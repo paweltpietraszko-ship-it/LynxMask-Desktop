@@ -323,37 +323,16 @@ _NER_BLOCKLIST: set = {
     "sko",
     "iod",
     "kw",
-    # [BUG-NER-FP] Przymiotniki i rzeczowniki pospolite błędnie klasyfikowane przez SpaCy
-    # jako OSOBA lub FIRMA — potwierdzone przez benchmark
+    # [BUG-NER-FP] Widziane w UI: OSOBA_006="KONTROLNA", OSOBA_007="Encje"
+    # SpaCy błędnie klasyfikuje te słowa jako OSOBA/FIRMA
     "kontrolna",
     "kontrolny",
     "kontrolne",
     "kontrolnych",
-    "kontrolnym",
+    "kontrolnego",
     "encje",
     "encja",
     "encji",
-    "rejestrowa",
-    "rejestrowy",
-    "rejestrowe",
-    "gospodarcza",
-    "gospodarczy",
-    "gospodarcze",
-    "podatkowa",
-    "podatkowy",
-    "podatkowe",
-    "prawna",
-    "prawny",
-    "prawne",
-    "handlowa",
-    "handlowy",
-    "handlowe",
-    "publiczna",
-    "publiczny",
-    "publiczne",
-    "prywatna",
-    "prywatny",
-    "prywatne",
 }
 
 

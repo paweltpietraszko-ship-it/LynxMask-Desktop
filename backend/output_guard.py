@@ -101,8 +101,9 @@ _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     # [FIX-IBAN-LEN] Wymóg min. 10 znaków po CC+DD — wyklucza NIP z prefiksem PL
     # (PL6551979313: po "PL65" zostaje tylko 8 znaków < 10). Najkrótszy IBAN (NO) = 15 znaków.
     # [BUG-IBAN-LETTERS] Poprzedni wzorzec [\s\d] nie obsługiwał IBAN z literami w BBAN
-    # (GB, IE, MT itd.) — np. GB29NWBK60161331926819. Nowy: [A-Z0-9\s] obejmuje wszystkie.
-    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9\s]{10,30}\b")),
+    # (GB, IE, MT itd.) — np. GB29NWBK60161331926819.
+    # Nowy wzorzec (z OutputGuard.kt l.59): grupy 4 znaków alfanumerycznych z opcjonalną spacją.
+    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b")),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
     # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
     # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.
