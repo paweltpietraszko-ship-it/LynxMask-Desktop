@@ -4,7 +4,7 @@
 
 Pseudonimizacja dokumentów OCR (LynxMask Desktop).
 Backend: Python (`backend/`), Frontend: Tauri + React (`frontend/`).
-Oryginalne foldery: `pseudominizer` (backend) i `pseudominizer-tauri` (frontend).
+Repo: https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop (prywatne)
 
 ## Stan po Coverage-Fix (2026-06-14) — ZAMKNIĘTY
 
@@ -87,3 +87,6 @@ Token do requestów: czytany automatycznie z `api_token.txt` (generowany przy st
 - `backend/api_token.txt` — generowany automatycznie przy starcie `pseudominizer_api.py`, nie w repo
 - `backend/anon_profiles/` — dane użytkownika, nie w repo
 - Dataset (50 doc) można wygenerować przez `backend/generator.py`
+- Benchmark (Linux): `cd backend && python run_benchmark.py --count 50`
+- Testy (Linux): `cd backend && python -m pytest tests/ -q`
+- Backend start: `cd backend && python pseudominizer_api.py`
