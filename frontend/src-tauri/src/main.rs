@@ -118,14 +118,16 @@ fn find_token_file() -> Result<std::path::PathBuf, String> {
         if let Some(dir) = exe.parent() {
             let p = dir.join(BACKEND_TOKEN_FILENAME);
             if p.exists() { return Ok(p); }
-            // 3. Dla dev: exe w target/debug/, backend w Desktop\pseudominizer\
+            // 3. Dla dev: exe w target/debug/, backend w Desktop\LynxMask-Desktop\backend\
             for up in 1..=5 {
                 let mut candidate = dir.to_path_buf();
                 for _ in 0..up { candidate = match candidate.parent() {
                     Some(p) => p.to_path_buf(),
                     None => break,
                 };}
-                let p = candidate.join("pseudominizer").join(BACKEND_TOKEN_FILENAME);
+                let p = candidate.join("backend").join(BACKEND_TOKEN_FILENAME);
+                if p.exists() { return Ok(p); }
+                let p = candidate.join("LynxMask-Desktop").join("backend").join(BACKEND_TOKEN_FILENAME);
                 if p.exists() { return Ok(p); }
                 let p2 = candidate.join(BACKEND_TOKEN_FILENAME);
                 if p2.exists() { return Ok(p2); }
@@ -133,8 +135,15 @@ fn find_token_file() -> Result<std::path::PathBuf, String> {
         }
     }
 
-    // 4. Hardcoded dev fallback — Desktop\pseudominizer\api_token.txt
+    // 4. Hardcoded dev fallback — Desktop\LynxMask-Desktop\backend\api_token.txt
     if let Ok(home) = std::env::var("USERPROFILE") {
+        let p = std::path::PathBuf::from(&home)
+            .join("Desktop")
+            .join("LynxMask-Desktop")
+            .join("backend")
+            .join(BACKEND_TOKEN_FILENAME);
+        if p.exists() { return Ok(p); }
+        // Legacy fallback — stara ścieżka przed migracją 2026-06-25
         let p = std::path::PathBuf::from(home)
             .join("Desktop")
             .join("pseudominizer")
