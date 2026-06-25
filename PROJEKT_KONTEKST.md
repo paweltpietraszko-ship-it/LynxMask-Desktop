@@ -38,6 +38,21 @@ Cel: CLR ≤ 5.3%, recall > 88%. Osiągnięty.
 - `backend/MAPA_ARCHITEKTURY_LynxMask_Desktop_v2_1.md` — architektura
 - `backend/RAPORT_Coverage_Fix.txt` — pełna tabela runów A/D/E/F
 
+## Aktywny problem — TESTY CZERWONE (2026-06-25)
+
+Testy które były zielone padły po sesji sprzątania backendu/benchmarku.
+
+**Hipoteza (drugi Claude):** problem z `/preview` — różnica obsługi plain text vs OCR.
+Kluczowe pliki do sprawdzenia: `pseudominizer_api.py` (endpoint `/preview`), `pipeline.py` (l.298 `USE_NEW_PIPELINE=True`).
+
+**Komenda startowa:**
+```
+cd C:\Users\p_pie\Desktop\pseudominizer
+python -m pytest tests\test_pipeline_v2.py tests\test_pipeline_adversarial.py -x --tb=long
+```
+
+Wklej wynik (stacktrace) do Claude — bez tego diagnoza jest zgadywaniem.
+
 ## Uwagi praktyczne
 
 - `backend/api_token.txt` — generowany automatycznie przy starcie `pseudominizer_api.py`, nie w repo
