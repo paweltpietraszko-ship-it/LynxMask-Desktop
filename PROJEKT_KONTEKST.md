@@ -38,20 +38,42 @@ Przyczyny i naprawy:
 1 xfailed (celowy):
 - `test_b19_kancelaria_naming` — KI-1, SpaCy rozbija "Kowalski i Wspólnicy" na dwa tokeny
 
+## Stan po Bug-Fix (2026-06-25) — ZAMKNIĘTY
+
+Naprawiono 6 bugów z portu Kotlin. Branch: `claude/jolly-hopper-hid2oh` → scalony z `main`.
+
+Naprawione:
+1. BUG-IBAN-LETTERS — IBAN z literami (GB/IE/MT) — `output_guard.py`
+2. BUG-NIP-LEAK — format 3-2-2-3 — `anonymizer_init.py`, `layers/identity.py`, `output_guard.py`
+3. BUG-INSTITUTION-FP — skróty (PPK/KNF/RPO) z `re.IGNORECASE` — `layers/institution.py`
+4. BUG-INSTITUTION-ORDER — institution przed NER → regresja recall — `pipeline_new.py`
+5. BUG-NER-FP — blocklist (kontrolna/encje) + filtr przymiotników — `ner_blocklist.py`, `ner_layer.py`
+
+Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed, 56 skipped, 1 xfailed`
+
 ## Wersje kluczowych plików
 
 - `layers/identity.py` v1.1
 - `layers/numeric.py` v1.0
 - `layers/address.py` v1.4
 - `layers/institution.py` v1.0 (NOWY — 2026-06-25)
-- `ner_blocklist.py` v1.3 (263 wpisy)
+- `ner_blocklist.py` v1.3 (263 wpisy + kontrolna/encje)
+- `ner_layer.py` v1.10 + _ADJECTIVE_ENDINGS_RE
 - `layers/ner_adapter.py` v1.1
-- `pipeline_new.py` v0.4 + apply_institution_layer
+- `pipeline_new.py` v0.4 — institution PO NER
 - `pipeline_core.py` v0.2+
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
-- `output_guard.py` — generyczny IBAN pattern
+- `output_guard.py` v3.7 — IBAN z literami, NIP 3-2-2-3
 
 ## Otwarte bugi — do naprawienia (priorytet malejący)
+
+### ~~BUG-IBAN-LETTERS~~ — NAPRAWIONY
+### ~~BUG-NIP-LEAK~~ — NAPRAWIONY
+### ~~BUG-NER-FP (kontrolna/encje/przymiotniki)~~ — NAPRAWIONY
+### ~~BUG-INSTITUTION-FP~~ — NAPRAWIONY
+### ~~BUG-INSTITUTION-ORDER~~ — NAPRAWIONY
+
+---
 
 Źródło fixów: wersja mobile (Kotlin) `C:\Projects\LynxMask\`.
 
@@ -122,11 +144,63 @@ _apply(state, apply_fallback_layer)
 ```
 Zasada: `allocator.is_occupied()` zablokuje re-tokenizację spanów zajętych przez NER (FIRMA).
 
-### BUG-ADDR-FP (SREDNI)
+### BUG-ADDR-FP (ŚREDNI)
 ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
 
 ### BUG-10 (WYSOKI — blokuje dystrybucję)
 Hardkodowana ścieżka Tesseract → `ocr_engine.py`
+
+---
+
+## Bugi z testu ręcznego PSE-2026-0756 (21.06.2026)
+
+Plik testowy: 4 poziomy degradacji OCR, 4 typy dokumentów.
+Wyniki encji z UI (37 tokenów) — poniżej NOWE bugi nieznane wcześniej.
+
+### BUG-NER-FP-INSTRUKCJE (WYSOKI)
+SpaCy klasyfikuje słowa z instrukcji/UI wklejonych do dokumentu jako encje:
+- OSOBA_007="Guardem" — fragment "output_guard"
+- OSOBA_008="Wkleić" — polskie "paste" z instrukcji w pliku testowym
+- OSOBA_009="Dluzn" — obcięty "Dłużnika" po OCR (fragment komorniczego)
+- FIRMA_003="Share" — angielskie "share" z instrukcji
+- FIRMA_004="RED" — kolor lub skrót
+
+Fix — `backend/ner_blocklist.py` (dodać do `_NER_BLOCKLIST`):
+```python
+"guardem", "wkleić", "wklej", "wklejam", "wklejanie",
+"share", "red", "dluzn",   # OCR-fragment "dłużnika"
+```
+Plik: `backend/ner_blocklist.py`
+
+### BUG-OCR-DEDUP (WYSOKI)
+Ta sama osoba z OCR-leet i bez leet dostaje dwa osobne tokeny:
+- OSOBA_001="Paulina Agate Kowalczyk"
+- OSOBA_002="P4nina Agat3 K0walczyk"
+
+`_person_stem` nie deduplikuje — "p4n" ≠ "pau", inne prefiksy.
+Fix wymaga OCR-normalizacji przed `_person_stem` albo similarity threshold.
+Plik: `backend/ner_layer.py` (`_person_stem`) lub nowy `layers/ocr_normalizer.py`
+
+### BUG-PESEL-DUP (ŚREDNI)
+PESEL z OCR-spacjami dostaje dwa tokeny z identyczną wartością:
+- NUMER_013 = NUMER_014 = "92 0915 12416"
+- NUMER_015 = NUMER_016 = "85 0717 92056"
+
+Ten sam string wchodzi do `reverse_map` dwukrotnie z różnymi kluczami.
+Fix: deduplication w `TokenAllocator.allocate()` — sprawdź czy wartość już istnieje w `reverse_map`, jeśli tak — zwróć istniejący token.
+Plik: `backend/pipeline_core.py`
+
+### BUG-FIRMA-TRUNC (ŚREDNI)
+FIRMA_001="Przedsiębiorstwo Usług Technicznych "ALTEX" Sp" — obcięte, brak "z o.o."
+SpaCy zatrzymuje granicę encji przed sufiksem prawnym w cudzysłowie.
+Fix: post-processing w `_filter_institutions()` dołączający sufiks prawny jeśli encja kończy się na "Sp" i następne słowa to ". z o.o." / "S.A." itp.
+Plik: `backend/ner_layer.py`
+
+### BUG-FIRMA-ZUS-MIX (NISKI)
+FIRMA_002="Sp. z o.o. ZUS-Warsz" — ZUS-fragment jako FIRMA zamiast INSTYTUCJA.
+SpaCy zassał fragment "ZUS-Warszawa" i sklasyfikował całość jako firmę.
+Powiązane z istniejącym BUG-NER-FP-GRANICE (MASTER).
+Plik: `backend/ner_layer.py` (`_filter_institutions`)
 
 ## Uwagi praktyczne
 
