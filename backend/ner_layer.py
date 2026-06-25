@@ -111,6 +111,22 @@ _ADDR_PREFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
+# [BUG-NER-FP] Filtr przymiotników — jednoczłonowe encje kończące się na polskie
+# końcówki przymiotnikowe są prawie zawsze FP (SpaCy błędnie klasyfikuje np.
+# "kontrolna", "rejestrowa" jako FIRMA lub OSOBA). Filtr stosowany tylko dla
+# encji jednoczłonowych — wielowyrazowe ("Komisja Kontrolna") pozostają nienaruszone.
+_ADJECTIVE_ENDINGS_RE = re.compile(
+    r"(?:ski|ska|skie|skich|skim|skiego|skiemu"
+    r"|cki|cka|ckie|ckich|ckim|ckiego|ckiemu"
+    r"|dzki|dzka|dzkie|dzkich|dzkim|dzkiego|dzkiemu"
+    r"|owy|owa|owe|owych|owym|owego|owej|owemu"
+    r"|owy|owy"
+    r"|ny|na|ne|nych|nym|nego|nej|nemu"
+    r"|any|ana|ane|anych|anym|anego|anej"
+    r"|ony|ona|one|onych|onym|onego|onej)$",
+    re.IGNORECASE | re.UNICODE,
+)
+
 # [FIX-NER-INTERNAL-ORG] Wewnętrzne działy i jednostki organizacyjne
 # nie są podmiotami zewnętrznymi — pomiń jako FIRMA.
 _INTERNAL_ORG_RE = re.compile(
@@ -148,6 +164,12 @@ def _filter_institutions(ner_results: list) -> list:
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
             logger.debug("[FILTER] pominięto dział wewnętrzny: '%s'", entity_text[:40])
+            continue
+        # [BUG-NER-FP] Pomiń jednoczłonowe encje kończące się na polskie końcówki
+        # przymiotnikowe — SpaCy regularnie klasyfikuje je jako OSOBA/FIRMA.
+        # Wielowyrazowe encje (np. "Komisja Kontrolna") nie są filtrowane.
+        if " " not in entity_text and _ADJECTIVE_ENDINGS_RE.search(entity_text):
+            logger.debug("[FILTER] pominięto przymiotnik: '%s'", entity_text[:40])
             continue
 
         out.append(ner)
@@ -187,41 +209,6 @@ def _person_stem(text: str) -> tuple | None:
     second = words[1][:3] if len(words) > 2 else ""
     last   = words[-1][:4]
     return (first, second, last)
-
-
-    """
-    Klucz deduplikacji dla wieloczłonowych odmian fleksyjnych encji OSOBA. [BUG-1]
-
-    Zwraca (stem_słowa_1[:3], stem_słowa_2[:3], stem_ostatniego[:4]) lub None
-    gdy encja jest jednoczłonowa (obsługiwana przez BUG-5).
-
-    Logika: "Jan Kowalski" i "Jana Kowalskiego" mają różne _ner_stem
-    ("jan kowal" vs "jana kowal"), więc stem_to_token nie deduplikuje ich.
-    _person_stem wyciąga invariantne prefiksy: ('jan', '', 'kowa') dla obu.
-
-    Dla trójczłonowych ("Jan Andrzej Kowalski" vs "Jana Andrzeja Kowalskiego"):
-    ('jan', 'and', 'kowa') — pierwsze dwa słowa + ostatnie.
-
-    Kolizja niemożliwa między różnymi osobami: różne imię lub różne nazwisko
-    dają różny tuple ('jan', '', 'kowa') vs ('ann', '', 'kowa') vs ('pio', '', 'kowa').
-    Stosowane TYLKO dla typ == "OSOBA" i len(words) >= 2.
-    """
-    words = re.sub(r"[^\w\s]", " ", text.lower()).split()
-    words = [w for w in words if len(w) >= 2]
-    if len(words) < 2:
-        return None
-    first  = words[0][:3]
-    second = words[1][:3] if len(words) > 2 else ""
-    last   = words[-1][:4]
-    return (first, second, last)
-
-
-
-    """Klucz deduplikacji — pierwsze 5 znaków każdego słowa, lowercase.
-    Strip znaków niealfanumerycznych — & i . w nazwie firmy nie mogą psuć klucza.
-    """
-    clean = re.sub(r"[^\w\s]", " ", text.lower())
-    return " ".join(w[:5] for w in clean.split() if len(w) >= 2)
 
 
 # ── API publiczne ─────────────────────────────────────────────────────────────

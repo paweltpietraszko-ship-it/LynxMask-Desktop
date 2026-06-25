@@ -51,10 +51,15 @@ def run_pipeline_new(
     _apply(state, apply_legal_layer)
     _apply(state, apply_numeric_layer)
     _apply(state, apply_contact_layer)
-    _apply(state, apply_institution_layer)
+    # [BUG-INSTITUTION-ORDER] institution musi działać PO NER — skróty instytucji
+    # (KNF, RPO itp.) są w blocklist NER żeby SpaCy ich nie tokenizował jako FIRMA.
+    # Gdyby institution działał przed NER, skrót stałby się już INSTYTUCJA_NNN
+    # i był pomijany przez _filter_institutions (TOKEN_RE match). Kolejność:
+    # NER → institution → fallback.
     extract_ner_results(state, anon_map)
     _apply(state, apply_address_layer)
     _apply(state, apply_ner_layer, anon_map)
+    _apply(state, apply_institution_layer)
     _apply(state, apply_fallback_layer)
     if anonymizer is not None:
         _apply(state, apply_validation_layer, anonymizer)

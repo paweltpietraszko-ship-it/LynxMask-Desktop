@@ -31,7 +31,10 @@ _INSTITUTION_RE = re.compile(
     r"|(?:Trybunał|Trybunału|Trybunałowi)\s+Konstytucyjn(?:y|ego|emu)"
     r"|(?:Państwowa|Państwowej)\s+Inspekcja\s+Pracy|Państwowej\s+Inspekcji\s+Pracy"
     r"|(?:Pracownicze|Pracowniczych|Pracowniczymi)\s+Plan(?:y|ów|ami)\s+Kapitałow(?:e|ych|ymi)"
-    r"|\bPPK\b|\bKNF\b|\bRPO\b|\bTK\b|\bPIP\b|\bGUS\b|\bNIK\b|\bUOKiK\b"
+    # [BUG-INSTITUTION-FP] Skróty muszą być TYLKO wielkie litery — re.IGNORECASE
+    # całego wzorca powodował, że "ppk", "knf" itp. (małe) też trafiały do tokenizacji.
+    # (?-i:...) wyłącza IGNORECASE lokalnie dla grupy skrótów.
+    r"|(?-i:\bPPK\b|\bKNF\b|\bRPO\b|\bTK\b|\bPIP\b|\bGUS\b|\bNIK\b|\bUOKiK\b)"
     r")",
     re.IGNORECASE | re.UNICODE,
 )

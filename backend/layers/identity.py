@@ -19,7 +19,8 @@ from pipeline_core import PipelineState, TokenAllocator
 _IDENTITY_SOURCES: frozenset[str] = frozenset({
     r"(?<!\d)\d{11}(?!\d)",                                    # PESEL
     r"(?<!\d)\d{14}(?!\d)",                                    # REGON 14
-    r"(?<!\d)\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}(?!\d)",  # NIP (stary string — lookup)
+    r"(?<!\d)\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}(?!\d)",  # NIP format 3-3-2-2 (lookup)
+    r"(?<!\d)\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}(?!\d)",  # NIP format 3-2-2-3 [BUG-NIP-LEAK]
     r"\bPL\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b",          # NIP z PL
     r"(?<!\d)\d{9}(?!\d)",                                     # REGON 9
     r"(?<![A-Za-z])[A-Z]{3}\s?\d{6}(?!\d)",                   # Dowód osobisty
