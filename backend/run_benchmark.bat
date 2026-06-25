@@ -1,14 +1,16 @@
 @echo off
-cd /d C:\Users\p_pie\Desktop\pseudominizer
+cd /d %~dp0
 echo.
 echo ============================================================
 echo  LynxMask — Benchmark
 echo ============================================================
 echo.
 
-REM Zatrzymaj stary backend jeśli działa
+REM Zatrzymaj stary backend jeśli działa (po PID portu 8765)
 echo [1/3] Zatrzymuję stary backend...
-taskkill /F /IM python.exe /FI "WINDOWTITLE eq LynxMask Backend" >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8765 " ^| findstr "LISTENING"') do (
+    taskkill /PID %%a /F >nul 2>&1
+)
 timeout /t 2 /nobreak >nul
 
 REM Uruchom świeży backend — nowy token zapisze się do api_token.txt
