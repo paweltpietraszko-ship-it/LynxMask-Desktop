@@ -17,76 +17,56 @@ Cel: CLR ≤ 5.3%, recall > 88%. Osiągnięty.
 - Dataset: dataset_20260614_081730 (50 doc, seed stały)
 - `USE_NEW_PIPELINE=True` aktywny w `pipeline.py` l.298
 
+## Stan po Test-Fix (2026-06-25) — ZAMKNIĘTY
+
+Naprawiono 34 czerwone testy. Commit: `bb2f5d1`.
+
+**Wynik: `157 passed, 2 skipped, 1 xfailed, 0 failed`**
+
+Przyczyny i naprawy:
+1. Stale `.pyc` z wbitą starą ścieżką (`pseudominizer\`) → usunięto `tests/__pycache__/`
+2. `_API_TOKEN` generowany przy imporcie modułu zamiast w `_lifespan()` → uvicorn spawn na Windows tworzył dwa tokeny → 401 → przeniesiono do `_lifespan()`
+3. Brak warstwy INSTYTUCJA w `pipeline_new.py` → stworzono `layers/institution.py`, dodano do pipeline
+4. `DB_PATH` / `_init_db` usunięte z `pseudominizer_api.py` po wydzieleniu `db_store.py` → dodano aliasy kompatybilności
+5. Output guard tylko PL IBAN → dodano generyczny pattern `[A-Z]{2}\d{2}[\s\d]{10,30}`
+6. Testy b5/b21/c7 napisane przed security guardem → zaktualizowane
+
+2 celowe skipy:
+- `test_b14` — pomijany gdy Morfeusz dostępny (test trybu degraded)
+- `test_c10` — placeholder (decrypt_map() niedostępna z poziomu testu)
+
+1 xfailed (celowy):
+- `test_b19_kancelaria_naming` — KI-1, SpaCy rozbija "Kowalski i Wspólnicy" na dwa tokeny
+
 ## Wersje kluczowych plików
 
 - `layers/identity.py` v1.1
-- `layers/numeric.py` v1.0 (NOWY)
+- `layers/numeric.py` v1.0
 - `layers/address.py` v1.4
+- `layers/institution.py` v1.0 (NOWY — 2026-06-25)
 - `ner_blocklist.py` v1.3 (263 wpisy)
 - `layers/ner_adapter.py` v1.1
-- `pipeline_new.py` v0.4
+- `pipeline_new.py` v0.4 + apply_institution_layer
 - `pipeline_core.py` v0.2+
+- `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
+- `output_guard.py` — generyczny IBAN pattern
 
 ## Otwarte problemy
 
 - **BUG-ADDR-FP** 🟡 — ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
 - **BUG-10** 🔴 — hardkodowana ścieżka Tesseract (blokuje dystrybucję) → `ocr_engine.py`
 
-### Czerwone testy (34 failures) — pre-existing, nie spowodowane migracją
+## Uwagi praktyczne
 
-Uruchom: `cd backend && python -m pytest tests/ --tb=line -q`
-
-Klasy z failami (wymagają naprawy pipeline dla plain text przez /preview):
-- `TestBug1PublicInstitutions` — ZUS, sądy, urzędy skarbowe, trybunal nie tokenizowane jako INSTYTUCJA
-- `TestNERDetection` — Jan Kowalski, IBAN, OSOBA, PESEL nie wykrywane przez NER
-- `TestConsistency` — ta sama osoba dostaje różne tokeny
-- `TestEdgeCases` — długi dokument z wyciekiem
-- `TestFirmaAttackToken::test_b5` — ValueError przy fake tokenach w inputcie
-
-Uwaga: benchmark (OCR pipeline) działa poprawnie — OSOBA recall 96.3% w Run F.
-Problem dotyczy ścieżki plain text → /preview (bez OCR). spaCy model działa.
-
-### Stan suite testów (2026-06-25)
-`106 passed, 34 failed, 19 skipped, 1 xfailed`
-
----
-
-## ZADANIE STARTOWE DLA CLAUDE
-
-**Cel: przywrócić testy do zielonego stanu (były zielone wcześniej).**
-
-Zacznij od diagnostyki — uruchom testy i znajdź root cause:
-
-```bash
-cd backend
-python -m pytest tests/test_pseudominizer.py -x --tb=long -q
-```
-
-Hipoteza do sprawdzenia: pipeline `/preview` dla pliku `.txt` (plain text, bez OCR)
-nie przechodzi przez warstwę NER/spaCy — podczas gdy benchmark wysyła obrazy PNG
-i działa poprawnie (OSOBA recall 96.3%). Sprawdź w `pseudominizer_api.py` jak
-endpoint `/preview` rozgałęzia się dla `text/plain` vs `image/*`.
-
-Kluczowe pliki:
-- `backend/pseudominizer_api.py` — endpoint `/preview`
-- `backend/pipeline.py` / `backend/pipeline_new.py` — pipeline główny
-- `backend/spacy_ner.py` / `backend/ner_layer.py` — warstwa NER
-- `backend/tests/test_pseudominizer.py` — failing tests
-
-Backend uruchomisz przez: `python pseudominizer_api.py`
-Token do requestów: czytany automatycznie z `api_token.txt` (generowany przy starcie).
+- `backend/api_token.txt` — generowany przy starcie `pseudominizer_api.py` przez `_lifespan()`, nie w repo
+- `backend/anon_profiles/` — dane użytkownika, nie w repo
+- Testy: `cd backend && python -m pytest tests/ -q` (wymaga działającego backendu na :8765)
+- Backend start: `cd backend && python pseudominizer_api.py`
+- Logi testów: `backend/pytest.log` (DEBUG, generowany automatycznie)
+- Dataset (50 doc): `backend/generator.py`
 
 ## Dokumentacja w repo
 
 - `backend/MASTER_LynxMask_Desktop.md` — główny dokument projektu
 - `backend/MAPA_ARCHITEKTURY_LynxMask_Desktop_v2_1.md` — architektura
 - `backend/RAPORT_Coverage_Fix.txt` — pełna tabela runów A/D/E/F
-
-## Uwagi praktyczne
-
-- `backend/api_token.txt` — generowany automatycznie przy starcie `pseudominizer_api.py`, nie w repo
-- `backend/anon_profiles/` — dane użytkownika, nie w repo
-- Dataset (50 doc) można wygenerować przez `backend/generator.py`
-- Benchmark (Linux): `cd backend && python run_benchmark.py --count 50`
-- Testy (Linux): `cd backend && python -m pytest tests/ -q`
-- Backend start: `cd backend && python pseudominizer_api.py`
