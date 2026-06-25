@@ -51,10 +51,82 @@ Przyczyny i naprawy:
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
 - `output_guard.py` — generyczny IBAN pattern
 
-## Otwarte problemy
+## Otwarte bugi — do naprawienia (priorytet malejący)
 
-- **BUG-ADDR-FP** 🟡 — ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
-- **BUG-10** 🔴 — hardkodowana ścieżka Tesseract (blokuje dystrybucję) → `ocr_engine.py`
+Źródło fixów: wersja mobile (Kotlin) `C:\Projects\LynxMask\`.
+
+### BUG-IBAN-LETTERS (KRYTYCZNY — wyciek PII)
+`backend/output_guard.py` linia 101. Pattern `[\s\d]{10,30}` nie obsługuje liter →
+IBANy GB/IE/MT (literowy BBAN) nie są blokowane.
+```python
+# Zamień:
+("IBAN", re.compile(r"\b[A-Z]{2}\d{2}[\s\d]{10,30}\b")),
+# Na (z OutputGuard.kt linia 59):
+("IBAN", re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b")),
+```
+
+### BUG-NIP-LEAK (WYSOKI — wyciek PII)
+Format NIP 3-2-2-3 (np. "512-34-56-789") nie jest tokenizowany.
+Fix 1 — `backend/anonymizer_init.py` (dodać po wzorcu NIP 3-3-2-2):
+```python
+(TOKEN_NUMER, re.compile(r"(?<!\d)\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}(?!\d)")),
+```
+Fix 2 — `backend/output_guard.py` linia 97, rozszerzyć wzorzec NIP:
+```python
+("NIP", re.compile(
+    r"\b\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b"   # 3-3-2-2
+    r"|\b\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}\b"  # 3-2-2-3
+)),
+```
+
+### BUG-NER-FP (WYSOKI — fałszywe pozytywy)
+Widziane w UI: OSOBA_006="KONTROLNA", OSOBA_007="Encje", OSOBA_008="Kont0", FIRMA_001="Byt0m".
+Fix 1 — `backend/ner_blocklist.py` (dodać do listy):
+```python
+"kontrolna", "kontrolny", "kontrolne", "kontrolnych", "kontrolnego",
+"encje", "encja", "encji",
+```
+Fix 2 — `backend/ner_layer.py` (dodać filtr przymiotników, z NameEngine.kt linie 287-362):
+```python
+_ADJECTIVE_ENDINGS_RE = re.compile(
+    r'(?i)(?:owego|owej|owym|owych|iego|iej|iem|owy|owa|owe|ową'
+    r'|czny|czna|czne|cznego|cznej|cznym|cznych'
+    r'|wny|wna|wne|wnego|wnej|wnym|wnych'
+    r'|lny|lna|lne|lnego|lnej|lnym|lnych)\b'
+)
+# W _filter_institutions() przed out.append(ner):
+if ner.label == "OSOBA" and _ADJECTIVE_ENDINGS_RE.search(entity_text):
+    continue
+```
+
+### BUG-INSTITUTION-FP (ŚREDNI — fałszywe pozytywy)
+`\bNIK\b`, `\bGUS\b`, `\bPIP\b` z `re.IGNORECASE` matchują imiona i polecenia IT.
+Fix — `backend/layers/institution.py` linia 34:
+```python
+# Zamień:
+r"|\bPPK\b|\bKNF\b|\bRPO\b|\bTK\b|\bPIP\b|\bGUS\b|\bNIK\b|\bUOKiK\b"
+# Na (inline flag wyłącza IGNORECASE dla samych skrótów):
+r"|(?-i:\bPPK\b|\bKNF\b|\bRPO\b|\bTK\b|\bPIP\b|\bGUS\b|\bNIK\b|\bUOKiK\b)"
+```
+
+### BUG-INSTITUTION-ORDER (ŚREDNI — architektura)
+`apply_institution_layer` przed NER niszczy firmy zawierające słowa kluczowe instytucji
+(np. "Kancelaria Sądu Rejonowego Sp. z o.o." → NER nie widzi pełnej nazwy).
+Fix — `backend/pipeline_new.py`: przenieść `apply_institution_layer` PO `apply_ner_layer`:
+```python
+extract_ner_results(state, anon_map)
+_apply(state, apply_address_layer)
+_apply(state, apply_ner_layer, anon_map)
+_apply(state, apply_institution_layer)   # PO NER, nie przed
+_apply(state, apply_fallback_layer)
+```
+Zasada: `allocator.is_occupied()` zablokuje re-tokenizację spanów zajętych przez NER (FIRMA).
+
+### BUG-ADDR-FP (SREDNI)
+ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
+
+### BUG-10 (WYSOKI — blokuje dystrybucję)
+Hardkodowana ścieżka Tesseract → `ocr_engine.py`
 
 ## Uwagi praktyczne
 
