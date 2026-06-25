@@ -49,6 +49,33 @@ Problem dotyczy ścieżki plain text → /preview (bez OCR). spaCy model działa
 ### Stan suite testów (2026-06-25)
 `106 passed, 34 failed, 19 skipped, 1 xfailed`
 
+---
+
+## ZADANIE STARTOWE DLA CLAUDE
+
+**Cel: przywrócić testy do zielonego stanu (były zielone wcześniej).**
+
+Zacznij od diagnostyki — uruchom testy i znajdź root cause:
+
+```bash
+cd backend
+python -m pytest tests/test_pseudominizer.py -x --tb=long -q
+```
+
+Hipoteza do sprawdzenia: pipeline `/preview` dla pliku `.txt` (plain text, bez OCR)
+nie przechodzi przez warstwę NER/spaCy — podczas gdy benchmark wysyła obrazy PNG
+i działa poprawnie (OSOBA recall 96.3%). Sprawdź w `pseudominizer_api.py` jak
+endpoint `/preview` rozgałęzia się dla `text/plain` vs `image/*`.
+
+Kluczowe pliki:
+- `backend/pseudominizer_api.py` — endpoint `/preview`
+- `backend/pipeline.py` / `backend/pipeline_new.py` — pipeline główny
+- `backend/spacy_ner.py` / `backend/ner_layer.py` — warstwa NER
+- `backend/tests/test_pseudominizer.py` — failing tests
+
+Backend uruchomisz przez: `python pseudominizer_api.py`
+Token do requestów: czytany automatycznie z `api_token.txt` (generowany przy starcie).
+
 ## Dokumentacja w repo
 
 - `backend/MASTER_LynxMask_Desktop.md` — główny dokument projektu
