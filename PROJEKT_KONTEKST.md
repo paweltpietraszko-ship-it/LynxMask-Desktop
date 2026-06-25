@@ -32,6 +32,23 @@ Cel: CLR ≤ 5.3%, recall > 88%. Osiągnięty.
 - **BUG-ADDR-FP** 🟡 — ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
 - **BUG-10** 🔴 — hardkodowana ścieżka Tesseract (blokuje dystrybucję) → `ocr_engine.py`
 
+### Czerwone testy (34 failures) — pre-existing, nie spowodowane migracją
+
+Uruchom: `cd backend && python -m pytest tests/ --tb=line -q`
+
+Klasy z failami (wymagają naprawy pipeline dla plain text przez /preview):
+- `TestBug1PublicInstitutions` — ZUS, sądy, urzędy skarbowe, trybunal nie tokenizowane jako INSTYTUCJA
+- `TestNERDetection` — Jan Kowalski, IBAN, OSOBA, PESEL nie wykrywane przez NER
+- `TestConsistency` — ta sama osoba dostaje różne tokeny
+- `TestEdgeCases` — długi dokument z wyciekiem
+- `TestFirmaAttackToken::test_b5` — ValueError przy fake tokenach w inputcie
+
+Uwaga: benchmark (OCR pipeline) działa poprawnie — OSOBA recall 96.3% w Run F.
+Problem dotyczy ścieżki plain text → /preview (bez OCR). spaCy model działa.
+
+### Stan suite testów (2026-06-25)
+`106 passed, 34 failed, 19 skipped, 1 xfailed`
+
 ## Dokumentacja w repo
 
 - `backend/MASTER_LynxMask_Desktop.md` — główny dokument projektu
