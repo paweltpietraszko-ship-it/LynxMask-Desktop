@@ -93,12 +93,16 @@ class GuardMode(Enum):
 # Dane bezpośrednio identyfikujące — ich obecność w odpowiedzi to wyciek RODO
 _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     ("PESEL",   re.compile(r"\b\d{11}\b")),
-    ("NIP",     re.compile(r"\b\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b")),
+    # [BUG-NIP-LEAK] NIP może mieć dwa formaty separatora: 3-3-2-2 i 3-2-2-3.
+    # Poprzedni wzorzec łapał tylko 3-3-2-2. Dodano alternatywę dla 3-2-2-3.
+    ("NIP",     re.compile(r"\b(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3})\b")),
     # [FIX-A4] IBAN generyczny — obsługuje PL i wszystkie europejskie (DE, AT, SK itd.)
-    # Format: [A-Z]{2} (kraj) + \d{2} (cyfry kontrolne) + 10-30 znaków (cyfry + spacje)
-    # [FIX-IBAN-LEN] Wymóg min. 10 cyfr/spacji po CC+DD — wyklucza NIP z prefiksem PL
-    # (PL6551979313: po "PL65" zostaje tylko 8 cyfr < 10). Najkrótszy IBAN (NO) = 15 znaków.
-    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}[\s\d]{10,30}\b")),
+    # Format: [A-Z]{2} (kraj) + \d{2} (cyfry kontrolne) + 10-30 znaków (cyfry + litery + spacje)
+    # [FIX-IBAN-LEN] Wymóg min. 10 znaków po CC+DD — wyklucza NIP z prefiksem PL
+    # (PL6551979313: po "PL65" zostaje tylko 8 znaków < 10). Najkrótszy IBAN (NO) = 15 znaków.
+    # [BUG-IBAN-LETTERS] Poprzedni wzorzec [\s\d] nie obsługiwał IBAN z literami w BBAN
+    # (GB, IE, MT itd.) — np. GB29NWBK60161331926819. Nowy: [A-Z0-9\s] obejmuje wszystkie.
+    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9\s]{10,30}\b")),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
     # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
     # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.

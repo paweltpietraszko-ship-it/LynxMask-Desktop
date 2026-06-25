@@ -266,9 +266,15 @@ STRUCTURAL_PATTERNS = [
     (TOKEN_NUMER, re.compile(
         r"(?<!\d)\d{14}(?!\d)"
     )),
-    # NIP (10 cyfr, opcjonalne separatory)
+    # NIP (10 cyfr, opcjonalne separatory) — format 3-3-2-2 (standardowy)
     (TOKEN_NUMER, re.compile(
         r"(?<!\d)\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}(?!\d)"
+    )),
+    # [BUG-NIP-LEAK] NIP format 3-2-2-3 (np. "123-45-67-890") — drugi wariant
+    # separatora stosowany przez część systemów. Osobny wpis żeby nie zepsuć
+    # string-based lookup w layers/identity.py (_IDENTITY_SOURCES, _NIP_PATTERN_ORIG).
+    (TOKEN_NUMER, re.compile(
+        r"(?<!\d)\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}(?!\d)"
     )),
     # [FIX-NIP-PL] NIP z prefiksem PL — format używany na fakturach dla firm
     # unijnych (np. "NIP: PL6551979313"). Poprzedni wzorzec wymagał samych cyfr.
