@@ -24,6 +24,7 @@ from layers.legal import apply_legal_layer
 from layers.numeric import apply_numeric_layer
 from layers.institution import apply_institution_layer
 from layers.address import apply_address_layer
+from layers.ocr_normalizer import apply_ocr_normalizer
 from layers.ner_adapter import apply_ner_layer, extract_ner_results
 from layers.fallback import apply_fallback_layer
 from layers.validation import apply_validation_layer
@@ -46,6 +47,7 @@ def run_pipeline_new(
     anonymizer: "Anonymizer | None" = None,
 ) -> tuple[str, dict]:
     state = PipelineState(text=text, allocator=TokenAllocator())
+    _apply(state, apply_ocr_normalizer)
     _apply(state, apply_identity_layer)
     _apply(state, apply_financial_layer)
     _apply(state, apply_legal_layer)
