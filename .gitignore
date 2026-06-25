@@ -1,0 +1,18 @@
+# === BACKEND (Python) ===
+**/api_token.txt
+backend/anon_profiles/
+backend/dataset_*/
+backend/.tmp.driveupload/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+
+# === FRONTEND (Tauri + Node) ===
+frontend/node_modules/
+frontend/src-tauri/target/
+frontend/dist/
+frontend/.vite/
+
+# === OGÓLNE ===
+*.log
+.env

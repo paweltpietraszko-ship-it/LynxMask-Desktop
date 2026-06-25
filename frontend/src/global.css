@@ -1,0 +1,50 @@
+/* LynxMask Desktop — global.css
+   Importuj w src/index.css lub src/main.tsx:
+   @import './global.css';  lub  import './global.css';
+*/
+
+/* Placeholder — jasny we wszystkich polach */
+::placeholder {
+  color: #B8BEC8 !important;
+  opacity: 1 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #B8BEC8 !important;
+  opacity: 1 !important;
+}
+
+/* Select — jasny tekst opcji */
+select {
+  color: #D1D5DB;
+}
+
+select option {
+  background: #22252b;
+  color: #F5F7FA;
+}
+
+/* Scrollbar — ciemny, dyskretny */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3f4a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a5060;
+}
+
+/* Focus outline globalny — niebieski */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #3b82f6 !important;
+}

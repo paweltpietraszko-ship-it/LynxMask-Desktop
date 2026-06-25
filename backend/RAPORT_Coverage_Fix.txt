@@ -1,0 +1,157 @@
+RAPORT — COVERAGE-FIX
+LynxMask Desktop | pipeline_new.py
+Data: 2026-06-14
+Dataset: dataset_20260614_081730 (50 dokumentów, seed stały)
+Zaakceptowane przez OCR: 41 (9 odrzuconych lvl2/3 — poprawne zachowanie)
+Encje krytyczne (CLR): 94
+
+================================================================================
+TABELA PORÓWNAWCZA — WSZYSTKIE RUNY
+================================================================================
+
+Metryka               Run A (stary)   Run D (v0.2)    Run E (v0.3)    Run F (v0.4)
+-------------------------------------------------------------------------------------
+CLR (główny KPI)      5.3% (5/94)     4.3% (4/94)     4.3% (4/94)     4.3% (4/94)
+Recall                90.8% (246/271) 89.3% (242/271) 88.9% (241/271) 89.7% (243/271)
+Precision             58.6%           72.0%           70.5%           70.4%
+F1                    71.2%           79.7%           78.6%           78.9%
+Semantic Accuracy     82.1%           87.6%           87.6%           87.7%
+FP (overmasking)      160+            94              101             102
+Guard blocked         4               0               0               0
+
+Per typ encji — pełna tabela Run F:
+  ADRES        R=93.5%  P=68.3%  FP=20   (43/46)
+  EMAIL        R=33.3%  P=100%   FP=0    (2/6)
+  NUMER        R=89.4%  P=86.8%  FP=18   (118/132)
+  OSOBA        R=96.3%  P=61.9%  FP=32   (52/54)
+  SYGNATURA    R=78.6%  P=100%   FP=0    (11/14)
+  TELEFON      R=89.5%  P=100%   FP=0    (17/19)
+
+Per OCR level — Run F (zaakceptowane):
+  Lvl 0 perfect scan   96.4%  (13 dok.)
+  Lvl 1 light noise    93.5%  (13 dok.)
+  Lvl 2 noise+blur     73.3%  (7 dok.)
+  Lvl 3 phone (good)   86.0%  (8 dok.)
+
+Cele Run F — status:
+  CLR ≤ 4.3%          ✓  (4.3%)
+  Recall ≥ 89.3%      ✓  (89.7%)
+  OSOBA ≥ 96.3%       ✓  (96.3% — regres odwrócony)
+  ADRES P ≥ 77.8%     ✗  (68.3% — otwarte: BUG-ADDR-FP)
+
+================================================================================
+NAPRAWIONE BUGI
+================================================================================
+
+BUG-NEW-1 — NIP z separatorem kropkowym (identity.py v1.0 → v1.1)
+  Symptom:  NIP formatowany jako "766-444-75.06" (OCR zamienia "-" na ".") był
+            pomijany przez nowy pipeline na czystych dokumentach.
+  Root cause: `_NIP_RE` używał tylko `[\-]` jako separatora.
+  Fix: separator zmieniony na `[\-\.]` — NIP z kropką wykrywany poprawnie.
+  Weryfikacja: Run D — doc_00002 zakrywa 766-444-75-06 (OCR odczytał jako .06).
+  Status: ✅ ZAMKNIĘTY
+
+BUG-NEW-2 — Brak warstwy numeric: KL-NNNNN / FV-* / VAT/* / UMW/* (pipeline v0.2 → v0.3)
+  Symptom:  20+ encji klasy "numer klienta/faktury/umowy" pomijanych w nowym pipeline.
+            Stary pipeline łapał je przez anonymizer._layer2_regex (trie + słownik biurowy).
+  Root cause: Nowy pipeline nie miał odpowiednika tej warstwy.
+  Fix: Nowy moduł layers/numeric.py v1.0 z wzorcami KL-, FV-/VAT/, UMW/.
+       Wstawiony po apply_legal_layer w pipeline_new.py v0.3.
+  Przykłady: KL-60608 → NUMER_005, UMW/2024/001 → NUMER_002.
+  Status: ✅ ZAMKNIĘTY
+
+BUG-REGRES-OSOBA — Regres OSOBA -3.7pp (Run E vs Run D)
+  Symptom:  doc_00001 "Krzysztof Adamczyk" i doc_00040 "Bartosz Michalski"
+            rozpoznawane w Run D, nierozpoznawane w Run E.
+  Root cause: Kolejność warstw w pipeline_new.py:
+              apply_address_layer (PRZED) → apply_ner_layer (PO)
+              address.py v1.4 maskuje całą ulicę (np. "al. Niepodległości 161/20,
+              30-001 Olsztyn" → ADRES_001). SpaCy dostaje tekst bez kontekstu
+              ulicy → nie rozpoznaje OSOBA obok tokenu ADRES_001.
+              W v1.2 address łapał tylko kod pocztowy ("30-001 Olsztyn") →
+              ulica zostawała w tekście → SpaCy miał kontekst → OSOBA ✓.
+  Fix: Pre-ekstrakcja NER przed address layer (pipeline_new.py v0.4):
+       - `extract_ner_results(state, anon_map)` wywołany PO contact, PRZED address
+       - SpaCy widzi tekst po PESEL/NIP/IBAN (bez wrażliwych liczb), ale PRZED
+         maskowaniem adresów (kontekst ulicy zachowany)
+       - Wyniki zapisane w state.ner_results (dict)
+       - apply_ner_layer() używa cache jeśli state.ner_results niepusty
+  Zmienione pliki:
+       - pipeline_core.py: ner_results: list → dict
+       - layers/ner_adapter.py v1.1: dodano extract_ner_results()
+       - pipeline_new.py v0.4: extract_ner_results() między contact a address
+  Weryfikacja: Run F — OSOBA R=96.3% (52/54), identycznie jak Run D.
+  Status: ✅ ZAMKNIĘTY
+
+================================================================================
+OTWARTE PROBLEMY
+================================================================================
+
+BUG-ADDR-FP — ADRES precision 68.3% (FP=20)
+  Priorytet: 🟡
+  Plik: layers/address.py
+  Symptom:  address.py v1.4 generuje FP z multilinii OCR. Kiedy dokument ma
+            adres w dwóch liniach (np. "ul. Słoneczna 197/15\n00-001 Warszawa"),
+            address layer maskuje to jako ADRES_001, ale OCR wielokrotnie
+            dostarcza ten sam adres w różnych formatach (z łamaniem/bez) →
+            powstaje ADRES_002 jako FP.
+  Obserwacja: Run E i Run F mają identyczne FP=20 dla ADRES — pre-ekstrakcja NER
+              nie wpłynęła na ten problem. ADRES precision Run D (FP=12, P=77.8%)
+              była lepsza, bo address v1.2 nie łapała całego adresu.
+  Uwaga: Poprawa precision ADRES wymagałaby deduplication FP multilinii bez
+         rezygnacji z gains recall (93.5% vs 91.3% w Run D). Trade-off.
+
+EMAIL recall 33.3% (2/6)
+  Priorytet: 🟢
+  Symptom:  4 z 6 emaili pomijane. Prawdopodobne przyczyny: OCR degradacja
+            lub format emaila nieobsługiwany.
+  Obserwacja: Stały wynik Run D/E/F — nie jest to regres coverage-fix.
+
+SYGNATURA recall 78.6% (11/14)
+  Priorytet: 🟢
+  Symptom:  Stałe pominięcia: PT.070433.2020 i LD1M/00393743/9 w doc_00037
+            (format KW z prefiksem LD1M nieobsługiwany). 3 encje niezmiennie
+            pomijane w każdym runie.
+
+NUMER recall 89.4%
+  Priorytet: 🟢
+  Symptom:  Wybrane numery dat (06.07.1978, 20.12.1995), numery referencyjne
+            o niestandardowym formacie — stałe pominięcia.
+
+================================================================================
+STAN USE_NEW_PIPELINE
+================================================================================
+
+pipeline.py linia ~298:
+  USE_NEW_PIPELINE: bool = True
+
+Status: AKTYWNY. Wszystkie requesty POST /preview przechodzą przez run_pipeline_new().
+Stary pipeline (7-warstwowy) nieaktywny, kod nienaruszony — rollback przez zmianę stałej.
+
+Benchmark Run F jest aktywnym pipeline'm produkcyjnym.
+
+================================================================================
+PLIKI ZMIENIONE W COVERAGE-FIX
+================================================================================
+
+Plik                  Wersja przed   Wersja po    Zmiany
+---------------------------------------------------------------------------
+layers/identity.py    v1.0           v1.1         _NIP_RE: [\-] → [\-\.]
+layers/numeric.py     (brak)         v1.0         NOWY — KL-/FV-/VAT//UMW/
+layers/address.py     v1.2           v1.4         faza 2a/2b split, _fix_city() precyzja
+ner_blocklist.py      v1.1           v1.3         +24 wpisy (263 łącznie)
+layers/ner_adapter.py v1.0           v1.1         extract_ner_results()
+pipeline_new.py       v0.2           v0.4         numeric layer + pre-NER extraction
+pipeline_core.py      v0.2           v0.2+        ner_results: dict
+
+Niezmienione: pseudominizer_api.py, pipeline.py (USE_NEW_PIPELINE=True w l.298),
+              ner_layer.py, anonymizer.py, output_guard.py, wszystkie frontend.
+
+================================================================================
+RAPORTY BENCHMARK NA DYSKU
+================================================================================
+
+Run A: benchmark_results/run_20260614_XXXXXX/  (stary pipeline)
+Run D: benchmark_results/run_20260614_XXXXXX/  (new + NIP dot fix)
+Run E: benchmark_results/run_20260614_132056/  (new + addr v1.4 + blocklist v1.3)
+Run F: benchmark_results/run_20260614_140053/  (Coverage-Fix kompletny)

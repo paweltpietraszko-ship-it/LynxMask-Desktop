@@ -1,0 +1,1449 @@
+<!-- pseudominizer.html v2.3 -->
+<!-- v2.3 — [FIX-VARIANT-A] modalConfirm: fix warunku manualTokens.length > 0
+     który był zawsze false dla tokenów z modalMarkSelection (przypisanie
+     właściwości obiektu zamiast push). Zastąpiony tokens.filter(t=>t.manual). -->
+<!-- v2.2 — [VARIANT-A] modalConfirm: fire-and-forget fetch do /profile/add-entity
+     dla każdego ręcznie dodanego tokenu. Encje persystują do profilu biura
+     (mapa.enc) i są używane przy kolejnych dokumentach bez ręcznego dodawania. -->
+<!-- v2.0 — [FIX-GUARD-UX] blokada guard nie zatrzymuje podglądu. Poprzednio
+     return po błędzie guard uniemożliwiał użytkownikowi zobaczenie wyników
+     i zablokował "Wyczyść sesję". Teraz: ostrzeżenie jest wyświetlane, tokeny
+     i podgląd są dostępne, tylko eksport PDF jest zablokowany (session._guardBlocked).
+     Użytkownik może zobaczyć co zostało wykryte i ręcznie dodać brakujące encje. -->
+<!-- v1.8 — modal: reczne dodawanie encji (human-in-the-loop); fix manualTokens
+<!-- v2.1 — [FIX-PDF-META] downloadPdf: server-side /export-pdf zamiast window.print().
+<!-- v1.7 — output_guard: blokada eksportu + powód z guard_reasons; przycisk "Kopiuj dla AI" z SYSTEM_PROMPT_SECURITY -->
+<!-- v1.9 — PSE sekwencyjny z backendu (pse_registry.json); koniec losowego Math.random() -->
+<!-- v1.6 — kod dokumentu PSE-RRRR-XXXX; eksport PDF; pole numeru przy eksporcie odpowiedzi -->
+<!-- v1.5 — szyfrowanie mapy sesji AES-256-GCM / PBKDF2-SHA256-600k; format .enc; modal hasła -->
+<!-- v1.4 — depseudonimizacja: wgrywanie pliku TXT + wgrywanie mapy sesji JSON; eksport mapy sesji przy pobieraniu -->
+<!-- v1.3 — wersja poprzednia -->
+<!-- v1.2 — raport encji auto/ręcznie w modalu i po eksporcie -->
+<!-- v1.1 — obsługa obrazów (PNG/JPG/TIFF), ostrzeżenie jakości OCR, blokada eksportu przy niskiej jakości -->
+<!-- v1.0 — wersja początkowa -->
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pseudominizer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0a1628;--navy2:#0f1f3a;--navy3:#162540;
+  --blue:#1d4ed8;--blue2:#3b82f6;--blue3:#93c5fd;--blue4:#bfdbfe;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+  --border:rgba(59,130,246,0.15);--border2:rgba(59,130,246,0.30);
+  --ok:#22c55e;--warn:#f59e0b;--err:#ef4444;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(--sans);overflow:hidden}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#1d4ed8;border-radius:2px}
+
+/* ONBOARDING */
+#onboarding{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px)}
+.ob-card{background:var(--navy2);border:1px solid var(--border2);border-radius:8px;padding:32px 36px;max-width:480px;width:100%}
+.ob-step{display:none}.ob-step.active{display:block}
+.ob-label{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--blue2);text-transform:uppercase;margin-bottom:18px}
+.ob-title{font-size:18px;font-weight:300;color:var(--text);margin-bottom:14px;line-height:1.4}
+.ob-text{font-size:13px;line-height:1.85;color:#94a3b8;margin-bottom:14px}
+.ob-note{background:rgba(29,78,216,.08);border-left:2px solid var(--blue);border-radius:0 4px 4px 0;padding:12px 16px;font-size:12px;color:#64748b;line-height:1.7;margin-bottom:24px}
+.ob-check-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;cursor:pointer}
+.ob-check-row input{margin-top:3px;accent-color:var(--blue2);width:15px;height:15px;flex-shrink:0}
+.ob-check-row span{font-size:13px;line-height:1.7;color:#94a3b8}
+.ob-btns{display:flex;gap:8px;margin-top:8px}
+.ob-btn{flex:1;padding:12px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;border-radius:4px;cursor:pointer;border:1px solid var(--border2);background:var(--navy);color:var(--blue3);transition:background .15s}
+.ob-btn:hover{background:var(--navy3)}.ob-btn.back{flex:0 0 auto;padding:12px 18px;color:var(--text3);border-color:var(--border)}
+.ob-btn:disabled{opacity:.35;cursor:not-allowed}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.ob-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background .2s}
+.ob-dot.active{background:var(--blue2)}
+
+/* APP */
+#app{display:grid;grid-template-rows:48px 1fr;height:100vh}
+
+/* HEADER */
+.header{display:flex;align-items:center;padding:0 16px;gap:12px;background:var(--navy);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-mark{width:26px;height:26px}
+.app-name{font-size:14px;font-weight:500;color:var(--text);letter-spacing:.02em}
+.h-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+.sec-indicator{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.04em;transition:color .4s;cursor:default}
+.sec-dot{width:7px;height:7px;border-radius:50%;background:#334155;transition:background .4s}
+.sec-indicator.ok .sec-dot{background:var(--ok)}.sec-indicator.ok{color:#4ade80}
+.sec-indicator.warn .sec-dot{background:var(--warn)}.sec-indicator.warn{color:#fbbf24}
+.sec-indicator.err .sec-dot{background:var(--err)}.sec-indicator.err{color:#f87171}
+.sec-indicator.local .sec-dot{background:var(--blue2)}.sec-indicator.local{color:var(--blue3)}
+.h-spacer{flex:1}
+.h-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:4px;border:1px solid var(--border);background:transparent;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .15s}
+.h-btn:hover{border-color:var(--border2);color:var(--text)}
+.h-btn.danger{border-color:rgba(239,68,68,.3);color:#f87171}
+.h-btn.danger:hover{background:rgba(239,68,68,.06)}
+
+/* BODY */
+.body{display:grid;grid-template-columns:200px 1fr;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:12px 0}
+.sb-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:0 16px;margin-bottom:3px;margin-top:10px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 16px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s}
+.sb-item:hover{background:rgba(59,130,246,.08);color:var(--text)}
+.sb-item.active{background:rgba(29,78,216,.18);color:var(--blue3)}
+.sb-item svg{flex-shrink:0;opacity:.65}.sb-item.active svg{opacity:1}
+.sb-divider{height:1px;background:var(--border);margin:8px 12px}
+
+/* SESSION INFO */
+.session-box{margin:8px;padding:10px 12px;border-radius:4px;border:1px solid var(--border);background:rgba(29,78,216,.04)}
+.session-label{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.session-val{font-family:var(--mono);font-size:10px;color:var(--blue3)}
+.session-empty{font-family:var(--mono);font-size:10px;color:var(--text3);font-style:italic}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.main-topbar{padding:12px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.main-title{font-size:13px;font-weight:500;color:var(--text)}
+.panel{display:none;flex-direction:column;height:100%}
+.panel.active{display:flex}
+.main-content{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+
+/* Components */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--text3)}
+.empty-state svg{opacity:.3}
+.empty-state p{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.empty-state small{font-size:11px;color:var(--text3);opacity:.7;text-align:center;max-width:280px;line-height:1.6}
+
+/* Drop zone */
+.drop-zone{border:2px dashed var(--border2);border-radius:8px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:all .2s;text-align:center}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--blue2);background:rgba(29,78,216,.06)}
+.drop-zone-icon{width:48px;height:48px;border-radius:8px;background:rgba(29,78,216,.12);display:flex;align-items:center;justify-content:center}
+.drop-zone-title{font-size:14px;color:var(--text)}
+.drop-zone-sub{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.06em}
+
+/* File card */
+.file-card{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:6px;border:1px solid var(--border);background:var(--navy2)}
+.file-icon{width:32px;height:32px;border-radius:4px;background:rgba(29,78,216,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-name{font-size:13px;font-weight:500;color:var(--text)}
+.file-meta{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* Token row */
+.token-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.token-type{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;border:1px solid;flex-shrink:0}
+.token-orig{font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.token-arrow{color:var(--text3);font-size:11px;flex-shrink:0}
+.token-id{font-family:var(--mono);font-size:11px;color:var(--blue3);flex-shrink:0}
+.token-colors-OSOBA{color:#f87171;border-color:#f87171}
+.token-colors-FIRMA{color:#60a5fa;border-color:#60a5fa}
+.token-colors-NUMER{color:#fbbf24;border-color:#fbbf24}
+.token-colors-KWOTA{color:#a3e635;border-color:#a3e635}
+.token-colors-ADRES{color:#34d399;border-color:#34d399}
+
+/* Notices */
+.notice{padding:8px 12px;border-radius:4px;font-family:var(--mono);font-size:9px;letter-spacing:.05em;line-height:1.6}
+.notice-warn{border:1px solid rgba(245,158,11,.3);border-left:2px solid var(--warn);background:rgba(245,158,11,.04);color:#fbbf24}
+.notice-ok{border:1px solid rgba(34,197,94,.2);border-left:2px solid var(--ok);background:rgba(34,197,94,.04);color:#4ade80}
+.notice-err{border:1px solid rgba(239,68,68,.3);border-left:2px solid var(--err);background:rgba(239,68,68,.04);color:#f87171}
+.notice-info{border:1px solid var(--border2);border-left:2px solid var(--blue2);background:rgba(29,78,216,.05);color:var(--blue3)}
+
+/* Buttons */
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:9px 16px;border-radius:4px;cursor:pointer;border:1px solid;transition:all .15s}
+.btn-primary{background:rgba(29,78,216,.12);border-color:rgba(59,130,246,.4);color:var(--blue3)}
+.btn-primary:hover{background:rgba(29,78,216,.22);border-color:var(--blue2)}
+.btn-secondary{background:transparent;border-color:var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--border2);color:var(--text)}
+.btn-success{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:#4ade80}
+.btn-success:hover{background:rgba(34,197,94,.15)}
+.btn-danger{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.3);color:#f87171}
+.btn-danger:hover{background:rgba(239,68,68,.12)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Text areas */
+.doc-preview{flex:1;background:var(--navy3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.75;color:#94a3b8;overflow-y:auto;white-space:pre-wrap;word-break:break-word;min-height:120px}
+.doc-edit{flex:1;background:var(--navy3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.75;color:#94a3b8;resize:none;width:100%;outline:none;white-space:pre-wrap;min-height:160px}
+.doc-edit:focus{border-color:var(--border2)}
+
+/* MODAL — podgląd anonimizacji */
+#modal{position:fixed;inset:0;background:#0a1628;z-index:200;display:none;flex-direction:column;font-family:var(--mono)}
+#modal.open{display:flex}
+.modal-header{flex-shrink:0;padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--navy2)}
+.modal-title{font-size:14px;font-weight:500;color:var(--text);font-family:var(--sans)}
+.modal-sub{font-size:11px;color:var(--blue3);letter-spacing:.04em;font-family:var(--mono)}
+.modal-badge{font-size:9px;padding:2px 10px;border-radius:2px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.06);color:#fbbf24;letter-spacing:.06em;margin-left:auto}
+.modal-body{flex:1;display:flex;overflow:hidden;gap:0}
+.modal-left{width:320px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:#0f1824}
+.modal-left-head{flex-shrink:0;padding:10px 16px;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.modal-left-body{flex:1;overflow-y:auto;padding:10px 12px}
+.modal-right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.modal-toolbar{flex-shrink:0;padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:#131b26}
+.modal-toolbar-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-right:4px}
+.modal-select{background:var(--navy);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:2px}
+.modal-text-wrap{flex:1;position:relative;overflow:hidden}
+.modal-highlight{position:absolute;top:0;left:0;right:0;bottom:0;font-size:12px;font-family:var(--mono);line-height:1.75;padding:14px 16px;box-sizing:border-box;pointer-events:none;white-space:pre-wrap;word-break:break-word;overflow-y:hidden;z-index:1;color:transparent}
+.modal-textarea{position:absolute;top:0;left:0;right:0;bottom:0;z-index:2;width:100%;height:100%;font-size:12px;font-family:var(--mono);line-height:1.75;padding:14px 16px;border:none;border-radius:0;background:transparent;color:#a0b4c8;resize:none;box-sizing:border-box;-webkit-text-fill-color:#a0b4c8;outline:none}
+.modal-footer{flex-shrink:0;border-top:1px solid var(--border);background:#131b26}
+.modal-footer-warn{padding:8px 20px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);line-height:1.6;letter-spacing:.02em}
+.modal-footer-actions{padding:12px 20px;display:flex;gap:8px}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onboarding">
+  <div class="ob-card">
+    <div class="ob-dots">
+      <div class="ob-dot active" id="dot0"></div>
+      <div class="ob-dot" id="dot1"></div>
+    </div>
+    <div class="ob-step active" id="step0">
+      <div class="ob-label">Pseudominizer · Pierwsze uruchomienie</div>
+      <div class="ob-title">Jak działa ochrona danych</div>
+      <div class="ob-text">Pseudominizer wykrywa dane wrażliwe w dokumentach i zastępuje je tokenami — zanim cokolwiek wyślesz do AI, prawnika lub konsultanta.</div>
+      <div class="ob-text">Dane osobowe, numery identyfikacyjne i nazwy firm nigdy nie opuszczają Twojego komputera w formie jawnej.</div>
+      <div class="ob-note">Pseudominizer stosuje pseudonimizację — nie pełną anonimizację. Odwzorowanie tokenów na dane jest przechowywane lokalnie i możesz je usunąć ręcznie.</div>
+      <div class="ob-btns"><button class="ob-btn" onclick="obNext(1)">Dalej →</button></div>
+    </div>
+    <div class="ob-step" id="step1">
+      <div class="ob-label">Potwierdzenie</div>
+      <div class="ob-title">Zanim zaczniesz</div>
+      <label class="ob-check-row"><input type="checkbox" id="c1" onchange="obCheck()"><span>Rozumiem, że to jest pseudonimizacja — nie gwarancja pełnej anonimizacji. Tokeny można odwrócić przy użyciu lokalnej mapy sesji.</span></label>
+      <label class="ob-check-row"><input type="checkbox" id="c2" onchange="obCheck()"><span>Weryfikuję tekst przed wysłaniem — automatyczna detekcja może nie wykryć wszystkich danych wrażliwych.</span></label>
+      <label class="ob-check-row"><input type="checkbox" id="c3" onchange="obCheck()"><span>Pseudominizer nie zastępuje porady prawnej ani audytu zgodności z RODO.</span></label>
+      <div class="ob-btns">
+        <button class="ob-btn back" onclick="obNext(0)">← Wróć</button>
+        <button class="ob-btn" id="ob-next2" onclick="obFinish()" disabled>Zaczynam pracę ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: podgląd anonimizacji -->
+<div id="modal">
+  <div class="modal-header">
+    <div>
+      <div class="modal-title">Podgląd pseudonimizacji</div>
+      <div class="modal-sub" id="modal-filename">—</div>
+    </div>
+    <div class="modal-badge" id="modal-badge">0 encji</div>
+  </div>
+  <div class="modal-body">
+    <!-- LEWA: lista encji -->
+    <div class="modal-left">
+      <div class="modal-left-head">Wykryte encje</div>
+      <div class="modal-left-body" id="modal-entity-list">
+        <div style="font-size:12px;color:var(--text3);padding:8px 4px">Brak wykrytych encji.</div>
+      </div>
+      <!-- Ręczne dodawanie encji -->
+      <div style="border-top:1px solid var(--border);padding:10px 8px;margin-top:4px">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Dodaj ręcznie</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;line-height:1.5">
+          Wpisz tekst który system pominął (np. numer zniekształcony przez OCR).
+        </div>
+        <input type="text" id="modal-manual-text"
+          style="width:100%;background:var(--navy3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 8px;border-radius:4px;outline:none;margin-bottom:6px;box-sizing:border-box"
+          placeholder="Tekst do zakrycia…"
+          onkeydown="if(event.key==='Enter')modalAddManual()"
+        >
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="modal-manual-type"
+            style="background:var(--navy3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:10px;padding:5px 6px;border-radius:4px;flex:1">
+            <option value="OSOBA">Osoba</option>
+            <option value="FIRMA">Firma</option>
+            <option value="NUMER" selected>Numer</option>
+            <option value="ADRES">Adres</option>
+          </select>
+          <button class="btn btn-secondary" style="padding:5px 12px;font-size:9px;white-space:nowrap" onclick="modalAddManual()">+ Dodaj</button>
+        </div>
+        <div id="modal-manual-info" style="font-family:var(--mono);font-size:9px;color:var(--ok);min-height:14px;margin-top:4px"></div>
+      </div>
+    </div>
+    <!-- PRAWA: tekst + oznaczanie -->
+    <div class="modal-right">
+      <div class="modal-toolbar">
+        <div class="modal-toolbar-label">Oznacz zaznaczone:</div>
+        <select class="modal-select" id="modal-sel-type">
+          <option value="OSOBA">Osoba</option>
+          <option value="FIRMA">Firma</option>
+          <option value="NUMER">Numer</option>
+          <option value="ADRES">Adres</option>
+        </select>
+        <button class="btn btn-secondary" style="padding:4px 12px;font-size:9px" onclick="modalMarkSelection()">+ Oznacz</button>
+        <span id="modal-mark-info" style="font-size:10px;color:var(--ok);letter-spacing:.06em"></span>
+      </div>
+      <div class="modal-text-wrap">
+        <div id="modal-highlight" class="modal-highlight" aria-hidden="true"></div>
+        <textarea id="modal-textarea" class="modal-textarea"
+          oninput="modalOnInput(this)"
+          onscroll="document.getElementById('modal-highlight').scrollTop=this.scrollTop"
+        ></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <div class="modal-footer-warn">
+      Automatyczna detekcja może nie wykryć wszystkich danych wrażliwych.
+      Zweryfikuj tekst przed zatwierdzeniem — odpowiadasz za decyzję o wysłaniu.
+    </div>
+    <div class="modal-footer-actions">
+      <button class="btn btn-success" style="flex:1" onclick="modalConfirm()">✓ Zatwierdź — pobierz pseudonimizowany dokument</button>
+      <button class="btn btn-secondary" onclick="modalCancel()">Anuluj</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: hasło do szyfrowania/odszyfrowania mapy sesji -->
+<div id="pwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
+  <div style="background:var(--navy2);border:1px solid var(--border2);border-radius:8px;padding:28px 32px;max-width:400px;width:100%">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--blue2);text-transform:uppercase;margin-bottom:14px" id="pwd-modal-label">Szyfrowanie mapy sesji</div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:6px" id="pwd-modal-title">Podaj hasło</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:18px" id="pwd-modal-desc">Hasło służy do zaszyfrowania mapy sesji. Bez niego nie będziesz mógł odtworzyć danych.</div>
+    <input type="password" id="pwd-input" autocomplete="new-password"
+      style="width:100%;background:var(--navy3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:4px;outline:none;margin-bottom:8px"
+      placeholder="Hasło…"
+      onkeydown="if(event.key==='Enter')pwdConfirm()"
+    >
+    <input type="password" id="pwd-input2" autocomplete="new-password"
+      style="width:100%;background:var(--navy3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:4px;outline:none;margin-bottom:6px"
+      placeholder="Powtórz hasło…"
+      onkeydown="if(event.key==='Enter')pwdConfirm()"
+    >
+    <div id="pwd-error" style="font-family:var(--mono);font-size:10px;color:#f87171;min-height:18px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="pwdConfirm()" id="pwd-ok-btn">Zatwierdź</button>
+      <button class="btn btn-secondary" onclick="pwdCancel()">Anuluj</button>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:14px;line-height:1.6">
+      AES-256-GCM · PBKDF2-SHA256 · 600 000 iteracji<br>
+      Hasło nie jest nigdzie zapisane — zgubione = utrata dostępu do mapy.
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="logo">
+      <svg class="logo-mark" viewBox="0 0 26 26" fill="none">
+        <rect width="26" height="26" rx="6" fill="#0f1f3a"/>
+        <polygon points="13,4 22,20 4,20" stroke="#1d4ed8" stroke-width="1.2" fill="none"/>
+        <polygon points="13,8 19,18 7,18" stroke="#3b82f6" stroke-width=".7" fill="none"/>
+        <circle cx="13" cy="13" r="1.5" fill="#93c5fd"/>
+      </svg>
+      <span class="app-name">Pseudominizer</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:6px;letter-spacing:.06em">v1.7</span>
+    </div>
+    <div class="h-sep"></div>
+    <div class="sec-indicator" id="sec-indicator" title="Status bezpieczeństwa">
+      <div class="sec-dot"></div>
+      <span id="sec-text">Lokalnie</span>
+    </div>
+    <div class="h-spacer"></div>
+    <button class="h-btn danger" onclick="confirmClearSession()" title="Usuń mapę sesji z pamięci">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0V5zm3 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0V5z"/></svg>
+      Wyczyść sesję
+    </button>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-label">Narzędzia</div>
+      <div class="sb-item active" id="nav-anonymize" onclick="showPanel('anonymize',this)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
+        Pseudonimizuj
+      </div>
+      <div class="sb-item" id="nav-deanonymize" onclick="showPanel('deanonymize',this)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+        Depseudonimizuj
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-label">Sesja</div>
+      <div class="session-box">
+        <div class="session-label">Mapa tokenów</div>
+        <div id="session-info" class="session-empty">Pusta</div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="sb-label" style="margin-top:0">Tryb</div>
+      <div class="session-box">
+        <div class="session-label">Dane po zamknięciu</div>
+        <div class="session-val">Usunięte (RAM only)</div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- PANEL: Pseudonimizuj -->
+      <div class="panel active" id="panel-anonymize">
+        <div class="main-topbar">
+          <div class="main-title">Pseudonimizacja dokumentu</div>
+        </div>
+        <div class="main-content" id="anon-content">
+          <!-- Drop zone -->
+          <div class="drop-zone" id="drop-zone"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="handleDrop(event)">
+            <div class="drop-zone-icon">
+              <svg width="22" height="22" viewBox="0 0 16 16" fill="#3b82f6"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+            </div>
+            <div class="drop-zone-title">Wgraj dokument</div>
+            <div class="drop-zone-sub">PDF · DOCX · TXT · PNG · JPG · TIFF — przeciągnij lub kliknij</div>
+          </div>
+          <input type="file" id="file-input" style="display:none" accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.tiff,.tif,.bmp,.webp" onchange="handleFileSelect(this)">
+
+          <div id="anon-result" style="display:none;flex-direction:column;gap:12px"></div>
+        </div>
+      </div>
+
+      <!-- PANEL: Depseudonimizuj -->
+      <div class="panel" id="panel-deanonymize">
+        <div class="main-topbar">
+          <div class="main-title">Depseudonimizacja odpowiedzi</div>
+        </div>
+        <div class="main-content">
+
+          <!-- Sekcja: Mapa sesji -->
+          <div style="background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:14px 16px">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Mapa sesji</div>
+            <div id="deanon-session-status" class="notice notice-warn" style="margin-bottom:10px">
+              ⚠ Brak aktywnej sesji — wgraj plik <strong>_mapa_sesji.json</strong> lub wróć do panelu Pseudonimizuj i wczytaj dokument.
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-secondary" style="font-size:9px" onclick="document.getElementById('session-map-input').click()">
+                ↑ Wgraj mapę sesji (.enc)
+              </button>
+              <input type="file" id="session-map-input" style="display:none" accept=".enc" onchange="loadSessionMap(this)">
+            </div>
+          </div>
+
+          <!-- Sekcja: Tekst do depseudonimizacji -->
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;margin-top:4px">Tekst z tokenami</div>
+          <!-- Drop zone dla pliku TXT -->
+          <div class="drop-zone" id="deanon-drop-zone" style="padding:20px 16px"
+            onclick="document.getElementById('deanon-file-input').click()"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="handleDeanonDrop(event)">
+            <div class="drop-zone-icon" style="width:32px;height:32px">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="#3b82f6"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+            </div>
+            <div style="font-size:13px;color:var(--text)">Wgraj plik z tokenami lub kliknij</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.06em">TXT — przeciągnij lub kliknij</div>
+          </div>
+          <input type="file" id="deanon-file-input" style="display:none" accept=".txt" onchange="loadDeanonFile(this)">
+
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center;letter-spacing:.06em">— lub wklej tekst bezpośrednio —</div>
+
+          <textarea id="deanon-input" class="doc-edit" placeholder="Wklej tekst z tokenami pseudonimizacji (np. OSOBA_001, FIRMA_002)..." style="min-height:140px"></textarea>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="doDeanonymize()">Odtwórz dane</button>
+            <button class="btn btn-secondary" onclick="clearDeanonPanel()">Wyczyść</button>
+          </div>
+          <div id="deanon-output-wrap" style="display:none;flex-direction:column;gap:8px">
+            <div class="notice notice-ok" id="deanon-status"></div>
+            <div class="doc-preview" id="deanon-output"></div>
+            <div class="btn-row">
+              <button class="btn btn-success" onclick="downloadDeanon()">↓ Pobierz PDF</button>
+              <button class="btn btn-secondary" onclick="copyDeanon()">Kopiuj</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+const API = 'http://localhost:8765';
+const LS_KEY = 'pseudominizer_onboarding_v1';
+
+// ── Stan sesji ───────────────────────────────────────────────────────────────
+// reverseMap: { "OSOBA_001": "Jan Kowalski", ... }
+// tokenList:  [ {token, original, type, label}, ... ]
+let session = {
+  reverseMap: {},
+  tokenList: [],
+  manualTokens: {},
+  lastAnonText: '',
+  lastFilename: '',
+  lastPseCode:  '',   // [PSE-SEQ v1.9] przypisywany przez backend przy /preview
+};
+
+function sessionHasData() {
+  return Object.keys(session.reverseMap).length > 0;
+}
+
+function updateSessionInfo() {
+  const el = document.getElementById('session-info');
+  const count = Object.keys(session.reverseMap).length;
+  if (count === 0) {
+    el.className = 'session-empty';
+    el.textContent = 'Pusta';
+  } else {
+    el.className = 'session-val';
+    el.textContent = count + ' tokenów w RAM';
+  }
+}
+
+function clearSession() {
+  session = { reverseMap: {}, tokenList: [], manualTokens: {}, lastAnonText: '', lastFilename: '', lastPseCode: '' };
+  updateSessionInfo();
+  setSecIndicator('local', 'Sesja wyczyszczona');
+  // Reset panelu deanon
+  document.getElementById('deanon-input').value = '';
+  document.getElementById('deanon-output-wrap').style.display = 'none';
+}
+
+function confirmClearSession() {
+  if (!sessionHasData()) { clearSession(); return; }
+  if (confirm('Usunąć mapę sesji z pamięci?\n\nTokeny w wysłanych dokumentach nie będą mogły zostać odwrócone.')) {
+    clearSession();
+  }
+}
+
+// ── Onboarding ───────────────────────────────────────────────────────────────
+function obNext(n) {
+  document.querySelectorAll('.ob-step').forEach((s,i) => s.classList.toggle('active', i===n));
+  document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i===n));
+}
+function obCheck() {
+  document.getElementById('ob-next2').disabled =
+    !['c1','c2','c3'].every(id => document.getElementById(id).checked);
+}
+function obFinish() {
+  localStorage.setItem(LS_KEY, '1');
+  document.getElementById('onboarding').style.display = 'none';
+  setSecIndicator('ok', 'Lokalnie — dane nie wychodzą');
+}
+
+if (localStorage.getItem(LS_KEY)) {
+  document.getElementById('onboarding').style.display = 'none';
+  setSecIndicator('ok', 'Lokalnie — dane nie wychodzą');
+}
+
+// ── Panels ───────────────────────────────────────────────────────────────────
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  const panel = document.getElementById('panel-'+name);
+  if (panel) panel.classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'deanonymize') updateDeanonSession();
+}
+
+function updateDeanonSession() {
+  const el = document.getElementById('deanon-session-status');
+  if (!el) return;
+  if (sessionHasData()) {
+    const count = Object.keys(session.reverseMap).length;
+    el.className = 'notice notice-ok';
+    el.innerHTML = `✓ Sesja aktywna — ${count} tokenów w RAM.`;
+  } else {
+    el.className = 'notice notice-warn';
+    el.innerHTML = '⚠ Brak aktywnej sesji — wgraj plik <strong>_mapa_sesji.json</strong> lub wróć do panelu Pseudonimizuj i wczytaj dokument.';
+  }
+}
+
+function loadSessionMap(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.reverseMap || typeof data.reverseMap !== 'object') throw new Error('Brak pola reverseMap');
+      session.reverseMap = data.reverseMap;
+      session.tokenList  = data.tokenList || [];
+      session.lastFilename = data._filename || '';
+      updateSessionInfo();
+      updateDeanonSession();
+      setSecIndicator('ok', `Mapa sesji wgrana — ${Object.keys(data.reverseMap).length} tokenów`);
+    } catch(err) {
+      alert('Błąd wczytywania mapy sesji:\n' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function handleDeanonDrop(event) {
+  event.preventDefault();
+  document.getElementById('deanon-drop-zone').classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file) readDeanonFile(file);
+}
+
+function loadDeanonFile(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (file) readDeanonFile(file);
+}
+
+function readDeanonFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('deanon-input').value = e.target.result;
+    document.getElementById('deanon-output-wrap').style.display = 'none';
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function clearDeanonPanel() {
+  document.getElementById('deanon-input').value = '';
+  document.getElementById('deanon-output-wrap').style.display = 'none';
+}
+
+// ── Sec indicator ────────────────────────────────────────────────────────────
+function setSecIndicator(cls, text) {
+  const el = document.getElementById('sec-indicator');
+  el.className = 'sec-indicator ' + cls;
+  document.getElementById('sec-text').textContent = text;
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function downloadText(text, filename) {
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// ── Token type colors ─────────────────────────────────────────────────────────
+const TYPE_COLORS  = {OSOBA:'#f87171',FIRMA:'#60a5fa',NUMER:'#fbbf24',KWOTA:'#a3e635',ADRES:'#34d399'};
+const TYPE_LABELS  = {OSOBA:'Osoba',FIRMA:'Firma',NUMER:'Numer',KWOTA:'Kwota',ADRES:'Adres'};
+const TOKEN_RE_STR = '\\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES)_(\\d{3})\\b';
+const TOKEN_RE     = new RegExp(TOKEN_RE_STR, 'g');
+
+// ── Highlight ─────────────────────────────────────────────────────────────────
+function highlightText(text) {
+  if (!text) return '';
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const ranges = [];
+
+  // Tokeny — zakryte
+  const re1 = /\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES)_\d{3}\b/g;
+  let m;
+  while ((m = re1.exec(text)) !== null) {
+    const col = TYPE_COLORS[m[1]] || '#888';
+    ranges.push({start:m.index, end:m.index+m[0].length,
+      html:`<mark style="background:${col}18;border-bottom:1px dashed ${col};border-radius:2px;color:${col};opacity:0.8">${esc(m[0])}</mark>`});
+  }
+
+  // Niezakryte dane strukturalne
+  const sensPatterns = [
+    /\b\d{11}\b/g,
+    /\b\d{3}[-\s]\d{3}[-\s]\d{2}[-\s]\d{2}\b/g,
+    /\bPL\d{2}(?:\s?\d{4}){6}\b/gi,
+    /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g,
+  ];
+  sensPatterns.forEach(re => {
+    re.lastIndex = 0;
+    let sm;
+    while ((sm = re.exec(text)) !== null) {
+      if (ranges.some(r => sm.index < r.end && sm.index+sm[0].length > r.start)) continue;
+      ranges.push({start:sm.index, end:sm.index+sm[0].length,
+        html:`<mark style="background:#b0601044;border-bottom:2px solid #e07030;border-radius:2px;color:#e07030;font-weight:600">⚠ ${esc(sm[0])}</mark>`});
+    }
+  });
+
+  ranges.sort((a,b) => a.start-b.start);
+  let result='', last=0;
+  for (const r of ranges) {
+    if (r.start < last) continue;
+    result += esc(text.slice(last, r.start));
+    result += r.html;
+    last = r.end;
+  }
+  result += esc(text.slice(last));
+  return result;
+}
+
+// ── File upload ───────────────────────────────────────────────────────────────
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  const result = document.getElementById('anon-result');
+  result.style.display = 'flex';
+  result.innerHTML = `
+    <div class="file-card">
+      <div class="file-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="#3b82f6"><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg></div>
+      <div style="flex:1;min-width:0">
+        <div class="file-name">${escHtml(file.name)}</div>
+        <div class="file-meta">${(file.size/1024).toFixed(1)} KB · wykrywam dane wrażliwe…</div>
+      </div>
+    </div>
+    <div class="notice notice-info" id="proc-status">⏳ Analizuję dokument…</div>`;
+
+  setSecIndicator('warn', 'Analizuję…');
+
+  let data;
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch(`${API}/preview`, {method:'POST', body:fd});
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    data = await resp.json();
+  } catch (e) {
+    document.getElementById('proc-status').className = 'notice notice-err';
+    document.getElementById('proc-status').textContent = '✗ Błąd połączenia z serwerem: ' + e.message;
+    setSecIndicator('err', 'Błąd');
+    return;
+  }
+
+  document.getElementById('proc-status').remove();
+
+  if (data.blocked) {
+    const guardReasons = (data.guard_reasons || []).map(r => `<li style="font-family:var(--mono);font-size:10px;margin:2px 0">${escHtml(r)}</li>`).join('');
+    result.insertAdjacentHTML('beforeend', `
+      <div class="notice notice-err">
+        ✗ <strong>output_guard wykrył niezakryte dane — eksport PDF zablokowany.</strong><br>
+        <span style="font-size:11px">Sprawdź listę tokenów, dodaj brakujące encje ręcznie i spróbuj ponownie.</span>
+        ${guardReasons ? `<ul style="margin:6px 0 0 0;padding-left:16px">${guardReasons}</ul>` : ''}
+      </div>`);
+    setSecIndicator('err', 'Blokada guard');
+    session._guardBlocked = true;
+    // NIE robimy return — pokazujemy podgląd i tokeny żeby użytkownik mógł
+    // zidentyfikować problem i dodać brakujące encje ręcznie
+  }
+  if (data.error) {
+    result.insertAdjacentHTML('beforeend', `<div class="notice notice-err">✗ ${escHtml(data.error)}</div>`);
+    setSecIndicator('err', 'Błąd');
+    return;
+  }
+
+  const tokens = data.tokens || [];
+  const anonText = data.anonymized_preview || '';
+  const originalText = data.original_text || '';
+
+  // Zapisz do sesji
+  session.lastFilename = file.name;
+  session.lastPseCode  = data.pse_code || '';   // [PSE-SEQ v1.9] z backendu
+  session.tokenList = tokens;
+  tokens.forEach(t => {
+    session.reverseMap[t.token] = t.original;
+  });
+  updateSessionInfo();
+
+  // Ostrzeżenie OCR — jeśli plik był obrazem
+  const ocr = data.ocr;
+  if (ocr) {
+    const ocrClass = {ok:'notice-ok', warn:'notice-warn', low:'notice-err'}[ocr.quality] || 'notice-warn';
+    const ocrIcon  = {ok:'✓', warn:'⚠', low:'✗'}[ocr.quality] || '⚠';
+    const ocrHtml = `<div class="notice ${ocrClass}" style="margin-bottom:4px">
+      <strong>${ocrIcon} OCR (${ocr.confidence}% pewności)</strong><br>
+      ${escHtml(ocr.warning)}
+    </div>`;
+    result.insertAdjacentHTML('beforeend', ocrHtml);
+    // Przy niskiej jakości wymagaj potwierdzenia przed eksportem
+    if (ocr.quality === 'low' || ocr.quality === 'warn') {
+      session._ocrRequiresConfirm = true;
+      session._ocrQuality = ocr.quality;
+    }
+  }
+
+  const warnHtml = tokens.length === 0
+    ? '<div class="notice notice-ok">✓ Nie wykryto danych wrażliwych — możesz wysłać bez pseudonimizacji.</div>'
+    : `<div class="notice notice-warn">⚠ Wykryto ${tokens.length} element(ów) do pseudonimizacji. Sprawdź listę i zatwierdź.</div>`;
+
+  result.insertAdjacentHTML('beforeend', warnHtml);
+  result.insertAdjacentHTML('beforeend', `
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="openModal('${escHtml(file.name).replace(/'/g,"\\'")}')">
+        ✎ Podgląd i weryfikacja
+      </button>
+      <button class="btn btn-success" onclick="downloadAnon()" ${session._guardBlocked ? 'disabled title="Eksport zablokowany — dodaj brakujące encje ręcznie"' : ''}>
+        ↓ Pobierz pseudonimizowany
+      </button>
+      <button class="btn btn-secondary" onclick="copyForAI()" title="Kopiuje instrukcję bezpieczeństwa + pseudonimizowany tekst gotowy do wklejenia w Claude/GPT">
+        ⎘ Kopiuj dla AI
+      </button>
+    </div>`);
+
+  // Przechowaj tekst i system prompt do pobrania
+  session.lastAnonText = anonText;
+  session.systemPrompt = data.system_prompt || null;
+
+  // Pokaż skrót tokenów
+  if (tokens.length > 0) {
+    const rowsHtml = tokens.slice(0,8).map(t => `
+      <div class="token-row">
+        <span class="token-type token-colors-${t.type}">${escHtml(t.label||t.type)}</span>
+        <span class="token-orig" title="${escHtml(t.original)}">${escHtml(t.original)}</span>
+        <span class="token-arrow">→</span>
+        <span class="token-id">${escHtml(t.token)}</span>
+      </div>`).join('');
+    const more = tokens.length > 8 ? `<div style="font-size:11px;color:var(--text3);padding:6px 0">… i ${tokens.length-8} więcej — otwórz podgląd aby zobaczyć wszystkie</div>` : '';
+    result.insertAdjacentHTML('beforeend', `
+      <div style="background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:14px 16px">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Mapa pseudonimizacji</div>
+        ${rowsHtml}${more}
+      </div>`);
+  }
+
+  setSecIndicator('ok', tokens.length > 0 ? `${tokens.length} encji zakrytych` : 'Dane bezpieczne');
+}
+
+function downloadAnon() {
+  if (!session.lastAnonText) { alert('Brak tekstu do pobrania. Wczytaj dokument.'); return; }
+  const pse  = generatePseCode();
+  const base = session.lastFilename.replace(/\.[^.]+$/, '');
+  // [FIX-META-1] Nazwa pliku PDF nie zawiera oryginalnej nazwy dokumentu.
+  // Oryginalna nazwa (np. "Jan_Kowalski_umowa.pdf") w nazwie pseudonimizowanego
+  // pliku to wyciek — identyfikuje klienta przez sam filesystem.
+  // Nazwa: PSE-2026-0001_pseudonimizowany.pdf (PSE wystarczy do identyfikacji).
+  downloadPdf(session.lastAnonText, `${pse}_pseudonimizowany`, [
+    `Dokument: ${pse}`,
+    `Plik źródłowy: ${session.lastFilename}`,
+    `Tokeny: ${session.tokenList.length}`,
+  ]);
+  // [FIX-META-1] Mapa: PSE-2026-0001.enc (bez nazwy oryginalnego pliku).
+  downloadSessionMap(pse);
+}
+
+// ── Kod dokumentu PSE ────────────────────────────────────────────────────────
+// [PSE-SEQ v1.9] PSE pochodzi z backendu (pse_registry.json — licznik sekwencyjny).
+// Funkcja zwraca kod przypisany przy /preview — ten sam dla PDF i .enc.
+// Fallback: timestamp gdy backend nie zwrócił kodu (np. stara wersja API).
+function generatePseCode() {
+  if (session.lastPseCode) return session.lastPseCode;
+  const year = new Date().getFullYear();
+  const fb   = `PSE-${year}-F${String(Date.now()).slice(-4)}`;
+  console.warn('[PSE] Brak kodu z backendu — fallback:', fb);
+  session.lastPseCode = fb;
+  return fb;
+}
+
+// ── Eksport PDF ───────────────────────────────────────────────────────────────
+async function downloadPdf(text, filename, headerLines) {
+  // [FIX-PDF-META] v2.1 — generowanie PDF server-side przez /export-pdf.
+  // Poprzednia implementacja używała window.print() przez ukryty iframe —
+  // Windows dokładał Author/Creator z konta systemowego (wyciek RODO).
+  // PyMuPDF po stronie serwera generuje PDF z pustymi metadanymi.
+  const safeName = (filename || 'pseudonimizowany').replace(/[^a-zA-Z0-9_\-]/g, '_') + '.pdf';
+  try {
+    const resp = await fetch('/export-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, filename: safeName }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safeName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+  } catch (e) {
+    // Fallback: pobierz jako .txt jeśli serwer niedostępny
+    console.warn('[export-pdf] Fallback do TXT:', e);
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safeName.replace('.pdf', '.txt');
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+    alert('PDF server-side niedostępny — pobrano jako .txt.\nSprawdź czy serwer działa.');
+  }
+}
+
+
+const CRYPTO_ITERATIONS = 600_000;
+const CRYPTO_SALT_LEN   = 32;  // 256 bit
+const CRYPTO_IV_LEN     = 12;  // 96 bit (GCM standard)
+const CRYPTO_MARKER     = 'PSEUDOMINIZER_ENC_V1';
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, hash: 'SHA-256', iterations: CRYPTO_ITERATIONS },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptMapData(plaintext, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(CRYPTO_SALT_LEN));
+  const iv   = crypto.getRandomValues(new Uint8Array(CRYPTO_IV_LEN));
+  const key  = await deriveKey(password, salt);
+  const enc  = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(plaintext)
+  );
+  // Format: marker(20B ASCII) | salt(32B) | iv(12B) | ciphertext
+  const marker = new TextEncoder().encode(CRYPTO_MARKER);
+  const out = new Uint8Array(marker.length + salt.length + iv.length + ciphertext.byteLength);
+  let offset = 0;
+  out.set(marker,               offset); offset += marker.length;
+  out.set(salt,                 offset); offset += salt.length;
+  out.set(iv,                   offset); offset += iv.length;
+  out.set(new Uint8Array(ciphertext), offset);
+  return out;
+}
+
+async function decryptMapData(bytes, password) {
+  const marker     = new TextEncoder().encode(CRYPTO_MARKER);
+  const offset0    = marker.length;
+  const salt       = bytes.slice(offset0, offset0 + CRYPTO_SALT_LEN);
+  const iv         = bytes.slice(offset0 + CRYPTO_SALT_LEN, offset0 + CRYPTO_SALT_LEN + CRYPTO_IV_LEN);
+  const ciphertext = bytes.slice(offset0 + CRYPTO_SALT_LEN + CRYPTO_IV_LEN);
+  const key        = await deriveKey(password, salt);
+  const plain      = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return new TextDecoder().decode(plain);
+}
+
+function isEncryptedMap(bytes) {
+  const marker = new TextEncoder().encode(CRYPTO_MARKER);
+  if (bytes.length < marker.length) return false;
+  for (let i = 0; i < marker.length; i++) if (bytes[i] !== marker[i]) return false;
+  return true;
+}
+
+// ── Password modal ────────────────────────────────────────────────────────────
+let _pwdCallback = null;
+let _pwdMode = 'encrypt'; // 'encrypt' | 'decrypt'
+
+function showPwdModal(mode, onConfirm) {
+  _pwdMode     = mode;
+  _pwdCallback = onConfirm;
+  const isEnc  = mode === 'encrypt';
+  document.getElementById('pwd-modal-label').textContent =
+    isEnc ? 'Szyfrowanie mapy sesji' : 'Odszyfrowanie mapy sesji';
+  document.getElementById('pwd-modal-title').textContent =
+    isEnc ? 'Ustaw hasło do mapy sesji' : 'Podaj hasło do mapy sesji';
+  document.getElementById('pwd-modal-desc').textContent =
+    isEnc
+      ? 'Hasło zaszyfruje mapę tokenów (AES-256-GCM). Bez niego odtworzenie danych będzie niemożliwe.'
+      : 'Podaj hasło użyte przy eksporcie mapy sesji.';
+  document.getElementById('pwd-input').value  = '';
+  document.getElementById('pwd-input2').value = '';
+  document.getElementById('pwd-error').textContent = '';
+  document.getElementById('pwd-input2').style.display = isEnc ? '' : 'none';
+  document.getElementById('pwd-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('pwd-input').focus(), 80);
+}
+
+function pwdCancel() {
+  document.getElementById('pwd-modal').style.display = 'none';
+  _pwdCallback = null;
+}
+
+function pwdConfirm() {
+  const p1 = document.getElementById('pwd-input').value;
+  const p2 = document.getElementById('pwd-input2').value;
+  const err = document.getElementById('pwd-error');
+  if (!p1) { err.textContent = 'Hasło nie może być puste.'; return; }
+  if (_pwdMode === 'encrypt' && p1 !== p2) { err.textContent = 'Hasła nie są zgodne.'; return; }
+  if (_pwdMode === 'encrypt' && p1.length < 8) { err.textContent = 'Hasło musi mieć co najmniej 8 znaków.'; return; }
+  document.getElementById('pwd-modal').style.display = 'none';
+  if (_pwdCallback) _pwdCallback(p1);
+  _pwdCallback = null;
+}
+
+// ── Eksport / import mapy sesji (zaszyfrowanej) ──────────────────────────────
+function copyForAI() {
+  if (!session.lastAnonText) { alert('Brak tekstu. Wczytaj i pseudonimizuj dokument.'); return; }
+  const prompt = session.systemPrompt || '';
+  const separator = '\n\n' + '─'.repeat(60) + '\n\n';
+  const fullText = prompt
+    ? prompt + separator + session.lastAnonText
+    : session.lastAnonText;
+  navigator.clipboard.writeText(fullText).then(() => {
+    setSecIndicator('ok', 'Skopiowano dla AI');
+    setTimeout(() => updateSessionInfo(), 2000);
+  }).catch(() => {
+    // Fallback dla starszych przeglądarek
+    const ta = document.createElement('textarea');
+    ta.value = fullText;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    setSecIndicator('ok', 'Skopiowano dla AI');
+    setTimeout(() => updateSessionInfo(), 2000);
+  });
+}
+
+function downloadSessionMap(base) {
+  const mapData = {
+    _info:     'Pseudominizer — mapa sesji (zaszyfrowana AES-256-GCM).',
+    _created:  new Date().toISOString(),
+    _filename: session.lastFilename,
+    reverseMap: session.reverseMap,
+    tokenList:  session.tokenList,
+  };
+  const plaintext = JSON.stringify(mapData);
+  const name = (base ? `${base}_mapa_sesji` : `mapa_sesji_${new Date().toISOString().slice(0,10)}`) + '.enc';
+
+  showPwdModal('encrypt', async (password) => {
+    try {
+      const btn = document.getElementById('pwd-ok-btn');
+      // Pokaż spinner — PBKDF2 z 600k iteracji zajmuje ~1s
+      const origLabel = document.getElementById('pwd-modal-label').textContent;
+      document.getElementById('pwd-modal').style.display = 'flex';
+      document.getElementById('pwd-modal-label').textContent = 'Szyfrowanie… (może potrwać chwilę)';
+      document.getElementById('pwd-ok-btn').disabled = true;
+      document.getElementById('pwd-input').disabled  = true;
+      document.getElementById('pwd-input2').disabled = true;
+
+      const encrypted = await encryptMapData(plaintext, password);
+
+      document.getElementById('pwd-modal').style.display = 'none';
+      document.getElementById('pwd-ok-btn').disabled = false;
+      document.getElementById('pwd-input').disabled  = false;
+      document.getElementById('pwd-input2').disabled = false;
+
+      const blob = new Blob([encrypted], { type: 'application/octet-stream' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch(e) {
+      document.getElementById('pwd-modal').style.display = 'none';
+      alert('Błąd szyfrowania: ' + e.message);
+    }
+  });
+}
+
+function loadSessionMap(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const bytes = new Uint8Array(e.target.result);
+
+    if (!isEncryptedMap(bytes)) {
+      alert('Nieprawidłowy format pliku.\nOczekiwano zaszyfrowanej mapy sesji (.enc) wygenerowanej przez Pseudominizer v1.5+.\n\nJeśli masz starą mapę (.json) z poprzedniej wersji — wczytaj ją przez panel Pseudonimizuj i pobierz ponownie.');
+      return;
+    }
+
+    showPwdModal('decrypt', async (password) => {
+      // Pokaż stan ładowania
+      document.getElementById('pwd-modal').style.display = 'flex';
+      document.getElementById('pwd-modal-label').textContent = 'Odszyfrowywanie…';
+      document.getElementById('pwd-ok-btn').disabled = true;
+      document.getElementById('pwd-input').disabled  = true;
+
+      try {
+        const plaintext = await decryptMapData(bytes, password);
+        document.getElementById('pwd-modal').style.display = 'none';
+        document.getElementById('pwd-ok-btn').disabled = false;
+        document.getElementById('pwd-input').disabled  = false;
+
+        const data = JSON.parse(plaintext);
+        if (!data.reverseMap || typeof data.reverseMap !== 'object') throw new Error('Brak pola reverseMap — plik uszkodzony.');
+        session.reverseMap   = data.reverseMap;
+        session.tokenList    = data.tokenList || [];
+        session.lastFilename = data._filename || '';
+        updateSessionInfo();
+        updateDeanonSession();
+        setSecIndicator('ok', `Mapa sesji wgrana — ${Object.keys(data.reverseMap).length} tokenów`);
+      } catch(err) {
+        document.getElementById('pwd-modal').style.display = 'none';
+        document.getElementById('pwd-ok-btn').disabled = false;
+        document.getElementById('pwd-input').disabled  = false;
+        if (err.name === 'OperationError') {
+          alert('Błędne hasło lub uszkodzony plik.\nSprawdź hasło i spróbuj ponownie.');
+        } else {
+          alert('Błąd odszyfrowywania: ' + err.message);
+        }
+      }
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+let modalState = { tokens: [], manualTokens: [], filename: '' };
+
+function openModal(filename) {
+  if (!session.lastAnonText) return;
+  modalState = {
+    tokens: [...session.tokenList],
+    manualTokens: [],
+    filename: filename || session.lastFilename,
+  };
+
+  document.getElementById('modal-filename').textContent = modalState.filename;
+  document.getElementById('modal-badge').textContent = session.tokenList.length + ' encji';
+  document.getElementById('modal-textarea').value = session.lastAnonText;
+  document.getElementById('modal-highlight').innerHTML = highlightText(session.lastAnonText);
+  renderModalEntityList();
+  document.getElementById('modal').classList.add('open');
+}
+
+// ── Ręczne dodawanie encji ────────────────────────────────────────────────────
+function modalAddManual() {
+  const input    = document.getElementById('modal-manual-text');
+  const typeEl   = document.getElementById('modal-manual-type');
+  const infoEl   = document.getElementById('modal-manual-info');
+  const rawText  = input.value.trim();
+  const tokenType = typeEl.value;
+
+  if (!rawText) { infoEl.textContent = 'Wpisz tekst do zakrycia.'; return; }
+
+  const ta = document.getElementById('modal-textarea');
+  const currentText = ta.value;
+
+  if (!currentText.includes(rawText)) {
+    infoEl.style.color = 'var(--err, #f87171)';
+    infoEl.textContent = `Nie znaleziono "${rawText}" w tekście.`;
+    setTimeout(() => { infoEl.textContent = ''; infoEl.style.color = 'var(--ok)'; }, 3000);
+    return;
+  }
+
+  // Generuj nowy token — znajdź najwyższy numer tego typu
+  const existingNums = (modalState.manualTokens || [])
+    .concat(session.tokenList || [])
+    .filter(t => t.token.startsWith(tokenType + '_'))
+    .map(t => parseInt(t.token.split('_')[1], 10))
+    .filter(n => !isNaN(n));
+  const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+  const token = `${tokenType}_${String(nextNum).padStart(3, '0')}`;
+
+  // Zapisz w stanie modalu
+  if (!modalState.manualTokens) modalState.manualTokens = [];
+  modalState.manualTokens.push({ token, original: rawText, type: tokenType, manual: true });
+
+  // Podmień w tekście (wszystkie wystąpienia)
+  const escaped = rawText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  ta.value = ta.value.replace(new RegExp(escaped, 'g'), token);
+  modalOnInput(ta);
+
+  // Dodaj do listy encji
+  const list = document.getElementById('modal-entity-list');
+  const existing = list.querySelector('.no-entities');
+  if (existing) existing.remove();
+  const row = document.createElement('div');
+  row.className = 'entity-row';
+  row.innerHTML = `
+    <span class="token-type token-colors-${tokenType}" style="font-size:9px">${tokenType}</span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis" title="${escHtml(rawText)}">${escHtml(rawText)}</span>
+    <span style="font-family:var(--mono);font-size:9px;color:var(--blue2)">${token}</span>
+    <span style="font-size:9px;color:var(--text3);margin-left:4px">[ręcznie]</span>
+  `;
+  list.appendChild(row);
+
+  infoEl.style.color = 'var(--ok)';
+  infoEl.textContent = `✓ Dodano: ${token}`;
+  input.value = '';
+  setTimeout(() => { infoEl.textContent = ''; }, 2500);
+}
+
+function modalCancel() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function renderModalEntityList() {
+  const list  = document.getElementById('modal-entity-list');
+  const stats = document.getElementById('modal-stats');
+  const all   = modalState.tokens;
+
+  // Statystyki
+  const autoCount   = all.filter(t => !t.manual).length;
+  const manualCount = all.filter(t => t.manual).length;
+  const byType = {};
+  all.forEach(t => { byType[t.type] = (byType[t.type]||0) + 1; });
+  const typeSummary = Object.entries(byType)
+    .map(([k,v]) => `${k}: ${v}`).join(' · ');
+  if (stats) {
+    stats.innerHTML =
+      `Auto: <span style="color:var(--blue3)">${autoCount}</span> &nbsp;|&nbsp; ` +
+      `Ręcznie: <span style="color:var(--ok)">${manualCount}</span>` +
+      (typeSummary ? `<br>${typeSummary}` : '');
+  }
+
+  if (all.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 4px">Brak wykrytych encji.</div>';
+    return;
+  }
+  list.innerHTML = all.map(t => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(15,24,36,0.6);border:1px solid var(--border);border-radius:2px;margin-bottom:4px">
+      <span class="token-type token-colors-${t.type||'NUMER'}" style="font-size:9px;padding:2px 6px;flex-shrink:0">${escHtml(t.label||t.type)}${t.manual?' ✎':''}</span>
+      <span style="font-size:11px;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic" title="${escHtml(t.original)}">${escHtml(t.original)}</span>
+      <span style="font-size:10px;color:${TYPE_COLORS[t.type]||'#60a5fa'};flex-shrink:0;letter-spacing:.04em">${escHtml(t.token)}</span>
+    </div>`).join('');
+}
+
+function modalOnInput(ta) {
+  document.getElementById('modal-highlight').innerHTML = highlightText(ta.value);
+}
+
+function modalMarkSelection() {
+  const ta = document.getElementById('modal-textarea');
+  const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd).trim();
+  if (!sel || sel.length < 2) return;
+
+  const type = document.getElementById('modal-sel-type').value;
+  const counts = {};
+  modalState.tokens.forEach(t => {
+    const p = t.token.split('_')[0];
+    counts[p] = (counts[p]||0) + 1;
+  });
+  const n = String((counts[type]||0) + 1).padStart(3,'0');
+  const token = `${type}_${n}`;
+
+  // Dodaj do listy
+  const newToken = {token, original: sel, type, label: TYPE_LABELS[type]||type, manual:true};
+  modalState.tokens.push(newToken);
+  modalState.manualTokens[token] = sel;
+
+  // Podmień w tekście
+  const savedScroll = ta.scrollTop;
+  ta.value = ta.value.split(sel).join(token);
+  document.getElementById('modal-highlight').innerHTML = highlightText(ta.value);
+  setTimeout(() => { ta.scrollTop = savedScroll; }, 0);
+
+  renderModalEntityList();
+  document.getElementById('modal-badge').textContent = modalState.tokens.length + ' encji';
+
+  const info = document.getElementById('modal-mark-info');
+  info.textContent = '✓ dodano ' + token;
+  setTimeout(() => { info.textContent = ''; }, 2000);
+}
+
+// ── Output Guard — skanuje tekst przed eksportem ─────────────────────────────
+const _GUARD_PATTERNS = [
+  { name: 'PESEL',   re: /\b\d{11}\b/g },
+  { name: 'NIP',     re: /\b\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b/g },
+  { name: 'IBAN',    re: /\bPL\d{2}(?:\s?\d{4}){6}\b/gi },
+  { name: 'EMAIL',   re: /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g },
+  { name: 'TELEFON', re: /\b(?:\+?48[\-\s]?)?\d{3}[\-\s]?\d{3}[\-\s]?\d{3}\b/g },
+];
+// Wzorzec adresu — ul./al./pl. + nazwa + numer
+const _ADDR_GUARD_RE = /\b(?:ul|al|pl|os|aleja|ulica|plac|osiedle)\.?\s+[A-ZŁŚŹĆŃ][\wżźćńłśąęó\s\-]{1,40}\s+\d+(?:[a-zA-Z])?(?:\/\d+(?:[a-zA-Z])?)?/gi;
+
+function outputGuard(text) {
+  // Usuń tokeny z tekstu przed skanowaniem
+  const clean = text.replace(/\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES)_\d{3}\b/g, '__TOKEN__');
+  const leaks = [];
+  for (const { name, re } of _GUARD_PATTERNS) {
+    re.lastIndex = 0;
+    const hits = clean.match(re);
+    if (hits) leaks.push(`${name}: ${hits.slice(0,3).join(', ')}${hits.length > 3 ? ` (+${hits.length-3})` : ''}`);
+  }
+  // Sprawdź adresy
+  _ADDR_GUARD_RE.lastIndex = 0;
+  const addrHits = clean.match(_ADDR_GUARD_RE);
+  if (addrHits) leaks.push(`ADRES: ${addrHits.slice(0,2).join(' | ')}`);
+  return leaks;
+}
+
+function modalConfirm() {
+  // Przy niskiej jakości OCR — wymagaj jawnego potwierdzenia
+  if (session._ocrRequiresConfirm) {
+    const qualityMsg = session._ocrQuality === 'low'
+      ? 'OCR wykrył tekst z niską pewnością. Czy na pewno zweryfikowałeś wszystkie dane, w szczególności numery (PESEL, NIP, IBAN)?'
+      : 'Jakość OCR jest obniżona. Czy sprawdziłeś tekst przed eksportem?';
+    if (!confirm(qualityMsg)) return;
+    session._ocrRequiresConfirm = false;
+  }
+
+  const ta = document.getElementById('modal-textarea');
+  const finalText = ta.value;
+
+  // Output guard — sprawdź czy brak jawnych danych przed eksportem
+  const guardLeaks = outputGuard(finalText);
+  if (guardLeaks.length > 0) {
+    const msg = 'UWAGA: Wykryto niezakryte dane wrażliwe w dokumencie:\n\n' +
+      guardLeaks.join('\n') +
+      '\n\nWróć do edycji i zakryj wskazane dane przed eksportem.\n' +
+      'Czy mimo to pobrać plik?';
+    if (!confirm(msg)) return;
+  }
+
+  // Aktualizuj sesję o manualne tokeny
+  // [FIX-VARIANT-A] Warunek przez tokens.filter — manualTokens.length jest zawsze 0
+  // gdy tokeny dodawane przez modalMarkSelection (przypisanie właściwości, nie push)
+  const allManual = modalState.tokens.filter(t => t.manual);
+  if (allManual.length > 0) {
+    allManual.forEach(t => {
+      session.reverseMap[t.token] = t.original;
+    });
+    session.tokenList = (session.tokenList || []).concat(allManual);
+
+    // [VARIANT-A] Persystuj ręczne korekty do profilu biura — fire-and-forget
+    allManual.forEach(t => {
+      fetch('/profile/add-entity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: t.original, token_type: t.type })
+      }).then(r => r.json()).then(data => {
+        if (data.ok) console.log('[VARIANT-A] Persystowano w profilu:', data.token_id, '←', t.original);
+        else         console.warn('[VARIANT-A] add-entity failed:', data.error, '←', t.original);
+      }).catch(e => console.warn('[VARIANT-A] add-entity error:', e, '←', t.original));
+    });
+  }
+  session.lastAnonText = finalText;
+  updateSessionInfo();
+
+  // Pobierz plik
+  const pse  = generatePseCode();
+  // [FIX-META-1] Nazwa pliku bez oryginalnej nazwy dokumentu (patrz downloadAnon)
+  downloadPdf(finalText, `${pse}_pseudonimizowany`, [
+    `Dokument: ${pse}`,
+    `Plik źródłowy: ${modalState.filename}`,
+    `Tokeny: ${session.tokenList.length} (auto: ${session.tokenList.filter(t=>!t.manual).length}, ręcznie: ${session.tokenList.filter(t=>t.manual).length})`,
+  ]);
+  downloadSessionMap(pse);
+
+  document.getElementById('modal').classList.remove('open');
+
+  // Raport po eksporcie
+  const autoC   = session.tokenList.filter(t => !t.manual).length;
+  const manualC = session.tokenList.filter(t =>  t.manual).length;
+  setSecIndicator('ok',
+    `${session.tokenList.length} tokenów (auto: ${autoC}, ręcznie: ${manualC})`);
+
+  // Pokaż raport w panelu
+  const result = document.getElementById('anon-result');
+  if (result) {
+    const reportEl = document.createElement('div');
+    reportEl.className = 'notice notice-ok';
+    reportEl.style.marginTop = '4px';
+    reportEl.innerHTML =
+      `✓ Pobrano pseudonimizowany dokument<br>` +
+      `<span style="opacity:.8">Encje automatyczne: <strong>${autoC}</strong> &nbsp;·&nbsp; ` +
+      `Dodane ręcznie: <strong>${manualC}</strong> &nbsp;·&nbsp; ` +
+      `Łącznie: <strong>${session.tokenList.length}</strong></span>`;
+    result.appendChild(reportEl);
+  }
+}
+
+// ── Depseudonimizacja ────────────────────────────────────────────────────────
+async function doDeanonymize() {
+  const input = document.getElementById('deanon-input').value.trim();
+  if (!input) return;
+
+  if (!sessionHasData()) {
+    updateDeanonSession();
+    return;
+  }
+
+  // Lokalna depseudonimizacja — podmiana tokenów przez reverseMap
+  let result = input;
+  let replaced = 0;
+  const missing = [];
+
+  const re = new RegExp(TOKEN_RE_STR, 'g');
+  let m;
+  while ((m = re.exec(input)) !== null) {
+    const token = `${m[1]}_${m[2]}`;
+    if (session.reverseMap[token] !== undefined) {
+      replaced++;
+    } else {
+      if (!missing.includes(token)) missing.push(token);
+    }
+  }
+
+  // Podmień
+  result = input.replace(new RegExp(TOKEN_RE_STR, 'g'), (match, type, num) => {
+    const token = `${type}_${num}`;
+    return session.reverseMap[token] !== undefined ? session.reverseMap[token] : match;
+  });
+
+  const wrap = document.getElementById('deanon-output-wrap');
+  const status = document.getElementById('deanon-status');
+  const output = document.getElementById('deanon-output');
+
+  let statusText = `✓ Odtworzono ${replaced} token(ów).`;
+  if (missing.length > 0) {
+    statusText += ` Nieznane tokeny (poza sesją): ${missing.join(', ')}`;
+    status.className = 'notice notice-warn';
+  } else {
+    status.className = 'notice notice-ok';
+  }
+
+  status.textContent = statusText;
+  output.textContent = result;
+  wrap.style.display = 'flex';
+}
+
+function downloadDeanon() {
+  const text = document.getElementById('deanon-output').textContent;
+  if (!text) return;
+  const pse = session.lastPseCode || '';
+  const suggested = pse ? pse : '';
+  const docNum = prompt(
+    'Podaj numer dokumentu (opcjonalnie)\nFormat: PSE-RRRR-XXXX\n\nNumer trafi do nagłówka PDF i pozwoli powiązać wydruk z teczką.',
+    suggested
+  );
+  if (docNum === null) return; // anulowano
+  const headerLines = [];
+  if (docNum.trim()) headerLines.push(`Dokument: ${docNum.trim()}`);
+  headerLines.push('Odpowiedź po depseudonimizacji');
+  downloadPdf(text, `odpowiedz_${docNum.trim() || new Date().toISOString().slice(0,10)}`, headerLines);
+}
+
+function copyDeanon() {
+  const text = document.getElementById('deanon-output').textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Skopiowano';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+// [SECURITY-IDLE] Auto-czyszczenie sesji po bezczynności.
+// Czyści tylko mapę tokenów z RAM — nie dotyka archiwum ani plików.
+// Zmień IDLE_MINUTES żeby dostosować czas (5 / 10 / 15 / 30).
+(function() {
+  const IDLE_MINUTES = 15;
+  let _idleTimer = null;
+
+  function _resetIdle() {
+    clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(() => {
+      if (typeof sessionHasData === 'function' && sessionHasData()) {
+        clearSession();
+        setSecIndicator('local', 'Auto-wylogowanie: sesja wyczyszczona po ' + IDLE_MINUTES + ' min bezczynności');
+      }
+    }, IDLE_MINUTES * 60 * 1000);
+  }
+
+  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(ev => {
+    document.addEventListener(ev, _resetIdle, { passive: true });
+  });
+
+  _resetIdle();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pseudominizer</title>
+    <!--
+      IBM Plex Mono + Sans — zidentyczne fonty jak Triangulum.
+      UWAGA: w trybie offline fonty nie załadują się z Google.
+      Do produkcji (.msi): pobierz fonty lokalnie i linkuj z /public/fonts/
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: #111820;
+        color: #dde4ed;
+        font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+        overflow: hidden;
+      }
+      /* Tekst w panelach — zaznaczalny */
+      .selectable { user-select: text; cursor: text; }
+      input, textarea { user-select: text; }
+      ::-webkit-scrollbar { width: 3px; }
+      ::-webkit-scrollbar-thumb { background: #2a5080; border-radius: 2px; }
+      button { font-family: inherit; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

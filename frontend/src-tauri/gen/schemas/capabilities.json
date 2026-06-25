@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Pseudominizer default capabilities","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-destroy","dialog:allow-save","dialog:default","fs:allow-write-text-file",{"identifier":"fs:scope","allow":[{"path":"$DOCUMENT/Pseudominizer/**"}]}]}}
