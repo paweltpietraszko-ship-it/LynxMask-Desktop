@@ -109,14 +109,15 @@ MAX_BLOB_BYTES   = 512 * 1024         # 512 KB
 # Tauri przekazuje go w nagłówku X-Api-Token przy każdym żądaniu.
 # Chroni przed dostępem z innych procesów na tym samym localhost.
 # Zapis do pliku tymczasowego (api_token.txt) żeby Tauri mógł go odczytać
-# przed pierwszym żądaniem. Plik usuwany przy zamknięciu serwera.
+# przed pierwszym żądaniem.
+# [FIX-DOUBLE-TOKEN] Token generowany w _lifespan() — NIE na poziomie modułu.
+# Na Windows uvicorn używa spawn: moduł jest importowany dwukrotnie (main + worker).
+# Każdy import generował inny token i nadpisywał plik — worker miał inny token
+# niż ostatni zapis do pliku → 401 na wszystkich requestach.
+# _lifespan() uruchamia się wyłącznie w procesie workera, dokładnie raz.
 import secrets as _secrets
 _API_TOKEN_PATH = Path(__file__).parent / "api_token.txt"
-_API_TOKEN: str = _secrets.token_hex(32)
-try:
-    _API_TOKEN_PATH.write_text(_API_TOKEN, encoding="utf-8")
-except Exception as _e:
-    logger.warning(f"[SECURITY] Nie można zapisać api_token.txt: {_e}")
+_API_TOKEN: str = ""  # ustawiany w _lifespan()
 FRONTEND_FILE    = Path(__file__).parent / "pseudominizer.html"
 ANON_PROFILE_DIR = os.getenv("ANONYMIZER_PROFILE_DIR", str(Path(__file__).parent / "anon_profiles" / "pseudominizer"))
 HARDWARE_PROFILE = os.getenv("HARDWARE_PROFILE", "./hardware_profile.json")
@@ -128,7 +129,12 @@ MAPS_DIR    = ARCHIVE_DIR / "mapy"
 
 # Inicjalizacja bazy — przez db_store (nie bezpośrednio sqlite3)
 MAPS_DIR.mkdir(parents=True, exist_ok=True)
-db_store.init(ARCHIVE_DIR / "rejestr.db")
+DB_PATH = ARCHIVE_DIR / "rejestr.db"
+db_store.init(DB_PATH)
+
+def _init_db() -> None:
+    """Alias kompatybilności — DB inicjalizowana przy imporcie modułu."""
+    pass
 
 # ── Rejestr PSE + ekstrakcja tekstu ──────────────────────────────────────────
 
@@ -150,7 +156,13 @@ _crypto_ok = False
 # worker). Lifespan gwarantuje jednokrotne wykonanie w procesie workera.
 @asynccontextmanager
 async def _lifespan(app):
-    global _GUARD_AVAILABLE, SYSTEM_PROMPT_SECURITY, _crypto_ok
+    global _GUARD_AVAILABLE, SYSTEM_PROMPT_SECURITY, _crypto_ok, _API_TOKEN
+
+    _API_TOKEN = _secrets.token_hex(32)
+    try:
+        _API_TOKEN_PATH.write_text(_API_TOKEN, encoding="utf-8")
+    except Exception as _e:
+        logger.warning(f"[SECURITY] Nie można zapisać api_token.txt: {_e}")
 
     try:
         import spacy_ner as _spacy_ner_mod

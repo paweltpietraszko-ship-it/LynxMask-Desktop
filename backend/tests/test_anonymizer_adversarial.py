@@ -272,20 +272,25 @@ class TestFirmaAttackToken(unittest.TestCase):
 
         # Krok 2: atak — tekst z wstrzykniętym tokenem
         attack_text = "Skontaktuj się z FIRMA_001 w tej sprawie."
-        attack_result = anon.anonymize(attack_text)
-        attack_anonymized = attack_result[0] if isinstance(attack_result, tuple) else attack_result
+        try:
+            attack_result = anon.anonymize(attack_text)
+            attack_anonymized = attack_result[0] if isinstance(attack_result, tuple) else attack_result
 
-        # Krok 3: depseudonimizacja z mapą z kroku 1
-        restored = deanonymize_text(attack_anonymized, reverse_map)
+            # Krok 3: depseudonimizacja z mapą z kroku 1
+            restored = deanonymize_text(attack_anonymized, reverse_map)
 
-        # "Acme Corp" NIE powinno pojawić się w depseudonimizowanym tekście ataku.
-        # Jeśli się pojawi — wstrzyknięty token podmienił się na prawdziwą encję.
-        self.assertNotIn(
-            "Acme Corp", restored,
-            "Atak FIRMA_001: wstrzyknięty token zmapował się do prawdziwej encji "
-            "po depseudonimizacji. Anonymizer musi re-tokenizować lub flagować "
-            "istniejące tokeny w wejściu użytkownika."
-        )
+            # "Acme Corp" NIE powinno pojawić się w depseudonimizowanym tekście ataku.
+            # Jeśli się pojawi — wstrzyknięty token podmienił się na prawdziwą encję.
+            self.assertNotIn(
+                "Acme Corp", restored,
+                "Atak FIRMA_001: wstrzyknięty token zmapował się do prawdziwej encji "
+                "po depseudonimizacji. Anonymizer musi re-tokenizować lub flagować "
+                "istniejące tokeny w wejściu użytkownika."
+            )
+        except ValueError:
+            # Security guard (anonymizer.py) słusznie blokuje tekst zawierający token
+            # maskujący — atak injection zatrzymany na poziomie wejścia. Cel testu osiągnięty.
+            pass
 
 
 # ===========================================================================
@@ -601,7 +606,11 @@ class TestIdempotency(unittest.TestCase):
 
         text = "Pełnomocnik: Marek Nowak."
         first = anonymize_text(anon, text)
-        second = anonymize_text(anon, first)
+        # Drugi run na już zanonimizowanym tekście: skip_guard=True bo tokeny w wejściu
+        # są oczekiwane (idempotencja), nie atakiem injection.
+        _second_result = anon.anonymize(first, skip_guard=True)
+        second = _second_result[0] if isinstance(_second_result, tuple) else _second_result
+        second = second[0] if isinstance(second, tuple) else second
 
         self.assertEqual(
             first, second,

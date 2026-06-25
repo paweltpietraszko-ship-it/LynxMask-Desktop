@@ -317,7 +317,9 @@ class TestPipelineIdempotency(unittest.TestCase):
 
         _anon_result = anon.anonymize(original)
         first = _anon_result[0] if isinstance(_anon_result, tuple) else _anon_result
-        _anon_result = anon.anonymize(first)
+        # Drugi run na już zanonimizowanym tekście: skip_guard=True bo tokeny w wejściu
+        # są oczekiwane (idempotencja pipeline'u), nie atakiem injection.
+        _anon_result = anon.anonymize(first, skip_guard=True)
         second = _anon_result[0] if isinstance(_anon_result, tuple) else _anon_result
 
         self.assertEqual(

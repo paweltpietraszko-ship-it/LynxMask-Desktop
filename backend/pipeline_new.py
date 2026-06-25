@@ -22,6 +22,7 @@ from layers.contact import apply_contact_layer
 from layers.financial import apply_financial_layer
 from layers.legal import apply_legal_layer
 from layers.numeric import apply_numeric_layer
+from layers.institution import apply_institution_layer
 from layers.address import apply_address_layer
 from layers.ner_adapter import apply_ner_layer, extract_ner_results
 from layers.fallback import apply_fallback_layer
@@ -50,6 +51,7 @@ def run_pipeline_new(
     _apply(state, apply_legal_layer)
     _apply(state, apply_numeric_layer)
     _apply(state, apply_contact_layer)
+    _apply(state, apply_institution_layer)
     extract_ner_results(state, anon_map)
     _apply(state, apply_address_layer)
     _apply(state, apply_ner_layer, anon_map)

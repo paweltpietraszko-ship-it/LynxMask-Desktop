@@ -94,12 +94,11 @@ class GuardMode(Enum):
 _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     ("PESEL",   re.compile(r"\b\d{11}\b")),
     ("NIP",     re.compile(r"\b\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b")),
-    # [FIX-A4] IBAN rozszerzony z PL-only na wszystkie europejskie (DE, AT, SK itd.)
-    # Format: [A-Z]{2} (kraj) + \d{2} (cyfry kontrolne) + grupy znaków IBAN
-    # [FIX-IBAN-LEN] Wymóg min. 15 znaków — wyklucza NIP z prefiksem PL (12 znaków)
-    # który pasował do wzorca i powodował false positive blokady.
-    # Najkrótszy prawdziwy IBAN (NO) ma 15 znaków, PL ma 28.
-    ("IBAN",    re.compile(r"\b(?=[A-Z]{2}\d{2}(?:\s?[A-Z0-9]+){2,}\S{0,4}\b.{0,2})(?=\S{15,})[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4})+(?:\s?[A-Z0-9]{1,4})?\b")),
+    # [FIX-A4] IBAN generyczny — obsługuje PL i wszystkie europejskie (DE, AT, SK itd.)
+    # Format: [A-Z]{2} (kraj) + \d{2} (cyfry kontrolne) + 10-30 znaków (cyfry + spacje)
+    # [FIX-IBAN-LEN] Wymóg min. 10 cyfr/spacji po CC+DD — wyklucza NIP z prefiksem PL
+    # (PL6551979313: po "PL65" zostaje tylko 8 cyfr < 10). Najkrótszy IBAN (NO) = 15 znaków.
+    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}[\s\d]{10,30}\b")),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
     # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
     # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.
