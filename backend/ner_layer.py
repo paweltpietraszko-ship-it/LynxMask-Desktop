@@ -111,19 +111,14 @@ _ADDR_PREFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
-# [BUG-NER-FP] Filtr przymiotników — jednoczłonowe encje kończące się na polskie
-# końcówki przymiotnikowe są prawie zawsze FP (SpaCy błędnie klasyfikuje np.
-# "kontrolna", "rejestrowa" jako FIRMA lub OSOBA). Filtr stosowany tylko dla
-# encji jednoczłonowych — wielowyrazowe ("Komisja Kontrolna") pozostają nienaruszone.
+# [BUG-NER-FP] Filtr przymiotników dla encji OSOBA — port z NameEngine.kt linie 287-362.
+# SpaCy klasyfikuje polskie przymiotniki jako OSOBA (KONTROLNA, Encje itp.).
+# Stosowany tylko dla OSOBA — firmy mogą mieć przymiotniki w nazwie legalnie.
 _ADJECTIVE_ENDINGS_RE = re.compile(
-    r"(?:ski|ska|skie|skich|skim|skiego|skiemu"
-    r"|cki|cka|ckie|ckich|ckim|ckiego|ckiemu"
-    r"|dzki|dzka|dzkie|dzkich|dzkim|dzkiego|dzkiemu"
-    r"|owy|owa|owe|owych|owym|owego|owej|owemu"
-    r"|owy|owy"
-    r"|ny|na|ne|nych|nym|nego|nej|nemu"
-    r"|any|ana|ane|anych|anym|anego|anej"
-    r"|ony|ona|one|onych|onym|onego|onej)$",
+    r'(?:owego|owej|owym|owych|iego|iej|iem|owy|owa|owe|ową'
+    r'|czny|czna|czne|cznego|cznej|cznym|cznych'
+    r'|wny|wna|wne|wnego|wnej|wnym|wnych'
+    r'|lny|lna|lne|lnego|lnej|lnym|lnych)\b',
     re.IGNORECASE | re.UNICODE,
 )
 
@@ -165,11 +160,10 @@ def _filter_institutions(ner_results: list) -> list:
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
             logger.debug("[FILTER] pominięto dział wewnętrzny: '%s'", entity_text[:40])
             continue
-        # [BUG-NER-FP] Pomiń jednoczłonowe encje kończące się na polskie końcówki
-        # przymiotnikowe — SpaCy regularnie klasyfikuje je jako OSOBA/FIRMA.
-        # Wielowyrazowe encje (np. "Komisja Kontrolna") nie są filtrowane.
-        if " " not in entity_text and _ADJECTIVE_ENDINGS_RE.search(entity_text):
-            logger.debug("[FILTER] pominięto przymiotnik: '%s'", entity_text[:40])
+        # [BUG-NER-FP] Pomiń encje OSOBA kończące się na polskie końcówki przymiotnikowe.
+        # FIRMA może mieć przymiotnik w nazwie legalnie ("Firma Handlowa X") — bez filtra.
+        if ner.label == "OSOBA" and _ADJECTIVE_ENDINGS_RE.search(entity_text):
+            logger.debug("[FILTER] pominięto przymiotnik jako OSOBA: '%s'", entity_text[:40])
             continue
 
         out.append(ner)
