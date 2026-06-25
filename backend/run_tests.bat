@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-cd /d C:\Users\p_pie\Desktop\pseudominizer
+cd /d %~dp0
 
 echo ================================================================
 echo  LynxMask Desktop -- pelny zestaw testow

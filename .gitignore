@@ -16,3 +16,10 @@ frontend/.vite/
 # === OGÓLNE ===
 *.log
 .env
+
+# === RUNTIME / GENEROWANE ===
+backend/benchmark_results/
+backend/archive/
+backend/hardware_profile.json
+backend/pse_registry.json
+backend/pseudominizer_audit.jsonl
