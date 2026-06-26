@@ -262,9 +262,11 @@ Fix: RotatingFileHandler, max 2 MB, 3 backupy (.jsonl.1/2/3).
 Logger w /profile/add-entity ujawniał token_type ("OSOBA", "FIRMA").
 Fix: usunięty z logu — zostaje tylko token_id.
 
-### BUG-7 (NISKI — PRAWDOPODOBNIE NAPRAWIONY)
-check_blacklist_context() niewywoływana — nazwa zmieniła się na check_and_block().
-Weryfikacja: sprawdzić czy check_and_block() jest wywoływana w pipeline.py.
+### ~~BUG-7~~ — ZAMKNIĘTY (zweryfikowane 2026-06-26)
+check_blacklist_context() jest wywoływana w output_guard.py linia 300,
+w ramach guard_output_with_map() → _apply_guard() w pipeline.
+Funkcja nie zginęła — przeniesiona do warstwy guard. check_and_block() to osobna
+funkcja SpaCy w pipeline.py (linia 379), wywołuje ją stary pipeline przed NER.
 
 ### ~~OBS-ADRES-DOUBLE-TOKEN~~ — NAPRAWIONY (address.py v1.7, 2026-06-26)
 Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
