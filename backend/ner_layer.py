@@ -1,9 +1,16 @@
 """
-ner_layer.py  v1.10
+ner_layer.py  v1.11
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.11 — [BUG-FIRMA-TRUNC] SpaCy zatrzymuje granicę encji przed sufiksem
+           prawnym w cudzysłowie, np. "ALTEX" Sp → "ALTEX" Sp. z o.o.
+           Naprawa: po zebraniu entity_text sprawdzamy czy kończy się na
+           skróconym wskaźniku spółki ("Sp", "S.A" itp.) i czy zaraz za
+           ner.end w oryginalnym tekście jest dopełnienie sufiksu (". z o.o."
+           itp.). Jeśli tak — entity_text rozszerzany o dopełnienie
+           i typ wymuszany na FIRMA.
   v1.10 — [BUG-1] Deduplikacja wieloczłonowych form fleksyjnych OSOBA.
            Poprzednio "Jana Kowalskiego" dostawało osobny token OSOBA_002
            mimo że "Jan Kowalski" był już OSOBA_001. Przyczyną był _ner_stem
@@ -127,6 +134,15 @@ _ADJECTIVE_ENDINGS_RE = re.compile(
 _INTERNAL_ORG_RE = re.compile(
     r"^(?:dział|oddział|wydział|departament|biuro|sekcja|referat|zespół|jednostka)"
     r"\s+",
+    re.IGNORECASE,
+)
+
+# [BUG-FIRMA-TRUNC] SpaCy obcina encję przed sufiksem prawnym.
+# Wzorzec dopasowuje dopełnienie sufiksu zaraz za końcem encji w tekście.
+# np. entity="ALTEX Sp", text[ner.end:]=" z o.o." → extend.
+_TRUNC_ENDINGS: tuple = ("Sp", "S.A", "Sp. k", "s.c", "p.s.a", "s.k.a")
+_SUFFIX_COMPLETION_RE = re.compile(
+    r'^[\s.]*(?:z\s+o\.o\.?|o\.o\.|S\.A\.?|k\.\s*a\.?|z\.o\.o\.?)',
     re.IGNORECASE,
 )
 
@@ -255,6 +271,13 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         entity_text  = entity_text.rstrip(",.;:!?()")
         if not entity_text:
             continue
+        # [BUG-FIRMA-TRUNC] Rozszerz encję o obcięty sufiks prawny
+        # np. "ALTEX" Sp → "ALTEX" Sp. z o.o.
+        if entity_text.endswith(_TRUNC_ENDINGS):
+            after = text[ner.end:]
+            m_suf = _SUFFIX_COMPLETION_RE.match(after)
+            if m_suf:
+                entity_text = entity_text + m_suf.group(0).rstrip()
         typ          = ner.label
         entity_lower = entity_text.lower()
 
