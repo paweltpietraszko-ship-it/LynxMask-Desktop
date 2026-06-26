@@ -222,9 +222,31 @@ Propozycja: _ADJECTIVE_ENDINGS_RE dla FIRMA (jak dla OSOBA) + confidence thresho
 Fix: App.tsx — blokować ekran Pseudonimizuj dopóki apiToken === "" po odblokowaniu.
 Plik: `frontend/src/App.tsx` linia 26, 54.
 
-### BUG-NEW-3 (ŚREDNI — OTWARTY)
-/archive nie sprawdza guard_blocked — zarchiwizować można sesję z niezamaskowanym PII.
-Fix wymaga persystencji flagi guard_blocked per PSE w SQLite. Złożony.
+### ~~BUG-NEW-3~~ — NAPRAWIONY (db_store.py v1.1 + pseudominizer_api.py, 2026-06-26) [CRIT-1]
+/archive/{pse}/blob zwraca 403 gdy guard_blocked=True. Nowa kolumna guard_blocked
+w SQLite, migracja addytywna. POST /archive przyjmuje flagę od klienta; GET /blob
+sprawdza przed wydaniem pliku .enc.
+
+---
+
+## Luki bezpieczeństwa (audyt 2026-06-26)
+
+### ~~CRIT-2~~ — NAPRAWIONY (audit_log.py v1.2, 2026-06-26)
+AUDIT_MODE był domyślnie True — logował PII przy każdej sesji produkcyjnej.
+Pole "original" w _build_token_summary zawierało plaintext encji w logach.
+Fix: AUDIT_MODE = False domyślnie; pole "original" usunięte z rekordu.
+
+### ~~CRIT-3~~ — NAPRAWIONY (output_guard.py v3.8, 2026-06-26)
+Fallback get_entity_names() w guard_output_with_map() połykał cicho wyjątek
+→ guard martwy gdy metoda nie istniała. Fix: wyjątek dodaje violation GUARD_ERROR
+i blokuje odpowiedź zamiast przepuszczać.
+
+### ~~HIGH-2~~ — NAPRAWIONY (db_store.py v1.1, 2026-06-26)
+Migracja używała DROP TABLE documents — niszczyła wszystkie archiwa użytkownika.
+Fix: ALTER TABLE documents RENAME TO documents_backup_filename.
+
+### ~~HIGH-5~~ — NAPRAWIONY razem z CRIT-2 (audit_log.py v1.2)
+AUDIT_MODE = True domyślnie = zbędne logowanie w trybie produkcyjnym.
 
 ### BUG-7 (NISKI — PRAWDOPODOBNIE NAPRAWIONY)
 check_blacklist_context() niewywoływana — nazwa zmieniła się na check_and_block().
