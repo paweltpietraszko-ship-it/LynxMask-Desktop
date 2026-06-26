@@ -63,7 +63,9 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `pipeline_new.py` v0.4 — institution PO NER
 - `pipeline_core.py` v0.2+
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
-- `output_guard.py` v4.0 — szersze wzorce Guard (IBAN odcisk palca, NIP bez separatora)
+- `output_guard.py` v4.1 — szersze wzorce Guard (IBAN odcisk palca, NIP bez separatora, DOWOD+PASZPORT w _LEAK_HIGH)
+- `anonymizer_init.py` v1.9 — paszport ze spacją OCR ([A-Z]{2}[ \t]?\d{7})
+- `layers/identity.py` v1.3 — paszport ze spacją OCR
 - `layers/financial.py` v1.1 — zagraniczne IBAN (DE, UA, GB, FR, NL) w pipeline
 - `layers/contact.py` v1.2 — OCR-tolerancyjny email
 - `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
@@ -282,6 +284,14 @@ funkcja SpaCy w pipeline.py (linia 379), wywołuje ją stary pipeline przed NER.
 Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
 jeden _apply_hits. Wcześniej offset shift między fazami powodował że
 is_occupied nie wykrywał pokryć → duplikat ADRES token.
+
+### ~~BUG-PASSPORT-SPACE~~ — NAPRAWIONY (anonymizer_init.py v1.9, identity.py v1.3, output_guard.py v4.1, 2026-06-26)
+Paszport ze spacją (`ZX 1234567`) nie był maskowany przez pipeline ani wykrywany przez Guard.
+OcrNormalizer usuwa spację tylko gdy w kontekście jest słowo "paszport:" — bez kontekstu
+spacja pozostaje i stary wzorzec `[A-Z]{2}\d{7}` nie pasował.
+Fix pipeline: wzorzec zmieniony na `[A-Z]{2}[ \t]?\d{7}` — łapie oba warianty.
+Fix Guard: dodano DOWOD i PASZPORT do `_LEAK_HIGH` — Guard w ogóle nie miał tych wzorców.
+Wzorce Guard zgodne z zasadą GUARD-BROAD: opcjonalna spacja między serią a numerem.
 
 ### ~~GUARD-BROAD~~ — NAPRAWIONY (output_guard.py v4.0, 2026-06-26)
 Guard nie może powielać wzorców pipeline — jeśli pipeline coś przepuści, identyczny
