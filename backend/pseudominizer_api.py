@@ -1,6 +1,11 @@
 """
-pseudominizer_api.py  v1.31-TAURI
+pseudominizer_api.py  v1.32-TAURI
 Historia zmian (od najnowszej):
+  v1.32-TAURI (2026-06-26):
+    [CRASH-UX] Zapis startup_error.json przed śmiercią procesu.
+               Frontend czyta ten plik przez Tauri read_startup_error() i pokazuje
+               CrashScreen z kodem błędu, instrukcją restartu i mailto do zgłoszenia.
+               Plik jest kasowany na początku _lifespan — stare błędy nie blokują nowego uruchomienia.
   v1.31-TAURI (2026-06-26):
     [MED-4] Logger w /profile/add-entity ujawniał token_type (np. "OSOBA").
              To metadata — usunięte z logu, zostaje tylko token_id.
@@ -159,9 +164,32 @@ _crypto_ok = False
 # Poprzednio kod wykonywał się na poziomie modułu — uvicorn na Windows używa
 # spawn zamiast fork, co powoduje dwukrotny import modułu (proces główny +
 # worker). Lifespan gwarantuje jednokrotne wykonanie w procesie workera.
+_STARTUP_ERROR_PATH = Path(__file__).parent / "startup_error.json"
+
+
+def _write_startup_error(code: str, message: str) -> None:
+    import json as _json_mod
+    from datetime import datetime as _dt
+    try:
+        _STARTUP_ERROR_PATH.write_text(
+            _json_mod.dumps({"code": code, "message": message,
+                             "timestamp": _dt.now().isoformat()},
+                            ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception as _e:
+        logger.error(f"[CRASH-UX] Nie można zapisać startup_error.json: {_e}")
+
+
 @asynccontextmanager
 async def _lifespan(app):
     global _GUARD_AVAILABLE, SYSTEM_PROMPT_SECURITY, _crypto_ok, _API_TOKEN
+
+    # [CRASH-UX] Kasujemy stary plik błędu na początku każdego startu.
+    try:
+        _STARTUP_ERROR_PATH.unlink(missing_ok=True)
+    except Exception:
+        pass
 
     _API_TOKEN = _secrets.token_hex(32)
     try:
@@ -204,9 +232,13 @@ async def _lifespan(app):
     try:
         from smoke_test import assert_smoke_test as _assert_smoke
         _assert_smoke()
-    except RuntimeError:
-        raise  # blokuje start — silnik nie działa poprawnie
+    except RuntimeError as _re:
+        _code = "SMOKE-" + (str(_re)[:30].replace(" ", "-").upper()
+                            if str(_re) else "PIPELINE-ERROR")
+        _write_startup_error(_code, str(_re))
+        raise
     except Exception as _e:
+        _write_startup_error("SMOKE-UNEXPECTED", str(_e))
         raise RuntimeError(f"[SMOKE] Nieoczekiwany błąd smoke testu: {_e}")
 
     yield  # aplikacja działa

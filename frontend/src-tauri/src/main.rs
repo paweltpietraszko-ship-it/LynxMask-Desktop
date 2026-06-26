@@ -1,4 +1,4 @@
-// Pseudominizer — src-tauri/src/main.rs  v1.5
+// Pseudominizer — src-tauri/src/main.rs  v1.6
 // ============================================================
 // ZMIANY W TEJ WERSJI: Potok 4 Biblioteka — komendy odpowiedzi AI
 // ============================================================
@@ -37,6 +37,7 @@ const KEY_VERIFY_PLAINTEXT: &[u8] = b"PSEUDOMINIZER_OK";
 
 // Ścieżka do katalogu backendu względem exe Tauri.
 const BACKEND_TOKEN_FILENAME: &str = "api_token.txt";
+const STARTUP_ERROR_FILENAME: &str = "startup_error.json";
 
 struct AppKey(Mutex<Option<[u8; KEY_LEN]>>);
 
@@ -154,6 +155,53 @@ fn find_token_file() -> Result<std::path::PathBuf, String> {
     Err(format!("Nie znaleziono {}. Sprawdź czy backend jest uruchomiony.", BACKEND_TOKEN_FILENAME))
 }
 
+// Zwraca katalog backendu (bez wymagania istnienia konkretnego pliku).
+// Używane przez read_startup_error — plik może nie istnieć, szukamy samego katalogu.
+fn find_backend_dir() -> Option<std::path::PathBuf> {
+    if let Ok(dir) = std::env::var("PSEUDOMINIZER_BACKEND_DIR") {
+        let p = std::path::PathBuf::from(dir);
+        if p.is_dir() { return Some(p); }
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            if dir.join(STARTUP_ERROR_FILENAME).exists()
+                || dir.join(BACKEND_TOKEN_FILENAME).exists()
+            {
+                return Some(dir.to_path_buf());
+            }
+            for up in 1..=5 {
+                let mut candidate = dir.to_path_buf();
+                for _ in 0..up { candidate = match candidate.parent() {
+                    Some(p) => p.to_path_buf(),
+                    None => break,
+                };}
+                let d = candidate.join("backend");
+                if d.is_dir() { return Some(d); }
+                let d = candidate.join("LynxMask-Desktop").join("backend");
+                if d.is_dir() { return Some(d); }
+            }
+        }
+    }
+    if let Ok(home) = std::env::var("USERPROFILE") {
+        let d = std::path::PathBuf::from(&home)
+            .join("Desktop").join("LynxMask-Desktop").join("backend");
+        if d.is_dir() { return Some(d); }
+        let d = std::path::PathBuf::from(home)
+            .join("Desktop").join("pseudominizer");
+        if d.is_dir() { return Some(d); }
+    }
+    // Linux dev fallback (HOME)
+    if let Ok(home) = std::env::var("HOME") {
+        let d = std::path::PathBuf::from(&home)
+            .join("LynxMask-Desktop").join("backend");
+        if d.is_dir() { return Some(d); }
+        let d = std::path::PathBuf::from(home)
+            .join("Desktop").join("LynxMask-Desktop").join("backend");
+        if d.is_dir() { return Some(d); }
+    }
+    None
+}
+
 // Walidacja formatu PSE przed użyciem w ścieżce pliku.
 // Zapobiega path traversal przez parametr pse w komendach zapisu/odczytu.
 fn validate_pse(pse: &str) -> Result<(), String> {
@@ -180,6 +228,26 @@ fn read_api_token() -> Result<String, String> {
         return Err("api_token.txt jest pusty — uruchom backend.".into());
     }
     Ok(token)
+}
+
+/// Czyta startup_error.json z katalogu backendu (jeśli istnieje) i zwraca jako String.
+/// Gdy plik nie istnieje zwraca błąd — caller traktuje to jako "brak błędu startu".
+#[tauri::command]
+fn read_startup_error() -> Result<String, String> {
+    let dir = find_backend_dir()
+        .ok_or_else(|| "Nie znaleziono katalogu backendu.".to_string())?;
+    let path = dir.join(STARTUP_ERROR_FILENAME);
+    if !path.exists() {
+        return Err("brak".into());
+    }
+    std::fs::read_to_string(&path)
+        .map_err(|e| format!("Błąd odczytu startup_error.json: {}", e))
+}
+
+/// Restartuje aplikację (zamknij + uruchom ponownie).
+#[tauri::command]
+fn restart_app(app: tauri::AppHandle) {
+    app.restart();
 }
 
 /// Wyprowadza klucz AES-256 z hasła przez PBKDF2 i trzyma go w State.
@@ -396,6 +464,8 @@ fn main() {
             is_first_run,
             save_depseudo_result,
             read_api_token,
+            read_startup_error,
+            restart_app,
             list_depseudo_responses,
             read_depseudo_response,
         ])

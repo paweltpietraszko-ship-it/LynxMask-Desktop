@@ -1,4 +1,4 @@
-// Pseudominizer — App.tsx  v1.5
+// Pseudominizer — App.tsx  v1.6
 // [BUG-10] tokenReady: blokuje MainLayout dopóki apiToken nie załadowany.
 //   Poprzednio UI było aktywne z apiToken="" przez chwilę po odblokowaniu → 401.
 // [FIX-TOKEN-API] Ładuje api_token.txt przez read_api_token po odblokowaniu.
@@ -13,6 +13,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import LockScreen from "./screens/LockScreen";
 import MainLayout from "./screens/MainLayout";
+import CrashScreen from "./screens/CrashScreen";
 import { T } from "./theme";
 
 export type Screen = "pseudonimizuj" | "biblioteka" | "depseudonimizuj" | "security";
@@ -27,6 +28,7 @@ export default function App() {
   const [countdown,    setCountdown]    = useState(60);
   const [apiToken,     setApiToken]     = useState("");
   const [tokenReady,   setTokenReady]   = useState(false);
+  const [crashInfo,    setCrashInfo]    = useState<{code: string; message: string; timestamp?: string} | null>(null);
   // [BUG-P4-03] PSE przekazywane z Biblioteki do Depseudonimizuj przy kliknięciu odpowiedzi AI.
   const [demaskPse,    setDemaskPse]    = useState<string | null>(null);
 
@@ -62,10 +64,27 @@ export default function App() {
         setApiToken(token);
         setTokenReady(true);
       })
-      .catch(err => {
-        console.error("[TOKEN] Błąd odczytu api_token.txt:", err);
-        setApiToken("");
-        setTokenReady(true);  // mimo błędu odblokuj UI — backend może jeszcze startować
+      .catch(async () => {
+        // Backend może jeszcze startować — poczekaj 4s i spróbuj ponownie.
+        await new Promise(r => setTimeout(r, 4000));
+        try {
+          const token = await invoke<string>("read_api_token");
+          setApiToken(token);
+          setTokenReady(true);
+        } catch {
+          // Drugi błąd — sprawdź czy backend zgłosił crash przy starcie.
+          try {
+            const errorJson = await invoke<string>("read_startup_error");
+            const info = JSON.parse(errorJson) as {code: string; message: string; timestamp?: string};
+            setCrashInfo(info);
+          } catch {
+            setCrashInfo({
+              code: "STARTUP-NO-RESPONSE",
+              message: "Silnik nie odpowiada. Spróbuj uruchomić aplikację ponownie.",
+            });
+          }
+          setTokenReady(true);
+        }
       });
   }, [unlocked]);
 
@@ -123,6 +142,11 @@ export default function App() {
 
   if (!unlocked) {
     return <LockScreen onUnlock={() => setUnlocked(true)} />;
+  }
+
+  // [CRASH-UX] Jeśli backend zgłosił błąd startu — pokaż ekran awarii.
+  if (crashInfo) {
+    return <CrashScreen code={crashInfo.code} message={crashInfo.message} timestamp={crashInfo.timestamp} />;
   }
 
   // [BUG-10] Czekaj na załadowanie tokenu — bez tego UI wysyła żądania z apiToken=""
