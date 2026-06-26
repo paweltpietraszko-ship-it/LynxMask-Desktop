@@ -59,11 +59,11 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `layers/institution.py` v1.0 (NOWY — 2026-06-25)
 - `ner_blocklist.py` v1.3 (263 wpisy + kontrolna/encje)
 - `ner_layer.py` v1.10 + _ADJECTIVE_ENDINGS_RE
-- `layers/ner_adapter.py` v1.1
-- `pipeline_new.py` v0.4 — institution PO NER
+- `layers/ner_adapter.py` v1.3 — WYS-1: try/except w extract_ner_results/apply_ner_layer, ner_error flag
+- `pipeline_new.py` v0.6 — WYS-2: zwraca (text, map, force_block), try/except całego pipeline
 - `pipeline_core.py` v0.2+
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
-- `output_guard.py` v4.1 — szersze wzorce Guard (IBAN odcisk palca, NIP bez separatora, DOWOD+PASZPORT w _LEAK_HIGH)
+- `output_guard.py` v4.2 — WYS-3: check_blacklist_context błąd → GUARD_ERROR + blokada (fail-closed)
 - `anonymizer_init.py` v1.9 — paszport ze spacją OCR ([A-Z]{2}[ \t]?\d{7})
 - `layers/identity.py` v1.4 — paszport ze spacją OCR, BUG-UR-DOB (data urodzenia)
 - `layers/financial.py` v1.1 — zagraniczne IBAN (DE, UA, GB, FR, NL) w pipeline
@@ -275,6 +275,29 @@ Fix: RotatingFileHandler, max 2 MB, 3 backupy (.jsonl.1/2/3).
 ### ~~MED-4~~ — NAPRAWIONY (pseudominizer_api.py v1.31, 2026-06-26)
 Logger w /profile/add-entity ujawniał token_type ("OSOBA", "FIRMA").
 Fix: usunięty z logu — zostaje tylko token_id.
+
+### ~~WYS-1~~ — NAPRAWIONY (ner_adapter.py v1.3, 2026-06-26)
+`extract_ner_results()` i `apply_ner_layer()` nie miały try/except — crash NER
+(np. brak SpaCy, wyjątek w process_ner) był połykany cicho, pipeline kontynuował
+bez NER, imiona i nazwy firm nie były maskowane.
+Fix: try/except w obu funkcjach → `state.ner_error = True` przy błędzie.
+`run_pipeline_new()` sprawdza flagę i zwraca `force_block=True` do callera.
+Zasada: fail-closed — błąd NER blokuje odpowiedź, nie przepuszcza niezamaskowaną.
+
+### ~~WYS-2~~ — NAPRAWIONY (pipeline_new.py v0.6, 2026-06-26)
+`run_pipeline_new()` nie miała obsługi błędów — nieoczekiwany wyjątek z dowolnej
+warstwy leciał niezłapany do callera który nie wiedział o blokadzie.
+Fix: try/except wokół całego pipeline → przy wyjątku zwraca `(text, {}, True)`.
+Sygnatura zmieniona: `→ tuple[str, dict, bool]` (dodano force_block).
+`pipeline.py` zaktualizowany — rozpakowuje 3 wartości i przekazuje `force_block`
+do `_apply_guard()`.
+
+### ~~WYS-3~~ — NAPRAWIONY (output_guard.py v4.2, 2026-06-26)
+`check_blacklist_context` błąd w `guard_output_with_map()` był tylko logowany
+jako `logger.warning` — pipeline kontynuował bez sprawdzenia blacklisty → PII
+mogło przejść przez guard bez detekcji.
+Fix: `except` dodaje `violation = ["GUARD_ERROR: ..."]` → guard blokuje odpowiedź.
+Fail-closed: błąd guard = blokada, nie ostrzeżenie.
 
 ### ~~BUG-7~~ — ZAMKNIĘTY (zweryfikowane 2026-06-26)
 check_blacklist_context() jest wywoływana w output_guard.py linia 300,
