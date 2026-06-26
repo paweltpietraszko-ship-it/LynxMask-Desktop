@@ -1,6 +1,10 @@
 """
-layers/contact.py  v1.0
+layers/contact.py  v1.1
 Warstwa contact — email i telefon.
+v1.1: [NUMER-RECALL] Dodano _PHONE_CONTEXT_RE — telefon po słowie kluczowym
+  (tel./kom./mob./fax/phone) wykrywany osobno, z wyższym priorytetem niż REGON.
+  Rozwiązuje kolizję: 9-cyfrowy numer komórkowy bez separatorów = REGON w identity.
+  Nowy wzorzec akceptuje też separatory kropkowe (501.234.567) i nawias (22)123-45-67.
 """
 from __future__ import annotations
 
@@ -24,10 +28,30 @@ _CONTACT_PHONE_PATTERNS: list[tuple[str, re.Pattern]] = [
 
 _CONTACT_PATTERNS = _CONTACT_EMAIL_PATTERNS + _CONTACT_PHONE_PATTERNS
 
+# [NUMER-RECALL] Telefon po słowie kluczowym — wyższy priorytet niż REGON.
+# Stosowany PRZED _CONTACT_PATTERNS żeby 9-cyfrowy numer zarejestrować zanim
+# identity layer (warstwa 1) zmatchuje go jako REGON.
+# Separatory: spacja, myślnik, kropka. Nawiasy przy kierunkowym opcjonalne.
+_PHONE_CONTEXT_RE = re.compile(
+    r"(?:tel\.?|fax\.?|kom\.?|mob\.?|phone|Tel\.?|Fax\.?|Kom\.?|Mob\.?)"
+    r"[\s:]*"
+    r"(?:\+?48[\s\-.]?)?"
+    r"\(?\d{2,3}\)?[\s\-.]?\d{3}[\s\-.]?\d{2}[\s\-.]?\d{2}"
+    r"|"
+    r"(?:tel\.?|fax\.?|kom\.?|mob\.?|phone|Tel\.?|Fax\.?|Kom\.?|Mob\.?)"
+    r"[\s:]*"
+    r"(?:\+?48[\s\-.]?)?"
+    r"\d{3}[\s\-.]?\d{3}[\s\-.]?\d{3}",
+    re.IGNORECASE,
+)
+
 
 def apply_contact_layer(state: PipelineState) -> None:
     """Stosuje wzorce email i telefon na state.text."""
     hits: list[tuple[int, int, str, str]] = []
+    # [NUMER-RECALL] Context-aware telefon — najpierw, by zająć span przed REGON
+    for m in _PHONE_CONTEXT_RE.finditer(state.text):
+        hits.append((m.start(), m.end(), m.group(0), TOKEN_NUMER))
     for token_type, pat in _CONTACT_PATTERNS:
         for m in pat.finditer(state.text):
             hits.append((m.start(), m.end(), m.group(0), token_type))

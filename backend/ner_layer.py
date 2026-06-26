@@ -1,9 +1,12 @@
 """
-ner_layer.py  v1.12
+ner_layer.py  v1.13
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.13 — [BUG-2] Encja SpaCy otoczona cudzysłowem wymusza typ FIRMA.
+           "Wiśniewski i Wspólnicy" w cudzysłowie = nazwa handlowa, nie OSOBA.
+           Wykrycie PRZED strip('"') — ner.start/end w oryginalnym tekście.
   v1.12 — [BUG-FIRMA-ZUS-MIX] _filter_institutions: encja FIRMA zawierająca
            fragment instytucji publicznej (ZUS, NFZ itp.) jest pomijana.
            Regex _INSTITUTION_IN_FIRMA_RE sprawdza całą treść encji.
@@ -281,6 +284,13 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         # encję zaczynającą się od " — filtr typograficzny poniżej nie łapie
         # cudzysłowu prostego (sprawdza tylko \u201e \u201c \u2018 \u2019).
         # strip() działa tylko na krawędziach, środek nazwy nienaruszony.
+        # [BUG-2] Wykryj cudzysłów wokół encji PRZED stripem — firma w cudzysłowie
+        # ("Wiśniewski i Wspólnicy") powinna być FIRMA, nie OSOBA.
+        _orig_span = text[ner.start:ner.end]
+        _quoted = (
+            _orig_span.startswith(('"', '„', '“'))
+            or _orig_span.endswith(('"', '”', '“'))
+        )
         entity_text  = entity_text.strip('"')
         if not entity_text:
             continue
@@ -299,6 +309,10 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
                 entity_text = entity_text + m_suf.group(0).rstrip()
         typ          = ner.label
         entity_lower = entity_text.lower()
+
+        # [BUG-2] Cudzysłów wokół encji → nazwa handlowa → wymuś FIRMA
+        if _quoted and typ == "OSOBA":
+            typ = "FIRMA"
 
         # [FIX-LEGAL-SUFFIX] Sufiks prawny wymusza FIRMA niezależnie od SpaCy
         # [BUG-F] Usunięta gałąź `s in entity_lower` — substring match powodował

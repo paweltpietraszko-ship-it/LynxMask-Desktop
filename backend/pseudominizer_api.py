@@ -668,6 +668,19 @@ async def profile_add_entity(request: Request):
 
     if not text:
         return JSONResponse({"error": "Brak pola text"}, status_code=400)
+    if len(text) < 3:
+        return JSONResponse({"error": "Encja zbyt krótka (min. 3 znaki)"}, status_code=400)
+    # [BUG-NEW-4] Nie pozwól na dodanie słowa pospolitego lub skrótu systemowego
+    from ner_blocklist import _NER_BLOCKLIST
+    try:
+        from spacy_ner import _PL_STOPWORDS
+    except Exception:
+        _PL_STOPWORDS = set()
+    if text.lower() in _NER_BLOCKLIST or text.lower() in _PL_STOPWORDS:
+        return JSONResponse(
+            {"error": f"Słowo pospolite lub skrót systemowy: {text!r}"},
+            status_code=400,
+        )
     if token_type not in ("OSOBA", "FIRMA", "NUMER", "ADRES"):
         return JSONResponse(
             {"error": f"Nieznany typ tokenu: {token_type!r}"},
