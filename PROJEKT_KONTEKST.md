@@ -144,11 +144,13 @@ _apply(state, apply_fallback_layer)
 ```
 Zasada: `allocator.is_occupied()` zablokuje re-tokenizację spanów zajętych przez NER (FIRMA).
 
-### BUG-ADDR-FP (ŚREDNI)
+### ~~BUG-ADDR-FP~~ — OTWARTY (wymaga analizy)
 ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
+Nienaprawiony — wymaga dogłębnej analizy false positive patterns.
 
-### BUG-10 (WYSOKI — blokuje dystrybucję)
-Hardkodowana ścieżka Tesseract → `ocr_engine.py`
+### ~~BUG-10~~ — NAPRAWIONY (ocr_engine.py v1.2)
+Hardkodowana ścieżka osobista C:/Users/p_pie/... zastąpiona przez
+`os.path.expandvars("%LOCALAPPDATA%")` w `_TESSERACT_CANDIDATES`.
 
 ---
 
@@ -157,22 +159,12 @@ Hardkodowana ścieżka Tesseract → `ocr_engine.py`
 Plik testowy: 4 poziomy degradacji OCR, 4 typy dokumentów.
 Wyniki encji z UI (37 tokenów) — poniżej NOWE bugi nieznane wcześniej.
 
-### BUG-NER-FP-INSTRUKCJE (WYSOKI)
-SpaCy klasyfikuje słowa z instrukcji/UI wklejonych do dokumentu jako encje:
-- OSOBA_007="Guardem" — fragment "output_guard"
-- OSOBA_008="Wkleić" — polskie "paste" z instrukcji w pliku testowym
-- OSOBA_009="Dluzn" — obcięty "Dłużnika" po OCR (fragment komorniczego)
-- FIRMA_003="Share" — angielskie "share" z instrukcji
-- FIRMA_004="RED" — kolor lub skrót
+### ~~BUG-NER-FP-INSTRUKCJE~~ — NAPRAWIONY (ner_blocklist.py v1.3+)
+Słowa z instrukcji/UI dodane do `_NER_BLOCKLIST`:
+"guardem", "wkleić", "wklej", "wklejam", "wklejanie", "share", "red", "dluzn"
+Zweryfikowane w kodzie: wpisy istnieją w aktualnym ner_blocklist.py.
 
-Fix — `backend/ner_blocklist.py` (dodać do `_NER_BLOCKLIST`):
-```python
-"guardem", "wkleić", "wklej", "wklejam", "wklejanie",
-"share", "red", "dluzn",   # OCR-fragment "dłużnika"
-```
-Plik: `backend/ner_blocklist.py`
-
-### BUG-OCR-DEDUP (WYSOKI)
+### BUG-OCR-DEDUP (WYSOKI — OTWARTY)
 Ta sama osoba z OCR-leet i bez leet dostaje dwa osobne tokeny:
 - OSOBA_001="Paulina Agate Kowalczyk"
 - OSOBA_002="P4nina Agat3 K0walczyk"
@@ -180,27 +172,25 @@ Ta sama osoba z OCR-leet i bez leet dostaje dwa osobne tokeny:
 `_person_stem` nie deduplikuje — "p4n" ≠ "pau", inne prefiksy.
 Fix wymaga OCR-normalizacji przed `_person_stem` albo similarity threshold.
 Plik: `backend/ner_layer.py` (`_person_stem`) lub nowy `layers/ocr_normalizer.py`
+NIENAPRAWIONY — ryzykowny, wymaga similarity threshold.
 
-### BUG-PESEL-DUP (ŚREDNI)
-PESEL z OCR-spacjami dostaje dwa tokeny z identyczną wartością:
-- NUMER_013 = NUMER_014 = "92 0915 12416"
-- NUMER_015 = NUMER_016 = "85 0717 92056"
+### ~~BUG-PESEL-DUP~~ — NAPRAWIONY (pipeline_core.py v0.2)
+`TokenAllocator.allocate()` już deduplikuje przez `_canonical_to_token`.
+Dwa PESEL-e z tą samą wartością kanoniczną dostają ten sam token.
+Test E w pipeline_core.py potwierdza: len(reverse_map)==1 dla dwóch wariantów.
 
-Ten sam string wchodzi do `reverse_map` dwukrotnie z różnymi kluczami.
-Fix: deduplication w `TokenAllocator.allocate()` — sprawdź czy wartość już istnieje w `reverse_map`, jeśli tak — zwróć istniejący token.
-Plik: `backend/pipeline_core.py`
+### ~~BUG-FIRMA-TRUNC~~ — NAPRAWIONY (ner_layer.py v1.11, 2026-06-26)
+SpaCy zatrzymywał granicę encji przed sufiksem prawnym.
+Naprawa: po rstrip() sprawdzamy czy entity_text kończy się na "Sp"/"S.A" itp.
+i czy text[ner.end:] zaczyna się od ". z o.o." itp. — jeśli tak, doklejamy.
+Regex `_SUFFIX_COMPLETION_RE` + `_TRUNC_ENDINGS` w ner_layer.py ~linia 145.
 
-### BUG-FIRMA-TRUNC (ŚREDNI)
-FIRMA_001="Przedsiębiorstwo Usług Technicznych "ALTEX" Sp" — obcięte, brak "z o.o."
-SpaCy zatrzymuje granicę encji przed sufiksem prawnym w cudzysłowie.
-Fix: post-processing w `_filter_institutions()` dołączający sufiks prawny jeśli encja kończy się na "Sp" i następne słowa to ". z o.o." / "S.A." itp.
-Plik: `backend/ner_layer.py`
-
-### BUG-FIRMA-ZUS-MIX (NISKI)
+### BUG-FIRMA-ZUS-MIX (NISKI — OTWARTY)
 FIRMA_002="Sp. z o.o. ZUS-Warsz" — ZUS-fragment jako FIRMA zamiast INSTYTUCJA.
 SpaCy zassał fragment "ZUS-Warszawa" i sklasyfikował całość jako firmę.
 Powiązane z istniejącym BUG-NER-FP-GRANICE (MASTER).
 Plik: `backend/ner_layer.py` (`_filter_institutions`)
+NIENAPRAWIONY — powiązany z architekturą granic encji NER.
 
 ## Uwagi praktyczne
 
