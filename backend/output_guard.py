@@ -1,5 +1,11 @@
 """
-Triangulum — output_guard.py  v3.7
+Triangulum — output_guard.py  v3.8
+Zmiany v3.8:
+  [CRIT-3] guard_output_with_map: fallback get_entity_names() nie może cicho połykać
+           wyjątku — gdy metoda nie istnieje lub rzuca błąd, guard zwracał result bez
+           violations (luka bezpieczeństwa). Fix: wyjątek dodaje violation GUARD_ERROR
+           i blokuje odpowiedź, zamiast cicho przepuszczać.
+
 Zmiany v3.7:
   [TASK-1] SYSTEM_PROMPT_SECURITY (linia 435): dodano EMAIL_001 i INSTYTUCJA_001
            do listy przykładowych tokenów. Model AI widzi te typy w maskowanym
@@ -313,7 +319,12 @@ def guard_output_with_map(
                             f"encja z mapy sesji obecna w odpowiedzi modelu"
                         )
             except Exception as e:
-                logger.warning(f"guard_with_map: entity_names fallback błąd: {e}")
+                # [CRIT-3] Wyjątek w fallbacku → blokada zamiast przepuszczenia.
+                # Cicha utrata guarda (AttributeError / runtime) = luka bezpieczeństwa.
+                logger.error(f"guard_with_map: entity_names fallback błąd — BLOKADA: {e}")
+                violations.append(
+                    f"[GUARD_ERROR] Fallback guarda rzucił wyjątek: {e} — blokada prewencyjna"
+                )
     # Ścieżka 3 bezpośrednio gdy anon_map=None (brak zależności od anonymizer)
     if anon_map is None and known_plain:
         text_lower = text.lower()

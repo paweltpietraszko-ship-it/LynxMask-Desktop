@@ -1,6 +1,7 @@
 """
-db_store.py  v1.0
+db_store.py  v1.1
 Historia zmian (od najnowszej):
+  v1.1 (2026-06-26): [HIGH-2] DROP TABLE zastąpiony RENAME — archiwum zachowane.
   v1.0 (2026-05-19): Wydzielony z pseudominizer_api.py.
     Izoluje wszystkie operacje SQLite — _api.py nie importuje sqlite3 bezpośrednio.
     Nowy schemat: dodano kolumnę description BLOB.
@@ -56,11 +57,12 @@ def _migrate(db_path: Path) -> None:
         with sqlite3.connect(db_path) as conn:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(documents)").fetchall()]
 
-            # Migracja z pre-v1.22: kolumna filename to PII — upuść tabelę (dane testowe)
+            # Migracja z pre-v1.22: kolumna filename — rename zamiast DROP (HIGH-2)
+            # Zachowujemy stare dane jako documents_backup_filename zamiast niszczyć.
             if "filename" in cols:
-                conn.execute("DROP TABLE documents")
+                conn.execute("ALTER TABLE documents RENAME TO documents_backup_filename")
                 conn.commit()
-                logger.info("[DB] Migracja: DROP TABLE documents (stary schemat z filename)")
+                logger.info("[DB] Migracja: RENAME documents → documents_backup_filename (stary schemat z filename)")
                 cols = []
 
             # Migracja do v1.0 db_store: dodaj description jeśli tabela istnieje bez niej
@@ -70,6 +72,15 @@ def _migrate(db_path: Path) -> None:
                 )
                 conn.commit()
                 logger.info("[DB] Migracja: ADD COLUMN description")
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(documents)").fetchall()]
+
+            # Migracja do v1.1: dodaj guard_blocked (CRIT-1)
+            if cols and "guard_blocked" not in cols:
+                conn.execute(
+                    "ALTER TABLE documents ADD COLUMN guard_blocked INTEGER NOT NULL DEFAULT 0"
+                )
+                conn.commit()
+                logger.info("[DB] Migracja: ADD COLUMN guard_blocked")
 
     except Exception as e:
         logger.warning(f"[DB] Błąd migracji: {e}")
@@ -80,10 +91,11 @@ def _create_tables(db_path: Path) -> None:
     with sqlite3.connect(db_path) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS documents (
-                pse          TEXT PRIMARY KEY,
-                description  BLOB NOT NULL DEFAULT '',
-                token_count  INTEGER NOT NULL DEFAULT 0,
-                created_at   TEXT NOT NULL
+                pse           TEXT PRIMARY KEY,
+                description   BLOB NOT NULL DEFAULT '',
+                token_count   INTEGER NOT NULL DEFAULT 0,
+                created_at    TEXT NOT NULL,
+                guard_blocked INTEGER NOT NULL DEFAULT 0
             )
         """)
         conn.execute("""
@@ -99,10 +111,11 @@ def _create_tables(db_path: Path) -> None:
 
 # ── CRUD ──────────────────────────────────────────────────────────────────────
 
-def save(pse: str, token_count: int, description: bytes = b"") -> str:
+def save(pse: str, token_count: int, description: bytes = b"", guard_blocked: bool = False) -> str:
     """
     Zapisuje lub nadpisuje rekord dokumentu.
     description: zaszyfrowany blob przesłany przez klienta — backend nie interpretuje.
+    guard_blocked: True jeśli output_guard zablokował sesję — blob nie może być pobrany.
     Zwraca created_at (ISO string).
     """
     _assert_init()
@@ -110,12 +123,25 @@ def save(pse: str, token_count: int, description: bytes = b"") -> str:
     with _db_lock:
         with sqlite3.connect(_DB_PATH) as conn:
             conn.execute(
-                """INSERT OR REPLACE INTO documents (pse, description, token_count, created_at)
-                   VALUES (?,?,?,?)""",
-                (pse, description, token_count, created_at)
+                """INSERT OR REPLACE INTO documents (pse, description, token_count, created_at, guard_blocked)
+                   VALUES (?,?,?,?,?)""",
+                (pse, description, token_count, created_at, int(guard_blocked))
             )
             conn.commit()
     return created_at
+
+
+def get_guard_blocked(pse: str) -> bool:
+    """Zwraca True jeśli output_guard zablokował sesję PSE."""
+    _assert_init()
+    with _db_lock:
+        with sqlite3.connect(_DB_PATH) as conn:
+            row = conn.execute(
+                "SELECT guard_blocked FROM documents WHERE pse = ?", (pse,)
+            ).fetchone()
+    if row is None:
+        return False
+    return bool(row[0])
 
 
 def list_documents() -> list[dict]:

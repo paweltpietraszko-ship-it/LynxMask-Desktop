@@ -391,10 +391,10 @@ async def archive_save(request: Request):
     Zapisuje zaszyfrowany blob mapy na dysku i tworzy rekord w SQLite.
     Szyfrowanie 100% po stronie klienta — backend nie widzi hasła ani danych.
 
-    Body JSON: {pse, token_count, enc_blob, description?}
-      enc_blob:    base64 — zaszyfrowana mapa sesji (AES-256-GCM, klient)
-      description: base64 — zaszyfrowany opis dokumentu (opcjonalne, klient)
-                   Przykład: "Umowa Kowalski najem 22.04.26" zaszyfrowane hasłem głównym.
+    Body JSON: {pse, token_count, enc_blob, description?, guard_blocked?}
+      enc_blob:      base64 — zaszyfrowana mapa sesji (AES-256-GCM, klient)
+      description:   base64 — zaszyfrowany opis dokumentu (opcjonalne, klient)
+      guard_blocked: bool — True jeśli output_guard zablokował sesję (CRIT-1)
     """
     try:
         body = await request.json()
@@ -445,9 +445,12 @@ async def archive_save(request: Request):
         logger.error(f"[ARCHIVE] Błąd zapisu pliku {pse}: {e}")
         return JSONResponse({"error": "Błąd zapisu pliku mapy"}, status_code=500)
 
+    # [CRIT-1] Odbierz guard_blocked od klienta — zapis do DB, sprawdzany przy pobieraniu blobu
+    guard_blocked_flag = bool(body.get("guard_blocked", False))
+
     # Zapis rekordu do SQLite przez db_store
     try:
-        db_store.save(pse, token_count, description_bytes)
+        db_store.save(pse, token_count, description_bytes, guard_blocked=guard_blocked_flag)
     except Exception as e:
         logger.error(f"[ARCHIVE] Błąd zapisu DB {pse}: {e}")
         return JSONResponse({"error": "Błąd zapisu do bazy"}, status_code=500)
@@ -485,6 +488,14 @@ async def archive_get_blob(pse: str):
     enc_path = MAPS_DIR / f"{pse}.enc"
     if not enc_path.exists():
         return JSONResponse({"error": f"Mapa {pse} nie istnieje"}, status_code=404)
+
+    # [CRIT-1] Nie wydawaj blobu jeśli guard zablokował tę sesję
+    if db_store.get_guard_blocked(pse):
+        logger.warning(f"[ARCHIVE] Próba pobrania zablokowanego blobu: {pse}")
+        return JSONResponse(
+            {"error": "Sesja zablokowana przez guard — pobieranie niedozwolone"},
+            status_code=403,
+        )
 
     try:
         blob_bytes = enc_path.read_bytes()

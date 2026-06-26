@@ -1,5 +1,9 @@
 """
-audit_log.py  v1.1
+audit_log.py  v1.2
+[FIX-AUDIT-MODE-APPLY] AUDIT_MODE = False — faktyczna zmiana wartości (v1.1 poprawiła
+                 tylko nagłówek, nie kod).
+[FIX-AUDIT-PII-APPLY]  Usunięto pole "original" z _build_token_summary — zawierało
+                 plaintext PII w każdym rekordzie audytu (CRIT-2).
 [FIX-AUDIT-MODE] AUDIT_MODE = False przed dystrybucją.
 [FIX-AUDIT-PII]  Usunięto input_fragment i output_fragment z rekordu —
                  zawierały do 500 znaków oryginalnego tekstu (PII).
@@ -28,7 +32,7 @@ logger = logging.getLogger("pseudominizer.audit")
 # ── Konfiguracja ──────────────────────────────────────────────────────────────
 
 # PRODUKCJA: False — zero zapisu, zero I/O
-AUDIT_MODE = True  # logi aktywne — kasowane ręcznie przez właściciela
+AUDIT_MODE = False  # PRODUKCJA: False. Włącz ręcznie tylko w trybie deweloperskim.
 
 AUDIT_FILE = Path("pseudominizer_audit.jsonl")
 
@@ -80,8 +84,8 @@ def _build_token_summary(tokens: list) -> dict:
         if ttype not in summary:
             summary[ttype] = []
         summary[ttype].append({
-            "token":    t.get("token", ""),
-            "original": t.get("original", ""),
+            "token": t.get("token", ""),
+            # "original" usunięte — zawierało plaintext PII (CRIT-2 / FIX-AUDIT-PII-APPLY)
         })
     return summary
 
