@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 
 def _canonical(value: str) -> str:
-    return re.sub(r"[\s\-\.]", "", value).lower()
+    return re.sub(r"[\s\-\.()\[\]]", "", value).lower()
 
 
 class TokenAllocator:

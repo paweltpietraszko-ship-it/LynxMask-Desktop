@@ -333,6 +333,20 @@ _NER_BLOCKLIST: set = {
     "encje",
     "encja",
     "encji",
+    # [BUG-NER-FP-INSTRUKCJE] PSE-2026-0756: słowa z UI/instrukcji klasyfikowane jako encje
+    "guardem",
+    "wkleić",
+    "wklej",
+    "wklejam",
+    "wklejanie",
+    "share",
+    "dluzn",
+    "red",
+    # PSE-2026-0820: nagłówek sekcji UI klasyfikowany jako OSOBA
+    "emaile",
+    "email",
+    "emailów",
+    "emailami",
 }
 
 

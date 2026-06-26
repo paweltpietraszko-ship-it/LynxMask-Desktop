@@ -46,6 +46,10 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         state.ner_variants = ner_variants
 
     for token_id, value in ner_reverse.items():
+        # Odrzuć fragmenty email (OCR rozbija "user@firma.pl" na dwa tokeny,
+        # część "@firma.pl" trafia do SpaCy jako OSOBA — filtrujemy).
+        if value.startswith("@"):
+            continue
         start = state.text.find(value)
         if start >= 0:
             end = start + len(value)
@@ -56,6 +60,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         key=lambda x: state.text.find(x[1]),
         reverse=True,
     ):
+        if value.startswith("@"):
+            continue
         state.text = state.text.replace(value, token_id)
 
 
