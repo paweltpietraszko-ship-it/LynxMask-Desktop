@@ -63,7 +63,10 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `pipeline_new.py` v0.4 — institution PO NER
 - `pipeline_core.py` v0.2+
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
-- `output_guard.py` v3.7 — IBAN z literami, NIP 3-2-2-3
+- `output_guard.py` v3.9 — IBAN z literami, NIP 3-2-2-3, zagraniczne IBAN compact
+- `layers/financial.py` v1.1 — zagraniczne IBAN (DE, UA, GB, FR, NL) w pipeline
+- `layers/contact.py` v1.2 — OCR-tolerancyjny email
+- `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
 
 ## Otwarte bugi — do naprawienia (priorytet malejący)
 
@@ -279,6 +282,14 @@ funkcja SpaCy w pipeline.py (linia 379), wywołuje ją stary pipeline przed NER.
 Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
 jeden _apply_hits. Wcześniej offset shift między fazami powodował że
 is_occupied nie wykrywał pokryć → duplikat ADRES token.
+
+### ~~BUG-4~~ — NAPRAWIONY (financial.py v1.1, output_guard.py v3.9, 2026-06-26)
+Zagraniczne IBAN (DE, UA, GB, FR, NL i inne) nie były maskowane przez pipeline
+ani flagowane przez Guard.
+Fix pipeline: `_IBAN_FOREIGN_RE` — dwa warianty: ze spacjami (grupy po 4) i compact
+(ciągły). Stosowany po wzorcach PL. Guard FP-filtr: min 15 znaków (najkrótszy IBAN = NO).
+Fix Guard: zaktualizowano `_LEAK_HIGH` IBAN pattern — stary wzorzec `\s?` nie łapał
+compact IBANs. Nowy: dwa alternatywy (spaced + compact), pokrywa wszystkie kraje.
 
 ### ~~BUG-ADDR-STREET-LOST~~ — NAPRAWIONY (address.py v1.8, 2026-06-26)
 Gdy adres zawierał kod pocztowy (np. "ul. Kwiatowa 12/3, 30-001 Kraków"),
