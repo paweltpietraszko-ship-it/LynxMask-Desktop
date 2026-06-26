@@ -63,7 +63,7 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `pipeline_new.py` v0.4 — institution PO NER
 - `pipeline_core.py` v0.2+
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
-- `output_guard.py` v3.9 — IBAN z literami, NIP 3-2-2-3, zagraniczne IBAN compact
+- `output_guard.py` v4.0 — szersze wzorce Guard (IBAN odcisk palca, NIP bez separatora)
 - `layers/financial.py` v1.1 — zagraniczne IBAN (DE, UA, GB, FR, NL) w pipeline
 - `layers/contact.py` v1.2 — OCR-tolerancyjny email
 - `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
@@ -282,6 +282,17 @@ funkcja SpaCy w pipeline.py (linia 379), wywołuje ją stary pipeline przed NER.
 Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
 jeden _apply_hits. Wcześniej offset shift między fazami powodował że
 is_occupied nie wykrywał pokryć → duplikat ADRES token.
+
+### ~~GUARD-BROAD~~ — NAPRAWIONY (output_guard.py v4.0, 2026-06-26)
+Guard nie może powielać wzorców pipeline — jeśli pipeline coś przepuści, identyczny
+wzorzec w Guardzie też to pominie. Guard powinien patrzeć szerzej.
+IBAN: zamiast walidować grupy po 4 znaki (jak pipeline), Guard używa prostego
+"odcisku palca": CC (2 litery) + DD (2 cyfry) + min. 11 znaków alfanumerycznych
+z opcjonalnymi spacjami — agnostyczny wobec formatu zapisu. Łapie IBAN z grupami
+po 3 (OCR), niestanddardowymi spacjami itp. — cokolwiek co "wygląda jak IBAN".
+NIP: dodano `\d{10}` jako trzecia alternatywa — łapie NIP bez separatora
+i z dowolnym separatorem (np. OCR wstawi `.` zamiast `-`).
+Zasada: pipeline = precyzyjny, Guard = szerszy odcisk palca.
 
 ### ~~BUG-4~~ — NAPRAWIONY (financial.py v1.1, output_guard.py v3.9, 2026-06-26)
 Zagraniczne IBAN (DE, UA, GB, FR, NL i inne) nie były maskowane przez pipeline
