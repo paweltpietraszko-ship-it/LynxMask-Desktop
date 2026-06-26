@@ -211,16 +211,16 @@ TELEFON 0% — 9-cyfrowy numer bez separatorów był pochłaniany przez identity
 _PHONE_CONTEXT_RE: tel./kom./mob./fax + numer → TOKEN_NUMER, rejestrowany przed identity.
 Pozostałe przyczyny FP (EMAIL 20%, NUMER 3.8%) — otwarte, wymagają analizy wzorców.
 
-### BUG-NER-FP-GRANICE (WYSOKI — OTWARTY)
-52 FP, 0 TP dla ORGANIZACJA. SpaCy zbyt agresywnie klasyfikuje ORG.
-Główne źródła: nagłówki WIELKIMI, akronimy ERP/CRM, przymiotniki jako FIRMA.
-Blocklist to reaktywna łatka — systemowy fix wymaga zmiany zasady klasyfikacji.
-Propozycja: _ADJECTIVE_ENDINGS_RE dla FIRMA (jak dla OSOBA) + confidence threshold.
+### ~~BUG-NER-FP-GRANICE~~ — NAPRAWIONY (ner_layer.py v1.14, 2026-06-26)
+3 nowe filtry w _filter_institutions (zainspirowane analizą mobile Kotlin):
+1. Nagłówki ALL-CAPS ≤2 słów bez sufiksu prawnego → odfiltrowane
+2. Czyste akronimy [A-Z]{2,6} (ERP/CRM/IT) bez sufiksu → odfiltrowane
+3. Jednosłowny przymiotnik jako FIRMA → odfiltrowany
+Zachowuje: ABC S.A., wielosłowne nazwy z przymiotnikiem, OSOBA.
 
-### BUG-10-MASTER (WYSOKI — OTWARTY)
-"Dodaj i zakryj" zwraca 401 — App.tsx ładuje apiToken async, UI aktywne przed załadowaniem.
-Fix: App.tsx — blokować ekran Pseudonimizuj dopóki apiToken === "" po odblokowaniu.
-Plik: `frontend/src/App.tsx` linia 26, 54.
+### ~~BUG-10-MASTER~~ — NAPRAWIONY (App.tsx v1.5, 2026-06-26)
+tokenReady state blokuje MainLayout dopóki read_api_token nie ukończy.
+Wcześniej UI było aktywne przez chwilę z apiToken="" → 401.
 
 ### ~~BUG-NEW-3~~ — NAPRAWIONY (db_store.py v1.1 + pseudominizer_api.py, 2026-06-26) [CRIT-1]
 /archive/{pse}/blob zwraca 403 gdy guard_blocked=True. Nowa kolumna guard_blocked
@@ -265,9 +265,10 @@ Fix: usunięty z logu — zostaje tylko token_id.
 check_blacklist_context() niewywoływana — nazwa zmieniła się na check_and_block().
 Weryfikacja: sprawdzić czy check_and_block() jest wywoływana w pipeline.py.
 
-### OBS-ADRES-DOUBLE-TOKEN (NISKI — OTWARTY)
-Offset shift między fazami 1/2a/2b powoduje duplikat ADRES.
-Fix wymaga konsolidacji hitów ze wszystkich faz przed _apply_hits — refaktor.
+### ~~OBS-ADRES-DOUBLE-TOKEN~~ — NAPRAWIONY (address.py v1.7, 2026-06-26)
+Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
+jeden _apply_hits. Wcześniej offset shift między fazami powodował że
+is_occupied nie wykrywał pokryć → duplikat ADRES token.
 
 ## Uwagi praktyczne
 
