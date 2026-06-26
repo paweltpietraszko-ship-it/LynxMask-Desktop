@@ -410,6 +410,128 @@ bez wymagania kodu pocztowego — ta sama zasada działania.
 - Logi testów: `backend/pytest.log` (DEBUG, generowany automatycznie)
 - Dataset (50 doc): `backend/generator.py`
 
+## Wersje kluczowych plików (aktualne po 2026-06-26)
+
+- `layers/identity.py` v1.4
+- `layers/contact.py` v1.4 — BUG-EMAIL-GREEDY + OCR email + 3-2-2 telefon
+- `layers/legal.py` v1.1 — KRS + sygnatura ukośnikowa
+- `layers/credentials.py` v1.0 (NOWY) — prawa zawodu, licencje, legitymacje
+- `layers/trie_layer.py` v1.0 (NOWY) — słownik klienta L1 jako pierwsza warstwa
+- `credential_patterns.json` — 20 wzorców, edytowalny JSON
+- `pipeline_new.py` v0.9 — credentials po identity, trie jako L1
+- `ner_layer.py` v1.16 — _COURT_PREFIX_RE filtr sądów z miastem
+- `layers/ner_adapter.py` v1.6 — _ADDR_PREFIX_RE, _BARE_SUFFIX_RE, _FIRMA_CLEANUP_RE
+- `ner_blocklist.py` v1.3
+- `street_names.json` (NOWY) — 10959 ulic z odmianami Morfeusza
+
+---
+
+## Różnice funkcjonalne Mobile ↔ Desktop (stan 2026-06-26)
+
+Źródło: analiza porównawcza Pawła. Podstawa do planowania ujednolicenia.
+
+### 1. Obraz — największa różnica produktowa
+
+| Funkcja | Mobile | Desktop |
+|---|---|---|
+| Wejście obrazu | Share z galerii/apki → ShareTargetActivity | Drag PDF/obraz → OCR w backendzie |
+| Redakcja pikseli | ✅ ImageRedactionPipeline — blur twarzy, ręczne prostokąty, linie tekstu z PII | ❌ brak |
+| OCR na obrazie | ML Kit + silnik decyduje co zamazać na bitmapie | Tesseract → tekst → maskowanie w tekście, obraz oryginalny bez redakcji wizualnej |
+| Zapis w bibliotece | ✅ sesja typu obraz (saveRedactedImage, JPEG) | ❌ tylko tekst + mapa tokenów |
+| UI edycji | ✅ ImageRedactionScreen (podgląd, regiony, zapis) | ❌ |
+
+**Wniosek:** Mobile ma warstwę obrazu (P1 w MASTER Mobile). Desktop ma „czytanie obrazów" tylko jako OCR → pipeline tekstowy. Użytkownik na telefonie dostaje zamazany JPG, na Desktopie zanonimizowany tekst.
+
+### 2. Onboarding — jest na obu, ale nie wspólny
+
+| Element | Mobile (OnboardingScreen.kt) | Desktop (OnboardingScreen.tsx) |
+|---|---|---|
+| Długość | 1 ekran, 3 kroki + „Zacznij" | 5 kart + ustawienie hasła |
+| Treść | Udostępnij → Zamaskuj → Wyślij | Pseudonimizacja, wgrywanie, ręczne uzupełnianie, odmaskowanie, karta OCR |
+| Hasło | Osobno w LoginScreen | Wbudowane w onboarding (pierwsze uruchomienie) |
+
+MASTER Desktop: „adaptowany z Mobile, treść do zmiany później" — wspólny onboarding to cel, nie stan.
+Desktop bogatszy; Mobile nie ma kart OCR / odmaskowania / profilu biura.
+
+**Do ujednolicenia:** ta sama lista kart (min. OCR, ręczne maskowanie, odmaskowanie, lokalność danych) + ten sam język, nawet jeśli UI (Compose vs React) osobne.
+
+### 3. Przenoszenie pamięci / plików Mobile ↔ Desktop
+
+| Mechanizm | Mobile | Desktop | Wspólny? |
+|---|---|---|---|
+| Eksport słownika .lynxdict | ✅ Ustawienia → eksport/import JSON | ❌ brak UI | Tylko Mobile |
+| Profil biura (encje ręczne) | UserDictionary (słownik A) | POST /profile/add-entity → anon_profiles/ | Osobne magazyny, brak sync |
+| GuardAllowlist (słownik B) | ✅ „Nie maskuj" → trwały wpis | ❌ nie zaimplementowany | Tylko Mobile |
+
+MASTER (sekcja 4 obu projektów): sync .lynxdict planowany, trigger po 10 encjach — nie zrobiony end-to-end.
+
+**Sesje nie da się teraz przenosić** — różne formaty identyfikatorów:
+- Mobile: `SESJA_XXXXXX` (6 znaków, PseudonymEngine) / UUID w SQLCipher
+- Desktop: `PSE-1234-5678` (nagłówek API) / SQLite + .enc bloby (Tauri/Rust)
+
+Docelowy format z MASTER: `TYP_XXXXXX_NNN` — jeszcze nie wdrożony.
+
+### 4. Wejście dokumentu — różne „okna" na ten sam cel
+
+| Funkcja | Mobile | Desktop |
+|---|---|---|
+| Share z innej apki | ✅ ShareTargetActivity | ❌ |
+| Kafelek szybkiego schowka | ✅ ClipboardCheckActivity + tile | ❌ |
+| Wklej ze schowka | ✅ (przez share/tile) | ✅ kolumna tekstu |
+| PDF / DOCX natywnie | ❌ (obraz/tekst) | ✅ document_processor |
+| Eksport PDF zamaskowany | ❌ | ✅ /export-pdf |
+| Jakość OCR — hard reject | banner ostrzegawczy | HTTP 422 przy conf < 70% |
+
+### 5. Słowniki — wzorzec wspólny w MASTER, różny w kodzie
+
+MASTER definiuje dwa słowniki (Mobile = wzorzec):
+- **A — UserDictionary:** maskuj to zawsze
+- **B — GuardAllowlist:** Guard, nie alarmuj
+
+| Element | Mobile | Desktop |
+|---|---|---|
+| Słownik A + UI | ✅ | częściowo (profile/add-entity, bez pełnego ekranu zarządzania) |
+| Słownik B | ✅ | ❌ |
+| Eksport .lynxdict | ✅ | ❌ |
+| UX Guard YELLOW: „Maskuj" / „Nie maskuj" | ✅ PseudonymResultPanel | ❌ brak GuardAllowlist |
+| Silnik konsultuje słownik A | ✅ | ✅ trie_layer (gdy profil podpięty — BUG-PROFIL-PIPELINE) |
+
+### 6. Bezpieczeństwo i sesja — podobny cel, inna implementacja
+
+| Element | Mobile | Desktop |
+|---|---|---|
+| Szyfrowanie danych | SQLCipher + Keystore | AES-256-GCM, PBKDF2, Rust |
+| Timeout / wylogowanie | flagi w prefs | 10 min idle → kasowanie klucza |
+| Ekran „Zabezpieczenia" | w ustawieniach (fragment) | ✅ SecurityScreen (pełny opis) |
+| Audit log | SessionStore.recordAudit | pseudominizer_audit.jsonl |
+
+Funkcja podobna; format plików niekompatybilny.
+
+### 7. Rzeczy tylko Desktop / tylko Mobile (poza silnikiem)
+
+**Tylko Mobile:**
+- Redakcja obrazu (twarz, podpis, regiony)
+- Share Target + kafelek schowka
+- Sesje-obrazy w bibliotece
+- Eksport/import .lynxdict
+- GuardAllowlist w UI
+
+**Tylko Desktop:**
+- PDF/DOCX pipeline
+- Eksport PDF
+- Profil biura w plikach anon_profiles/
+- Benchmark + generator datasetów
+- Backend FastAPI (osobny proces)
+- SpaCy NER (backend)
+
+**Planowane oba, brak w kodzie:**
+- Express Mode (bez logowania, bez biblioteki)
+- Sync pełnej biblioteki Mobile ↔ Desktop
+- Taksonomia 9 typów tokenów
+- Format tokenu z sufiksem sesji: `TYP_XXXXXX_NNN`
+
+---
+
 ## Dokumentacja w repo
 
 - `backend/MASTER_LynxMask_Desktop.md` — główny dokument projektu
