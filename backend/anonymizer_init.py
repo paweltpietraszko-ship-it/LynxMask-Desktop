@@ -1,8 +1,12 @@
 """
-anonymizer_init.py  v1.8
+anonymizer_init.py  v1.9
 Inicjalizacja warstw opcjonalnych (postal, stdnum, phonenumbers),
 stałe tokenów, STRUCTURAL_PATTERNS.
 
+v1.9 — [BUG-PASSPORT-SPACE] Paszport: dodano opcjonalna spacje miedzy seria a numerem.
+       OcrNormalizer normalizuje "paszport: ZX 1234567" → "ZX1234567" tylko gdy
+       slowo "paszport" jest w kontekscie. Bez kontekstu spacja pozostaje i wzorzec
+       nie lapal. Nowy wzorzec: [A-Z]{2}[ \t]?\d{7} — lapie oba warianty.
 v1.8 — [FIX-ID-CARD-BOUNDARY] Wzorzec dowodu osobistego: \b[A-Z]{3} → (?<![A-Za-z])[A-Z]{3}
        i \b na końcu → (?!\d). \b nie działa gdy dowód stoi przy literze (\w+\w).
        Naprawia pominięcia JHS681545, YTZ143919, DBF379230, RWU996331 z benchmarku.
@@ -382,9 +386,10 @@ STRUCTURAL_PATTERNS = [
     (TOKEN_NUMER, re.compile(
         r"(?<!\d)\d{2}[.\-]\d{2}[.\-]\d{4}(?!\d)"
     )),
-    # Paszport polski — 2 litery + 7 cyfr (np. ZX1234567)
+    # Paszport polski — 2 litery + opcjonalna spacja + 7 cyfr (np. ZX1234567 lub ZX 1234567)
+    # [BUG-PASSPORT-SPACE] OCR bez kontekstu "paszport:" wstawia spacje — normalizer nie dziala.
     (TOKEN_NUMER, re.compile(
-        r"(?<![A-Z])\b[A-Z]{2}\d{7}\b"
+        r"(?<![A-Z])\b[A-Z]{2}[ \t]?\d{7}\b"
     )),
     # identyfikatory systemowe itp. False positives (EAN, CN) akceptowalne —
     # oryginał w sejfie, AI nie potrzebuje surowych kodów produktów.

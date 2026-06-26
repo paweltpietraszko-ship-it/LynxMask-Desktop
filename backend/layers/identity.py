@@ -1,5 +1,5 @@
 """
-layers/identity.py  v1.2
+layers/identity.py  v1.3
 Warstwa identity — PESEL, NIP, REGON, dowod osobisty, paszport.
 v1.2: [NUMER-RECALL-OCR] OCR-tolerancyjne wzorce PESEL/NIP/REGON.
   OCR czesto wstawia spacje w srodku liczb (85041 23 4567 zamiast 85041234567).
@@ -29,7 +29,7 @@ _IDENTITY_SOURCES: frozenset[str] = frozenset({
     r"\bPL\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b",          # NIP z PL
     r"(?<!\d)\d{9}(?!\d)",                                     # REGON 9
     r"(?<![A-Za-z])[A-Z]{3}\s?\d{6}(?!\d)",                   # Dowód osobisty
-    r"(?<![A-Z])\b[A-Z]{2}\d{7}\b",                           # Paszport
+    r"(?<![A-Z])\b[A-Z]{2}[ \t]?\d{7}\b",                     # Paszport (ze spacją OCR lub bez)
     r"\bur\.\s*\d{1,2}\.\d{1,2}\.\d{4}(?:\s+w\s+[A-ZŁŚŹĆŃ][\w\-]{1,30})?",  # ur. DD.MM.RRRR
 })
 

@@ -1,5 +1,11 @@
 """
-Triangulum — output_guard.py  v4.0
+Triangulum — output_guard.py  v4.1
+Zmiany v4.1:
+  [BUG-PASSPORT-SPACE] Dodano wzorzec DOWOD i PASZPORT do _LEAK_HIGH.
+          Guard w ogole nie mial tych wzorcow — niezamaskowany dowod osobisty
+          ani paszport nie byl wykrywany jako wyciek. Nowe wzorce zgodne z zasada
+          GUARD-BROAD: szersze niz pipeline ([ \t]? miedzy serie a numerem).
+
 Zmiany v4.0:
   [GUARD-BROAD] Guard nie moze powielac wzorcow pipeline — jesli pipeline cos pominie,
           identyczny wzorzec w Guardzie tez to pominie. Guard powinien patrzec szerzej:
@@ -127,6 +133,12 @@ _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     # Agnostyczny wobec formatu: lapie grupy po 4, po 3, po 2, bez spacji,
     # z tabulatorami — cokolwiek co "wyglada jak IBAN".
     ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]){11,33}\b")),
+    # [BUG-PASSPORT-SPACE] Dowod osobisty: 3 litery + 6 cyfr (np. AYC123456 lub AYC 123456).
+    # Guard-broad: opcjonalna spacja miedzy seria a numerem.
+    ("DOWOD",   re.compile(r"(?<![A-Za-z])[A-Z]{3}[ \t]?\d{6}(?!\d)")),
+    # [BUG-PASSPORT-SPACE] Paszport: 2 litery + 7 cyfr (np. ZX1234567 lub ZX 1234567).
+    # Guard-broad: opcjonalna spacja — OCR bez kontekstu "paszport:" jej nie usuwa.
+    ("PASZPORT", re.compile(r"(?<![A-Z])\b[A-Z]{2}[ \t]?\d{7}\b")),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
     # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
     # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.
