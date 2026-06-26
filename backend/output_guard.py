@@ -92,34 +92,38 @@ class GuardMode(Enum):
 # HIGH: jeden match → natychmiastowa blokada w REDACT (i STRICT)
 # Dane bezpośrednio identyfikujące — ich obecność w odpowiedzi to wyciek RODO
 _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
-    ("PESEL",   re.compile(r"\b\d{11}\b")),
+    ("PESEL",        re.compile(r"\b\d{11}\b")),
+    # [PORT-KT-v2.0] PESEL ze spacjami/myślnikami — OCR rozdziela cyfry spacjami.
+    # Wzorzec z OutputGuard.kt v2.0: "92 09 15 12416" → PESEL_SPACE.
+    ("PESEL_SPACE",  re.compile(r"\b(?:\d[ \-]?){10}\d\b")),
     # [BUG-NIP-LEAK] NIP może mieć dwa formaty separatora: 3-3-2-2 i 3-2-2-3.
-    # Poprzedni wzorzec łapał tylko 3-3-2-2. Dodano alternatywę dla 3-2-2-3.
-    ("NIP",     re.compile(r"\b(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3})\b")),
-    # [FIX-A4] IBAN generyczny — obsługuje PL i wszystkie europejskie (DE, AT, SK itd.)
-    # Format: [A-Z]{2} (kraj) + \d{2} (cyfry kontrolne) + 10-30 znaków (cyfry + litery + spacje)
-    # [FIX-IBAN-LEN] Wymóg min. 10 znaków po CC+DD — wyklucza NIP z prefiksem PL
-    # (PL6551979313: po "PL65" zostaje tylko 8 znaków < 10). Najkrótszy IBAN (NO) = 15 znaków.
-    # [BUG-IBAN-LETTERS] Poprzedni wzorzec [\s\d] nie obsługiwał IBAN z literami w BBAN
-    # (GB, IE, MT itd.) — np. GB29NWBK60161331926819.
+    ("NIP",          re.compile(r"\b(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3})\b")),
+    # [BUG-IBAN-LETTERS] Poprzedni wzorzec nie obsługiwał IBAN z literami w BBAN (GB/IE/MT).
     # Nowy wzorzec (z OutputGuard.kt l.59): grupy 4 znaków alfanumerycznych z opcjonalną spacją.
-    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b")),
+    ("IBAN",         re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b")),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
-    # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
-    # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.
-    ("EMAIL",   re.compile(r"\b[a-zA-Z0-9._%+\-]+@[a-zA-Z][a-zA-Z0-9\-]*(?:\.[a-zA-Z][a-zA-Z0-9\-]*)*\.[a-zA-Z]{2,}\b")),
+    ("EMAIL",        re.compile(r"\b[a-zA-Z0-9._%+\-]+@[a-zA-Z][a-zA-Z0-9\-]*(?:\.[a-zA-Z][a-zA-Z0-9\-]*)*\.[a-zA-Z]{2,}\b")),
+    # [PORT-KT-v2.0] Dowód osobisty — siatka bezpieczeństwa gdy pipeline pominie.
+    # Format: 3 litery + opcjonalna spacja + 6 cyfr. Brak (?i) — seria zawsze uppercase.
+    ("DOWOD",        re.compile(r"\b[A-Z]{3}\s?\d{6}\b")),
+    # [PORT-KT-v2.0] Telefon — szerszy niż poprzednio: kropka/0048/nawiasy jako separator.
+    # Port z OutputGuard.kt: TELEFON_PELNY RED.
+    # Dwie gałęzie: (a) kierunkowy 2-cyfrowy + 7 cyfr, (b) komórkowy 3+3+3.
+    ("TELEFON",      re.compile(
+        r"\b(?:(?:\+48|0048|48)[ \-.]?)?"
+        r"(?:\(?\d{2}\)?[ \-.]\d{3}[ \-.](?:\d{3}[ \-.]?\d{3}|\d{2}[ \-.]?\d{2})"
+        r"|\d{3}[ \-.]\d{3}[ \-.]\d{3})\b"
+    )),
 ]
 
 # MEDIUM: zamazywane, blokada przy sumie wag >= BLOCK_THRESHOLD
-# IMIE_NAZWISKO usuniete — zbyt szeroki wzorzec (fałszywe alarmy na "Rada Ministrów" itp.)
-# Ochrona przed wyciekiem nazwisk jest w guard_output_with_map (konkretne encje z mapy sesji)
+# REGON usunięty — silnik pipeline maskuje przed guardem (port z KT v2.1: REGON usunięty).
+# TELEFON przeniesiony do HIGH (port z KT v2.0: TELEFON_PELNY RED).
 _LEAK_MEDIUM: list[tuple[str, re.Pattern, int]] = [
-    ("REGON",   re.compile(r"\b\d{9}\b"),                                                        1),
-    # [FIX-A7] TELEFON: bez prefiksu +48 wymagany separator (spacja lub kreska).
-    # Poprzedni wzorzec z opcjonalnym separatorem łapał "123456789" (9 cyfr bez spacji)
-    # identycznie jak REGON → double counting, nieprzewidywalny próg BLOCK_THRESHOLD.
-    # Teraz: bez +48 → muszą być separatory. Z +48 → separatory opcjonalne.
-    ("TELEFON", re.compile(r"\b(?:\+?48[-\s]?\d{3}[-\s]?\d{3}[-\s]?\d{3}|\d{3}[-\s]\d{3}[-\s]\d{3})\b"), 1),
+    # Data urodzenia — YELLOW z kontekstem (port z OutputGuard.kt v2.1: URODZENIE).
+    ("URODZENIE", re.compile(
+        r"(?i)\bur(?:odzony|odzena|odzeni|\.)[\s]+\d{1,2}[.\-/]\d{1,2}[.\-/]\d{4}\b"
+    ), 1),
 ]
 
 _TOKEN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
