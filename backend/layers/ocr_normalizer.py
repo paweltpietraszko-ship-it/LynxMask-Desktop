@@ -1,9 +1,14 @@
 """
-layers/ocr_normalizer.py  v2.3
+layers/ocr_normalizer.py  v2.4
 Port z OcrNormalizer.kt v2.6 (LynxMask Mobile).
 
 Uruchamiany jako PIERWSZA warstwa pipeline — normalizuje tekst OCR zanim
 wzorce regex i SpaCy go zobaczą. Nie tworzy tokenów — tylko naprawia tekst.
+
+Zmiany v2.4:
+  - Krok 15b: io→ło w nazwiskach ("Jabioński"→"Jabłoński") — sprawdzane w słowniku
+  - Krok 16: OCR_CITY_MIDSPACE (port z OcrNormalizer.kt v1.3) — sklejanie nazw miast
+    ("Sos nowiec"→"Sosnowiec", "Kato wice"→"Katowice") — zamknięta lista ~25 miast
 
 Zmiany v2.3:
   - Krok 14b: email TLD OCR fix — "p1"→"pl", "c0m"→"com" (email regex wymaga liter w TLD)
@@ -318,6 +323,49 @@ _DIGIT_IN_WORD_RE = re.compile(
     r'(?<=[A-Za-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ])([10])(?=[A-Za-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ])'
 )
 
+# ── Krok 15b: io → ło w nazwiskach (OCR: ł+o → i+o) ────────────────────────
+# "Jabioński" → "Jabłoński" — sprawdzane w słowniku, zero false positives.
+
+_IO_AS_LO_RE = re.compile(
+    r'[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźżA-ZŁŚŹĆŃĄĘÓŻ]*io[a-ząćęłńóśźżA-ZŁŚŹĆŃĄĘÓŻ]+'
+)
+
+# ── Krok 16: OCR_CITY_MIDSPACE (port z OcrNormalizer.kt v1.3) ────────────────
+# Sklejanie nazw miast rozbitych przez OCR: "Sos nowiec" → "Sosnowiec"
+# Bezpieczne: sprawdzamy czy złączone słowo jest na zamkniętej liście miast.
+
+_KNOWN_CITY_FORMS: frozenset = frozenset({
+    "warszawa", "warszawy", "warszawie", "warszawę", "warszawą",
+    "kraków", "krakowa", "krakowie", "krakowem",
+    "gdańsk", "gdańska", "gdańsku", "gdańskiem",
+    "wrocław", "wrocławia", "wrocławiu", "wrocławiem",
+    "poznań", "poznania", "poznaniu", "poznaniem",
+    "łódź", "łodzi",
+    "katowice", "katowic", "katowicach", "katowicami",
+    "lublin", "lublina", "lublinie", "lublinem",
+    "białystok", "białegostoku", "białymstoku",
+    "rzeszów", "rzeszowa", "rzeszowie",
+    "szczecin", "szczecina", "szczecinie",
+    "bydgoszcz", "bydgoszczy",
+    "toruń", "torunia", "toruniu",
+    "kielce", "kielc", "kielcach",
+    "gliwice", "gliwic", "gliwicach",
+    "zabrze", "zabrza", "zabrzu",
+    "bytom", "bytomia", "bytomiu",
+    "olsztyn", "olsztyna", "olsztynie",
+    "opole", "opola", "opolu",
+    "gdynia", "gdyni", "gdynię",
+    "częstochowa", "częstochowy", "częstochowie",
+    "radom", "radomia", "radomiu",
+    "sosnowiec", "sosnowca", "sosnowcu",
+    "tychy", "tychów", "tychach",
+    "rybnik", "rybnika", "rybniku",
+})
+
+_CITY_MIDSPACE_RE = re.compile(
+    r'([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźżA-ZŁŚŹĆŃĄĘÓŻ]{2,10})[^\S\n]+([a-ząćęłńóśźż]{2,8})'
+)
+
 # ── Krok 15: De-leet ─────────────────────────────────────────────────────────
 
 _LEET_CANDIDATE_RE = re.compile(
@@ -492,6 +540,23 @@ def normalize_ocr(text: str) -> str:
     # Krok 15: de-leet (tylko gdy w słowniku)
     text = _de_leet(text)
 
+    # Krok 15b: io → ło w nazwiskach (OCR: ł+o odczytane jako i+o)
+    def _fix_io_as_lo(m: re.Match) -> str:
+        token = m.group()
+        candidate = token.replace('io', 'ło')
+        if candidate.lower() in _SURNAMES_FORMS or candidate.lower() in _NAMES_FORMS:
+            return candidate
+        return token
+    text = _IO_AS_LO_RE.sub(_fix_io_as_lo, text)
+
+    # Krok 16: OCR_CITY_MIDSPACE — sklejanie nazw miast rozbitych przez OCR
+    def _fix_city_midspace(m: re.Match) -> str:
+        candidate = m.group(1) + m.group(2)
+        if candidate.lower() in _KNOWN_CITY_FORMS:
+            return candidate
+        return m.group(0)
+    text = _CITY_MIDSPACE_RE.sub(_fix_city_midspace, text)
+
     return text
 
 
@@ -603,10 +668,29 @@ def test_ocr_normalizer() -> bool:
     r = normalize_ocr("a1. Niepodległości 95")
     check("a1. → al.", r.startswith("al."), r)
 
-    print("\n12. Brak false positive:")
+    print("\n12. io→ło w nazwiskach (OCR):")
+    r = normalize_ocr("Jabioński")
+    check("Jabioński → Jabłoński", "Jabłoński" in r, r)
+    r2 = normalize_ocr("Jabiońskiego podpis")
+    check("Jabiońskiego → Jabłońskiego", "Jabłońskiego" in r2, r2)
+    r3 = normalize_ocr("Biuro Radia")
+    check("Biuro/Radio bez zmian (FP check)", "Biuro" in r3 and "Radia" in r3, r3)
+
+    print("\n13. OCR_CITY_MIDSPACE:")
+    r = normalize_ocr("Sos nowiec")
+    check("Sos nowiec → Sosnowiec", "Sosnowiec" in r, r)
+    r2 = normalize_ocr("Kato wice, ul. Prosta 1")
+    check("Kato wice → Katowice", "Katowice" in r2, r2)
+    r3 = normalize_ocr("Zupełnie inny tekst")
+    check("Nieznane słowo nie sklejone (FP)", "Zupełnie inny tekst" in r3, r3)
+
+    print("\n14. Brak false positive:")
     original = "Jan Kowalski, ul. Prosta 1, NIP: 123-456-78-90"
     check("Poprawny tekst niezmieniony", normalize_ocr(original) == original,
           normalize_ocr(original))
+    original2 = "Biuro Maklerskie Santander, ul. Złota 59"
+    check("Biuro Maklerskie bez zmian", normalize_ocr(original2) == original2,
+          normalize_ocr(original2))
 
     print(f"\n{'=' * 42}")
     print(f"Wynik: {passed} PASS  {failed} FAIL")
