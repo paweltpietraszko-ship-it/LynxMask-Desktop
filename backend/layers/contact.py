@@ -1,6 +1,9 @@
 """
-layers/contact.py  v1.2
+layers/contact.py  v1.3
 Warstwa contact — email i telefon.
+v1.3: [BUG-EMAIL-GREEDY] _EMAIL_OCR_RE bez (?!\w) na końcu łapał zbyt dużo:
+  "firma.pl, paszport" → TLD separator pasował do ", " a "paszpo" do TLD (6 znaków).
+  Fix: dodano (?!\w) — TLD nie może być poprzedzone kolejną literą/cyfrą.
 v1.2: [NUMER-RECALL-EMAIL] OCR-tolerancyjne wykrywanie emaila:
   - spacja/newline wokol @ (OCR rozrywa wiersz w miejscu @)
   - © jako @ (OCR myli znak)
@@ -60,7 +63,7 @@ _EMAIL_OCR_RE = re.compile(
     r"[ \t\n]{0,2}"                 # OCR: spacja/newline po @
     r"[a-zA-Z0-9.\-]{2,}"          # domena
     r"[ \t]{0,1}[.,][ \t]{0,1}"    # TLD separator — kropka lub przecinek
-    r"[a-zA-Z]{2,6}",              # TLD
+    r"[a-zA-Z]{2,6}(?!\w)",        # TLD — nie może ciągnąć się dalej (BUG-EMAIL-GREEDY)
     re.IGNORECASE,
 )
 

@@ -1,6 +1,9 @@
 """
-layers/address.py  v1.8
+layers/address.py  v1.9
 Warstwa address — adresy z kodem pocztowym, kody pocztowe jako kotwice.
+v1.9: [BUG-ADDR-OCR-DIACRITICS] OCR często gubi diakrytyki w nazwach miast
+  ("Krakow" zamiast "Kraków"). _match_city teraz sprawdza też ASCII-folded formę
+  z _CITY_FORMS_ASCII. Wersja kanoniczna = oryginalna forma z SIMC.
 v1.7: [OBS-ADRES-DOUBLE-TOKEN] Wszystkie trzy fazy zbierają hity na tym samym
   tekście wejściowym, potem jeden wspólny _apply_hits. Wcześniej każda faza
   modyfikowała state.text niezależnie — po fazie 1 offsety w alokatorze
@@ -28,6 +31,7 @@ import os
 import pathlib
 import re
 import sys
+import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -38,11 +42,21 @@ from pipeline_core import PipelineState, TokenAllocator
 # Baza miast SIMC (GUS) — formy morfologiczne wygenerowane przez Morfeusz2.
 # ---------------------------------------------------------------------------
 _CITIES_PATH = pathlib.Path(__file__).parent.parent / 'cities_forms.json'
+def _ascii_fold(s: str) -> str:
+    return unicodedata.normalize('NFD', s).encode('ascii', 'ignore').decode('ascii')
+
+
 try:
     with open(_CITIES_PATH, encoding='utf-8') as _f:
-        _CITY_FORMS: frozenset[str] = frozenset(json.load(_f))
+        _raw_city_list: list[str] = json.load(_f)
+    _CITY_FORMS: frozenset[str] = frozenset(_raw_city_list)
+    # [BUG-ADDR-OCR-DIACRITICS] OCR gubi diakrytyki — mapujemy ascii → oryginalna forma SIMC
+    _CITY_FORMS_ASCII: dict[str, str] = {
+        _ascii_fold(f): f for f in _raw_city_list
+    }
 except FileNotFoundError:
     _CITY_FORMS = frozenset()
+    _CITY_FORMS_ASCII = {}
 
 # Jeden człon nazwy miejscowości (obsługuje łączniki: Bielsko-Biała, Zielona-Góra)
 _CITY_WORD_RE = re.compile(
@@ -72,9 +86,17 @@ def _match_city(text: str, pos: int) -> tuple[int, str] | None:
             two = word1 + ' ' + m2.group(0)
             if two in _CITY_FORMS:
                 return (m2.end(), two)
+            # [BUG-ADDR-OCR-DIACRITICS] OCR bez diakrytyków
+            two_ascii = _ascii_fold(two)
+            if two_ascii in _CITY_FORMS_ASCII:
+                return (m2.end(), _CITY_FORMS_ASCII[two_ascii])
     # Próbuj jedno słowo
     if word1 in _CITY_FORMS:
         return (pos2, word1)
+    # [BUG-ADDR-OCR-DIACRITICS] OCR bez diakrytyków
+    word1_ascii = _ascii_fold(word1)
+    if word1_ascii in _CITY_FORMS_ASCII:
+        return (pos2, _CITY_FORMS_ASCII[word1_ascii])
     return None
 
 

@@ -56,10 +56,12 @@ def run_smoke_test() -> tuple[bool, list[str]]:
 
     try:
         state = PipelineState(text=_SMOKE_TEXT, allocator=TokenAllocator())
-        apply_identity_layer(state)
-        apply_financial_layer(state)
-        apply_contact_layer(state)
-        apply_address_layer(state)
+        # reset_spans() przed każdą warstwą — tak samo jak _apply() w pipeline_new.py.
+        # Po modyfikacji tekstu stare spany mają błędne offsety i blokowałyby kolejną warstwę.
+        state.allocator.reset_spans(); apply_identity_layer(state)
+        state.allocator.reset_spans(); apply_financial_layer(state)
+        state.allocator.reset_spans(); apply_contact_layer(state)
+        state.allocator.reset_spans(); apply_address_layer(state)
         result = state.text
     except Exception as e:
         return False, [f"[SMOKE] Pipeline crash: {e}"]
