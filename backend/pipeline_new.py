@@ -1,5 +1,5 @@
 """
-pipeline_new.py  v0.6
+pipeline_new.py  v0.7
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
 Zmiany v0.6:
   - [WYS-1] run_pipeline_new() zwraca (text, reverse_map, force_block).
@@ -38,6 +38,7 @@ from layers.ocr_normalizer import apply_ocr_normalizer
 from layers.ner_adapter import apply_ner_layer, extract_ner_results
 from layers.fallback import apply_fallback_layer
 from layers.validation import apply_validation_layer
+from layers.trie_layer import apply_trie_layer
 
 if TYPE_CHECKING:
     from anonymizer import Anonymizer
@@ -69,6 +70,9 @@ def run_pipeline_new(
     try:
         state = PipelineState(text=text, allocator=TokenAllocator())
         _apply(state, apply_ocr_normalizer)
+        # [TRIE-L1] Słownik klienta jako pierwsza warstwa — priorytet nad regex/NER
+        if anonymizer is not None:
+            _apply(state, apply_trie_layer, anonymizer)
         _apply(state, apply_identity_layer)
         _apply(state, apply_financial_layer)
         _apply(state, apply_legal_layer)
