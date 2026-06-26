@@ -1,5 +1,5 @@
 """
-pipeline_new.py  v0.7
+pipeline_new.py  v0.8
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
 Zmiany v0.6:
   - [WYS-1] run_pipeline_new() zwraca (text, reverse_map, force_block).
@@ -39,6 +39,8 @@ from layers.ner_adapter import apply_ner_layer, extract_ner_results
 from layers.fallback import apply_fallback_layer
 from layers.validation import apply_validation_layer
 from layers.trie_layer import apply_trie_layer
+from layers.amount import apply_amount_layer
+from layers.verbal_amount_layer import apply_verbal_amount_layer
 
 if TYPE_CHECKING:
     from anonymizer import Anonymizer
@@ -78,6 +80,8 @@ def run_pipeline_new(
         _apply(state, apply_legal_layer)
         _apply(state, apply_numeric_layer)
         _apply(state, apply_contact_layer)
+        _apply(state, apply_amount_layer)
+        _apply(state, apply_verbal_amount_layer)
         # [BUG-INSTITUTION-ORDER] institution musi działać PO NER — skróty instytucji
         # (KNF, RPO itp.) są w blocklist NER żeby SpaCy ich nie tokenizował jako FIRMA.
         # Gdyby institution działał przed NER, skrót stałby się już INSTYTUCJA_NNN
