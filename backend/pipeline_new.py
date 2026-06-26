@@ -1,6 +1,11 @@
 """
-pipeline_new.py  v0.4
+pipeline_new.py  v0.5
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
+Zmiany v0.5:
+  - apply_ocr_normalizer jako pierwsza warstwa (krok 0) — OCR-błędy naprawiane
+    zanim wzorce regex i SpaCy zobaczą tekst. Bez tego I→1/O→0 itp. nie były
+    korygowane, IBAN/PESEL/NIP z błędami OCR trafiały do tekstu wyjściowego
+    niesprawdzone (PSE-2026-0824).
 Zmiany v0.4:
   - Pre-ekstrakcja NER przed apply_address_layer (extract_ner_results).
     SpaCy musi widzieć pełny adres żeby rozpoznać poprzedzające imię/nazwisko.

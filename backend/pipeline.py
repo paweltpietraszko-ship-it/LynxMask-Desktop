@@ -1,5 +1,10 @@
 ﻿r"""
-pipeline.py  v1.21
+pipeline.py  v1.22
+Historia zmian:
+  v1.22 — [FIX-GUARD-BYPASS] Wydzielono _apply_guard() — wspólna ścieżka guard dla obu pipelinów.
+           USE_NEW_PIPELINE=True powodował return przed wywołaniem guarda (linia ~475).
+           Guard nie działał dla nowego pipeline — wszystkie dokumenty PSE bez flagi guarda.
+           Dodano apply_ocr_normalizer w pipeline_new.py v0.5 jako krok 0.
 Orchestrator pseudonimizacji â€” wywoĹ‚uje warstwy w ustalonej kolejnoĹ›ci.
 Wydzielony z pseudominizer_api.py v1.18.
 
