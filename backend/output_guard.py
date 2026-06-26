@@ -1,5 +1,10 @@
 """
-Triangulum — output_guard.py  v4.1
+Triangulum — output_guard.py  v4.2
+Zmiany v4.2:
+  [WYS-3] check_blacklist_context błąd → violation GUARD_ERROR + blokada.
+  Poprzednio: except → logger.warning → pipeline kontynuował bez sprawdzenia
+  blacklisty → PII mogło przejść. Fix: błąd dodaje violation i blokuje (fail-closed).
+
 Zmiany v4.1:
   [BUG-PASSPORT-SPACE] Dodano wzorzec DOWOD i PASZPORT do _LEAK_HIGH.
           Guard w ogole nie mial tych wzorcow — niezamaskowany dowod osobisty
@@ -328,7 +333,9 @@ def guard_output_with_map(
             from anonymizer import check_blacklist_context
             violations = check_blacklist_context(text, anon_map, known_plain=known_plain)
         except Exception as e:
-            logger.warning(f"guard_with_map: check_blacklist_context błąd: {e}")
+            # [WYS-3] Błąd guard = blokada, nie ostrzeżenie. Fail-closed.
+            logger.error(f"guard_with_map: check_blacklist_context crash — blokowanie: {e}")
+            violations = [f"GUARD_ERROR: {e}"]
 
         # [FIX-RVM-1] Fallback: bezpośredni skan encji z anon_map.
         # Poprzednia wersja (v3.2) używała anon_map.reverse_map.values() —

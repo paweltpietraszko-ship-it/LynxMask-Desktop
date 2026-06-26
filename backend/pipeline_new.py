@@ -1,6 +1,11 @@
 """
-pipeline_new.py  v0.5
+pipeline_new.py  v0.6
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
+Zmiany v0.6:
+  - [WYS-1] run_pipeline_new() zwraca (text, reverse_map, force_block).
+    force_block=True gdy NER crashuje (state.ner_error) lub pipeline crash.
+    Caller (pseudominizer_api.py) musi sprawdzić tę flagę i zablokować odpowiedź.
+  - [WYS-2] try/except wokół całego pipeline — nieoczekiwany wyjątek → force_block.
 Zmiany v0.5:
   - apply_ocr_normalizer jako pierwsza warstwa (krok 0) — OCR-błędy naprawiane
     zanim wzorce regex i SpaCy zobaczą tekst. Bez tego I→1/O→0 itp. nie były
@@ -50,27 +55,46 @@ def run_pipeline_new(
     text: str,
     anon_map: dict,
     anonymizer: "Anonymizer | None" = None,
-) -> tuple[str, dict]:
-    state = PipelineState(text=text, allocator=TokenAllocator())
-    _apply(state, apply_ocr_normalizer)
-    _apply(state, apply_identity_layer)
-    _apply(state, apply_financial_layer)
-    _apply(state, apply_legal_layer)
-    _apply(state, apply_numeric_layer)
-    _apply(state, apply_contact_layer)
-    # [BUG-INSTITUTION-ORDER] institution musi działać PO NER — skróty instytucji
-    # (KNF, RPO itp.) są w blocklist NER żeby SpaCy ich nie tokenizował jako FIRMA.
-    # Gdyby institution działał przed NER, skrót stałby się już INSTYTUCJA_NNN
-    # i był pomijany przez _filter_institutions (TOKEN_RE match). Kolejność:
-    # NER → institution → fallback.
-    extract_ner_results(state, anon_map)
-    _apply(state, apply_address_layer)
-    _apply(state, apply_ner_layer, anon_map)
-    _apply(state, apply_institution_layer)
-    _apply(state, apply_fallback_layer)
-    if anonymizer is not None:
-        _apply(state, apply_validation_layer, anonymizer)
-    return state.text, state.allocator.reverse_map
+) -> tuple[str, dict, bool]:
+    """Zwraca (text, reverse_map, force_block).
+
+    [WYS-1/WYS-2] force_block=True gdy:
+    - NER crashuje (state.ner_error ustawione przez ner_adapter)
+    - Nieoczekiwany wyjątek z dowolnej warstwy
+    Caller musi sprawdzić force_block i zablokować odpowiedź (fail-closed).
+    """
+    import logging as _logging
+    _logger = _logging.getLogger("lynxmask.pipeline_new")
+
+    try:
+        state = PipelineState(text=text, allocator=TokenAllocator())
+        _apply(state, apply_ocr_normalizer)
+        _apply(state, apply_identity_layer)
+        _apply(state, apply_financial_layer)
+        _apply(state, apply_legal_layer)
+        _apply(state, apply_numeric_layer)
+        _apply(state, apply_contact_layer)
+        # [BUG-INSTITUTION-ORDER] institution musi działać PO NER — skróty instytucji
+        # (KNF, RPO itp.) są w blocklist NER żeby SpaCy ich nie tokenizował jako FIRMA.
+        # Gdyby institution działał przed NER, skrót stałby się już INSTYTUCJA_NNN
+        # i był pomijany przez _filter_institutions (TOKEN_RE match). Kolejność:
+        # NER → institution → fallback.
+        extract_ner_results(state, anon_map)
+        _apply(state, apply_address_layer)
+        _apply(state, apply_ner_layer, anon_map)
+        _apply(state, apply_institution_layer)
+        _apply(state, apply_fallback_layer)
+        if anonymizer is not None:
+            _apply(state, apply_validation_layer, anonymizer)
+
+        force_block = getattr(state, "ner_error", False)
+        if force_block:
+            _logger.error("[PIPELINE] NER crash — force_block=True")
+        return state.text, state.allocator.reverse_map, force_block
+
+    except Exception as e:
+        _logger.error(f"[PIPELINE] Nieoczekiwany crash — force_block=True: {e}")
+        return text, {}, True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

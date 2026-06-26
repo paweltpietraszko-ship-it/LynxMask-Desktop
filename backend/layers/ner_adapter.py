@@ -1,8 +1,11 @@
 """
-layers/ner_adapter.py  v1.2
+layers/ner_adapter.py  v1.3
 Adapter NER — wywołuje ner_layer.process_ner() i rejestruje tokeny w allocatorze.
 ner_layer.py nie jest modyfikowany.
 
+v1.3: [WYS-1] extract_ner_results() i apply_ner_layer() mają teraz try/except.
+  Błąd NER → state.ner_error = True. run_pipeline_new() sprawdza tę flagę
+  i zwraca force_block=True do callera zamiast cicho kontynuować bez NER.
 v1.2: Port z PseudonymEngine.kt / NameEngine.kt:
   - Pre-processing: naprawa emaili z błędami OCR (spacja wokół @, spacja po kropce
     przed @) — port z PseudonymEngine.kt pre-processing bloku
@@ -164,12 +167,21 @@ def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
     żeby SpaCy widział pełne adresy jako kontekst dla rozpoznania imion/nazwisk.
     apply_ner_layer() wykryje wypełnione state.ner_results i użyje ich zamiast
     ponownie wywoływać process_ner().
+
+    [WYS-1] Błąd NER ustawia state.ner_error = True — run_pipeline_new() blokuje
+    odpowiedź (force_block). Fail-closed: lepiej zablokować niż puścić bez NER.
     """
-    # Pre-processing OCR emaili przed NER (SpaCy lepiej widzi poprawne emaile)
-    state.text = _fix_ocr_email(state.text)
-    ner_reverse, ner_variants = process_ner(state.text, anon_map)
-    state.ner_results = ner_reverse
-    state.ner_variants = ner_variants
+    try:
+        state.text = _fix_ocr_email(state.text)
+        ner_reverse, ner_variants = process_ner(state.text, anon_map)
+        state.ner_results = ner_reverse
+        state.ner_variants = ner_variants
+    except Exception as e:
+        import logging as _logging
+        _logging.getLogger("lynxmask.ner_adapter").error(
+            f"[NER] extract_ner_results crash — blokowanie odpowiedzi: {e}"
+        )
+        state.ner_error = True
 
 
 def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
@@ -183,12 +195,24 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
     - Propagacja OSOBA (Warstwa 3c): formy fleksyjne wykrytych nazwisk
     - Inicjały: "K. Kowalski" → OSOBA (jeśli nazwisko w słowniku)
     """
-    if state.ner_results:
-        ner_reverse = state.ner_results
-    else:
-        state.text = _fix_ocr_email(state.text)
-        ner_reverse, ner_variants = process_ner(state.text, anon_map)
-        state.ner_variants = ner_variants
+    # [WYS-1] Jeśli extract_ner_results() już zgłosiło błąd — nie próbuj ponownie
+    if getattr(state, "ner_error", False):
+        return
+
+    try:
+        if state.ner_results:
+            ner_reverse = state.ner_results
+        else:
+            state.text = _fix_ocr_email(state.text)
+            ner_reverse, ner_variants = process_ner(state.text, anon_map)
+            state.ner_variants = ner_variants
+    except Exception as e:
+        import logging as _logging
+        _logging.getLogger("lynxmask.ner_adapter").error(
+            f"[NER] apply_ner_layer crash — blokowanie odpowiedzi: {e}"
+        )
+        state.ner_error = True
+        return
 
     for token_id, value in ner_reverse.items():
         # Odrzuć fragmenty email (OCR rozbija "user@firma.pl" na dwa tokeny,
