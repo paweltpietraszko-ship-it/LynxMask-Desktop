@@ -6,11 +6,23 @@ Warstwy przetwarzania: layers/identity.py, layers/...
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 
+def _strip_diacritics(s: str) -> str:
+    """NFD → usuń combining marks → ASCII-like. Ą→A, ę→e itd."""
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s)
+        if unicodedata.category(c) != "Mn"
+    )
+
+
 def _canonical(value: str) -> str:
-    return re.sub(r"[\s\-\.()\[\]]", "", value).lower()
+    # Usuń separatory, sprowadź do lowercase, usuń diakrytyki.
+    # Dzięki temu "Dąbrowska" i "Dabrowska" (OCR) dają ten sam klucz.
+    stripped = re.sub(r"[\s\-\.()\[\]]", "", value).lower()
+    return _strip_diacritics(stripped)
 
 
 class TokenAllocator:
