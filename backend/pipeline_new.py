@@ -1,5 +1,5 @@
 """
-pipeline_new.py  v0.8
+pipeline_new.py  v0.9
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
 Zmiany v0.6:
   - [WYS-1] run_pipeline_new() zwraca (text, reverse_map, force_block).
@@ -41,6 +41,7 @@ from layers.validation import apply_validation_layer
 from layers.trie_layer import apply_trie_layer
 from layers.amount import apply_amount_layer
 from layers.verbal_amount_layer import apply_verbal_amount_layer
+from layers.credentials import apply_credentials_layer
 
 if TYPE_CHECKING:
     from anonymizer import Anonymizer
@@ -76,6 +77,7 @@ def run_pipeline_new(
         if anonymizer is not None:
             _apply(state, apply_trie_layer, anonymizer)
         _apply(state, apply_identity_layer)
+        _apply(state, apply_credentials_layer)
         _apply(state, apply_financial_layer)
         _apply(state, apply_legal_layer)
         _apply(state, apply_numeric_layer)
