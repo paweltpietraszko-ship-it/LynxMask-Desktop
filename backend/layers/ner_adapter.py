@@ -1,5 +1,5 @@
 """
-layers/ner_adapter.py  v1.5
+layers/ner_adapter.py  v1.6
 Adapter NER — wywołuje ner_layer.process_ner() i rejestruje tokeny w allocatorze.
 ner_layer.py nie jest modyfikowany.
 
@@ -66,6 +66,23 @@ _INITIALS_RE = re.compile(
 
 # ── Token RE — żeby nie podmieniać już zamaskowanych fragmentów ──────────────
 _TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|EMAIL|KWOTA|ADRES)_\d{3}\b")
+
+# ── Filtry NER (port: FIX-NER-GLOBAL stary pipeline + Cursor review) ─────────
+# Odrzuć warianty będące prefiksem adresu ("os. Bolesława..." jako OSOBA)
+_ADDR_PREFIX_RE = re.compile(
+    r"^(?:ul\.|al\.|pl\.|os\.|sk\.|rondo\s|park\s)", re.IGNORECASE
+)
+# Odrzuć śmieciowe jednowyrazowe FIRMA (sama forma prawna bez nazwy)
+_BARE_SUFFIX_RE = re.compile(
+    r"^(?:sp\.?\s*z\.?\s*o\.?\s*o\.?|s\.a\.|sp\.?\s*k\.?|sp\.?\s*j\.?|"
+    r"spółka|spółki|spółce|spółkę|s\.?\s*c\.?)$",
+    re.IGNORECASE,
+)
+# Oczyść token z przyrostka prawnego: "FIRMA_001 S.A." → "FIRMA_001"
+_FIRMA_CLEANUP_RE = re.compile(
+    r"(FIRMA_\d{3})\s+(?:S\.A\.|Sp\.?\s*z\s*o\.o\.|Sp\.?\s*k\.|Sp\.?\s*j\.|S\.C\.)",
+    re.IGNORECASE,
+)
 
 # ── Polskie diakrytyki do strip (NFD) ────────────────────────────────────────
 def _strip_diacritics(s: str) -> str:
@@ -265,6 +282,10 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             continue
         if _TOKEN_RE.search(_var_text):
             continue
+        if _ADDR_PREFIX_RE.match(_var_text):
+            continue
+        if _tok_id.startswith("FIRMA") and _BARE_SUFFIX_RE.match(_var_text.strip()):
+            continue
         _stripped = re.sub(r"[,\.;:!?\s]+$", "", _var_text).rstrip()
         _target = _stripped if _stripped else _var_text
         if not _target:
@@ -272,6 +293,9 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = state.text.replace(_var_text, _tok_id)
         state.text = state.text.replace(_target, _tok_id)
+
+    # Oczyść "FIRMA_001 S.A." → "FIRMA_001" (forma prawna przyklejona do tokenu)
+    state.text = _FIRMA_CLEANUP_RE.sub(r"\1", state.text)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
