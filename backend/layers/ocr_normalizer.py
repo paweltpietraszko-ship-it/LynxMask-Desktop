@@ -1,9 +1,14 @@
 """
-layers/ocr_normalizer.py  v2.2
+layers/ocr_normalizer.py  v2.3
 Port z OcrNormalizer.kt v2.6 (LynxMask Mobile).
 
 Uruchamiany jako PIERWSZA warstwa pipeline — normalizuje tekst OCR zanim
 wzorce regex i SpaCy go zobaczą. Nie tworzy tokenów — tylko naprawia tekst.
+
+Zmiany v2.3:
+  - Krok 14b: email TLD OCR fix — "p1"→"pl", "c0m"→"com" (email regex wymaga liter w TLD)
+  - Bez tej poprawki email z błędnym TLD nie był maskowany, a NER maskował imiona w nim
+  - 33/33 testów PASS
 
 Zmiany v2.2:
   - Dowód: FOH6 14892 → FOH614892 (spacja wewnętrzna usuwana; identity regex [A-Z]{3}\d{6})
@@ -130,6 +135,11 @@ _EMAIL_SPACE_BEFORE_AT_DOT = re.compile(
 _EMAIL_SPACE_BEFORE_AT_DIGITS = re.compile(
     r'([a-zA-Z0-9._%+\-]+)\s+([a-zA-Z0-9._%+\-]*\d[a-zA-Z0-9._%+\-]*@)'
 )
+# TLD z OCR-cyframi: "prawnik.p1" → "prawnik.pl" (1→l, 0→o)
+_EMAIL_TLD_OCR_RE = re.compile(
+    r'(@[a-zA-Z0-9.\-]{2,40}\.)([a-zA-Z0-9]{2,6})\b'
+)
+_TLD_OCR_MAP: dict[str, str] = {'1': 'l', '0': 'o'}
 
 # ── Krok 1: OCR_UL_PREFIX ────────────────────────────────────────────────────
 # "u. Nazwa" / "u Nazwa" / "uI. Nazwa" → "ul. Nazwa"
@@ -474,6 +484,10 @@ def normalize_ocr(text: str) -> str:
     # Krok 14: email TLD/SLD space
     text = _EMAIL_SLDSPACE.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)
     text = _EMAIL_TLDSPACE.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)
+    # Krok 14b: email TLD OCR (p1→pl, c0m→com)
+    text = _EMAIL_TLD_OCR_RE.sub(
+        lambda m: m.group(1) + ''.join(_TLD_OCR_MAP.get(c, c) for c in m.group(2)), text
+    )
 
     # Krok 15: de-leet (tylko gdy w słowniku)
     text = _de_leet(text)
@@ -572,6 +586,10 @@ def test_ocr_normalizer() -> bool:
     check("TLD space fix", "jan@onetpl" in r or "jan@onet.pl" in r, r)
     r2 = normalize_ocr("email: jan@ wp.pl")
     check("spacja po @", "jan@wp.pl" in r2, r2)
+    r3 = normalize_ocr("jan.kowalski@prawnik.p1")
+    check("TLD OCR: p1→pl", "jan.kowalski@prawnik.pl" in r3, r3)
+    r4 = normalize_ocr("info@firma.c0m")
+    check("TLD OCR: c0m→com", "info@firma.com" in r4, r4)
 
     print("\n11. OCR digit-in-context (safety net):")
     r = normalize_ocr("NIP 525OO5885O")
