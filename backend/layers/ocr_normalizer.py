@@ -1,9 +1,15 @@
 """
-layers/ocr_normalizer.py  v2.1
+layers/ocr_normalizer.py  v2.2
 Port z OcrNormalizer.kt v2.6 (LynxMask Mobile).
 
 Uruchamiany jako PIERWSZA warstwa pipeline — normalizuje tekst OCR zanim
 wzorce regex i SpaCy go zobaczą. Nie tworzy tokenów — tylko naprawia tekst.
+
+Zmiany v2.2:
+  - Dowód: FOH6 14892 → FOH614892 (spacja wewnętrzna usuwana; identity regex [A-Z]{3}\d{6})
+  - Paszport: AB 1234567 → AB1234567 (jw.; identity regex [A-Z]{2}\d{7})
+  - Oba dokumenty teraz poprawnie maskowane przez identity layer
+  - 31/31 testów PASS
 
 Zmiany v2.1:
   - J→0 w OCR_TO_DIGIT (IBAN: "000J" → "0000")
@@ -398,25 +404,26 @@ def normalize_ocr(text: str) -> str:
     text = _NIP_BARE3322_RE.sub(_nip_fix_bare, text)
     text = _NIP_BARE3223_RE.sub(_nip_fix_bare, text)
 
-    # Krok 5: Dowód osobisty
+    # Krok 5: Dowód osobisty — normalizuj do ABC123456 (bez spacji wewnętrznej)
     def _fix_dowod_full(m: re.Match) -> str:
         series_raw = m.group(1)
         num_raw = m.group(2)
         series_fixed = ''.join(_SERIES_MAP.get(c, c) for c in series_raw)
-        num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) if not c.isspace() else c for c in num_raw)
+        # Spację wewnętrzną usuwamy — identity regex wymaga 6 cyfr bez spacji
+        num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num_raw if not c.isspace())
         prefix_len = m.start(1) - m.start()
         prefix = m.group(0)[:prefix_len]
         return prefix + series_fixed + num_fixed
     text = _DOWOD_DIGITS_RE.sub(_fix_dowod_full, text)
 
-    # Krok 6: Paszport
+    # Krok 6: Paszport — normalizuj do AB1234567 (bez spacji; identity regex [A-Z]{2}\d{7})
     def _fix_paszport(m: re.Match) -> str:
         series = m.group(1)  # 2 litery serii — nie naprawiamy
         num_raw = m.group(2)
         num_fixed = _fix_seg(num_raw)
         prefix_len = m.start(1) - m.start()
         prefix = m.group(0)[:prefix_len]
-        return prefix + series + ' ' + num_fixed
+        return prefix + series + num_fixed
     text = _PASZPORT_DIGITS_RE.sub(_fix_paszport, text)
 
     # Krok 7: REGON
@@ -532,11 +539,15 @@ def test_ocr_normalizer() -> bool:
 
     print("\n5. Dowód osobisty:")
     r = normalize_ocr("Nr dowodu: FOH6 I4892")
-    check("I→1 w numerze dowodu", "FOH614892" in r or "FOH6 14892" in r, r)
+    check("FOH6 I4892 → FOH614892 (spacja usunięta, I→1)", "FOH614892" in r, r)
+    r2 = normalize_ocr("DOWÓD OSOBISTY: FOH6 14892")
+    check("FOH6 14892 → FOH614892 (normalizacja formatu)", "FOH614892" in r2, r2)
 
     print("\n6. Paszport:")
     r = normalize_ocr("paszport: AB I234567")
-    check("I→1 w numerze paszportu", "AB 1234567" in r, r)
+    check("AB I234567 → AB1234567 (I→1, bez spacji)", "AB1234567" in r, r)
+    r2 = normalize_ocr("Paszport: AB 1234567")
+    check("AB 1234567 → AB1234567 (spacja usunięta)", "AB1234567" in r2, r2)
 
     print("\n7. REGON:")
     r = normalize_ocr("REGON: OI2345678")
