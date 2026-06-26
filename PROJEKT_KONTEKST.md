@@ -67,8 +67,10 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `anonymizer_init.py` v1.9 — paszport ze spacją OCR ([A-Z]{2}[ \t]?\d{7})
 - `layers/identity.py` v1.4 — paszport ze spacją OCR, BUG-UR-DOB (data urodzenia)
 - `layers/financial.py` v1.1 — zagraniczne IBAN (DE, UA, GB, FR, NL) w pipeline
-- `layers/contact.py` v1.2 — OCR-tolerancyjny email
+- `layers/contact.py` v1.3 — BUG-EMAIL-GREEDY fix + OCR-tolerancyjny email
+- `layers/address.py` v1.9 — BUG-ADDR-OCR-DIACRITICS fix + SIMC ASCII-folded
 - `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
+- `smoke_test.py` v1.0 — smoke test blokujący start przy wycieku PII (reset_spans fix)
 
 ## Otwarte bugi — do naprawienia (priorytet malejący)
 
@@ -319,6 +321,31 @@ Fix pipeline: `_IBAN_FOREIGN_RE` — dwa warianty: ze spacjami (grupy po 4) i co
 (ciągły). Stosowany po wzorcach PL. Guard FP-filtr: min 15 znaków (najkrótszy IBAN = NO).
 Fix Guard: zaktualizowano `_LEAK_HIGH` IBAN pattern — stary wzorzec `\s?` nie łapał
 compact IBANs. Nowy: dwa alternatywy (spaced + compact), pokrywa wszystkie kraje.
+
+### ~~BUG-EMAIL-GREEDY~~ — NAPRAWIONY (contact.py v1.3, 2026-06-26)
+`_EMAIL_OCR_RE` bez `(?!\w)` na końcu łapał zbyt dużo: po emailu `firma.pl,`
+separator `, ` pasował do `[ \t]{0,1}[.,][ \t]{0,1}`, a `paszpo` (6 znaków)
+pasowało do `[a-zA-Z]{2,6}` jako rzekomy TLD → `jan.kowalski@firma.pl, paszpo`
+zamiast `jan.kowalski@firma.pl`. Email zostawał niezamaskowany.
+Fix: dodano `(?!\w)` — TLD nie może być poprzedzone kolejną literą/cyfrą.
+Regex cofa się i dopasowuje właściwy TLD (`pl` po `.` z poprzednim backtracking).
+
+### ~~BUG-ADDR-OCR-DIACRITICS~~ — NAPRAWIONY (address.py v1.9, 2026-06-26)
+OCR często gubi diakrytyki w nazwach miast: `Krakow` zamiast `Kraków`,
+`Gdansk` zamiast `Gdańsk`. Baza SIMC zawiera tylko formy z polskimi znakami
+→ `_match_city("Krakow")` zwracało `None` → adres z kodem pocztowym nie był maskowany.
+Fix: zbudowano `_CITY_FORMS_ASCII` (słownik ascii-fold → oryginalna forma SIMC).
+`_match_city` sprawdza najpierw dokładne dopasowanie, potem ASCII-folded.
+Wartość w tokenie = oryginalna forma SIMC (np. `Kraków`).
+
+### ~~SMOKE-RESET-SPANS~~ — NAPRAWIONY (smoke_test.py, 2026-06-26)
+Smoke test wywołał warstwy bez `reset_spans()` między nimi. Allocator
+przechowywał spany z `identity_layer` (pozycje w oryginalnym tekście).
+Po zamianie tokenów pozycje się przesuwają — spany identity trafiały
+na offsety emaila i adresu w zmodyfikowanym tekście → `is_occupied()` zwracało True
+→ contact i address layer nie maskowały PII. Email i adres wyciekały.
+Fix: `reset_spans()` przed każdą warstwą — identycznie jak `_apply()` w pipeline_new.py.
+Smoke test teraz przechodzi: wszystkie 7 kategorii PII zamaskowane.
 
 ### ~~BUG-ADDR-STREET-LOST~~ — NAPRAWIONY (address.py v1.8, 2026-06-26)
 Gdy adres zawierał kod pocztowy (np. "ul. Kwiatowa 12/3, 30-001 Kraków"),
