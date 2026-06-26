@@ -248,6 +248,19 @@ Fix: ALTER TABLE documents RENAME TO documents_backup_filename.
 ### ~~HIGH-5~~ — NAPRAWIONY razem z CRIT-2 (audit_log.py v1.2)
 AUDIT_MODE = True domyślnie = zbędne logowanie w trybie produkcyjnym.
 
+### ~~MED-1~~ — NAPRAWIONY (pipeline.py v1.23, 2026-06-26)
+Guard wywoływany z niekompletną mapą gdy anonymizer się wysypał.
+Fix: błąd anonymizera → force_block=True do _apply_guard(). Wyjątek samego
+guarda też teraz blokuje zamiast cicho przepuszczać.
+
+### ~~MED-2~~ — NAPRAWIONY (audit_log.py v1.3, 2026-06-26)
+Audit log rósł bez limitu (open "a" bez rotacji).
+Fix: RotatingFileHandler, max 2 MB, 3 backupy (.jsonl.1/2/3).
+
+### ~~MED-4~~ — NAPRAWIONY (pseudominizer_api.py v1.31, 2026-06-26)
+Logger w /profile/add-entity ujawniał token_type ("OSOBA", "FIRMA").
+Fix: usunięty z logu — zostaje tylko token_id.
+
 ### BUG-7 (NISKI — PRAWDOPODOBNIE NAPRAWIONY)
 check_blacklist_context() niewywoływana — nazwa zmieniła się na check_and_block().
 Weryfikacja: sprawdzić czy check_and_block() jest wywoływana w pipeline.py.
