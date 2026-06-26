@@ -1,12 +1,5 @@
 ﻿r"""
 pipeline.py  v1.23
-Historia zmian:
-  v1.23 — [MED-1] _apply_guard(): wyjątek guarda → guard_blocked=True (zamiast cicho przepuszczać).
-           Stary pipeline: błąd anonymizera → force_block=True do _apply_guard().
-  v1.22 — [FIX-GUARD-BYPASS] Wydzielono _apply_guard() — wspólna ścieżka guard dla obu pipelinów.
-           USE_NEW_PIPELINE=True powodował return przed wywołaniem guarda (linia ~475).
-           Guard nie działał dla nowego pipeline — wszystkie dokumenty PSE bez flagi guarda.
-           Dodano apply_ocr_normalizer w pipeline_new.py v0.5 jako krok 0.
 Orchestrator pseudonimizacji â€” wywoĹ‚uje warstwy w ustalonej kolejnoĹ›ci.
 Wydzielony z pseudominizer_api.py v1.18.
 
@@ -312,13 +305,10 @@ def _apply_guard(
     state: AppState,
     force_block: bool = False,
 ) -> PipelineResult:
-    “””Uruchamia output_guard na gotowym tekście. Wspólna ścieżka dla obu pipelinów.
-
-    force_block=True: blokada prewencyjna gdy wcześniejszy etap (np. anonymizer)
-      zgłosił błąd — guard dostałby niekompletną mapę (MED-1).
-    “””
+    # Wspolna sciezka output_guard dla obu pipelinow.
+    # force_block=True: blokada prewencyjna gdy wczesniejszy etap zglosil blad (MED-1).
     guard_blocked = force_block
-    guard_reasons: list = [“[FORCE_BLOCK] Błąd wcześniejszego etapu”] if force_block else []
+    guard_reasons: list = ["[FORCE_BLOCK] Blad wczesniejszego etapu"] if force_block else []
 
     if _GUARD_AVAILABLE and not force_block:
         try:
@@ -328,24 +318,21 @@ def _apply_guard(
                 mode=GuardMode.REDACT,
                 known_plain=[
                     v for v in reverse_map.values()
-                    if len(re.sub(r'[\s\”\'””„]+', '', v)) >= 5
+                    if len(re.sub(r'[\s\"\'“”„‟]+', '', v)) >= 5
                 ],
             )
             guard_blocked = guard_result.blocked
             guard_reasons = guard_result.reasons
             if guard_blocked:
-                logger.error(
-                    “[PIPELINE] Guard zablokował eksport — PII w tekście: %s”,
-                    guard_reasons,
-                )
+                logger.error("[PIPELINE] Guard zablokował eksport: %s", guard_reasons)
             elif guard_result.redacted:
-                logger.warning(“[PIPELINE] Guard zamazał fragmenty: %s”, guard_reasons)
+                logger.warning("[PIPELINE] Guard zamazał fragmenty: %s", guard_reasons)
                 text = guard_result.redacted_text
         except Exception as e:
-            # [MED-1] Wyjątek guarda → blokada prewencyjna zamiast przepuszczenia.
+            # [MED-1] Wyjatek guarda -> blokada prewencyjna zamiast przepuszczenia.
             guard_blocked = True
-            guard_reasons = [f”[GUARD_EXCEPTION] {e}”]
-            logger.error(“[PIPELINE] output_guard wyjątek — BLOKADA prewencyjna: %s”, e)
+            guard_reasons = [f"[GUARD_EXCEPTION] {e}"]
+            logger.error("[PIPELINE] output_guard wyjatek -- BLOKADA prewencyjna: %s", e)
 
     return PipelineResult(
         text=text,
@@ -457,6 +444,9 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
     _anonymizer_failed = False
     if state.anonymizer:
         try:
+            # [BUG-PIPELINE-GUARD] Zbierz tokeny wstawione przez warstwy 1-4
+            # i przekaĹĽ do anonymize() jako known_tokens â€” guard injection
+            # nie rzuca na wĹ‚asne tokeny pipeline'u.
             pipeline_tokens = frozenset(
                 m.group(0) for m in _TOKEN_RE.finditer(text)
             )
@@ -468,13 +458,13 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
             )
             reverse_map.update(anon_reverse)
             text = anon_text
-            logger.debug(“[PIPELINE] anonymizer: %d tokenĂłw Ĺ‚Ä…cznie”, len(reverse_map))
+            logger.debug("[PIPELINE] anonymizer: %d tokenĂłw Ĺ‚Ä…cznie", len(reverse_map))
         except Exception as e:
-            # [MED-1] Błąd anonymizera → guard dostałby niekompletną mapę → force_block.
+            # [MED-1] Blad anonymizera -> guard dostalby niepelna mape -> force_block.
             _anonymizer_failed = True
-            logger.error(“[PIPELINE] anonymizer bĹ‚Ä…d: %s â€” BLOKADA guard prewencyjna”, e)
+            logger.error("[PIPELINE] anonymizer blad: %s -- BLOKADA guard prewencyjna", e)
     else:
-        logger.warning(“[PIPELINE] anonymizer niedostÄ™pny â€” pomijam warstwy regex”)
+        logger.warning("[PIPELINE] anonymizer niedostÄ™pny â€” pomijam warstwy regex")
 
     # â”€â”€ Warstwa 6: FIX-NER-GLOBAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
