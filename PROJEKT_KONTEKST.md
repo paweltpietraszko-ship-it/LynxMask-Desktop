@@ -187,6 +187,53 @@ Regex `_SUFFIX_COMPLETION_RE` + `_TRUNC_ENDINGS` w ner_layer.py ~linia 145.
 publicznej (ZUS, NFZ, KRUS, PIP itp.) — regex `_INSTITUTION_IN_FIRMA_RE`.
 Plik: `backend/ner_layer.py` ~linia 139.
 
+---
+
+## Bugi z MASTER_LynxMask_Desktop.md (2026-06-26)
+
+### ~~BUG-3~~ — NAPRAWIONY (pseudominizer_api.py [AUD-01])
+Token injection: odrzut 422 gdy tekst wejściowy zawiera TOKEN_RE (FIRMA_001 itp.).
+
+### ~~BUG-9~~ — NAPRAWIONY częściowo przez [AUD-01]
+Pipeline pomijał regex przy mieszanych dokumentach. AUD-01 odrzuca takie dokumenty
+przed pipeline. Pełny fix wymaga TokenAllocator.reset_spans() — niższy priorytet.
+
+### ~~BUG-2~~ — NAPRAWIONY (ner_layer.py v1.13, 2026-06-26)
+Firma w cudzysłowie rozbijana — "Wiśniewski i Wspólnicy" → OSOBA_001.
+Naprawa: encja SpaCy otoczona cudzysłowem w oryginalnym tekście wymusza FIRMA.
+
+### ~~BUG-NEW-4~~ — NAPRAWIONY (pseudominizer_api.py, 2026-06-26)
+Profil biura akceptował słowa pospolite. Dodana walidacja: _NER_BLOCKLIST +
+_PL_STOPWORDS + min. 3 znaki przed zapisem w /profile/add-entity.
+
+### ~~NUMER-RECALL (telefon)~~ — NAPRAWIONY częściowo (contact.py v1.1, 2026-06-26)
+TELEFON 0% — 9-cyfrowy numer bez separatorów był pochłaniany przez identity jako REGON.
+_PHONE_CONTEXT_RE: tel./kom./mob./fax + numer → TOKEN_NUMER, rejestrowany przed identity.
+Pozostałe przyczyny FP (EMAIL 20%, NUMER 3.8%) — otwarte, wymagają analizy wzorców.
+
+### BUG-NER-FP-GRANICE (WYSOKI — OTWARTY)
+52 FP, 0 TP dla ORGANIZACJA. SpaCy zbyt agresywnie klasyfikuje ORG.
+Główne źródła: nagłówki WIELKIMI, akronimy ERP/CRM, przymiotniki jako FIRMA.
+Blocklist to reaktywna łatka — systemowy fix wymaga zmiany zasady klasyfikacji.
+Propozycja: _ADJECTIVE_ENDINGS_RE dla FIRMA (jak dla OSOBA) + confidence threshold.
+
+### BUG-10-MASTER (WYSOKI — OTWARTY)
+"Dodaj i zakryj" zwraca 401 — App.tsx ładuje apiToken async, UI aktywne przed załadowaniem.
+Fix: App.tsx — blokować ekran Pseudonimizuj dopóki apiToken === "" po odblokowaniu.
+Plik: `frontend/src/App.tsx` linia 26, 54.
+
+### BUG-NEW-3 (ŚREDNI — OTWARTY)
+/archive nie sprawdza guard_blocked — zarchiwizować można sesję z niezamaskowanym PII.
+Fix wymaga persystencji flagi guard_blocked per PSE w SQLite. Złożony.
+
+### BUG-7 (NISKI — PRAWDOPODOBNIE NAPRAWIONY)
+check_blacklist_context() niewywoływana — nazwa zmieniła się na check_and_block().
+Weryfikacja: sprawdzić czy check_and_block() jest wywoływana w pipeline.py.
+
+### OBS-ADRES-DOUBLE-TOKEN (NISKI — OTWARTY)
+Offset shift między fazami 1/2a/2b powoduje duplikat ADRES.
+Fix wymaga konsolidacji hitów ze wszystkich faz przed _apply_hits — refaktor.
+
 ## Uwagi praktyczne
 
 - `backend/api_token.txt` — generowany przy starcie `pseudominizer_api.py` przez `_lifespan()`, nie w repo
