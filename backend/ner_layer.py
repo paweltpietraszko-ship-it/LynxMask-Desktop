@@ -1,9 +1,16 @@
 """
-ner_layer.py  v1.11
+ner_layer.py  v1.12
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.12 — [BUG-FIRMA-ZUS-MIX] _filter_institutions: encja FIRMA zawierająca
+           fragment instytucji publicznej (ZUS, NFZ itp.) jest pomijana.
+           Regex _INSTITUTION_IN_FIRMA_RE sprawdza całą treść encji.
+           [BUG-OCR-DEDUP] Przed _person_stem w _process_ner aplikujemy
+           normalize_ocr(entity_text) — "P4nina" i "Paulina" dają ten sam
+           stem i trafiają do tego samego tokenu OSOBA. entity_text (wartość
+           tokenu) pozostaje niezmieniona.
   v1.11 — [BUG-FIRMA-TRUNC] SpaCy zatrzymuje granicę encji przed sufiksem
            prawnym w cudzysłowie, np. "ALTEX" Sp → "ALTEX" Sp. z o.o.
            Naprawa: po zebraniu entity_text sprawdzamy czy kończy się na
@@ -137,6 +144,14 @@ _INTERNAL_ORG_RE = re.compile(
     re.IGNORECASE,
 )
 
+# [BUG-FIRMA-ZUS-MIX] Encja FIRMA zawierająca fragment instytucji publicznej
+# (np. "Sp. z o.o. ZUS-Warszawa") — pomiń, to nie jest prywatna firma.
+# Ryzyko FP ("ZUS-IT Sp. z o.o.") minimalne — takich firm w Polsce nie ma.
+_INSTITUTION_IN_FIRMA_RE = re.compile(
+    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK)\b',
+    re.IGNORECASE,
+)
+
 # [BUG-FIRMA-TRUNC] SpaCy obcina encję przed sufiksem prawnym.
 # Wzorzec dopasowuje dopełnienie sufiksu zaraz za końcem encji w tekście.
 # np. entity="ALTEX Sp", text[ner.end:]=" z o.o." → extend.
@@ -175,6 +190,10 @@ def _filter_institutions(ner_results: list) -> list:
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
             logger.debug("[FILTER] pominięto dział wewnętrzny: '%s'", entity_text[:40])
+            continue
+        # [BUG-FIRMA-ZUS-MIX] Pomiń encję FIRMA zawierającą fragment instytucji publicznej
+        if ner.label == "FIRMA" and _INSTITUTION_IN_FIRMA_RE.search(entity_text):
+            logger.debug("[FILTER] pominięto FIRMA z instytucją: '%s'", entity_text[:60])
             continue
         # [BUG-NER-FP] Pomiń encje OSOBA kończące się na polskie końcówki przymiotnikowe.
         # FIRMA może mieć przymiotnik w nazwie legalnie ("Firma Handlowa X") — bez filtra.
@@ -317,8 +336,16 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         # więc stem_to_token jej nie deduplikuje. Sprawdź _person_stem który
         # jest invariantny na odmiany: ('jan', '', 'kowa') dla obu form.
         # Stosowane tylko dla OSOBA wieloczłonowej — jednoczłonowe obsługuje BUG-5.
+        # [BUG-OCR-DEDUP] Przed _person_stem normalizuj OCR-leet żeby "P4nina"
+        # dało ten sam stem co "Paulina". Normalizacja tylko do celów kluczowania —
+        # entity_text (wartość tokenu) pozostaje oryginalna (lub już znorm. przez pipeline).
         if typ == "OSOBA" and " " in entity_text:
-            pstem = _person_stem(entity_text)
+            try:
+                from layers.ocr_normalizer import normalize_ocr as _norm_ocr
+                _entity_for_stem = _norm_ocr(entity_text)
+            except Exception:
+                _entity_for_stem = entity_text
+            pstem = _person_stem(_entity_for_stem)
             if pstem is not None and pstem in person_stem_to_token:
                 existing_token = person_stem_to_token[pstem]
                 all_variants[entity_text] = existing_token

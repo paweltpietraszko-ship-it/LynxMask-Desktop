@@ -1,6 +1,10 @@
 """
-layers/address.py  v1.5
+layers/address.py  v1.6
 Warstwa address — adresy z kodem pocztowym, kody pocztowe jako kotwice.
+v1.6: [BUG-ADDR-FP] Faza 2a — gdy brak kodu pocztowego w dopasowaniu,
+  wymagamy że przynajmniej jedno słowo z dopasowania pasuje do bazy SIMC.
+  Wcześniej wzorce bez kodu pocztowego były akceptowane bez walidacji miasta
+  co powodowało FP (precision 68.3%). Faza 1 i 2b bez zmian.
 v1.5: _CITY_FORMS (frozenset z cities_forms.json — baza SIMC GUS, 179k form)
   + _match_city(text, pos) zastępuje wzorzec regex dla nazwy miasta.
   Miasto musi być w bazie SIMC — redukuje FP z ogólnego wzorca [A-Z][a-z]+.
@@ -157,6 +161,8 @@ def apply_address_layer(state: PipelineState) -> None:
 
     # Faza 2a — pełne wzorce strukturalne (OCR-linebreak, ulica bez prefiksu).
     # Po znalezieniu kodu pocztowego w dopasowaniu: _match_city waliduje miasto.
+    # Gdy brak kodu pocztowego: wymagamy że ostatnie słowo/słowa dopasowania
+    # są rozpoznaną miejscowością w SIMC — inaczej pomiń (redukcja FP).
     full_hits: list[tuple[int, int, str, str]] = []
     for tok, pat in _ADDR_STRUCTURAL_FULL:
         for m in pat.finditer(state.text):
@@ -169,6 +175,19 @@ def apply_address_layer(state: PipelineState) -> None:
                     end = city_r[0]
                 else:
                     end = after_postal
+            else:
+                # [BUG-ADDR-FP] Brak kodu pocztowego — wymagaj SIMC na końcu dopasowania.
+                match_text = m.group(0)
+                # Szukaj miasta od ostatniego dużego słowa w dopasowaniu
+                city_search_pos = start
+                last_city: tuple[int, str] | None = None
+                for cm in _CITY_WORD_RE.finditer(match_text):
+                    candidate_pos = start + cm.start()
+                    cr = _match_city(state.text, candidate_pos)
+                    if cr and cr[0] <= end + 5:
+                        last_city = cr
+                if last_city is None:
+                    continue  # pomiń — brak potwierdzonej miejscowości
             full_hits.append((start, end, state.text[start:end], tok))
     state.text = _apply_hits(state.text, full_hits, state.allocator)
 
