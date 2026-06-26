@@ -1,6 +1,11 @@
 """
-layers/identity.py  v1.3
+layers/identity.py  v1.4
 Warstwa identity — PESEL, NIP, REGON, dowod osobisty, paszport.
+v1.4: [BUG-UR-DOB] Wzorzec ur. DD.MM.RRRR nie trafiał do _IDENTITY_PATTERNS.
+  _IDENTITY_SOURCES miał literalne ZŁŚŹĆŃ, anonymizer_init.py ma ŁŚ...
+  — inne bajty, pat.pattern in frozenset zwracał False.
+  Fix: zmieniono klucz w _IDENTITY_SOURCES na zapis \\u zgodny z anonymizer_init.py.
+v1.3: [BUG-PASSPORT-SPACE] Paszport ze spacją OCR: [A-Z]{2}[ \t]?\d{7}.
 v1.2: [NUMER-RECALL-OCR] OCR-tolerancyjne wzorce PESEL/NIP/REGON.
   OCR czesto wstawia spacje w srodku liczb (85041 23 4567 zamiast 85041234567).
   _DIGITS_WITH_SPACES_RE: lapiemy grupy cyfr przedzielone spacjami,
@@ -30,7 +35,7 @@ _IDENTITY_SOURCES: frozenset[str] = frozenset({
     r"(?<!\d)\d{9}(?!\d)",                                     # REGON 9
     r"(?<![A-Za-z])[A-Z]{3}\s?\d{6}(?!\d)",                   # Dowód osobisty
     r"(?<![A-Z])\b[A-Z]{2}[ \t]?\d{7}\b",                     # Paszport (ze spacją OCR lub bez)
-    r"\bur\.\s*\d{1,2}\.\d{1,2}\.\d{4}(?:\s+w\s+[A-ZŁŚŹĆŃ][\w\-]{1,30})?",  # ur. DD.MM.RRRR
+    r"\bur\.\s*\d{1,2}\.\d{1,2}\.\d{4}(?:\s+w\s+[A-Z\u0141\u015a\u0179\u0106\u0143][\w\-]{1,30})?",  # ur. DD.MM.RRRR
 })
 
 # Wzorzec NIP z rozszerzonym separatorem: OCR czasem zastepuje myslnik kropka
