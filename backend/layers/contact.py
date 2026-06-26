@@ -1,5 +1,5 @@
 """
-layers/contact.py  v1.3
+layers/contact.py  v1.4
 Warstwa contact — email i telefon.
 v1.3: [BUG-EMAIL-GREEDY] _EMAIL_OCR_RE bez (?!\w) na końcu łapał zbyt dużo:
   "firma.pl, paszport" → TLD separator pasował do ", " a "paszpo" do TLD (6 znaków).
@@ -67,6 +67,9 @@ _EMAIL_OCR_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Numer wewnętrzny 3-2-2 (np. "322 19 27") — port z STRUCTURAL_PATTERNS
+_PHONE_322_RE = re.compile(r"(?<!\d)\d{3}[\s\-]\d{2}[\s\-]\d{2}(?!\d)")
+
 # Normalizacja emaila po OCR: usun biale znaki wokol @, © -> @, przecinek -> kropka w TLD
 _AT_NOISE_RE   = re.compile(r"[ \t\n]{0,2}[@©][ \t\n]{0,2}")
 _TLD_COMMA_RE  = re.compile(r"[ \t]{0,1},[ \t]{0,1}([a-zA-Z]{2,6})$", re.IGNORECASE)
@@ -93,6 +96,10 @@ def apply_contact_layer(state: PipelineState) -> None:
 
     # [NUMER-RECALL] Context-aware telefon — przed REGON
     for m in _PHONE_CONTEXT_RE.finditer(state.text):
+        hits.append((m.start(), m.end(), m.group(0), TOKEN_NUMER))
+
+    # Numer wewnętrzny 3-2-2
+    for m in _PHONE_322_RE.finditer(state.text):
         hits.append((m.start(), m.end(), m.group(0), TOKEN_NUMER))
 
     for token_type, pat in _CONTACT_PATTERNS:

@@ -1,6 +1,7 @@
 """
-layers/legal.py  v1.0
+layers/legal.py  v1.1
 Warstwa legal — sygnatury sądowe, komornicze, administracyjne, KW.
+v1.1: Dodano KRS i sygnaturę ukośnikową (brakujące z STRUCTURAL_PATTERNS).
 """
 from __future__ import annotations
 
@@ -34,10 +35,27 @@ _KW_RE = re.compile(
     re.UNICODE,
 )
 
+# KRS — 10 cyfr z prefiksem
+_KRS_RE = re.compile(r"\bKRS\s*\d{10}\b", re.IGNORECASE)
+
+# Sygnatura ukośnikowa — co najmniej 3 segmenty, przynajmniej jedna litera.
+# Pasuje: 15/2Pm/P/JAG3/2024/EO, I/ACa/123/2024
+# Nie pasuje: 1/2/2024 (same cyfry = data), Sokola 4/6 (2 segmenty)
+_SLASH_SIG_RE = re.compile(
+    r"(?<!\w)"
+    r"(?=[0-9A-Za-z/]*[A-Za-z])"
+    r"[A-Z0-9]{1,8}"
+    r"(?:/[A-Z0-9]{1,8}){2,}"
+    r"(?!\w)",
+    re.IGNORECASE,
+)
+
 _LEGAL_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("NUMER", _CASE_SIG_RE),
     ("NUMER", _ADMIN_SIG_RE),
     ("NUMER", _KW_RE),
+    ("NUMER", _KRS_RE),
+    ("NUMER", _SLASH_SIG_RE),
 ]
 
 
