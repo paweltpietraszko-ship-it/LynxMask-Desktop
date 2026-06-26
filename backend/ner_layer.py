@@ -1,9 +1,13 @@
 """
-ner_layer.py  v1.15
+ner_layer.py  v1.16
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.16 — [FIX-NER-COURTS] _COURT_PREFIX_RE — każda encja zaczynająca się od
+           "sąd ", "naczelny sąd ", "wojewódzki sąd " lub "trybunał " jest
+           filtrowana niezależnie od miasta (SpaCy widział "Sąd Rejonowy w
+           Gdańsku" jako FIRMA, choć blocklist miał tylko generyczne formy).
   v1.15 — [BUG-ADJECTIVE-MULTIWORD] Filtr _ADJECTIVE_ENDINGS_RE stosowany tylko
            dla jednowyrazowych encji OSOBA. Poprzednio "Jana Kowalskiego" było
            filtrowane bo końcówka -skiego pasuje do przymiotnikowej, ale to
@@ -161,6 +165,15 @@ _ADJECTIVE_ENDINGS_RE = re.compile(
     re.IGNORECASE | re.UNICODE,
 )
 
+# [FIX-NER-COURTS] Sądy powszechne i administracyjne — instytucje publiczne,
+# nie prywatne firmy. Łapie "Sąd Rejonowy w Gdańsku", "Sąd Okręgowy w Warszawie",
+# "Naczelny Sąd Administracyjny" itp. — każda encja zaczynająca się od "sąd " lub
+# "naczelny sąd" lub "trybunał" (już częściowo w blocklist, ale bez form z miastem).
+_COURT_PREFIX_RE = re.compile(
+    r"^(?:sąd\s|naczelny\s+sąd\s|wojewódzki\s+sąd\s|trybunał\s)",
+    re.IGNORECASE | re.UNICODE,
+)
+
 # [FIX-NER-INTERNAL-ORG] Wewnętrzne działy i jednostki organizacyjne
 # nie są podmiotami zewnętrznymi — pomiń jako FIRMA.
 _INTERNAL_ORG_RE = re.compile(
@@ -211,6 +224,10 @@ def _filter_institutions(ner_results: list) -> list:
         # [FIX-NER-ADDR-PREFIX] Pomiń encje będące adresami (ul., os., gen. itp.)
         if _ADDR_PREFIX_RE.match(entity_text):
             logger.debug("[FILTER] pominięto adres jako encję: '%s'", entity_text[:40])
+            continue
+        # [FIX-NER-COURTS] Pomiń sądy i trybunały — instytucje publiczne, nie firmy
+        if _COURT_PREFIX_RE.match(entity_text):
+            logger.debug("[FILTER] pominięto sąd/trybunał: '%s'", entity_text[:60])
             continue
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
