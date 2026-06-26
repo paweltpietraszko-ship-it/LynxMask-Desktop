@@ -1,5 +1,5 @@
 """
-layers/ner_adapter.py  v1.4
+layers/ner_adapter.py  v1.5
 Adapter NER — wywołuje ner_layer.process_ner() i rejestruje tokeny w allocatorze.
 ner_layer.py nie jest modyfikowany.
 
@@ -249,6 +249,29 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
 
     # ── Inicjały: "K. Kowalski" → OSOBA (port: INITIALS_REGEX) ──────────────
     state.text = _apply_initials(state.text, state.allocator)
+
+    # ── Warianty SpaCy (port: FIX-NER-GLOBAL) ────────────────────────────────
+    # ner_variants zawiera WSZYSTKIE formy wykryte przez SpaCy (odmiany fleksyjne,
+    # wersje bez cudzysłowów, warianty FIRMA). Stary pipeline.py stosował je przez
+    # FIX-NER-GLOBAL w Warstwie 6. Nowy pipeline wcześniej ustawiał state.ner_variants
+    # ale nigdy nie używał do zamiany tekstu → regres: odmiany nie były maskowane.
+    _variants = getattr(state, "ner_variants", None) or {}
+    for _var_text, _tok_id in sorted(
+        _variants.items(),
+        key=lambda x: state.text.find(x[0]),
+        reverse=True,
+    ):
+        if _var_text.startswith("@"):
+            continue
+        if _TOKEN_RE.search(_var_text):
+            continue
+        _stripped = re.sub(r"[,\.;:!?\s]+$", "", _var_text).rstrip()
+        _target = _stripped if _stripped else _var_text
+        if not _target:
+            continue
+        if _stripped and _stripped != _var_text:
+            state.text = state.text.replace(_var_text, _tok_id)
+        state.text = state.text.replace(_target, _tok_id)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
