@@ -25,6 +25,7 @@ _IDENTITY_SOURCES: frozenset[str] = frozenset({
     r"(?<!\d)\d{9}(?!\d)",                                     # REGON 9
     r"(?<![A-Za-z])[A-Z]{3}\s?\d{6}(?!\d)",                   # Dowód osobisty
     r"(?<![A-Z])\b[A-Z]{2}\d{7}\b",                           # Paszport
+    r"\bur\.\s*\d{1,2}\.\d{1,2}\.\d{4}(?:\s+w\s+[A-ZŁŚŹĆŃ][\w\-]{1,30})?",  # ur. DD.MM.RRRR
 })
 
 # Wzorzec NIP z rozszerzonym separatorem: OCR czasem zastępuje myślnik kropką
