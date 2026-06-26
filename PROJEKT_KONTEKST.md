@@ -55,7 +55,7 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 
 - `layers/identity.py` v1.1
 - `layers/numeric.py` v1.0
-- `layers/address.py` v1.4
+- `layers/address.py` v1.8
 - `layers/institution.py` v1.0 (NOWY — 2026-06-25)
 - `ner_blocklist.py` v1.3 (263 wpisy + kontrolna/encje)
 - `ner_layer.py` v1.10 + _ADJECTIVE_ENDINGS_RE
@@ -270,6 +270,17 @@ Weryfikacja: sprawdzić czy check_and_block() jest wywoływana w pipeline.py.
 Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
 jeden _apply_hits. Wcześniej offset shift między fazami powodował że
 is_occupied nie wykrywał pokryć → duplikat ADRES token.
+
+### ~~BUG-ADDR-STREET-LOST~~ — NAPRAWIONY (address.py v1.8, 2026-06-26)
+Gdy adres zawierał kod pocztowy (np. "ul. Kwiatowa 12/3, 30-001 Kraków"),
+ulica wypadała z tokenu — token zawierał tylko "30-001 Kraków".
+Przyczyna: faza 2b (_POSTAL_ANCHOR_RE) tworzyła hit "30-001 Kraków" (start=31),
+który był przetwarzany przed hitem fazy 1 (start=12, pełny adres) — sort malejący
+po start. Faza 2b allokowała span, faza 1 trafiała na is_occupied → odrzucona.
+Fix: _apply_hits najpierw alokuje od największego spanu (większy hit wygrywa
+przy nakładaniu), potem podmienia tekst od prawej (spójność pozycji).
+Zweryfikowane na mobile: OcrNormalizer.kt reaguje na sam prefiks ul./al./pl./os.
+bez wymagania kodu pocztowego — ta sama zasada działania.
 
 ## Uwagi praktyczne
 
