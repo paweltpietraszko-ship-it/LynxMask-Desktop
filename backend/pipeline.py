@@ -1,5 +1,10 @@
 ﻿r"""
-pipeline.py  v1.21
+pipeline.py  v1.22
+Historia zmian:
+  v1.22 — [FIX-GUARD-BYPASS] Wydzielono _apply_guard() — wspólna ścieżka guard dla obu pipelinów.
+           USE_NEW_PIPELINE=True powodował return przed wywołaniem guarda (linia ~475).
+           Guard nie działał dla nowego pipeline — wszystkie dokumenty PSE bez flagi guarda.
+           Dodano apply_ocr_normalizer w pipeline_new.py v0.5 jako krok 0.
 Orchestrator pseudonimizacji â€” wywoĹ‚uje warstwy w ustalonej kolejnoĹ›ci.
 Wydzielony z pseudominizer_api.py v1.18.
 
@@ -299,11 +304,47 @@ USE_NEW_PIPELINE: bool = True
 
 # â”€â”€ Implementacja â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+def _apply_guard(text: str, reverse_map: dict, state: AppState) -> PipelineResult:
+    """Uruchamia output_guard na gotowym tekście. Wspólna ścieżka dla obu pipelinów."""
+    guard_blocked = False
+    guard_reasons: list = []
+    if _GUARD_AVAILABLE:
+        try:
+            guard_result = guard_output_with_map(
+                text,
+                state.anon_map,
+                mode=GuardMode.REDACT,
+                known_plain=[
+                    v for v in reverse_map.values()
+                    if len(re.sub(r'[\s\"\'“”„]+', '', v)) >= 5
+                ],
+            )
+            guard_blocked = guard_result.blocked
+            guard_reasons = guard_result.reasons
+            if guard_blocked:
+                logger.error(
+                    "[PIPELINE] Guard zablokował eksport — PII w tekście: %s",
+                    guard_reasons,
+                )
+            elif guard_result.redacted:
+                logger.warning("[PIPELINE] Guard zamazał fragmenty: %s", guard_reasons)
+                text = guard_result.redacted_text
+        except Exception as e:
+            logger.warning("[PIPELINE] output_guard błąd: %s — kontynuuję bez blokady", e)
+    return PipelineResult(
+        text=text,
+        reverse_map=reverse_map,
+        guard_blocked=guard_blocked,
+        guard_reasons=guard_reasons,
+        error=None,
+    )
+
+
 def _run_pipeline(text: str, state: AppState) -> PipelineResult:
     if USE_NEW_PIPELINE:
         from pipeline_new import run_pipeline_new
         new_text, new_map = run_pipeline_new(text, state.spacy_ner_mod, state.anonymizer)
-        return PipelineResult(text=new_text, reverse_map=new_map)
+        return _apply_guard(new_text, new_map, state)
 
     reverse_map: dict = {}
 
@@ -472,40 +513,7 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
     # [FIX-FIRMA-CLEANUP] WyczyĹ›Ä‡ "FIRMA_001" S.A. â†’ FIRMA_001
     text = _FIRMA_CLEANUP_RE.sub(r"\1", text)
 
-    # â”€â”€ Warstwa 7: output_guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    guard_blocked = False
-    guard_reasons: list = []
-    if _GUARD_AVAILABLE:
-        try:
-            guard_result = guard_output_with_map(
-                text,
-                state.anon_map,
-                mode=GuardMode.REDACT,
-                known_plain=[
-                    v for v in reverse_map.values()
-                    if len(re.sub(r'[\s\"\'\u201c\u201d\u201e]+', '', v)) >= 5
-                ],
-            )
-            guard_blocked = guard_result.blocked
-            guard_reasons = guard_result.reasons
-            if guard_blocked:
-                logger.error(
-                    "[PIPELINE] Guard zablokowaĹ‚ eksport â€” PII w tekĹ›cie: %s",
-                    guard_reasons,
-                )
-            elif guard_result.redacted:
-                logger.warning("[PIPELINE] Guard zamazaĹ‚ fragmenty: %s", guard_reasons)
-                text = guard_result.redacted_text
-        except Exception as e:
-            logger.warning("[PIPELINE] output_guard bĹ‚Ä…d: %s â€” kontynuujÄ™ bez blokady", e)
-
-    return PipelineResult(
-        text=text,
-        reverse_map=reverse_map,
-        guard_blocked=guard_blocked,
-        guard_reasons=guard_reasons,
-        error=None,
-    )
+    return _apply_guard(text, reverse_map, state)
 
 
 

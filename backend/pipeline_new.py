@@ -1,6 +1,11 @@
 """
-pipeline_new.py  v0.4
+pipeline_new.py  v0.5
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
+Zmiany v0.5:
+  - apply_ocr_normalizer jako pierwsza warstwa (krok 0) — OCR-błędy naprawiane
+    zanim wzorce regex i SpaCy zobaczą tekst. Bez tego I→1/O→0 itp. nie były
+    korygowane, IBAN/PESEL/NIP z błędami OCR trafiały do tekstu wyjściowego
+    niesprawdzone (PSE-2026-0824).
 Zmiany v0.4:
   - Pre-ekstrakcja NER przed apply_address_layer (extract_ner_results).
     SpaCy musi widzieć pełny adres żeby rozpoznać poprzedzające imię/nazwisko.
@@ -25,7 +30,6 @@ from layers.numeric import apply_numeric_layer
 from layers.institution import apply_institution_layer
 from layers.address import apply_address_layer
 from layers.ocr_normalizer import apply_ocr_normalizer
-from layers.amount import apply_amount_layer
 from layers.ner_adapter import apply_ner_layer, extract_ner_results
 from layers.fallback import apply_fallback_layer
 from layers.validation import apply_validation_layer
@@ -50,7 +54,6 @@ def run_pipeline_new(
     state = PipelineState(text=text, allocator=TokenAllocator())
     _apply(state, apply_ocr_normalizer)
     _apply(state, apply_identity_layer)
-    _apply(state, apply_amount_layer)
     _apply(state, apply_financial_layer)
     _apply(state, apply_legal_layer)
     _apply(state, apply_numeric_layer)

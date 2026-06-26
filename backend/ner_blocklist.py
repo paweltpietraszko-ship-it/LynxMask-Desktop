@@ -342,6 +342,11 @@ _NER_BLOCKLIST: set = {
     "share",
     "dluzn",
     "red",
+    # PSE-2026-0820: nagłówek sekcji UI klasyfikowany jako OSOBA
+    "emaile",
+    "email",
+    "emailów",
+    "emailami",
 }
 
 
