@@ -1,24 +1,32 @@
 """
-layers/ocr_normalizer.py  v2.0
+layers/ocr_normalizer.py  v2.1
 Port z OcrNormalizer.kt v2.6 (LynxMask Mobile).
 
 Uruchamiany jako PIERWSZA warstwa pipeline — normalizuje tekst OCR zanim
 wzorce regex i SpaCy go zobaczą. Nie tworzy tokenów — tylko naprawia tekst.
 
+Zmiany v2.1:
+  - J→0 w OCR_TO_DIGIT (IBAN: "000J" → "0000")
+  - _NIP_BARE3322/3223_RE: pierwszy segment dopuszcza OCR-litery (I42-... → 142-...)
+  - _PHONE_AFTER_KW_RE: rozszerzono charset o T,S,B,G,Z i koniec wzorca (T2T→727)
+  - Krok 0c: a1. → al. (OCR-artefakt skrótu "aleja")
+  - Nowy test: NIP sprzedawcy/nabywcy z OCR, telefon z T, IBAN z J, al.
+
 Etapy (kolejność z Kotlin):
   0.  Keyword canonicalization: PE5EL→PESEL, N1P→NIP, REG0N→REGON, IB4N→IBAN
   0b. Email pre-processing: spacje wokół @ (OCR artefakty)
+  0c. al. prefix: "a1." → "al." (aleja)
   1.  OCR_UL_PREFIX: "u. Nazwa" / "u Nazwa" → "ul. Nazwa"
   2.  PESEL split/word: "PESEL: 9l0405 l2367" → "PESEL: 91040512367"
   3.  NIP digits (po kw): "NIP: 526-O3O-O1-34" → "NIP: 526-030-01-34"
-  4.  NIP split/dot/bare: NIP bez kontekstu z literami OCR
+  4.  NIP split/dot/bare: NIP bez kontekstu z literami OCR (w tym I42-I99-O6-38)
   5.  Dowód osobisty: "FOH6 I4892" → "FOH6 14892"
   6.  Paszport: "AB I234567" → "AB 1234567"
   7.  REGON: "OI2345678" → "012345678"
-  8.  IBAN split/newline/digits
+  8.  IBAN split/newline/digits (w tym J→0 w IBAN)
   9.  Kod pocztowy: "2O-1OO" → "20-100"
   10. Kod pocztowy spacja: "85 001" po przecinku → "85-001"
-  11. Telefon po słowie kluczowym
+  11. Telefon po słowie kluczowym (w tym T2T→727)
   12. OCR_DIGIT_IN_CONTEXT: l/O/I/o między cyframi → cyfra (safety net)
   13. Cyfra między literami → litera (1→i, 0→o)
   14. Email TLD/SLD space: "@onet pl" → "@onet.pl"
@@ -43,6 +51,7 @@ _OCR_TO_DIGIT: dict[str, str] = {
     'O': '0', 'o': '0',
     'S': '5', 'B': '8',
     'G': '6', 'Z': '2', 'z': '2',
+    'J': '0',  # J≈0 w IBAN (np. "000J" → "0000")
     # Homoglify cyrylica
     'З': '3', 'з': '3',  # Cyrillic З
     'О': '0', 'о': '0',  # Cyrillic О
@@ -60,7 +69,7 @@ _SERIES_MAP: dict[str, str] = {
     '2': 'Z', '1': 'I', '0': 'O', '8': 'B', '5': 'S', '6': 'G', '7': 'T',
 }
 
-_NUMERIC_CHARS = r'TIlOSBGZzo0-9ЗзОоІі'
+_NUMERIC_CHARS = r'TIlOSBGZJzo0-9ЗзОоІі'
 
 
 def _fix_seg(seg: str) -> str:
@@ -95,7 +104,12 @@ _KW_IBAN_RE = re.compile(
     re.IGNORECASE,
 )
 
-# ── Krok 0b: Email pre-processing ────────────────────────────────────────────
+# ── Krok 0b: Email pre-processing ─────────────────────────────────────────────
+# ── Krok 0c: al. prefix (a1. → al.) ──────────────────────────────────────────
+
+_AL_PREFIX_RE = re.compile(r'\ba1\.(?=\s)')
+
+# ──────────────────────────────────────────────────────────────────────────────
 
 _EMAIL_SLDSPACE = re.compile(
     r'(@[a-zA-Z0-9\-]{2,15})[^\S\n]([a-zA-Z0-9\-]{2,15}\.[a-zA-Z][a-zA-Z0-9]{1,3})\b'
@@ -144,13 +158,13 @@ _NIP_DIGITS_COLON_RE = re.compile(
 # ── Krok 4: NIP bez kontekstu (bare shape) ────────────────────────────────────
 
 _NIP_BARE3322_RE = re.compile(
-    r'\b(\d{3})([\-])'
+    r'\b([TIlOSBGZ0-9]{3})([\-])'
     r'([TIlOSBGZ0-9ЗзОоo]{3})([\-])'
     r'([TIlOSBGZ0-9ЗзОоo]{2})([\-])'
     r'([TIlOSBGZ0-9ЗзОоo]{2})\b'
 )
 _NIP_BARE3223_RE = re.compile(
-    r'\b(\d{3})([\-])'
+    r'\b([TIlOSBGZ0-9]{3})([\-])'
     r'([TIlOSBGZ0-9ЗзОоo]{2})([\-])'
     r'([TIlOSBGZ0-9ЗзОоo]{2})([\-])'
     r'([TIlOSBGZ0-9ЗзОоo]{3})\b'
@@ -206,14 +220,14 @@ _REGON_FULL_RE = re.compile(
 
 # Bare PL + wielogrupowy IBAN z OCR (np. "PLB7 I5OO IOI3 I625 5190 4517 6SST")
 _IBAN_BARE_RE = re.compile(
-    r'\bPL([TIlOSBGZo0-9][TIlOSBGZo0-9 ]{24,34}[TIlOSBGZo0-9])\b'
+    r'\bPL([TIlOSBGZJo0-9][TIlOSBGZJo0-9 ]{24,34}[TIlOSBGZJo0-9])\b'
 )
 
 _IBAN_SPLIT_RE = re.compile(
-    r'\bPL([TIlOSBGZo0-9]{2,25})[^\S\n]([TIlOSBGZo0-9]{1,24})\b'
+    r'\bPL([TIlOSBGZJo0-9]{2,25})[^\S\n]([TIlOSBGZJo0-9]{1,24})\b'
 )
 _IBAN_NEWLINE_RE = re.compile(
-    r'\bPL([TIlOSBGZo0-9 ]{2,30})\n([TIlOSBGZo0-9 ]{2,25})\b'
+    r'\bPL([TIlOSBGZJo0-9 ]{2,30})\n([TIlOSBGZJo0-9 ]{2,25})\b'
 )
 _IBAN_DIGITS_RE = re.compile(
     r'(?i)((?:IBAN|Nr\s{0,1}kont\w{0,6}|kont\w{0,4})\s{0,3}:?\s{0,3})'
@@ -275,7 +289,7 @@ def _fix_postal(m: re.Match) -> str:
 _PHONE_AFTER_KW_RE = re.compile(
     r'(?i)\b(tel(?:efon)?|kom(?:\.?|orkowy)?|mob(?:\.?|ile)?|fax|faks)'
     r'\.?[^\S\n]*[:–\-]?[^\S\n]*'
-    r'(\+?(?:48[^\S\n]*)?' r'[\d\s\-(). lOIo]{7,22}\d)'
+    r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d\s\-(). ]{7,22}[TIlOSBGZzo\d])'
 )
 
 # ── Krok 12: OCR_DIGIT_IN_CONTEXT (safety net) ───────────────────────────────
@@ -350,6 +364,9 @@ def normalize_ocr(text: str) -> str:
     text = _EMAIL_SPACE_AFTER_AT.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)
     text = _EMAIL_SPACE_BEFORE_AT_DOT.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)
     text = _EMAIL_SPACE_BEFORE_AT_DIGITS.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)
+
+    # Krok 0c: a1. → al.
+    text = _AL_PREFIX_RE.sub('al. ', text)
 
     # Krok 1: ul. prefix
     text = _UL_PREFIX_RE.sub('ul. ', text)
@@ -508,6 +525,10 @@ def test_ocr_normalizer() -> bool:
     check("I→1, O→0 po NIP", "831-145-84-09" in r2, r2)
     r3 = normalize_ocr("NIP 873-054-80.39")
     check("NIP kropka → myślnik", "873-054-80-39" in r3, r3)
+    r4 = normalize_ocr("NIP sprzedawcy: I42-I99-O6-38")
+    check("NIP sprzedawcy: I→1, O→0 (bare)", "142-199-06-38" in r4, r4)
+    r5 = normalize_ocr("NIP nabywcy: 45I-OS2-35-26")
+    check("NIP nabywcy: I→1, S→5, O→0 (bare)", "451-052-35-26" in r5, r5)
 
     print("\n5. Dowód osobisty:")
     r = normalize_ocr("Nr dowodu: FOH6 I4892")
@@ -526,6 +547,8 @@ def test_ocr_normalizer() -> bool:
     check("B→8, I→1, O→0, S→5, T→7 w IBAN", "PL87" in r, r)
     r2 = normalize_ocr("IBAN: PLO4 325O 1234 5633 956O 1883 1852")
     check("O→0 po IBAN:", "PL04" in r2 and "3250" in r2, r2)
+    r3 = normalize_ocr("Nr konta: PL04 3250 000J 5633 9560 7883 1852")
+    check("J→0 w IBAN (Nr konta)", "0000" in r3, r3)
 
     print("\n9. Kod pocztowy:")
     r = normalize_ocr("20-1OO Rybnik")
@@ -542,6 +565,14 @@ def test_ocr_normalizer() -> bool:
     print("\n11. OCR digit-in-context (safety net):")
     r = normalize_ocr("NIP 525OO5885O")
     check("O→0 w liczbie", "O" not in r.split()[-1], r)
+
+    print("\n11b. Telefon z OCR (T=7):")
+    r = normalize_ocr("Tel: +48 606 219 T2T")
+    check("T→7 w telefonie (T2T→727)", "727" in r, r)
+
+    print("\n11c. al. prefix:")
+    r = normalize_ocr("a1. Niepodległości 95")
+    check("a1. → al.", r.startswith("al."), r)
 
     print("\n12. Brak false positive:")
     original = "Jan Kowalski, ul. Prosta 1, NIP: 123-456-78-90"
