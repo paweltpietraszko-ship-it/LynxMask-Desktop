@@ -144,9 +144,10 @@ _apply(state, apply_fallback_layer)
 ```
 Zasada: `allocator.is_occupied()` zablokuje re-tokenizację spanów zajętych przez NER (FIRMA).
 
-### ~~BUG-ADDR-FP~~ — OTWARTY (wymaga analizy)
-ADRES precision 68.3% (FP=20), duplikaty OCR multilinii → `layers/address.py`
-Nienaprawiony — wymaga dogłębnej analizy false positive patterns.
+### ~~BUG-ADDR-FP~~ — NAPRAWIONY (address.py v1.6, 2026-06-26)
+Faza 2a: gdy brak kodu pocztowego w dopasowaniu, wymagamy potwierdzenia
+miejscowości w bazie SIMC GUS (179k form). Brak miasta w SIMC → pomiń.
+Wcześniej wzorce bez kodu były akceptowane bez walidacji → FP.
 
 ### ~~BUG-10~~ — NAPRAWIONY (ocr_engine.py v1.2)
 Hardkodowana ścieżka osobista C:/Users/p_pie/... zastąpiona przez
@@ -164,15 +165,11 @@ Słowa z instrukcji/UI dodane do `_NER_BLOCKLIST`:
 "guardem", "wkleić", "wklej", "wklejam", "wklejanie", "share", "red", "dluzn"
 Zweryfikowane w kodzie: wpisy istnieją w aktualnym ner_blocklist.py.
 
-### BUG-OCR-DEDUP (WYSOKI — OTWARTY)
-Ta sama osoba z OCR-leet i bez leet dostaje dwa osobne tokeny:
-- OSOBA_001="Paulina Agate Kowalczyk"
-- OSOBA_002="P4nina Agat3 K0walczyk"
-
-`_person_stem` nie deduplikuje — "p4n" ≠ "pau", inne prefiksy.
-Fix wymaga OCR-normalizacji przed `_person_stem` albo similarity threshold.
-Plik: `backend/ner_layer.py` (`_person_stem`) lub nowy `layers/ocr_normalizer.py`
-NIENAPRAWIONY — ryzykowny, wymaga similarity threshold.
+### ~~BUG-OCR-DEDUP~~ — NAPRAWIONY (ner_layer.py v1.12, 2026-06-26)
+Przed obliczeniem `_person_stem` aplikujemy `normalize_ocr(entity_text)`.
+"P4nina Agat3 K0walczyk" → po normalizacji OCR → ten sam stem co "Paulina Agate Kowalczyk".
+entity_text (wartość tokenu) pozostaje oryginalna.
+Plik: `backend/ner_layer.py` ~linia 336.
 
 ### ~~BUG-PESEL-DUP~~ — NAPRAWIONY (pipeline_core.py v0.2)
 `TokenAllocator.allocate()` już deduplikuje przez `_canonical_to_token`.
@@ -185,12 +182,10 @@ Naprawa: po rstrip() sprawdzamy czy entity_text kończy się na "Sp"/"S.A" itp.
 i czy text[ner.end:] zaczyna się od ". z o.o." itp. — jeśli tak, doklejamy.
 Regex `_SUFFIX_COMPLETION_RE` + `_TRUNC_ENDINGS` w ner_layer.py ~linia 145.
 
-### BUG-FIRMA-ZUS-MIX (NISKI — OTWARTY)
-FIRMA_002="Sp. z o.o. ZUS-Warsz" — ZUS-fragment jako FIRMA zamiast INSTYTUCJA.
-SpaCy zassał fragment "ZUS-Warszawa" i sklasyfikował całość jako firmę.
-Powiązane z istniejącym BUG-NER-FP-GRANICE (MASTER).
-Plik: `backend/ner_layer.py` (`_filter_institutions`)
-NIENAPRAWIONY — powiązany z architekturą granic encji NER.
+### ~~BUG-FIRMA-ZUS-MIX~~ — NAPRAWIONY (ner_layer.py v1.12, 2026-06-26)
+`_filter_institutions` pomija encję FIRMA jeśli zawiera fragment instytucji
+publicznej (ZUS, NFZ, KRUS, PIP itp.) — regex `_INSTITUTION_IN_FIRMA_RE`.
+Plik: `backend/ner_layer.py` ~linia 139.
 
 ## Uwagi praktyczne
 
