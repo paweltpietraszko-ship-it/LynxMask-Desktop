@@ -71,6 +71,10 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `layers/address.py` v1.9 — BUG-ADDR-OCR-DIACRITICS fix + SIMC ASCII-folded
 - `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
 - `smoke_test.py` v1.0 — smoke test blokujący start przy wycieku PII (reset_spans fix)
+- `pseudominizer_api.py` v1.32 — CRASH-UX: zapis startup_error.json przed śmiercią
+- `frontend/src-tauri/src/main.rs` v1.6 — CRASH-UX: komendy read_startup_error, restart_app
+- `frontend/src/screens/CrashScreen.tsx` v1.0 — NOWY: ekran awarii z kodem błędu i akcjami
+- `frontend/src/App.tsx` v1.6 — CRASH-UX: retry tokenu + detekcja crashu → CrashScreen
 
 ## Otwarte bugi — do naprawienia (priorytet malejący)
 
@@ -360,6 +364,22 @@ OCR często gubi diakrytyki w nazwach miast: `Krakow` zamiast `Kraków`,
 Fix: zbudowano `_CITY_FORMS_ASCII` (słownik ascii-fold → oryginalna forma SIMC).
 `_match_city` sprawdza najpierw dokładne dopasowanie, potem ASCII-folded.
 Wartość w tokenie = oryginalna forma SIMC (np. `Kraków`).
+
+### ~~CRASH-UX~~ — NAPRAWIONY (pseudominizer_api.py v1.32, main.rs v1.6, CrashScreen.tsx v1.0, App.tsx v1.6, 2026-06-26)
+Gdy smoke test blokował start backendu, użytkownik widział pusty ekran "Ładowanie sesji…"
+bez żadnej podpowiedzi co zrobić.
+Fix — 4 warstwy:
+1. **Backend**: `_write_startup_error(code, message)` zapisuje `backend/startup_error.json`
+   przed re-raise RuntimeError. Na początku `_lifespan()` plik jest kasowany (stare błędy
+   nie blokują nowego startu).
+2. **Tauri** (`main.rs`): `read_startup_error()` — szuka `startup_error.json` w katalogu
+   backendu (ta sama logika co `find_token_file`, ale bez wymagania istnienia pliku).
+   `restart_app()` — restartuje aplikację przez `app.restart()`.
+3. **CrashScreen.tsx**: nowy pełnoekranowy komponent — kod błędu, przycisk "Uruchom ponownie",
+   link mailto z wypełnionym tematem/treścią, instrukcja reinstalacji krok po kroku.
+4. **App.tsx**: po nieudanym `read_api_token()` czeka 4s i próbuje ponownie (backend może
+   jeszcze startować). Drugi błąd → `read_startup_error()` → jeśli plik istnieje: CrashScreen
+   z kodem błędu; jeśli nie: CrashScreen z `STARTUP-NO-RESPONSE`.
 
 ### ~~SMOKE-RESET-SPANS~~ — NAPRAWIONY (smoke_test.py, 2026-06-26)
 Smoke test wywołał warstwy bez `reset_spans()` między nimi. Allocator
