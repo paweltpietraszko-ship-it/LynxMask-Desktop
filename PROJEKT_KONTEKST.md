@@ -65,7 +65,7 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `db_store.py` v1.0 (wydzielony z pseudominizer_api.py)
 - `output_guard.py` v4.1 — szersze wzorce Guard (IBAN odcisk palca, NIP bez separatora, DOWOD+PASZPORT w _LEAK_HIGH)
 - `anonymizer_init.py` v1.9 — paszport ze spacją OCR ([A-Z]{2}[ \t]?\d{7})
-- `layers/identity.py` v1.3 — paszport ze spacją OCR
+- `layers/identity.py` v1.4 — paszport ze spacją OCR, BUG-UR-DOB (data urodzenia)
 - `layers/financial.py` v1.1 — zagraniczne IBAN (DE, UA, GB, FR, NL) w pipeline
 - `layers/contact.py` v1.2 — OCR-tolerancyjny email
 - `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
@@ -284,6 +284,14 @@ funkcja SpaCy w pipeline.py (linia 379), wywołuje ją stary pipeline przed NER.
 Wszystkie trzy fazy zbierają hity na tym samym tekście wejściowym, potem
 jeden _apply_hits. Wcześniej offset shift między fazami powodował że
 is_occupied nie wykrywał pokryć → duplikat ADRES token.
+
+### ~~BUG-UR-DOB~~ — NAPRAWIONY (identity.py v1.4, 2026-06-26)
+Wzorzec `ur. DD.MM.RRRR` nie był maskowany mimo że istniał w `STRUCTURAL_PATTERNS`.
+Przyczyna: `_IDENTITY_SOURCES` miał literalne `ZŁŚŹĆŃ`, a `anonymizer_init.py`
+kompilował wzorzec z `ŁŚŹĆŃ` — te same znaki, ale inne
+bajty w stringu → `pat.pattern in frozenset` zwracał `False` → wzorzec cicho
+wypadał z `_IDENTITY_PATTERNS`.
+Fix: klucz w `_IDENTITY_SOURCES` zmieniony na zapis `\u` zgodny z `anonymizer_init.py`.
 
 ### ~~BUG-PASSPORT-SPACE~~ — NAPRAWIONY (anonymizer_init.py v1.9, identity.py v1.3, output_guard.py v4.1, 2026-06-26)
 Paszport ze spacją (`ZX 1234567`) nie był maskowany przez pipeline ani wykrywany przez Guard.
