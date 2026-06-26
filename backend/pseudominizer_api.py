@@ -1,6 +1,11 @@
 """
-pseudominizer_api.py  v1.30-TAURI
+pseudominizer_api.py  v1.31-TAURI
 Historia zmian (od najnowszej):
+  v1.31-TAURI (2026-06-26):
+    [MED-4] Logger w /profile/add-entity ujawniał token_type (np. "OSOBA").
+             To metadata — usunięte z logu, zostaje tylko token_id.
+    [CRIT-1] POST /archive odbiera guard_blocked od klienta i zapisuje do DB.
+             GET /archive/{pse}/blob zwraca 403 gdy guard_blocked=True.
   v1.30-TAURI (2026-06-12):
     [AUD-01] Token injection attack — walidacja w /preview przed pipeline.
              Jeśli tekst wejściowy zawiera token w formacie FIRMA_001 (lub
@@ -700,7 +705,7 @@ async def profile_add_entity(request: Request):
 
     try:
         token_id = _app_state.anon_map.add_entity(text, token_type)
-        logger.info("[PROFILE] Dodano encję: %s [token_id=%s]", token_type, token_id)
+        logger.info("[PROFILE] Dodano encję [token_id=%s]", token_id)  # [MED-4] token_type usunięty z logu
         return {"ok": True, "token_id": token_id}
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)

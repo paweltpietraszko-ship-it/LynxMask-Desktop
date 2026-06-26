@@ -1,9 +1,11 @@
 """
-audit_log.py  v1.2
+audit_log.py  v1.3
 [FIX-AUDIT-MODE-APPLY] AUDIT_MODE = False — faktyczna zmiana wartości (v1.1 poprawiła
                  tylko nagłówek, nie kod).
 [FIX-AUDIT-PII-APPLY]  Usunięto pole "original" z _build_token_summary — zawierało
                  plaintext PII w każdym rekordzie audytu (CRIT-2).
+[MED-2] AUDIT_FILE teraz rotowany: max 2 MB, 3 backupy (pseudominizer_audit.jsonl.1/2/3).
+                 Zapis przez _audit_writer (RotatingFileHandler) zamiast open("a").
 [FIX-AUDIT-MODE] AUDIT_MODE = False przed dystrybucją.
 [FIX-AUDIT-PII]  Usunięto input_fragment i output_fragment z rekordu —
                  zawierały do 500 znaków oryginalnego tekstu (PII).
@@ -24,6 +26,7 @@ Wywołanie z pseudominizer_api.py:
 
 import json
 import logging
+import logging.handlers
 from datetime import datetime
 from pathlib import Path
 
@@ -34,7 +37,34 @@ logger = logging.getLogger("pseudominizer.audit")
 # PRODUKCJA: False — zero zapisu, zero I/O
 AUDIT_MODE = False  # PRODUKCJA: False. Włącz ręcznie tylko w trybie deweloperskim.
 
-AUDIT_FILE = Path("pseudominizer_audit.jsonl")
+AUDIT_FILE     = Path("pseudominizer_audit.jsonl")
+AUDIT_MAX_BYTES = 2 * 1024 * 1024   # 2 MB per plik
+AUDIT_BACKUPS   = 3                  # pseudominizer_audit.jsonl.1, .2, .3
+
+# [MED-2] RotatingFileHandler — leniwa inicjalizacja przy pierwszym zapisie.
+_audit_handler: logging.handlers.RotatingFileHandler | None = None
+_audit_line_logger: logging.Logger | None = None
+
+
+def _get_audit_line_logger() -> logging.Logger:
+    """Zwraca (lub tworzy) dedykowany logger do zapisu JSONL z rotacją."""
+    global _audit_handler, _audit_line_logger
+    if _audit_line_logger is not None:
+        return _audit_line_logger
+
+    _audit_line_logger = logging.getLogger("pseudominizer.audit.file")
+    _audit_line_logger.setLevel(logging.INFO)
+    _audit_line_logger.propagate = False  # nie idzie do root loggera
+
+    _audit_handler = logging.handlers.RotatingFileHandler(
+        str(AUDIT_FILE),
+        maxBytes=AUDIT_MAX_BYTES,
+        backupCount=AUDIT_BACKUPS,
+        encoding="utf-8",
+    )
+    _audit_handler.setFormatter(logging.Formatter("%(message)s"))
+    _audit_line_logger.addHandler(_audit_handler)
+    return _audit_line_logger
 
 
 # ── API publiczne ─────────────────────────────────────────────────────────────
@@ -144,8 +174,8 @@ def _write_record(
         # input_fragment i output_fragment usunięte — zawierały PII
     }
 
-    with open(AUDIT_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    # [MED-2] Zapis przez RotatingFileHandler — rotacja przy 2 MB, 3 backupy.
+    _get_audit_line_logger().info(json.dumps(record, ensure_ascii=False))
 
     # Skrócone info w głównym logu — bez PII
     leak_info  = f" ⚠ LEAKS: {stats['leak_count']}" if stats["leak_count"] else ""
