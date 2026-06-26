@@ -1,11 +1,17 @@
 """
-Triangulum — output_guard.py  v3.9
+Triangulum — output_guard.py  v4.0
+Zmiany v4.0:
+  [GUARD-BROAD] Guard nie moze powielac wzorcow pipeline — jesli pipeline cos pominie,
+          identyczny wzorzec w Guardzie tez to pominie. Guard powinien patrzec szerzej:
+          prostszy "odcisk palca", wyzszy recall, wiecej false positives (akceptowalne).
+          Zmiana IBAN: zamiast walidowac struktury grup (po 4 znaki), Guard pyta
+          "czy to wyglada jak IBAN?" = CC (2 litery) + DD (2 cyfry) + min. 11 znakow
+          alfanumerycznych z opcjonalnymi spacjami. Lacznie min. 15 znakow (NO = najkrotszy).
+          Jeden wzorzec zamiast dwoch alternatyw — agnostyczny wobec formatu zapisu.
+          Zmiana NIP: dodano \b\d{10}\b jako trzecia alternatywa — lapie NIP bez
+          separatorow i z dowolnym separatorem (np. OCR wstawi '.' zamiast '-').
+
 Zmiany v3.9:
-  [BUG-4] _LEAK_HIGH IBAN: stary wzorzec (\s? grupy po 4) nie lapał compact IBANs
-          (bez spacji) ani krótkich grup (DE 22 znaki = 5 grup po 4 + reszta).
-          Nowy wzorzec: dwa alternatywne -- spaced (grupy po 4, 2-7 grup + ostatnia
-          krotsza) i compact (ciagly, min 11 znakow BBAN). Pokrywa DE, UA, GB, FR, NL
-          i wszystkie inne formaty IBAN.
 
 Zmiany v3.8:
   [CRIT-3] guard_output_with_map: fallback get_entity_names() nie może cicho połykać
@@ -106,17 +112,21 @@ class GuardMode(Enum):
 # Dane bezpośrednio identyfikujące — ich obecność w odpowiedzi to wyciek RODO
 _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     ("PESEL",   re.compile(r"\b\d{11}\b")),
-    # [BUG-NIP-LEAK] NIP może mieć dwa formaty separatora: 3-3-2-2 i 3-2-2-3.
-    # Poprzedni wzorzec łapał tylko 3-3-2-2. Dodano alternatywę dla 3-2-2-3.
-    ("NIP",     re.compile(r"\b(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3})\b")),
-    # [BUG-4] IBAN generyczny — PL, DE, UA, GB, FR, NL i wszystkie inne.
-    # Wzorzec 1: ze spacjami — grupy 4 znakow alfanumerycznych, ostatnia moze byc krotsza.
-    # Wzorzec 2: compact (bez spacji) — min. 11 znakow BBAN po CC+DD.
-    # Razem pokrywaja wszystkie formaty zapisu IBAN (min. 15 znakow lacznie = NO).
-    ("IBAN",    re.compile(
-        r"\b[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]{4}){2,7}(?:[ \t]?[A-Z0-9]{1,4})?\b"
-        r"|\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"
+    # [GUARD-BROAD] NIP: formaty z separatorem + \b\d{10}\b (bez separatora).
+    # Pipeline sprawdza konkretne formaty — Guard lapie tez NIP bez separatora
+    # i z dowolnym separatorem (kropka z OCR, biale znaki itp.).
+    ("NIP",     re.compile(
+        r"\b(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}"
+        r"|\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}"
+        r"|\d{10})\b"
     )),
+    # [GUARD-BROAD] IBAN: zamiast walidowac grupy (po 4 znaki jak pipeline),
+    # Guard uzywa prostszego "odcisku palca": CC (2 duze litery) + DD (2 cyfry)
+    # + min. 11 znakow alfanumerycznych z opcjonalnymi spacjami/tabami.
+    # Lacznie min. 15 znakow = najkrotszy IBAN na swiecie (Norwegia).
+    # Agnostyczny wobec formatu: lapie grupy po 4, po 3, po 2, bez spacji,
+    # z tabulatorami — cokolwiek co "wyglada jak IBAN".
+    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]){11,33}\b")),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
     # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
     # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.
