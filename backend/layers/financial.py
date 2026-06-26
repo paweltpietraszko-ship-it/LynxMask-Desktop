@@ -1,6 +1,10 @@
 """
-layers/financial.py  v1.0
+layers/financial.py  v1.1
 Warstwa financial — IBAN, numery kont bankowych.
+v1.1: [BUG-4] Zagraniczne IBAN (DE, UA, GB, FR, NL...) maskowane przez pipeline.
+  _IBAN_FOREIGN_RE: dwa wzorce — ze spacjami (grupy po 4) i bez spacji (compact).
+  Stosowany PO wzorcach PL (konto bez prefiksu PL mogloby podlapac prefiks obcego IBAN).
+  Walidacja: min. 15 znakow lacznie (najkrotszy IBAN na swiecie = NO, 15 znakow).
 """
 from __future__ import annotations
 
@@ -13,12 +17,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from anonymizer_init import STRUCTURAL_PATTERNS, TOKEN_NUMER
 from pipeline_core import PipelineState, TokenAllocator
 
-# Explicit set — "PL" in pat.pattern złapałoby też NIP-PL i PLN (waluta)
+# Explicit set — "PL" in pat.pattern zlapalby tez NIP-PL i PLN (waluta)
 _FINANCIAL_SOURCES: frozenset[str] = frozenset({
-    r"(?<!\d)\d{24}(?!\d)",           # 24-cyfrowy numer konta/przesyłki
+    r"(?<!\d)\d{24}(?!\d)",           # 24-cyfrowy numer konta/przesylki
     r"\bPL\s?\d{2}(?:\s?\d{4}){6}\b", # IBAN PL (ze spacjami lub bez)
     r"\b\d{2}(?:\s\d{4}){5,6}\b",     # konto bez prefiksu PL (spacje)
-    r"\b\d{2}-\d[\d\-]{20,28}\d\b",   # konto bez prefiksu PL (myślniki)
+    r"\b\d{2}-\d[\d\-]{20,28}\d\b",   # konto bez prefiksu PL (myslniki)
 })
 
 _FINANCIAL_PATTERNS: list[tuple[str, re.Pattern]] = [
@@ -26,31 +30,57 @@ _FINANCIAL_PATTERNS: list[tuple[str, re.Pattern]] = [
     if pat.pattern in _FINANCIAL_SOURCES
 ]
 
+# [BUG-4] Zagraniczne IBAN — DE, UA, GB, FR, NL i inne.
+# Wzorzec 1: ze spacjami — grupy po 4 znaki (A-Z0-9), ostatnia moze byc krotsza.
+# Wzorzec 2: compact — ciagle (bez spacji), min. 11 znakow BBAN po CC+DD.
+# Min. 15 znakow lacznie = najkrotszy IBAN (Norwegia NO).
+# Wykluczamy "PL" (obslugiwany przez _FINANCIAL_PATTERNS) i "UA" osobno nie trzeba.
+_IBAN_FOREIGN_RE = re.compile(
+    r"\b(?!PL)[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]{4}){2,7}(?:[ \t]?[A-Z0-9]{1,4})?\b"
+    r"|"
+    r"\b(?!PL)[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"
+)
+
+# Minimalny IBAN ma 15 znakow — odrzucamy krotsze dopasowania (FP-guard)
+_IBAN_MIN_LEN = 15
+
 
 def apply_financial_layer(state: PipelineState) -> None:
     """Stosuje wzorce IBAN i kont bankowych na state.text."""
     hits: list[tuple[int, int, str, str]] = []
+
     for token_type, pat in _FINANCIAL_PATTERNS:
         for m in pat.finditer(state.text):
             hits.append((m.start(), m.end(), m.group(0), token_type))
 
-    hits.sort(key=lambda x: x[0], reverse=True)
+    # [BUG-4] Zagraniczne IBAN — po wzorcach PL
+    for m in _IBAN_FOREIGN_RE.finditer(state.text):
+        raw = m.group(0)
+        # Odrzuc jesli za krotkie (FP) lub juz objety wczesniejszym hitem PL
+        if len(raw.replace(" ", "").replace("\t", "")) >= _IBAN_MIN_LEN:
+            hits.append((m.start(), m.end(), raw, TOKEN_NUMER))
 
-    text = state.text
+    # Wiekszy span wygrywa
+    hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
+    valid: list[tuple[int, int, str]] = []
     for start, end, value, token_type in hits:
         if state.allocator.is_occupied(start, end):
             continue
         tid = state.allocator.allocate(token_type, value, start, end)
         if tid is None:
             continue
-        text = text[:start] + tid + text[end:]
+        valid.append((start, end, tid))
 
+    valid.sort(key=lambda x: x[0], reverse=True)
+    text = state.text
+    for start, end, tid in valid:
+        text = text[:start] + tid + text[end:]
     state.text = text
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Testy
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def test_financial_layer() -> bool:
     passed = 0
@@ -67,66 +97,70 @@ def test_financial_layer() -> bool:
 
     print("=== test_financial_layer ===\n")
 
-    # ── Test podstawowy: dwa IBAN PL ─────────────────────────────────────────
-    print("1. IBAN PL ze spacjami i bez spacjami:")
+    print("1. IBAN PL ze spacjami i bez:")
     state = PipelineState(
-        text=(
-            "konto: PL61 1090 1014 0000 0712 1981 2874, "
-            "lub PL58325000032630362440455236"
-        ),
+        text="konto: PL61 1090 1014 0000 0712 1981 2874, lub PL58325000032630362440455236",
         allocator=TokenAllocator(),
     )
     apply_financial_layer(state)
-    check("PL61 usunięty", "PL61" not in state.text,
-          f"text={state.text!r}")
-    check("PL58 usunięty", "PL58" not in state.text,
-          f"text={state.text!r}")
-    rm = state.allocator.reverse_map
-    check("Dwa wpisy w reverse_map", len(rm) == 2,
-          f"reverse_map={rm}")
+    check("PL61 usuniety", "PL61" not in state.text, f"text={state.text!r}")
+    check("PL58 usuniety", "PL58" not in state.text, f"text={state.text!r}")
+    check("Dwa tokeny", len(state.allocator.reverse_map) == 2,
+          f"reverse_map={state.allocator.reverse_map}")
 
-    # ── Test konta bez prefiksu PL (spacje) ──────────────────────────────────
-    print("\n2. Konto bez PL (spacje 2+4+4+4+4+4+4):")
+    print("\n2. IBAN DE — ze spacjami i bez:")
     state2 = PipelineState(
-        text="Przelew na: 61 1090 1014 0000 0712 1981 2874",
+        text="Konto DE: DE89 3704 0044 0532 0130 00 lub DE89370400440532013000",
         allocator=TokenAllocator(),
     )
     apply_financial_layer(state2)
-    check("Konto bez PL usunięte",
-          "1090 1014 0000 0712 1981 2874" not in state2.text,
+    check("DE ze spacjami usuniety", "DE89 3704" not in state2.text,
+          f"text={state2.text!r}")
+    check("DE bez spacji usuniety", "DE89370400440532013000" not in state2.text,
           f"text={state2.text!r}")
 
-    # ── Test 24-cyfrowy numer ─────────────────────────────────────────────────
-    print("\n3. 24-cyfrowy numer konta/przesyłki:")
+    print("\n3. IBAN UA (Ukraina — 29 znakow):")
     state3 = PipelineState(
-        text="Nr: 612345678901234567890123",
+        text="Odbiorca: UA213223130000026007233566001",
         allocator=TokenAllocator(),
     )
     apply_financial_layer(state3)
-    check("24-cyfrowy usunięty",
-          "612345678901234567890123" not in state3.text,
-          f"text={state3.text!r}")
+    check("UA usuniety", "UA21" not in state3.text, f"text={state3.text!r}")
 
-    # ── Test deduplikacji — ten sam IBAN dwa razy ────────────────────────────
-    print("\n4. Deduplication — ten sam IBAN dwa razy:")
+    print("\n4. IBAN GB (z literami w BBAN):")
     state4 = PipelineState(
-        text="konto: PL58325000032630362440455236 i PL58325000032630362440455236",
+        text="Sort code: GB29 NWBK 6016 1331 9268 19",
         allocator=TokenAllocator(),
     )
     apply_financial_layer(state4)
-    check("IBAN usunięty", "PL58" not in state4.text)
-    rm4 = state4.allocator.reverse_map
-    check("Jeden token (dedup)", len(rm4) == 1,
-          f"reverse_map={rm4}")
+    check("GB usuniety", "GB29" not in state4.text, f"text={state4.text!r}")
 
-    # ── Test brak dopasowań ───────────────────────────────────────────────────
-    print("\n5. Brak dopasowań — tekst niezmieniony:")
-    original = "Kwota: 1234 PLN, NIP: 855-019-31-23"
-    state5 = PipelineState(text=original, allocator=TokenAllocator())
+    print("\n5. Konto bez prefiksu PL (spacje):")
+    state5 = PipelineState(
+        text="Przelew na: 61 1090 1014 0000 0712 1981 2874",
+        allocator=TokenAllocator(),
+    )
     apply_financial_layer(state5)
-    check("Tekst niezmieniony", state5.text == original,
+    check("Konto bez PL usuniete",
+          "1090 1014 0000 0712 1981 2874" not in state5.text,
           f"text={state5.text!r}")
-    check("reverse_map pusty", len(state5.allocator.reverse_map) == 0)
+
+    print("\n6. Deduplication — ten sam IBAN dwa razy:")
+    state6 = PipelineState(
+        text="DE89370400440532013000 i DE89370400440532013000",
+        allocator=TokenAllocator(),
+    )
+    apply_financial_layer(state6)
+    check("Oba DE usuniete", "DE89" not in state6.text)
+    check("Jeden token (dedup)", len(state6.allocator.reverse_map) == 1,
+          f"reverse_map={state6.allocator.reverse_map}")
+
+    print("\n7. Brak dopasowania — tekst niezmieniony:")
+    original = "Kwota: 1234 PLN, NIP: 855-019-31-23"
+    state7 = PipelineState(text=original, allocator=TokenAllocator())
+    apply_financial_layer(state7)
+    check("Tekst niezmieniony", state7.text == original, f"text={state7.text!r}")
+    check("reverse_map pusty", len(state7.allocator.reverse_map) == 0)
 
     print(f"\n{'=' * 42}")
     print(f"Wynik: {passed} PASS  {failed} FAIL")

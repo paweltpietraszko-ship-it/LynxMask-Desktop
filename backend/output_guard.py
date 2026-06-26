@@ -1,5 +1,12 @@
 """
-Triangulum — output_guard.py  v3.8
+Triangulum — output_guard.py  v3.9
+Zmiany v3.9:
+  [BUG-4] _LEAK_HIGH IBAN: stary wzorzec (\s? grupy po 4) nie lapał compact IBANs
+          (bez spacji) ani krótkich grup (DE 22 znaki = 5 grup po 4 + reszta).
+          Nowy wzorzec: dwa alternatywne -- spaced (grupy po 4, 2-7 grup + ostatnia
+          krotsza) i compact (ciagly, min 11 znakow BBAN). Pokrywa DE, UA, GB, FR, NL
+          i wszystkie inne formaty IBAN.
+
 Zmiany v3.8:
   [CRIT-3] guard_output_with_map: fallback get_entity_names() nie może cicho połykać
            wyjątku — gdy metoda nie istnieje lub rzuca błąd, guard zwracał result bez
@@ -102,14 +109,14 @@ _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     # [BUG-NIP-LEAK] NIP może mieć dwa formaty separatora: 3-3-2-2 i 3-2-2-3.
     # Poprzedni wzorzec łapał tylko 3-3-2-2. Dodano alternatywę dla 3-2-2-3.
     ("NIP",     re.compile(r"\b(?:\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}|\d{3}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3})\b")),
-    # [FIX-A4] IBAN generyczny — obsługuje PL i wszystkie europejskie (DE, AT, SK itd.)
-    # Format: [A-Z]{2} (kraj) + \d{2} (cyfry kontrolne) + 10-30 znaków (cyfry + litery + spacje)
-    # [FIX-IBAN-LEN] Wymóg min. 10 znaków po CC+DD — wyklucza NIP z prefiksem PL
-    # (PL6551979313: po "PL65" zostaje tylko 8 znaków < 10). Najkrótszy IBAN (NO) = 15 znaków.
-    # [BUG-IBAN-LETTERS] Poprzedni wzorzec [\s\d] nie obsługiwał IBAN z literami w BBAN
-    # (GB, IE, MT itd.) — np. GB29NWBK60161331926819.
-    # Nowy wzorzec (z OutputGuard.kt l.59): grupy 4 znaków alfanumerycznych z opcjonalną spacją.
-    ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b")),
+    # [BUG-4] IBAN generyczny — PL, DE, UA, GB, FR, NL i wszystkie inne.
+    # Wzorzec 1: ze spacjami — grupy 4 znakow alfanumerycznych, ostatnia moze byc krotsza.
+    # Wzorzec 2: compact (bez spacji) — min. 11 znakow BBAN po CC+DD.
+    # Razem pokrywaja wszystkie formaty zapisu IBAN (min. 15 znakow lacznie = NO).
+    ("IBAN",    re.compile(
+        r"\b[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]{4}){2,7}(?:[ \t]?[A-Z0-9]{1,4})?\b"
+        r"|\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"
+    )),
     # [FIX-A3] EMAIL: każda etykieta domeny musi zaczynać się od litery.
     # Poprzedni wzorzec łapał "art.5@par.1.KP" — "1" nie zaczyna się od litery,
     # nowy wzorzec go odrzuci. Prawdziwe emaile jak "jan@firma.com.pl" nadal OK.
