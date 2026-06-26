@@ -201,6 +201,14 @@ async def _lifespan(app):
     except Exception as e:
         logger.warning(f"[STARTUP] crypto_selftest niedostępny: {e}")
 
+    try:
+        from smoke_test import assert_smoke_test as _assert_smoke
+        _assert_smoke()
+    except RuntimeError:
+        raise  # blokuje start — silnik nie działa poprawnie
+    except Exception as _e:
+        raise RuntimeError(f"[SMOKE] Nieoczekiwany błąd smoke testu: {_e}")
+
     yield  # aplikacja działa
 
 # ── Stałe dla tabeli tokenów ──────────────────────────────────────────────────
