@@ -194,9 +194,10 @@ Plik: `backend/ner_layer.py` ~linia 139.
 ### ~~BUG-3~~ — NAPRAWIONY (pseudominizer_api.py [AUD-01])
 Token injection: odrzut 422 gdy tekst wejściowy zawiera TOKEN_RE (FIRMA_001 itp.).
 
-### ~~BUG-9~~ — NAPRAWIONY częściowo przez [AUD-01]
-Pipeline pomijał regex przy mieszanych dokumentach. AUD-01 odrzuca takie dokumenty
-przed pipeline. Pełny fix wymaga TokenAllocator.reset_spans() — niższy priorytet.
+### ~~BUG-9~~ — ZAMKNIĘTY przez [AUD-01] (zweryfikowane 2026-06-26)
+Scenariusz "mieszany dokument z nowym PII" nie może wystąpić — AUD-01 odrzuca
+każdy tekst zawierający TOKEN_RE z kodem 422 przed wejściem do pipeline.
+Pełny fix pipeline był zbędny — ochrona jest na poziomie wejścia.
 
 ### ~~BUG-2~~ — NAPRAWIONY (ner_layer.py v1.13, 2026-06-26)
 Firma w cudzysłowie rozbijana — "Wiśniewski i Wspólnicy" → OSOBA_001.
