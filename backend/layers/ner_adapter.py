@@ -1,8 +1,13 @@
 """
-layers/ner_adapter.py  v1.3
+layers/ner_adapter.py  v1.4
 Adapter NER — wywołuje ner_layer.process_ner() i rejestruje tokeny w allocatorze.
 ner_layer.py nie jest modyfikowany.
 
+v1.4: [BUG-NER-WRONG-ARG] process_ner(text, spacy_ner_mod) — drugi argument
+  to moduł spacy_ner, nie anon_map. ner_adapter importuje spacy_ner i przekazuje
+  moduł. Poprzednio: process_ner(state.text, anon_map) → spacy_ner_mod=dict →
+  spacy_ner_mod.NERBlockError → AttributeError → ner_error=True → force_block.
+  Efekt: NER zawsze crashował w ner_adapter, każda odpowiedź była blokowana.
 v1.3: [WYS-1] extract_ner_results() i apply_ner_layer() mają teraz try/except.
   Błąd NER → state.ner_error = True. run_pipeline_new() sprawdza tę flagę
   i zwraca force_block=True do callera zamiast cicho kontynuować bez NER.
@@ -30,6 +35,7 @@ import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
 from pipeline_core import PipelineState, TokenAllocator
 
@@ -173,7 +179,7 @@ def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
     """
     try:
         state.text = _fix_ocr_email(state.text)
-        ner_reverse, ner_variants = process_ner(state.text, anon_map)
+        ner_reverse, ner_variants = process_ner(state.text, _spacy_ner_mod)
         state.ner_results = ner_reverse
         state.ner_variants = ner_variants
     except Exception as e:
@@ -204,7 +210,7 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             ner_reverse = state.ner_results
         else:
             state.text = _fix_ocr_email(state.text)
-            ner_reverse, ner_variants = process_ner(state.text, anon_map)
+            ner_reverse, ner_variants = process_ner(state.text, _spacy_ner_mod)
             state.ner_variants = ner_variants
     except Exception as e:
         import logging as _logging

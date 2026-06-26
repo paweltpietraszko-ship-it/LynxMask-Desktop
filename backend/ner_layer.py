@@ -1,9 +1,14 @@
 """
-ner_layer.py  v1.14
+ner_layer.py  v1.15
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.15 — [BUG-ADJECTIVE-MULTIWORD] Filtr _ADJECTIVE_ENDINGS_RE stosowany tylko
+           dla jednowyrazowych encji OSOBA. Poprzednio "Jana Kowalskiego" było
+           filtrowane bo końcówka -skiego pasuje do przymiotnikowej, ale to
+           dopełniacz osoby w zdaniu, nie przymiotnik. Wielowyrazowe encje OSOBA
+           (imię+nazwisko w dowolnym przypadku) teraz nie są odfiltrowane.
   v1.14 — [BUG-NER-FP-GRANICE] Trzy nowe filtry redukujące 52 FP dla ORGANIZACJA/FIRMA:
            1. Nagłówki ALL-CAPS ≤2 słów bez sufiksu prawnego → pomiń jako FIRMA.
               SpaCy widzi "ZAKRES OBOWIĄZKÓW" → ORG, ale to nagłówek, nie firma.
@@ -215,8 +220,12 @@ def _filter_institutions(ner_results: list) -> list:
         if ner.label == "FIRMA" and _INSTITUTION_IN_FIRMA_RE.search(entity_text):
             logger.debug("[FILTER] pominięto FIRMA z instytucją: '%s'", entity_text[:60])
             continue
-        # [BUG-NER-FP] Pomiń encje OSOBA kończące się na polskie końcówki przymiotnikowe.
-        if ner.label == "OSOBA" and _ADJECTIVE_ENDINGS_RE.search(entity_text):
+        # [BUG-NER-FP] Pomiń jednowyrazowe encje OSOBA kończące się na końcówki przymiotnikowe.
+        # TYLKO jednowyrazowe — "Jana Kowalskiego" to dopełniacz osoby, nie przymiotnik.
+        # Wielowyrazowe: "Jan Kowalski", "Jana Kowalskiego" → zawsze OSOBA (fleksja).
+        if (ner.label == "OSOBA"
+                and " " not in entity_text.strip()
+                and _ADJECTIVE_ENDINGS_RE.search(entity_text)):
             logger.debug("[FILTER] pominięto przymiotnik jako OSOBA: '%s'", entity_text[:40])
             continue
 
