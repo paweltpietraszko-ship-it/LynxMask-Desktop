@@ -1,5 +1,5 @@
 """
-layers/address.py  v1.7
+layers/address.py  v1.8
 Warstwa address — adresy z kodem pocztowym, kody pocztowe jako kotwice.
 v1.7: [OBS-ADRES-DOUBLE-TOKEN] Wszystkie trzy fazy zbierają hity na tym samym
   tekście wejściowym, potem jeden wspólny _apply_hits. Wcześniej każda faza
@@ -132,13 +132,20 @@ def _apply_hits(
     hits: list[tuple[int, int, str, str]],
     allocator,
 ) -> str:
-    hits.sort(key=lambda x: x[0], reverse=True)
+    # [BUG-ADDR-STREET-LOST] Alokuj od największego spanu — większy hit wygrywa
+    # gdy nakładają się (np. faza1: ul.+kod+miasto vs faza2b: sam kod+miasto).
+    # Podmianę tekstu wykonuj osobno od prawej, żeby pozycje pozostały spójne.
+    hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
+    valid: list[tuple[int, int, str]] = []
     for start, end, value, token_type in hits:
         if allocator.is_occupied(start, end):
             continue
         tid = allocator.allocate(token_type, value, start, end)
         if tid is None:
             continue
+        valid.append((start, end, tid))
+    valid.sort(key=lambda x: x[0], reverse=True)
+    for start, end, tid in valid:
         text = text[:start] + tid + text[end:]
     return text
 
