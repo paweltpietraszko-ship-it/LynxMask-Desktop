@@ -53,7 +53,7 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 
 ## Wersje kluczowych plików
 
-- `layers/identity.py` v1.1
+- `layers/identity.py` v1.2
 - `layers/numeric.py` v1.0
 - `layers/address.py` v1.8
 - `layers/institution.py` v1.0 (NOWY — 2026-06-25)
@@ -207,10 +207,17 @@ Naprawa: encja SpaCy otoczona cudzysłowem w oryginalnym tekście wymusza FIRMA.
 Profil biura akceptował słowa pospolite. Dodana walidacja: _NER_BLOCKLIST +
 _PL_STOPWORDS + min. 3 znaki przed zapisem w /profile/add-entity.
 
-### ~~NUMER-RECALL (telefon)~~ — NAPRAWIONY częściowo (contact.py v1.1, 2026-06-26)
-TELEFON 0% — 9-cyfrowy numer bez separatorów był pochłaniany przez identity jako REGON.
-_PHONE_CONTEXT_RE: tel./kom./mob./fax + numer → TOKEN_NUMER, rejestrowany przed identity.
-Pozostałe przyczyny FP (EMAIL 20%, NUMER 3.8%) — otwarte, wymagają analizy wzorców.
+### ~~NUMER-RECALL~~ — NAPRAWIONY (contact.py v1.2, identity.py v1.2, 2026-06-26)
+TELEFON 0% — fix w v1.1: _PHONE_CONTEXT_RE (tel./kom./mob./fax + numer przed REGON).
+EMAIL 20% — fix w v1.2: _EMAIL_OCR_RE lapie emaile rozbite przez OCR:
+  spacja/newline wokol @, © zamiast @, przecinek jako kropka w TLD.
+  Wartosc kanoniczna w reverse_map = znormalizowany email (bez smieci OCR).
+NUMER 3.8% — fix w identity.py v1.2: _DIGITS_WITH_SPACES_RE lapie PESEL/NIP
+  rozbite spacjami przez OCR (11 cyfr=PESEL, 10 cyfr=NIP, z kanoniczna forma).
+  REGON (9 cyfr) wykluczony — nie do odroznienia od telefonu z spacjami.
+Mobile (OcrNormalizer.kt): emaile/telefony NIE sa normalizowane w OcrNormalizerze
+  (tylko znaki 1/0/| miedzy literami i spacje w nazwach ulic/miast).
+  Logika detekcji emaili jest w PseudonymEngine — nasza architektura spójna.
 
 ### ~~BUG-NER-FP-GRANICE~~ — NAPRAWIONY (ner_layer.py v1.14, 2026-06-26)
 3 nowe filtry w _filter_institutions (zainspirowane analizą mobile Kotlin):
