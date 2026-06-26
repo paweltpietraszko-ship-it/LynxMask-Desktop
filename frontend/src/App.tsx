@@ -1,4 +1,6 @@
-// Pseudominizer — App.tsx  v1.4
+// Pseudominizer — App.tsx  v1.5
+// [BUG-10] tokenReady: blokuje MainLayout dopóki apiToken nie załadowany.
+//   Poprzednio UI było aktywne z apiToken="" przez chwilę po odblokowaniu → 401.
 // [FIX-TOKEN-API] Ładuje api_token.txt przez read_api_token po odblokowaniu.
 //   Token przekazywany do MainLayout → ekranów jako prop apiToken.
 // Idle timer: ostrzeżenie po 9 min, wylogowanie po 10 min.
@@ -24,6 +26,7 @@ export default function App() {
   const [idleWarning,  setIdleWarning]  = useState(false);
   const [countdown,    setCountdown]    = useState(60);
   const [apiToken,     setApiToken]     = useState("");
+  const [tokenReady,   setTokenReady]   = useState(false);
   // [BUG-P4-03] PSE przekazywane z Biblioteki do Depseudonimizuj przy kliknięciu odpowiedzi AI.
   const [demaskPse,    setDemaskPse]    = useState<string | null>(null);
 
@@ -49,14 +52,20 @@ export default function App() {
   useEffect(() => {
     if (!unlocked) {
       setApiToken("");
+      setTokenReady(false);
       return;
     }
+    // [BUG-10] tokenReady=false blokuje MainLayout aż token się załaduje.
+    setTokenReady(false);
     invoke<string>("read_api_token")
-      .then(token => setApiToken(token))
+      .then(token => {
+        setApiToken(token);
+        setTokenReady(true);
+      })
       .catch(err => {
-        // Logujemy błąd, ale nie blokujemy UI — backend może jeszcze startować.
         console.error("[TOKEN] Błąd odczytu api_token.txt:", err);
         setApiToken("");
+        setTokenReady(true);  // mimo błędu odblokuj UI — backend może jeszcze startować
       });
   }, [unlocked]);
 
@@ -114,6 +123,19 @@ export default function App() {
 
   if (!unlocked) {
     return <LockScreen onUnlock={() => setUnlocked(true)} />;
+  }
+
+  // [BUG-10] Czekaj na załadowanie tokenu — bez tego UI wysyła żądania z apiToken=""
+  if (!tokenReady) {
+    return (
+      <div style={{
+        height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: T.bg, fontFamily: T.mono, fontSize: 11,
+        color: T.muted, letterSpacing: "0.08em",
+      }}>
+        Ładowanie sesji…
+      </div>
+    );
   }
 
   return (

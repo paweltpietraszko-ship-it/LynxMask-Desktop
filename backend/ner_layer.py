@@ -1,9 +1,16 @@
 """
-ner_layer.py  v1.13
+ner_layer.py  v1.14
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.14 — [BUG-NER-FP-GRANICE] Trzy nowe filtry redukujące 52 FP dla ORGANIZACJA/FIRMA:
+           1. Nagłówki ALL-CAPS ≤2 słów bez sufiksu prawnego → pomiń jako FIRMA.
+              SpaCy widzi "ZAKRES OBOWIĄZKÓW" → ORG, ale to nagłówek, nie firma.
+           2. Czyste akronimy [A-Z]{2,6} bez cyfr/sufiksu → pomiń.
+              ERP/CRM/IT jako samodzielna encja to skrót systemowy, nie firma.
+           3. Przymiotnik jako jedyne słowo FIRMA — _ADJECTIVE_ENDINGS_RE teraz
+              stosowany też dla FIRMA gdy encja to jedno słowo przymiotnikowe.
   v1.13 — [BUG-2] Encja SpaCy otoczona cudzysłowem wymusza typ FIRMA.
            "Wiśniewski i Wspólnicy" w cudzysłowie = nazwa handlowa, nie OSOBA.
            Wykrycie PRZED strip('"') — ner.start/end w oryginalnym tekście.
@@ -120,6 +127,16 @@ logger = logging.getLogger("pseudominizer.ner_layer")
 _TOKEN_RE      = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
 _ORDER_CODE_RE = re.compile(r"^[A-Z]{2,6}_\d{4,}$")
 
+# [BUG-NER-FP-GRANICE] Czyste akronimy bez cyfr/sufiksu prawnego — skróty systemowe
+# (ERP, CRM, IT, HR, BHP) błędnie klasyfikowane przez SpaCy jako FIRMA/ORG.
+_PURE_ACRONYM_RE = re.compile(r"^[A-Z]{2,6}$")
+
+# Sufiks prawny — jeśli obecny, akronim jest legalną nazwą firmy (ABC S.A.)
+_LEGAL_SUFFIX_RE = re.compile(
+    r'\b(?:S\.A\.?|Sp\.?\s*z\s*o\.o\.?|Sp\.?\s*k\.?|s\.c\.?|p\.s\.a\.?|Ltd\.?|LLC|GmbH|s\.k\.a\.?)\b',
+    re.IGNORECASE,
+)
+
 # [FIX-NER-ADDR-PREFIX] Encje zaczynające się od prefiksu adresowego
 # są adresami, nie osobami — pomiń.
 _ADDR_PREFIX_RE = re.compile(
@@ -199,9 +216,34 @@ def _filter_institutions(ner_results: list) -> list:
             logger.debug("[FILTER] pominięto FIRMA z instytucją: '%s'", entity_text[:60])
             continue
         # [BUG-NER-FP] Pomiń encje OSOBA kończące się na polskie końcówki przymiotnikowe.
-        # FIRMA może mieć przymiotnik w nazwie legalnie ("Firma Handlowa X") — bez filtra.
         if ner.label == "OSOBA" and _ADJECTIVE_ENDINGS_RE.search(entity_text):
             logger.debug("[FILTER] pominięto przymiotnik jako OSOBA: '%s'", entity_text[:40])
+            continue
+
+        # [BUG-NER-FP-GRANICE] Jednoslowna FIRMA będąca przymiotnikiem → pomiń.
+        # Wieloslowna nazwa "Firma Handlowa X" jest legalna — filtrujemy tylko jedno słowo.
+        if (ner.label == "FIRMA" and " " not in entity_text.strip()
+                and _ADJECTIVE_ENDINGS_RE.search(entity_text)
+                and not _LEGAL_SUFFIX_RE.search(entity_text)):
+            logger.debug("[FILTER] pominięto jednosłowny przymiotnik jako FIRMA: '%s'", entity_text[:40])
+            continue
+
+        # [BUG-NER-FP-GRANICE] Czyste akronimy bez sufiksu prawnego → pomiń.
+        # "ERP", "CRM", "IT" to skróty systemowe — nie firmy.
+        if (ner.label in ("FIRMA", "ORGANIZACJA") and _PURE_ACRONYM_RE.match(entity_text.strip())
+                and not _LEGAL_SUFFIX_RE.search(entity_text)):
+            logger.debug("[FILTER] pominięto czysty akronim jako FIRMA/ORG: '%s'", entity_text)
+            continue
+
+        # [BUG-NER-FP-GRANICE] Nagłówki ALL-CAPS (≤2 słowa, brak sufiksu) → pomiń.
+        # "ZAKRES OBOWIĄZKÓW", "DANE OSOBOWE" to nagłówki dokumentów, nie firmy.
+        words = entity_text.split()
+        if (ner.label in ("FIRMA", "ORGANIZACJA")
+                and len(words) <= 2
+                and entity_text == entity_text.upper()
+                and not _LEGAL_SUFFIX_RE.search(entity_text)
+                and not any(c.isdigit() for c in entity_text)):
+            logger.debug("[FILTER] pominięto nagłówek ALL-CAPS jako FIRMA/ORG: '%s'", entity_text[:40])
             continue
 
         out.append(ner)

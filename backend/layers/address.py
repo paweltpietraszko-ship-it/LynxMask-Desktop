@@ -1,6 +1,11 @@
 """
-layers/address.py  v1.6
+layers/address.py  v1.7
 Warstwa address — adresy z kodem pocztowym, kody pocztowe jako kotwice.
+v1.7: [OBS-ADRES-DOUBLE-TOKEN] Wszystkie trzy fazy zbierają hity na tym samym
+  tekście wejściowym, potem jeden wspólny _apply_hits. Wcześniej każda faza
+  modyfikowała state.text niezależnie — po fazie 1 offsety w alokatorze
+  nie odpowiadały pozycjom w zmienionym tekście → is_occupied nie wykrywał
+  pokrywających się dopasowań z faz 2a/2b.
 v1.6: [BUG-ADDR-FP] Faza 2a — gdy brak kodu pocztowego w dopasowaniu,
   wymagamy że przynajmniej jedno słowo z dopasowania pasuje do bazy SIMC.
   Wcześniej wzorce bez kodu pocztowego były akceptowane bez walidacji miasta
@@ -141,36 +146,34 @@ def _apply_hits(
 def apply_address_layer(state: PipelineState) -> None:
     """Stosuje wzorce adresów i kodów pocztowych na state.text.
 
+    [OBS-ADRES-DOUBLE-TOKEN] Wszystkie fazy zbierają hity na tym samym tekście,
+    potem jeden _apply_hits. Wcześniej każda faza modyfikowała state.text — offsety
+    allokatora nie zgadzały się z pozycjami w zmienionym tekście.
+
     Faza 1: _ADDR_RE + _match_city — adresy z prefiksem ul./al./os.
-            Regex kończy się na kodzie pocztowym; miasto z SIMC przez _match_city.
     Faza 2a: _ADDR_STRUCTURAL_FULL + _match_city — wzorce bez prefiksu (OCR).
-             _match_city waliduje/przycina miasto po kodzie pocztowym.
     Faza 2b: _POSTAL_ANCHOR_RE + _match_city — sam kod pocztowy + miasto (SIMC).
-             Tylko jeśli miasto rozpoznane w bazie SIMC — redukuje FP.
     """
+    text = state.text
+    all_hits: list[tuple[int, int, str, str]] = []
+
     # Faza 1 — pełne adresy z prefiksem ul./al./os./pl./osiedle/…
-    addr_hits: list[tuple[int, int, str, str]] = []
-    for m in _ADDR_RE.finditer(state.text):
+    for m in _ADDR_RE.finditer(text):
         end = m.end()
         if _POSTAL_END_RE.search(m.group(0)):
-            city_r = _match_city(state.text, end)
+            city_r = _match_city(text, end)
             if city_r:
                 end = city_r[0]
-        addr_hits.append((m.start(), end, state.text[m.start():end], "ADRES"))
-    state.text = _apply_hits(state.text, addr_hits, state.allocator)
+        all_hits.append((m.start(), end, text[m.start():end], "ADRES"))
 
     # Faza 2a — pełne wzorce strukturalne (OCR-linebreak, ulica bez prefiksu).
-    # Po znalezieniu kodu pocztowego w dopasowaniu: _match_city waliduje miasto.
-    # Gdy brak kodu pocztowego: wymagamy że ostatnie słowo/słowa dopasowania
-    # są rozpoznaną miejscowością w SIMC — inaczej pomiń (redukcja FP).
-    full_hits: list[tuple[int, int, str, str]] = []
     for tok, pat in _ADDR_STRUCTURAL_FULL:
-        for m in pat.finditer(state.text):
+        for m in pat.finditer(text):
             start, end = m.start(), m.end()
             postals = list(_POSTAL_IN_MATCH_RE.finditer(m.group(0)))
             if postals:
                 after_postal = start + postals[-1].end()
-                city_r = _match_city(state.text, after_postal)
+                city_r = _match_city(text, after_postal)
                 if city_r:
                     end = city_r[0]
                 else:
@@ -178,29 +181,24 @@ def apply_address_layer(state: PipelineState) -> None:
             else:
                 # [BUG-ADDR-FP] Brak kodu pocztowego — wymagaj SIMC na końcu dopasowania.
                 match_text = m.group(0)
-                # Szukaj miasta od ostatniego dużego słowa w dopasowaniu
-                city_search_pos = start
                 last_city: tuple[int, str] | None = None
                 for cm in _CITY_WORD_RE.finditer(match_text):
                     candidate_pos = start + cm.start()
-                    cr = _match_city(state.text, candidate_pos)
+                    cr = _match_city(text, candidate_pos)
                     if cr and cr[0] <= end + 5:
                         last_city = cr
                 if last_city is None:
-                    continue  # pomiń — brak potwierdzonej miejscowości
-            full_hits.append((start, end, state.text[start:end], tok))
-    state.text = _apply_hits(state.text, full_hits, state.allocator)
+                    continue
+            all_hits.append((start, end, text[start:end], tok))
 
-    # Faza 2b — kod pocztowy + miasto z SIMC (tylko jeśli _match_city potwierdziło).
-    postal_hits: list[tuple[int, int, str, str]] = []
-    for m in _POSTAL_ANCHOR_RE.finditer(state.text):
-        city_r = _match_city(state.text, m.end())
+    # Faza 2b — kod pocztowy + miasto z SIMC.
+    for m in _POSTAL_ANCHOR_RE.finditer(text):
+        city_r = _match_city(text, m.end())
         if city_r:
             city_end, _ = city_r
-            postal_hits.append(
-                (m.start(), city_end, state.text[m.start():city_end], "ADRES")
-            )
-    state.text = _apply_hits(state.text, postal_hits, state.allocator)
+            all_hits.append((m.start(), city_end, text[m.start():city_end], "ADRES"))
+
+    state.text = _apply_hits(text, all_hits, state.allocator)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
