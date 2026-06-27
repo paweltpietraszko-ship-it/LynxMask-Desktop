@@ -1,5 +1,9 @@
 """
-layers/financial.py  v1.2
+layers/financial.py  v1.3
+v1.3: [FIX-IBAN-OCR-WIDE] _IBAN_PL_OCR_RE: rozszerzono {20,45} → {20,55}.
+  IBAN ze spacją między każdą cyfrą ma 51 znaków po "PL" (26 cyfr × 2 - 1).
+  Poprzedni limit 45 obcinał match, post-match walidacja "== 26 cyfr" nie
+  przechodziła — IBAN pozostawał niezamaskowany i Guard go blokował.
 Warstwa financial — IBAN, numery kont bankowych.
 v1.1: [BUG-4] Zagraniczne IBAN (DE, UA, GB, FR, NL...) maskowane przez pipeline.
   _IBAN_FOREIGN_RE: dwa wzorce — ze spacjami (grupy po 4) i bez spacji (compact).
@@ -30,7 +34,7 @@ _FINANCIAL_SOURCES: frozenset[str] = frozenset({
 # [OCR-IBAN-PL] Tolerancyjny wzorzec dla PL IBAN z rozerwanymi grupami OCR.
 # Lapiemy: PL + do 40 znakow (cyfry + spacje), post-match walidacja: dokladnie 26 cyfr.
 # Przyklad OCR lvl3: "PL 98 1 053 1 875 0000 0023 4567 8901" -> 26 cyfr po PL.
-_IBAN_PL_OCR_RE = re.compile(r"\bPL[\d\s]{20,45}(?=\D|$)", re.IGNORECASE)
+_IBAN_PL_OCR_RE = re.compile(r"\bPL[\d\s]{20,55}(?=\D|$)", re.IGNORECASE)
 
 _FINANCIAL_PATTERNS: list[tuple[str, re.Pattern]] = [
     (tok, pat) for tok, pat in STRUCTURAL_PATTERNS
