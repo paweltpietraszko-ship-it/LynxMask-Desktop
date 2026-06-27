@@ -1,5 +1,5 @@
 """
-verbal_amounts.py  v1.3
+verbal_amounts.py  v1.4
 Maskowanie kwot zapisanych słownie.
 Wydzielony z pseudominizer_api.py v1.18.
 
@@ -92,10 +92,22 @@ _PL_NUMBER_WORDS: frozenset[str] = frozenset({
     "milion", "miliony", "milionów", "miliona",
     "miliard", "miliardy", "miliardów", "miliarda",
     "i",
+    # [v1.4] Formy OCR bez polskich znaków diakrytycznych
+    "tysiac", "tysiace", "tysiecy",
+    "milionow", "miliardow",
+    "pieciuset", "szesciuset", "siedmiuset", "osmiuset", "dziewieciuset",
+    "piecdziesieciu", "szescdziesieciu", "siedemdziesieciu",
+    "osiemdziesieciu", "dziewiecdziesieciu",
+    "trzydziestu", "czterdziestu",
+    "jedenastu", "dwunastu", "trzynastu", "czternastu", "pietnastu",
+    "szesnastu", "siedemnastu", "osiemnastu", "dziewiętnastu", "dziewiętnastu",
+    "dwudziestu",
+    "pieciu", "szesciu", "siedmiu", "osmiu", "dziewieciu", "dziesieciu",
+    "dwoch", "trzech",
 })
 
 _CURRENCY_RE = re.compile(
-    r"\b(złot\w+|grosz\w+|grosza|groszy|euro|cent\w+|PLN|EUR|USD|GBP)\b",
+    r"\b(z[łl]ot\w+|grosz\w+|grosza|groszy|euro|cent\w+|PLN|EUR|USD|GBP)\b",
     re.IGNORECASE,
 )
 

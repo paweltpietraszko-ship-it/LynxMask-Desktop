@@ -1,5 +1,5 @@
 """
-ner_blocklist.py  v1.3
+ner_blocklist.py  v1.4
 Historia zmian:
   v1.2 — [BUG-NER-02] Dodano słowa kluczowe dokumentów prawno-administracyjnych
           i komorniczych do _NER_BLOCKLIST. SpaCy klasyfikował je jako OSOBA lub FIRMA,
@@ -33,6 +33,8 @@ Edycja tutaj nie wymaga znajomości kodu ner_layer.py.
 # dowodem że to firma, nie osoba.
 _LEGAL_SUFFIXES: tuple = (
     "sp. z o.o.", "sp.z o.o.", "spółka z o.o.",
+    "sp z o.o.", "sp z o.o", "sp. z o.o",
+    "sp z o o",
     "sp. k.", "sp.k.", "spółka komandytowa",
     "sp. j.", "sp.j.", "spółka jawna",
     "s.a.", "s.a", "spółka akcyjna",
@@ -347,6 +349,25 @@ _NER_BLOCKLIST: set = {
     "email",
     "emailów",
     "emailami",
+    # [v1.4] Fałszywe pozytywy z dokumentów komorniczych i faktur
+    # SpaCy klasyfikował te słowa jako OSOBA lub FIRMA
+    "doreczone",
+    "doręczone",
+    "wplate",
+    "wpłatę",
+    "wpłata",
+    "wplata",
+    "platnosc",
+    "płatność",
+    "platnosci",
+    "płatności",
+    "odebral",
+    "odebrał",
+    "odebrala",
+    "odebrała",
+    "dostarczono",
+    "doreczono",
+    "doręczono",
 }
 
 

@@ -1,6 +1,8 @@
 """
-layers/identity.py  v1.4
+layers/identity.py  v1.5
 Warstwa identity — PESEL, NIP, REGON, dowod osobisty, paszport.
+v1.5: [BUG-NIP-DOUBLE-SEP] NIP z separatorem " -" (spacja+myslnik): "873 -000 -51-39".
+  _NIP_RE_OCR zmieniony z [-\s.]? na [-\s.]{0,3} — lapie 0, 1 lub 2 znaki separatora.
 v1.4: [BUG-UR-DOB] Wzorzec ur. DD.MM.RRRR nie trafiał do _IDENTITY_PATTERNS.
   _IDENTITY_SOURCES miał literalne ZŁŚŹĆŃ, anonymizer_init.py ma ŁŚ...
   — inne bajty, pat.pattern in frozenset zwracał False.
@@ -41,7 +43,7 @@ _IDENTITY_SOURCES: frozenset[str] = frozenset({
 # Wzorzec NIP z rozszerzonym separatorem: OCR czasem zastepuje myslnik kropka
 # (np. "766-444-75.06"). STRUCTURAL_PATTERNS ma stary [-\s]? — podmieniamy lokalnie.
 _NIP_PATTERN_ORIG = r"(?<!\d)\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}(?!\d)"
-_NIP_RE_OCR = re.compile(r"(?<!\d)\d{3}[-\s.]?\d{3}[-\s.]?\d{2}[-\s.]?\d{2}(?!\d)")
+_NIP_RE_OCR = re.compile(r"(?<!\d)\d{3}[-\s.]{0,3}\d{3}[-\s.]{0,3}\d{2}[-\s.]{0,3}\d{2}(?!\d)")
 
 _IDENTITY_PATTERNS: list[tuple[str, re.Pattern]] = [
     (tok, _NIP_RE_OCR if pat.pattern == _NIP_PATTERN_ORIG else pat)

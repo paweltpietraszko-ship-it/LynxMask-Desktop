@@ -1,5 +1,5 @@
 """
-ner_layer.py  v1.17
+ner_layer.py  v1.18
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
@@ -142,7 +142,7 @@ _PURE_ACRONYM_RE = re.compile(r"^[A-Z]{2,6}$")
 
 # Sufiks prawny — jeśli obecny, akronim jest legalną nazwą firmy (ABC S.A.)
 _LEGAL_SUFFIX_RE = re.compile(
-    r'\b(?:S\.A\.?|Sp\.?\s*z\s*o\.o\.?|Sp\.?\s*k\.?|s\.c\.?|p\.s\.a\.?|Ltd\.?|LLC|GmbH|s\.k\.a\.?)\b',
+    r'\b(?:S\.A\.?|Sp\.?\s*z\s*o\.?\.?\s*o\.?|Sp\.?\s*k\.?|s\.c\.?|p\.s\.a\.?|Ltd\.?|LLC|GmbH|s\.k\.a\.?|SP\s+Z\s+O\.?O\.?)\b',
     re.IGNORECASE,
 )
 
