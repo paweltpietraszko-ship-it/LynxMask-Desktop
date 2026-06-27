@@ -1,4 +1,4 @@
-// Pseudominizer — src-tauri/src/main.rs  v1.6
+// Pseudominizer — src-tauri/src/main.rs  v1.7
 // ============================================================
 // ZMIANY W TEJ WERSJI: Potok 4 Biblioteka — komendy odpowiedzi AI
 // ============================================================
@@ -450,6 +450,141 @@ fn read_depseudo_response(
         .map_err(|e| format!("Błąd odczytu pliku: {}", e))
 }
 
+/// Zmiana hasła szyfrowania.
+///
+/// Algorytm:
+/// 1. Wyprowadza stary klucz z old_password + istniejącą solą.
+/// 2. Weryfikuje stary klucz przez key_verify.bin → WRONG_PASSWORD jeśli zły.
+/// 3. Wyprowadza nowy klucz z new_password + tą samą solą.
+/// 4. Pobiera listę wszystkich PSE z backendu (GET /archive).
+/// 5. Dla każdego PSE pobiera blob (GET /archive/{pse}/blob), deszyfruje
+///    starym kluczem, szyfruje nowym kluczem.
+/// 6. Wysyła wszystkie re-zaszyfrowane bloby do POST /archive/reencrypt.
+/// 7. Nadpisuje key_verify.bin nowym kluczem.
+/// 8. Aktualizuje klucz w State (użytkownik pozostaje zalogowany).
+#[tauri::command]
+async fn change_password(
+    old_password: String,
+    new_password: String,
+    api_token: String,
+    app: tauri::AppHandle,
+    state: State<'_, AppKey>,
+) -> Result<(), String> {
+    use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
+
+    let sp = salt_path(&app)?;
+    let salt = load_or_create_salt(&sp)?;
+
+    // Krok 1: wyprowadź stary klucz i zweryfikuj
+    let mut old_key = [0u8; KEY_LEN];
+    pbkdf2_hmac::<Sha256>(old_password.as_bytes(), &salt, PBKDF2_ITER, &mut old_key);
+
+    let vp = verify_path(&app)?;
+    if vp.exists() {
+        let blob = std::fs::read(&vp).map_err(|e| e.to_string())?;
+        let plaintext = decrypt_with_key(&blob, &old_key)
+            .map_err(|_| "WRONG_PASSWORD".to_string())?;
+        if plaintext != KEY_VERIFY_PLAINTEXT {
+            return Err("WRONG_PASSWORD".into());
+        }
+    } else {
+        return Err("Profil nie jest zainicjowany.".into());
+    }
+
+    // Krok 2: wyprowadź nowy klucz
+    let mut new_key = [0u8; KEY_LEN];
+    pbkdf2_hmac::<Sha256>(new_password.as_bytes(), &salt, PBKDF2_ITER, &mut new_key);
+
+    // Krok 3: pobierz listę PSE z backendu
+    let client = reqwest::Client::new();
+    let list_resp = client
+        .get("http://127.0.0.1:8765/archive")
+        .header("x-api-token", &api_token)
+        .send()
+        .await
+        .map_err(|e| format!("Błąd połączenia z backendem: {e}"))?;
+
+    if !list_resp.status().is_success() {
+        return Err(format!("Błąd pobierania listy PSE: {}", list_resp.status()));
+    }
+
+    let list_json: serde_json::Value = list_resp.json().await
+        .map_err(|e| format!("Błąd parsowania listy PSE: {e}"))?;
+
+    let documents = list_json["documents"].as_array()
+        .ok_or("Nieprawidłowy format listy dokumentów")?;
+
+    // Krok 4: dla każdego PSE — pobierz blob, re-szyfruj
+    let mut blobs_payload: Vec<serde_json::Value> = Vec::new();
+
+    for doc in documents {
+        let pse = doc["pse"].as_str().ok_or("Brak pola pse w dokumencie")?.to_string();
+        let enc_exists = doc["enc_exists"].as_bool().unwrap_or(false);
+        if !enc_exists {
+            continue; // brak pliku .enc — pomiń
+        }
+
+        let blob_resp = client
+            .get(format!("http://127.0.0.1:8765/archive/{pse}/blob"))
+            .header("x-api-token", &api_token)
+            .send()
+            .await
+            .map_err(|e| format!("Błąd pobierania bloba {pse}: {e}"))?;
+
+        if !blob_resp.status().is_success() {
+            return Err(format!("Błąd pobierania bloba {pse}: {}", blob_resp.status()));
+        }
+
+        let blob_json: serde_json::Value = blob_resp.json().await
+            .map_err(|e| format!("Błąd parsowania bloba {pse}: {e}"))?;
+
+        let enc_b64 = blob_json["enc_blob"].as_str()
+            .ok_or(format!("Brak enc_blob dla {pse}"))?;
+
+        let enc_bytes = B64.decode(enc_b64)
+            .map_err(|e| format!("Błąd base64 dla {pse}: {e}"))?;
+
+        // Deszyfruj starym kluczem
+        let plaintext = decrypt_with_key(&enc_bytes, &old_key)
+            .map_err(|e| format!("Błąd deszyfrowania {pse}: {e}"))?;
+
+        // Szyfruj nowym kluczem
+        let new_enc = encrypt_with_key(&plaintext, &new_key)
+            .map_err(|e| format!("Błąd szyfrowania {pse}: {e}"))?;
+
+        blobs_payload.push(serde_json::json!({
+            "pse": pse,
+            "enc_blob": B64.encode(&new_enc),
+        }));
+    }
+
+    // Krok 5: wyślij re-zaszyfrowane bloby do backendu
+    if !blobs_payload.is_empty() {
+        let reenc_resp = client
+            .post("http://127.0.0.1:8765/archive/reencrypt")
+            .header("x-api-token", &api_token)
+            .header("content-type", "application/json")
+            .json(&serde_json::json!({ "blobs": blobs_payload }))
+            .send()
+            .await
+            .map_err(|e| format!("Błąd wysyłania nowych blobów: {e}"))?;
+
+        if !reenc_resp.status().is_success() {
+            let err: serde_json::Value = reenc_resp.json().await.unwrap_or_default();
+            return Err(format!("Błąd reencrypt: {}", err["error"].as_str().unwrap_or("nieznany")));
+        }
+    }
+
+    // Krok 6: zaktualizuj key_verify.bin nowym kluczem
+    let new_verify_blob = encrypt_with_key(KEY_VERIFY_PLAINTEXT, &new_key)?;
+    std::fs::write(&vp, &new_verify_blob).map_err(|e| e.to_string())?;
+
+    // Krok 7: zaktualizuj klucz w State
+    *state.0.lock().map_err(|_| "Błąd mutex")? = Some(new_key);
+
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -468,6 +603,7 @@ fn main() {
             restart_app,
             list_depseudo_responses,
             read_depseudo_response,
+            change_password,
         ])
         .run(tauri::generate_context!())
         .expect("Błąd uruchamiania Pseudominizer");

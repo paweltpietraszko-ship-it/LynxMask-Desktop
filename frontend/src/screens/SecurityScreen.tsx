@@ -1,7 +1,8 @@
-// Pseudominizer — src/screens/SecurityScreen.tsx  v2.1
+// Pseudominizer — src/screens/SecurityScreen.tsx  v2.2
 // ============================================================
-// ZMIANY W TEJ WERSJI (v2.1):
-//   - Sekcja "Hasło" zastąpiona informacją (zmiana hasła wymaga Tauri crypto)
+// ZMIANY W TEJ WERSJI (v2.2):
+//   - Sekcja "Hasło" — pełna zmiana hasła przez Tauri invoke("change_password")
+//     Rust re-szyfruje wszystkie sesje starym→nowym kluczem, aktualizuje State
 //   - Sekcja "Słownik biura" — eksport (.lynxdict) i import słownika
 //     Eksport: GET /profile/export-dict → <a download> trick
 //     Import: <input type="file"> → POST /profile/import-dict
@@ -13,6 +14,7 @@
 // ============================================================
 
 import { useState, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
 
 const API = "http://127.0.0.1:8765";
@@ -122,6 +124,106 @@ function Alert({ type, children }: { type: "success" | "error"; children: React.
     }}>
       {isOk ? "✓ " : "✕ "}{children}
     </div>
+  );
+}
+
+// ── Sekcja: Zmiana hasła ──────────────────────────────────────────────────────
+
+function InputPw({ value, onChange, placeholder }: {
+  value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <input
+      type="password"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{
+        width: "100%", boxSizing: "border-box",
+        padding: "9px 12px",
+        background: T.bg, border: `1px solid ${T.border}`,
+        borderRadius: 6, color: T.textPrimary,
+        fontSize: 14, fontFamily: T.sans,
+        outline: "none",
+      }}
+    />
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: 12, color: T.textMuted, textTransform: "uppercase",
+      letterSpacing: "0.08em", marginBottom: 6, fontFamily: T.mono,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function ChangePasswordSection({ apiToken }: { apiToken: string }) {
+  const [oldPw,     setOldPw]     = useState("");
+  const [newPw,     setNewPw]     = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [status,    setStatus]    = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  async function handleChange() {
+    setStatus(null);
+    if (!oldPw || !newPw || !confirmPw) {
+      setStatus({ type: "error", msg: "Wypełnij wszystkie pola." });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setStatus({ type: "error", msg: "Nowe hasła nie są identyczne." });
+      return;
+    }
+    if (newPw.length < 8) {
+      setStatus({ type: "error", msg: "Nowe hasło musi mieć co najmniej 8 znaków." });
+      return;
+    }
+    setLoading(true);
+    try {
+      await invoke("change_password", {
+        oldPassword: oldPw,
+        newPassword: newPw,
+        apiToken,
+      });
+      setStatus({ type: "success", msg: "Hasło zmienione. Wszystkie sesje zostały ponownie zaszyfrowane." });
+      setOldPw(""); setNewPw(""); setConfirmPw("");
+    } catch (err: unknown) {
+      const msg = typeof err === "string" ? err : "Błąd zmiany hasła.";
+      if (msg === "WRONG_PASSWORD") {
+        setStatus({ type: "error", msg: "Stare hasło jest nieprawidłowe." });
+      } else {
+        setStatus({ type: "error", msg });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Section title="Hasło">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+        <div>
+          <FieldLabel>Stare hasło</FieldLabel>
+          <InputPw value={oldPw} onChange={setOldPw} placeholder="••••••••" />
+        </div>
+        <div>
+          <FieldLabel>Nowe hasło</FieldLabel>
+          <InputPw value={newPw} onChange={setNewPw} placeholder="••••••••" />
+        </div>
+        <div>
+          <FieldLabel>Potwierdź nowe</FieldLabel>
+          <InputPw value={confirmPw} onChange={setConfirmPw} placeholder="••••••••" />
+        </div>
+      </div>
+      <Btn onClick={handleChange} disabled={loading}>
+        {loading ? "▸ Zmieniam..." : "Zmień hasło"}
+      </Btn>
+      {status && <Alert type={status.type}>{status.msg}</Alert>}
+    </Section>
   );
 }
 
@@ -348,13 +450,7 @@ export default function SecurityScreen({ apiToken = "" }: Props) {
       </div>
 
       {/* ── Sekcje akcji ── */}
-      <Section title="Hasło">
-        <div style={{ color: T.textMuted, fontSize: 13, lineHeight: 1.6 }}>
-          Zmiana hasła szyfrowania wymaga operacji kryptograficznej po stronie aplikacji Tauri/Rust
-          i zostanie dodana w kolejnej wersji. Hasło możesz zmienić, usuwając profil i tworząc go od nowa
-          (Dane → Usuń wszystkie dane).
-        </div>
-      </Section>
+      <ChangePasswordSection apiToken={apiToken} />
       <DictSection apiToken={apiToken} />
 
       {/* ── Sekcje informacyjne ── */}
