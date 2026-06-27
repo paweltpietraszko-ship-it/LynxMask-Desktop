@@ -1,4 +1,4 @@
-// Pseudominizer — MainLayout.tsx  v2.3
+// Pseudominizer — MainLayout.tsx  v2.4
 // ============================================================
 // ZMIANY W TEJ WERSJI (v2.2):
 //   [UI-SIDEBAR-04] Logo responsywne na motyw
@@ -112,7 +112,7 @@ function ScreenContent({
         <Depseudonimizuj apiToken={apiToken} initialPse={demaskPse ?? undefined} />
       </div>
       <div style={{ display: screen === "security"        ? "block" : "none", height: "100%" }}>
-        <SecurityScreen />
+        <SecurityScreen apiToken={apiToken} />
       </div>
     </>
   );
