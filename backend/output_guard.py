@@ -1,5 +1,10 @@
 """
-Triangulum — output_guard.py  v4.3
+Triangulum — output_guard.py  v4.4
+Zmiany v4.4:
+  [IBAN-OCR-TOL] IBAN_OCR: zmieniono {25} na {24,25} — tolerancja ±1 cyfra.
+  OCR moze zgubic jedną cyfrę z 26-cyfrowego PL IBAN — {24,25} łapie 25 lub 26 cyfr.
+  [PESEL-TOL] PESEL: zmieniono \b\d{11}\b na \b\d{10,11}\b — tolerancja ±1 cyfra OCR.
+
 Zmiany v4.3:
   [IBAN-OCR] Nowy wzorzec HIGH: IBAN_OCR — PL IBAN z OCR-garbled spacjami/enterami.
   Istniejący wzorzec IBAN wymaga grup bez spacji między pojedynczymi cyframi:
@@ -131,7 +136,10 @@ class GuardMode(Enum):
 # HIGH: jeden match → natychmiastowa blokada w REDACT (i STRICT)
 # Dane bezpośrednio identyfikujące — ich obecność w odpowiedzi to wyciek RODO
 _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
-    ("PESEL",   re.compile(r"\b\d{11}\b")),
+    # [GUARD-BROAD] PESEL: tolerancja ±1 cyfra — OCR moze gubic/dodawac cyfre.
+    # \d{10,11} lapie 10-cyfrowy (jedna cyfra zgubiona) i 11-cyfrowy (prawidlowy).
+    # \d{12} nie dodajemy — 12 cyfr to juz REGON-14 fragment, wyzszy FP.
+    ("PESEL",   re.compile(r"\b\d{10,11}\b")),
     # [GUARD-BROAD] NIP: formaty z separatorem + \b\d{10}\b (bez separatora).
     # Pipeline sprawdza konkretne formaty — Guard lapie tez NIP bez separatora
     # i z dowolnym separatorem (kropka z OCR, biale znaki itp.).
@@ -151,10 +159,10 @@ _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     # lub enterem w srodku numeru. Istniejacy wzorzec IBAN nie lapie zapisu
     # "PL 98 1 053 1 875 0000 0023 4567 8901" — [ \t]? nie dopuszcza przerwy
     # miedzy "PL" a cyframi kontrolnymi, ani spacji miedzy kazda cyfrą.
-    # Nowy wzorzec liczy dokladnie 26 cyfr po "PL" z dowolnymi bialymi znakami
-    # (spacja / tab / enter) miedzy nimi — PL IBAN zawsze ma 2+24=26 cyfr.
+    # Nowy wzorzec liczy 25 lub 26 cyfr po "PL" z dowolnymi bialymi znakami
+    # (spacja / tab / enter) miedzy nimi — PL IBAN ma 2+24=26 cyfr, {24,25} daje tolerancje OCR ±1.
     ("IBAN_OCR", re.compile(
-        r"(?<![A-Z])PL[ \t\n\r]*\d(?:[ \t\n\r]*\d){25}(?!\d)"
+        r"(?<![A-Z])PL[ \t\n\r]*\d(?:[ \t\n\r]*\d){24,25}(?!\d)"
     )),
     # [BUG-PASSPORT-SPACE] Dowod osobisty: 3 litery + 6 cyfr (np. AYC123456 lub AYC 123456).
     # Guard-broad: opcjonalna spacja miedzy seria a numerem.
