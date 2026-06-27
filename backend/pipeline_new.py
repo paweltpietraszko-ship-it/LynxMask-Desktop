@@ -1,6 +1,15 @@
 """
-pipeline_new.py  v0.9
+pipeline_new.py  v1.0
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
+Zmiany v1.0:
+  - [EXPR] run_pipeline_express() — tryb bez SpaCy/NER.
+    Tylko warstwy regex: ocr_normalizer, trie, identity, credentials,
+    financial, legal, numeric, contact, amount, verbal_amount, institution, address.
+    Brak: NER (osoby/firmy bez kontekstu słownikowego), fallback, validation.
+    force_block=False zawsze (brak NER → brak możliwości NER crash).
+    Szybszy ~5–10x, bez ładowania modelu spaCy.
+    Zastosowanie: Express Mode, pre-screening, benchmark masowy.
+  - Poprawka: wewnętrzny test_pipeline_new() rozpakowywał 2 wartości zamiast 3.
 Zmiany v0.6:
   - [WYS-1] run_pipeline_new() zwraca (text, reverse_map, force_block).
     force_block=True gdy NER crashuje (state.ner_error) lub pipeline crash.
@@ -107,6 +116,44 @@ def run_pipeline_new(
         return text, {}, True
 
 
+def run_pipeline_express(
+    text: str,
+    anon_map: dict,
+    anonymizer: "Anonymizer | None" = None,
+) -> tuple[str, dict, bool]:
+    """Express Mode — pipeline bez SpaCy/NER.
+
+    Tylko warstwy regex — szybszy ~5–10x, nie wymaga załadowanego modelu spaCy.
+    Maskuje: PESEL, NIP, REGON, dowód, paszport, IBAN, konta, email, telefon,
+    sygnatury, kwoty, daty, numery zawodowe (credentials), instytucje, adresy.
+    NIE maskuje: imion/nazwisk i nazw firm bez kontekstu słownikowego (brak NER).
+    force_block zawsze False — brak NER = brak możliwości NER crash.
+    """
+    import logging as _logging
+    _logger = _logging.getLogger("lynxmask.pipeline_express")
+
+    try:
+        state = PipelineState(text=text, allocator=TokenAllocator())
+        _apply(state, apply_ocr_normalizer)
+        if anonymizer is not None:
+            _apply(state, apply_trie_layer, anonymizer)
+        _apply(state, apply_identity_layer)
+        _apply(state, apply_credentials_layer)
+        _apply(state, apply_financial_layer)
+        _apply(state, apply_legal_layer)
+        _apply(state, apply_numeric_layer)
+        _apply(state, apply_contact_layer)
+        _apply(state, apply_amount_layer)
+        _apply(state, apply_verbal_amount_layer)
+        _apply(state, apply_address_layer)
+        _apply(state, apply_institution_layer)
+        return state.text, state.allocator.reverse_map, False
+
+    except Exception as e:
+        _logger.error(f"[EXPRESS] Nieoczekiwany crash: {e}")
+        return text, {}, False
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Test integracyjny
 # ─────────────────────────────────────────────────────────────────────────────
@@ -149,7 +196,7 @@ def test_pipeline_new() -> bool:
 
     # NER nie zwraca nic dla tego tekstu (brak modelu w testach)
     with patch.object(_ner_mod, "process_ner", return_value=({}, {})):
-        result_text, reverse_map = run_pipeline_new(text, anon_map={})
+        result_text, reverse_map, _ = run_pipeline_new(text, anon_map={})
 
     print("Tekst po pseudonimizacji:")
     print(result_text)
