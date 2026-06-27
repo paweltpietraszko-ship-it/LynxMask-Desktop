@@ -166,7 +166,8 @@ export default function App() {
   }
 
   // [BUG-10] Czekaj na załadowanie tokenu — bez tego UI wysyła żądania z apiToken=""
-  if (!tokenReady) {
+  // expressMode pomija unlock, więc tokenReady nigdy nie zostaje ustawione przez efekt — ignorujemy check.
+  if (!tokenReady && !expressMode) {
     return (
       <div style={{
         height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
