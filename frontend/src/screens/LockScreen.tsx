@@ -1,6 +1,9 @@
-// Pseudominizer — src/screens/LockScreen.tsx  v1.4
+// Pseudominizer — src/screens/LockScreen.tsx  v1.5
 // ============================================================
-// ZMIANY W TEJ WERSJI (v1.4):
+// ZMIANY W TEJ WERSJI (v1.5):
+//   [EXPR-UI] Przycisk Express Mode na stronie logowania — pomija logowanie.
+//             onExpressMode() prop → App.tsx przełącza na ExpressModeScreen.
+// ZMIANY W v1.4:
 //   [UI-FONT-01] Czcionki podniesione globalnie
 //     Logo: 18px → 20px
 //     Podpis logo: 12px → 14px
@@ -20,7 +23,8 @@ import { T } from "../theme";
 import OnboardingScreen from "./OnboardingScreen";
 
 interface Props {
-  onUnlock: () => void;
+  onUnlock:      () => void;
+  onExpressMode: () => void;
 }
 
 type Mode = "checking" | "onboarding" | "login";
@@ -46,7 +50,7 @@ function IconEyeOff() {
   );
 }
 
-export default function LockScreen({ onUnlock }: Props) {
+export default function LockScreen({ onUnlock, onExpressMode }: Props) {
   const [mode,     setMode]     = useState<Mode>("checking");
   const [password, setPassword] = useState("");
   const [showPw,   setShowPw]   = useState(false);
@@ -194,6 +198,35 @@ export default function LockScreen({ onUnlock }: Props) {
           }}
         >
           {loading ? "▸ Odblokowanie..." : "Odblokuj"}
+        </button>
+
+        {/* Separator */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, margin: "20px 0 4px",
+        }}>
+          <div style={{ flex: 1, height: 1, background: T.border }} />
+          <span style={{ fontSize: 12, color: T.textMuted, fontFamily: T.mono, letterSpacing: "0.06em" }}>
+            lub
+          </span>
+          <div style={{ flex: 1, height: 1, background: T.border }} />
+        </div>
+
+        {/* Express Mode */}
+        <button
+          onClick={onExpressMode}
+          style={{
+            width: "100%", padding: "10px",
+            background: "none",
+            border: `1px solid ${T.border}`,
+            borderRadius: 6,
+            color: T.textMuted, fontSize: 14,
+            cursor: "pointer",
+            transition: "border-color 0.15s, color 0.15s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = T.amber; e.currentTarget.style.color = T.amber; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; }}
+        >
+          ⚡ Express Mode — bez logowania
         </button>
 
       </div>

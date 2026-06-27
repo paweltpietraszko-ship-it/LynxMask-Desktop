@@ -1,4 +1,4 @@
-// Pseudominizer — App.tsx  v1.6
+// Pseudominizer — App.tsx  v1.7
 // [BUG-10] tokenReady: blokuje MainLayout dopóki apiToken nie załadowany.
 //   Poprzednio UI było aktywne z apiToken="" przez chwilę po odblokowaniu → 401.
 // [FIX-TOKEN-API] Ładuje api_token.txt przez read_api_token po odblokowaniu.
@@ -14,6 +14,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import LockScreen from "./screens/LockScreen";
 import MainLayout from "./screens/MainLayout";
 import CrashScreen from "./screens/CrashScreen";
+import ExpressModeScreen from "./screens/ExpressModeScreen";
 import { T } from "./theme";
 
 export type Screen = "pseudonimizuj" | "biblioteka" | "depseudonimizuj" | "security";
@@ -31,6 +32,7 @@ export default function App() {
   const [crashInfo,    setCrashInfo]    = useState<{code: string; message: string; timestamp?: string} | null>(null);
   // [BUG-P4-03] PSE przekazywane z Biblioteki do Depseudonimizuj przy kliknięciu odpowiedzi AI.
   const [demaskPse,    setDemaskPse]    = useState<string | null>(null);
+  const [expressMode,  setExpressMode]  = useState(false);
 
   // ── Zamknięcie okna → clear key ───────────────────────────────────────────
 
@@ -140,8 +142,12 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  if (expressMode) {
+    return <ExpressModeScreen onExit={() => setExpressMode(false)} />;
+  }
+
   if (!unlocked) {
-    return <LockScreen onUnlock={() => setUnlocked(true)} />;
+    return <LockScreen onUnlock={() => setUnlocked(true)} onExpressMode={() => setExpressMode(true)} />;
   }
 
   // [CRASH-UX] Jeśli backend zgłosił błąd startu — pokaż ekran awarii.
