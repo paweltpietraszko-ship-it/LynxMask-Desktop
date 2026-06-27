@@ -29,17 +29,19 @@ Port 8765. Repo: paweltpietraszko-ship-it/LynxMask-Desktop (prywatne).
 | `pseudominizer_api.py` | v1.33+ (seed_profile podpięty) |
 | `anonymizer.py` | v4.20+ |
 | `ner_layer.py` | v1.18 |
-| `ner_blocklist.py` | v1.6 (57K wpisów: miasta + ulice + med.) |
-| `output_guard.py` | v4.4 |
+| `ner_blocklist.py` | v1.7 (57K wpisów + "guard/guardu/guardzie") |
+| `output_guard.py` | v4.5 |
 | `layers/identity.py` | v1.5 |
 | `layers/address.py` | v1.9 |
 | `layers/contact.py` | v1.4 |
-| `layers/financial.py` | v1.2 |
+| `layers/financial.py` | v1.3 |
 | `layers/legal.py` | v1.1 |
 | `layers/credentials.py` | v1.0 |
 | `layers/institution.py` | v1.0 |
 | `layers/ocr_normalizer.py` | v2.4 |
 | `layers/trie_layer.py` | v1.0 |
+| `layers/ner_adapter.py` | v1.7 |
+| `anonymizer_init.py` | v2.0 |
 | `verbal_amounts.py` | v1.4 |
 | `smoke_test.py` | v1.1 |
 | `seed_profile.py` | v1.0 (NOWY) |
@@ -68,7 +70,7 @@ L13: fallback        ← 8+ cyfr które przeżyły
 L14: validation      ← spójność
 ```
 
-Następnie: `_apply_guard()` → Output Guard v4.4
+Następnie: `_apply_guard()` → Output Guard v4.5
 
 ---
 
@@ -85,7 +87,7 @@ Następnie: `_apply_guard()` → Output Guard v4.4
 
 ---
 
-## Output Guard v4.4
+## Output Guard v4.5
 
 **HIGH** (1 hit = blokada całości):
 - PESEL `\b\d{10,11}\b` — tolerancja ±1 cyfra OCR
@@ -125,8 +127,15 @@ Następnie: `_apply_guard()` → Output Guard v4.4
 - **GuardAllowlist (słownik B)** — gdy Guard ostrzega, użytkownik może powiedzieć "to nie PII, nie alarmuj". Mobile ma UX z "Maskuj"/"Nie maskuj". Desktop nie ma.
 - **Ekran zarządzania słownikiem** — lista dodanych encji + usuń. Brak UI.
 - **Eksport .lynxdict** — sync Mobile↔Desktop. Nie zrobiony.
+- **Import .lynxdict** — Desktop nie ma, Mobile ma.
 - **Klucz odzyskiwania** — 24 znaki w 4 grupach (`ABCD12-EFGH34-IJKL56-MNOP78`). Nie zaimplementowany.
-- **Redakcja wizualna obrazu** — blur twarzy, prostokąty na pikselach. Tylko Mobile.
+- **Zmiana hasła bez usuwania biblioteki encji** — Mobile to ma, Desktop nie.
+- **Usunięcie wszystkich danych (reset profilu)** — w karcie Zabezpieczenia. Brak.
+- **Redakcja wizualna obrazu** — blur twarzy, prostokąty na pikselach. Tylko Mobile. Wymaga osobnej sesji.
+
+### Znane FN (silnik)
+- **"Przychodnia Rejonowa Zdrowie" niezamaskowana** — SpaCy rozbija wielowyrazową encję firmy.
+- **"STOCZNIA GDAŃSKA SERWIS Sp." niezamaskowana** — j.w.
 
 ### Bezpieczeństwo (przed dystrybucją)
 - **AUD-13/14 PBKDF2** — zmiana iteracji/soli unieważnia mapy.enc, wymaga planu migracji.
@@ -144,10 +153,11 @@ Następnie: `_apply_guard()` → Output Guard v4.4
 
 ```
 backend/test_docs/
-  doc_lvl2_pismo_komornicze.txt   ← test real-world (11 bugów naprawionych)
-  doc_lvl3_faktura_zlecenie.txt   ← test real-world
-  doc_test_nowe_encje.txt         ← test nowych wzorców (sygnatury, KRS, tablice, KW)
-  doc_test_guard.txt              ← test Output Guard (wszystkie HIGH + MEDIUM + pułapki)
+  doc_lvl2_pismo_komornicze.txt              ← test real-world (11 bugów naprawionych)
+  doc_lvl3_faktura_zlecenie.txt              ← test real-world
+  doc_test_nowe_encje.txt                    ← test nowych wzorców (sygnatury, KRS, tablice, KW)
+  doc_test_guard.txt                         ← test Output Guard (wszystkie HIGH + MEDIUM + pułapki)
+  doc_stresstest_silnik_guard_lvl0_3.txt     ← stress test LVL0-3 (OCR od idealnego do telefonu), 80 encji (PSE-2026-1145)
 ```
 
 ---

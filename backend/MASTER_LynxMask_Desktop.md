@@ -49,6 +49,12 @@ Pliki: generator.py (v1.2) + benchmark.py (v1.2), uruchamiane przez run_benchmar
 - OBS-PERMISSION-DENIED — hardware_profile.json czasem Permission Denied przy zapisie.
 
 ### NAPRAWIONE (chronologicznie, od najnowszych)
+- ~~BUG-NER-BLOCKLIST-GUARD~~ — "Guard" klasyfikowany jako FIRMA przez SpaCy; dodano "guard/guardu/guardzie" do blocklista (ner_blocklist.py v1.7, 2026-06-27)
+- ~~BUG-GUARD-ALERT-VALUE~~ — alert Guard pokazywał tylko licznik zamiast dopasowanej wartości; teraz: `HIGH IBAN_OCR «PL 27...»: 1 wystąpień` (output_guard.py v4.5, 2026-06-27)
+- ~~FIX-SLASH-SIG~~ — sygnatura ukośnikowa generowała FP na "PESEL/NIP/IBAN/email" (string bez cyfr); dodano lookahead `(?=[0-9A-Za-z/]*\d)` (anonymizer_init.py v2.0, 2026-06-27)
+- ~~FIX-DATE-CONTEXT~~ — bare `\d{2}[.\-]\d{2}[.\-]\d{4}` maskował WSZYSTKIE daty (faktury, decyzje, terminy); zastąpiono wzorcem z kontekstem "data urodzenia:" (anonymizer_init.py v2.0, 2026-06-27)
+- ~~BUG-NER-BARE-SUFFIX~~ — SpaCy łapał sam sufiks "z o.o" (bez "sp.") jako osobną FIRMA; `_BARE_SUFFIX_RE` rozszerzony (layers/ner_adapter.py v1.7, 2026-06-27)
+- ~~BUG-IBAN-OCR-LONG~~ — IBAN OCR ze spacją między każdą cyfrą (51 znaków po "PL") nie był maskowany; `_IBAN_PL_OCR_RE` limit `{20,45}` → `{20,55}` (layers/financial.py v1.3, 2026-06-27)
 - ~~BUG-NIP-DOUBLE-SEP~~ — NIP z separatorem " -" (identity.py v1.5, guard v4.4)
 - ~~IBAN-OCR-TOLERANCE~~ — IBAN_OCR {25}→{24,25}, PESEL \d{10,11} (guard v4.4)
 - ~~BUG-IBAN-OCR~~ — PL IBAN z spacjami/enterem między cyframi (guard v4.3, pipeline v1.24)
@@ -128,24 +134,25 @@ Te rzeczy NIE mogą być zmieniane jednostronnie przez instancję mobile ani des
 | `pseudominizer_api.py` | v1.33+ |
 | `anonymizer.py` | v4.20+ |
 | `ner_layer.py` | v1.18 |
-| `ner_blocklist.py` | v1.6 (57K wpisów) |
-| `output_guard.py` | v4.4 |
+| `ner_blocklist.py` | v1.7 (57K wpisów + "guard/guardu/guardzie") |
+| `output_guard.py` | v4.5 |
 | `verbal_amounts.py` | v1.4 |
 | `smoke_test.py` | v1.1 |
 | `seed_profile.py` | v1.0 (NOWY) |
 | `layers/identity.py` | v1.5 |
 | `layers/address.py` | v1.9 |
 | `layers/contact.py` | v1.4 |
-| `layers/financial.py` | v1.2 |
+| `layers/financial.py` | v1.3 |
 | `layers/legal.py` | v1.1 |
 | `layers/credentials.py` | v1.0 |
 | `layers/institution.py` | v1.0 |
 | `layers/ocr_normalizer.py` | v2.4 |
 | `layers/trie_layer.py` | v1.0 |
+| `layers/ner_adapter.py` | v1.7 |
 | `credential_patterns.json` | 29 wzorców |
 | `spacy_ner.py` | v1.7 |
 | `ocr_engine.py` | v1.4.5 |
-| `anonymizer_init.py` | v1.9 |
+| `anonymizer_init.py` | v2.0 |
 | `document_processor.py` | v1.2 |
 | `main.rs` | v1.6 |
 | `MainLayout.tsx` | v2.2 |
