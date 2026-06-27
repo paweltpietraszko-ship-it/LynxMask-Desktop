@@ -1,4 +1,5 @@
 # tests/test_output_guard_adversarial.py
+# v2.2 — [IBAN-OCR] TestIbanOcrGarbled: OCR-garbled PL IBAN ze spacjami między cyframi
 # v2.1 — FIX A1 mock: get_entity_names.return_value zamiast reverse_map
 # v2.0 — poprawki po analizie adversarialnej (16.05.2026)
 #
@@ -681,6 +682,81 @@ class TestTokenInLanguageConstruct(unittest.TestCase):
             f"Tokeny z polską fleksją wywołały {result.detection_count} detekcji. "
             f"Anonymizer nie powinien produkować takich konstrukcji, ALE jeśli model "
             f"to zrobi — guard powinien być odporny."
+        )
+
+
+# ===========================================================================
+# A17: IBAN OCR-garbled — spacje między pojedynczymi cyframi / enter w środku
+# ===========================================================================
+
+class TestIbanOcrGarbled(unittest.TestCase):
+    """
+    [IBAN-OCR] OCR skanując faktury często wstawia spacje między każdą cyfrą
+    (np. "PL 98 1 053 1 875 0000 0023 4567 8901") lub enter w środku numeru.
+    Istniejący wzorzec IBAN nie łapie takich formatów.
+    Nowy wzorzec IBAN_OCR musi je wykryć.
+    Wyciek z doc_lvl3_faktura_zlecenie.txt.
+    """
+
+    # Dwa IBAN-y z dokumentu testowego
+    _IBAN_SINGLE_DIGITS = "PL 98 1 053 1 875 0000 0023 4567 8901"
+    _IBAN_MIXED_GROUPS  = "PL 27 1 160 2202 0000 0001 8844 5523"
+
+    def test_a17_iban_single_digit_spaces_blocked(self):
+        """PL IBAN z spacją między każdą cyfrą → blokada HIGH."""
+        result = guard_output(self._IBAN_SINGLE_DIGITS)
+        self.assertTrue(
+            result.blocked,
+            f"IBAN ze spacjami między cyframi NIE został zablokowany. "
+            f"reasons={result.reasons}"
+        )
+        self.assertTrue(result.high_hit, "Powinno być HIGH hit.")
+
+    def test_a17_iban_mixed_groups_blocked(self):
+        """PL IBAN z mieszanymi grupami cyfr → blokada HIGH."""
+        result = guard_output(self._IBAN_MIXED_GROUPS)
+        self.assertTrue(
+            result.blocked,
+            f"IBAN z mieszanymi grupami NIE został zablokowany. "
+            f"reasons={result.reasons}"
+        )
+        self.assertTrue(result.high_hit, "Powinno być HIGH hit.")
+
+    def test_a17_iban_with_newline_blocked(self):
+        """PL IBAN z enterem w środku → blokada HIGH."""
+        iban_with_newline = "PL 27 1 160 2202 0000 0001\n8844 5523"
+        result = guard_output(iban_with_newline)
+        self.assertTrue(
+            result.blocked,
+            f"IBAN z enterem w środku NIE został zablokowany. reasons={result.reasons}"
+        )
+
+    def test_a17_iban_redacted_in_text(self):
+        """Garbled IBAN musi być zastąpiony [REDACTED] w wyjściu guard."""
+        text = f"Proszę przelać na konto {self._IBAN_SINGLE_DIGITS} do końca miesiąca."
+        result = guard_output(text)
+        self.assertNotIn(
+            "PL 98",
+            result.redacted_text,
+            "Surowy IBAN powinien być zastąpiony [REDACTED] w redacted_text."
+        )
+        self.assertIn(
+            "[REDACTED]",
+            result.redacted_text,
+            "Oczekiwano [REDACTED] w redacted_text po wykryciu garbled IBAN."
+        )
+
+    def test_a17_compact_iban_still_matched(self):
+        """Kompaktowy IBAN bez spacji nadal działa (regresja)."""
+        result = guard_output("PL98105318750000002345678901")
+        self.assertTrue(result.blocked, "Kompaktowy PL IBAN musi być blokowany.")
+
+    def test_a17_short_pl_not_false_positive(self):
+        """Krótki ciąg PL + cyfry nie powinien triggerować (za mało cyfr)."""
+        result = guard_output("PL 12 345")
+        self.assertFalse(
+            result.high_hit,
+            f"Krótki 'PL 12 345' nie powinien być IBAN. reasons={result.reasons}"
         )
 
 

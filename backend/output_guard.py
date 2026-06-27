@@ -1,5 +1,14 @@
 """
-Triangulum — output_guard.py  v4.2
+Triangulum — output_guard.py  v4.3
+Zmiany v4.3:
+  [IBAN-OCR] Nowy wzorzec HIGH: IBAN_OCR — PL IBAN z OCR-garbled spacjami/enterami.
+  Istniejący wzorzec IBAN wymaga grup bez spacji między pojedynczymi cyframi:
+  "PL 98 1 053 1 875…" (spacja co cyfrę) nie pasował do \b[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]){11,33}\b.
+  Nowy wzorzec: PL + dokładnie 26 cyfr z dowolnymi białymi znakami między nimi.
+  PL IBAN zawsze ma 26 cyfr (2 check + 24 konto) — count={26} jest precyzyjny.
+  [IBAN-OCR] _apply_guard w pipeline.py: przy blocked=True text teraz też zamieniany
+  na redacted_text — anonymized_preview pokazuje [REDACTED] zamiast surowego IBAN.
+
 Zmiany v4.2:
   [WYS-3] check_blacklist_context błąd → violation GUARD_ERROR + blokada.
   Poprzednio: except → logger.warning → pipeline kontynuował bez sprawdzenia
@@ -138,6 +147,15 @@ _LEAK_HIGH: list[tuple[str, re.Pattern]] = [
     # Agnostyczny wobec formatu: lapie grupy po 4, po 3, po 2, bez spacji,
     # z tabulatorami — cokolwiek co "wyglada jak IBAN".
     ("IBAN",    re.compile(r"\b[A-Z]{2}\d{2}(?:[ \t]?[A-Z0-9]){11,33}\b")),
+    # [IBAN-OCR] PL IBAN z OCR-garbled spacjami miedzy pojedynczymi cyframi
+    # lub enterem w srodku numeru. Istniejacy wzorzec IBAN nie lapie zapisu
+    # "PL 98 1 053 1 875 0000 0023 4567 8901" — [ \t]? nie dopuszcza przerwy
+    # miedzy "PL" a cyframi kontrolnymi, ani spacji miedzy kazda cyfrą.
+    # Nowy wzorzec liczy dokladnie 26 cyfr po "PL" z dowolnymi bialymi znakami
+    # (spacja / tab / enter) miedzy nimi — PL IBAN zawsze ma 2+24=26 cyfr.
+    ("IBAN_OCR", re.compile(
+        r"(?<![A-Z])PL[ \t\n\r]*\d(?:[ \t\n\r]*\d){25}(?!\d)"
+    )),
     # [BUG-PASSPORT-SPACE] Dowod osobisty: 3 litery + 6 cyfr (np. AYC123456 lub AYC 123456).
     # Guard-broad: opcjonalna spacja miedzy seria a numerem.
     ("DOWOD",   re.compile(r"(?<![A-Za-z])[A-Z]{3}[ \t]?\d{6}(?!\d)")),

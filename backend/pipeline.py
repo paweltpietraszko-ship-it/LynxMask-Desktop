@@ -1,5 +1,5 @@
 ﻿r"""
-pipeline.py  v1.23
+pipeline.py  v1.24
 Orchestrator pseudonimizacji â€” wywoĹ‚uje warstwy w ustalonej kolejnoĹ›ci.
 Wydzielony z pseudominizer_api.py v1.18.
 
@@ -325,6 +325,11 @@ def _apply_guard(
             guard_reasons = guard_result.reasons
             if guard_blocked:
                 logger.error("[PIPELINE] Guard zablokował eksport: %s", guard_reasons)
+                # [IBAN-OCR] Przy blokadzie HIGH tekst też zamieniamy na redacted_text
+                # — anonymized_preview pokazuje [REDACTED] zamiast surowych danych.
+                # Guard zawsze wypełnia redacted_text (pattern.sub dla każdego HIGH),
+                # niezależnie od blocked/redacted flag.
+                text = guard_result.redacted_text
             elif guard_result.redacted:
                 logger.warning("[PIPELINE] Guard zamazał fragmenty: %s", guard_reasons)
                 text = guard_result.redacted_text
