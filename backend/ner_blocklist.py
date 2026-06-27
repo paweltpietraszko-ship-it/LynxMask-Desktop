@@ -1,5 +1,5 @@
 """
-ner_blocklist.py  v1.5
+ner_blocklist.py  v1.6
 Historia zmian:
   v1.5 — Dynamiczne ładowanie miast, ulic i placówek medycznych z plików JSON.
           SpaCy nie będzie klasyfikował "Gdańsk", "Leśna", "klinika" jako OSOBA/FIRMA.
@@ -416,6 +416,33 @@ _NER_BLOCKLIST: set = {
     "emailami",
     # [v1.4] Fałszywe pozytywy z dokumentów komorniczych i faktur
     # SpaCy klasyfikował te słowa jako OSOBA lub FIRMA
+    # Terminy medyczne i administracyjne — nie są PII
+    "kartoteka",
+    "kartoteki",
+    "kartotece",
+    "kartoteką",
+    "historia",
+    "historii",
+    "historię",
+    "historią",
+    "skierowanie",
+    "skierowania",
+    "skierowaniu",
+    "wynik",
+    "wyniki",
+    "wyników",
+    "zaświadczenie",
+    "zaswiadczenie",
+    "zaświadczenia",
+    "zaswiadczenia",
+    "polisa",
+    "polisy",
+    "polisę",
+    "polisą",
+    "recepta",
+    "recepty",
+    "receptę",
+    "receptą",
     "doreczone",
     "doręczone",
     "wplate",
