@@ -1,6 +1,11 @@
 """
-pseudominizer_api.py  v1.32-TAURI
+pseudominizer_api.py  v1.33-TAURI
 Historia zmian (od najnowszej):
+  v1.33-TAURI (2026-06-27):
+    [EXPR-API] Endpoint /preview-express — Express Mode bez SpaCy/NER.
+               Wywołuje run_pipeline_express() zamiast run_pipeline_new().
+               Taki sam interfejs jak /preview, bez pola anonymizer_active.
+               force_block zawsze False — brak NER = brak możliwości NER crash.
   v1.32-TAURI (2026-06-26):
     [CRASH-UX] Zapis startup_error.json przed śmiercią procesu.
                Frontend czyta ten plik przez Tauri read_startup_error() i pokazuje
@@ -752,6 +757,91 @@ async def profile_add_entity(request: Request):
     except Exception as e:
         logger.error(f"[PROFILE] Błąd add_entity: {e}")
         return JSONResponse({"error": "Błąd zapisu profilu"}, status_code=500)
+
+
+@app.post("/preview-express")
+async def preview_express(request: Request, file: UploadFile = File(...)):
+    """Express Mode — pipeline bez SpaCy/NER (~5-10x szybszy).
+
+    Maskuje: PESEL, NIP, REGON, dowód, paszport, IBAN, konta, email, telefon,
+    sygnatury, kwoty, daty, numery zawodowe, instytucje, adresy.
+    NIE maskuje: imion/nazwisk i nazw firm bez kontekstu słownikowego (brak NER).
+    """
+    from pipeline_new import run_pipeline_express
+
+    content = await file.read()
+
+    if len(content) > MAX_FILE_BYTES:
+        return JSONResponse(
+            {"error": "Plik za duży (max 5 MB)", "blocked": False},
+            status_code=400,
+        )
+
+    pse_code = _next_pse()
+    logger.info(f"[EXPRESS] {pse_code} — plik: {len(file.filename or '')} znaków")
+
+    text, extract_err, ocr_meta = _extract_text(content, file.filename or "")
+    if extract_err:
+        logger.warning(f"[EXPRESS] {pse_code} — błąd ekstrakcji: {extract_err}")
+        return JSONResponse(
+            {"error": extract_err, "blocked": False, "ocr": ocr_meta},
+            status_code=400,
+        )
+
+    text = text.strip()[:MAX_TEXT_CHARS]
+    if not text:
+        return JSONResponse(
+            {"error": "Plik jest pusty lub nie zawiera tekstu", "blocked": False},
+            status_code=400,
+        )
+
+    if _TOKEN_RE.search(text):
+        logger.warning("[EXPRESS] %s — odmowa: token injection", pse_code)
+        return JSONResponse(
+            {
+                "error":   "Tekst wejściowy zawiera tokeny maskujące. Wyczyść tekst przed pseudonimizacją.",
+                "blocked": False,
+            },
+            status_code=422,
+        )
+
+    anon_text, reverse_map, _ = run_pipeline_express(
+        text,
+        _app_state.anon_map or {},
+        _app_state.anonymizer,
+    )
+
+    tokens = []
+    for token, original in reverse_map.items():
+        prefix = token.split("_")[0] if "_" in token else "INNE"
+        tokens.append({
+            "token":    token,
+            "original": original,
+            "type":     prefix,
+            "label":    _TYPE_LABELS.get(prefix, "Inne"),
+        })
+    tokens.sort(key=lambda t: (_TYPE_ORDER.get(t["type"], 9), t["token"]))
+
+    anon_text_with_pse = (
+        f"[Dokument pseudonimizowany (Express). Kod sesji: {pse_code}.\n"
+        f"W odpowiedzi przepisz ten kod jako pierwsze slowo.]\n\n"
+        f"{anon_text}"
+    )
+
+    return {
+        "blocked":            False,
+        "error":              None,
+        "guard_reasons":      [],
+        "tokens":             tokens,
+        "total":              len(tokens),
+        "has_sensitive":      len(tokens) > 0,
+        "anonymized_preview": anon_text_with_pse,
+        "original_text":      text,
+        "ocr":                ocr_meta,
+        "system_prompt":      SYSTEM_PROMPT_SECURITY if _GUARD_AVAILABLE else None,
+        "pse_code":           pse_code,
+        "express_mode":       True,
+    }
 
 
 # ── Frontend ──────────────────────────────────────────────────────────────────
