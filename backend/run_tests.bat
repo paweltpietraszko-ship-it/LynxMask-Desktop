@@ -30,33 +30,37 @@ echo ================================================================ >> %LOG%
 
 echo.
 echo === [1/3] Testy pytest (unit + HTTP z backendem) ===
+echo Trwa... (wyniki w %LOG%)
 echo. >> %LOG%
 echo === [1/3] Testy pytest (unit + HTTP z backendem) === >> %LOG%
-python -m pytest tests/test_pseudominizer.py -v --tb=short 2>&1 | tee -a %LOG%
+python -m pytest tests/test_pseudominizer.py -v --tb=short >> %LOG% 2>&1
 set PYTEST_EXIT=%errorlevel%
 
 echo.
 echo === [2/3] Testy pipeline HTTP (test_pipeline.py) ===
+echo Trwa...
 echo. >> %LOG%
 echo === [2/3] Testy pipeline HTTP (test_pipeline.py) === >> %LOG%
-python tests\test_pipeline.py 2>&1 | tee -a %LOG%
+python tests\test_pipeline.py >> %LOG% 2>&1
 
 echo.
 echo === [3/3] Testy adversarialne (bezposredni import) ===
+echo Trwa...
 echo. >> %LOG%
 echo === [3/3] Testy adversarialne (bezposredni import) === >> %LOG%
-python -m pytest tests\test_anonymizer_adversarial.py -v --tb=short 2>&1 | tee -a %LOG%
-python -m pytest tests\test_output_guard_adversarial.py -v --tb=short 2>&1 | tee -a %LOG%
-python -m pytest tests\test_pipeline_adversarial.py -v --tb=short 2>&1 | tee -a %LOG%
-python -m pytest tests\test_pipeline_v2.py -v --tb=short 2>&1 | tee -a %LOG%
+python -m pytest tests\test_anonymizer_adversarial.py -v --tb=short >> %LOG% 2>&1
+python -m pytest tests\test_output_guard_adversarial.py -v --tb=short >> %LOG% 2>&1
+python -m pytest tests\test_pipeline_adversarial.py -v --tb=short >> %LOG% 2>&1
+python -m pytest tests\test_pipeline_v2.py -v --tb=short >> %LOG% 2>&1
+
+echo. >> %LOG%
+echo ================================================================ >> %LOG%
+echo Gotowe. pytest exit code: %PYTEST_EXIT% >> %LOG%
+echo ================================================================ >> %LOG%
 
 echo.
 echo ================================================================
 echo  Gotowe. pytest exit code: %PYTEST_EXIT%
 echo  Raport: %REPORT_DIR%\wyniki.txt
 echo ================================================================
-echo. >> %LOG%
-echo ================================================================ >> %LOG%
-echo Gotowe. pytest exit code: %PYTEST_EXIT% >> %LOG%
-echo ================================================================ >> %LOG%
 pause
