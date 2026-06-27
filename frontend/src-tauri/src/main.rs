@@ -1,4 +1,4 @@
-// Pseudominizer — src-tauri/src/main.rs  v1.7
+// Pseudominizer — src-tauri/src/main.rs  v1.8
 // ============================================================
 // ZMIANY W TEJ WERSJI: Potok 4 Biblioteka — komendy odpowiedzi AI
 // ============================================================
@@ -415,16 +415,19 @@ async fn reset_password_with_recovery(
         return Err("WRONG_RECOVERY_KEY".into());
     }
 
+    // Walidacja nowego hasła po stronie Rust
+    if new_password.len() < 8 {
+        return Err("Nowe hasło musi mieć co najmniej 8 znaków.".into());
+    }
+
     // Wyprowadź nowy klucz główny
     let mut new_key = [0u8; KEY_LEN];
     pbkdf2_hmac::<Sha256>(new_password.as_bytes(), &salt, PBKDF2_ITER, &mut new_key);
 
-    // Re-szyfruj sesje (bez starego klucza — sesje są już niedostępne przy zapomnianym haśle,
-    // więc jeśli użytkownik nie jest zalogowany, pomijamy re-szyfrowanie sesji)
-    let is_logged_in = state.0.lock().map_err(|_| "Błąd mutex")?.is_some();
+    // Re-szyfruj sesje jeśli zalogowany — trzymamy jeden lock przez całą operację (brak TOCTOU)
+    let old_key_opt: Option<[u8; KEY_LEN]> = state.0.lock().map_err(|_| "Błąd mutex")?.clone();
 
-    if is_logged_in {
-        let old_key = *state.0.lock().map_err(|_| "Błąd mutex")?.as_ref().unwrap();
+    if let Some(old_key) = old_key_opt {
         let client = reqwest::Client::new();
         let list_resp = client
             .get("http://127.0.0.1:8765/archive")
