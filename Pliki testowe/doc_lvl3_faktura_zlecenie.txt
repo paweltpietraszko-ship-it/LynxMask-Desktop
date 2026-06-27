@@ -1,0 +1,83 @@
+FAKTURAvVAT Nr FV/2024/09/00847
+─────────────────────────────────────────────────────────────────────────────
+
+Sprzedawca:                              Nabywca:
+MEDITECH SOLUTIONS SP Z O.O              Szpital Specjalistyczny im.
+NIP: 7 12-304-56 78                      Sw. Lukasza w Tarnowie
+REGON: 36 1298 450                       REGON: 000 309 256
+ul. Pulaskiego 2 0, 32-500 Chrzanow      ul. Lwowska 178, 33-100 Tarnow
+tel.: 32 623 45 67                       NIP: 873 -000 -51-39
+e-mail: biuro©meditech-sol.pl            tel.: 14 631 02 00
+
+Data wystawienia:    02.09.2024
+Data sprzedazy:      31.08.2024
+Termin platnosci:    16.09.2024
+Nr zamowienia:       ZAM/2024/08/00312
+
+─────────────────────────────────────────────────────────────────────────────
+Lp.  Nazwa towaru/uslugi              Ilosc  J.m.   Cena      Wartosc
+                                                     netto     netto
+─────────────────────────────────────────────────────────────────────────────
+1.   System monitorowania pacjenta      1    szt.  42 000,00  42 000,00
+     MEDITECH PRO X3 (SN: MP2024-0847)
+2.   Instalacja i konfiguracja          8    godz.    350,00   2 800,00
+3.   Szkolenie personelu medycznego     2    dni    1 500,00   3 000,00
+4.   Licencja oprogramowania 12 m-cy    1    szt.   3 600,00   3 600,00
+─────────────────────────────────────────────────────────────────────────────
+                                              Razem netto:    51 400,00 PLN
+                                              VAT 23%:        11 822,00 PLN
+                                              RAZEM BRUTTO:   63 222,00 PLN
+(s lownie: szescdziesiat trzy tysiac e dwiescie dwadziescia dwa zlote 00/100)
+─────────────────────────────────────────────────────────────────────────────
+
+Platnosc przelewem na rachunek:
+PL 98 1 053 1 875 0000 0023 4567 8901
+Bank: ING Bank Slaski S.A.
+Tytul przelewu: FV/2024/09/00847
+
+─────────────────────────────────────────────────────────────────────────────
+UMOWA ZLECENIA Nr UMW/2024/08/0042
+(zalacznik do faktury)
+
+Zleceniodawca: Szpital Specjalistyczny im. Sw. Lukasza w Tarnowie
+               reprezentowany przez: dyr. Ryszarda Kowalczyka, PESEL 65 071812345
+
+Zleceniobiorca: Piotr Dabrowskl
+               PESEL: 880 304 56 789
+               zamieszkaly: ul. Prz emyslowa 7/4, 32-5 00 Chrzanow
+               dowod osobisty: DYF 49 2031
+               tel.: 660 -987- 654
+               e-mail: p.dabrowski @meditech-sol.pl
+               PWZ 2 345678 (fizjoterapeuta)
+
+Przedmiot zlecenia: Przeprowadzenie szkolen dla personelu medycznego
+                    w zakresie obslugi systemu MEDITECH PRO X3.
+
+Wynagrodzenie: 3 000,00 PLN brutto
+               (slowa: trzy tysiace zlotych 00/100)
+
+Platnosc na nr rachunku: PL 27 1 160 2202 0000 0001 8844 5523
+Termin wykonania: 31.08.2024
+
+Zleceniobiorca oswiadcza, ze:
+[ x ] podlega ubezpieczeniu spolecznemu z innego tytulu (PESEL: 880 304 56 789)
+[   ] nie podlega ubezpieczeniu spolecznemu
+
+Ur. 04.03.1988 w Oswiecimiu.
+
+Skan dowodu osobistego oraz zaswiadczenia o PWZ w zalaczeniu.
+Numer uprawnien budowlanych wskazany omylkowo w poprzednim aneksie
+(WAR/0042/19/BOK) — nie dotyczy tej umowy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Oswiadczenie o posiadaniu rachunku bankowego zostalo zloz one osobiscie.
+Kopia paszportu (EB 9 012345) — kserokopia w aktach.
+
+Dokument sporzadzony zgodnie z ustawa z dnia 29 wrzesnia 1994 r.
+o rachunkowosci (Dz.U. z 2023 r. poz. 120 poz. 1047).
+
+_______________________________          _______________________________
+Wystawil: Anna Brzezinska               Odebral: mgr Tomasz Wroblewski
+Glowna Ksiegowa MEDITECH                Z-ca Dyrektora ds. Technicznych
+tel. 32 623 45 68                       tel. 14 631 02 15
