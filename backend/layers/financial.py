@@ -1,10 +1,13 @@
 """
-layers/financial.py  v1.1
+layers/financial.py  v1.2
 Warstwa financial — IBAN, numery kont bankowych.
 v1.1: [BUG-4] Zagraniczne IBAN (DE, UA, GB, FR, NL...) maskowane przez pipeline.
   _IBAN_FOREIGN_RE: dwa wzorce — ze spacjami (grupy po 4) i bez spacji (compact).
   Stosowany PO wzorcach PL (konto bez prefiksu PL mogloby podlapac prefiks obcego IBAN).
   Walidacja: min. 15 znakow lacznie (najkrotszy IBAN na swiecie = NO, 15 znakow).
+v1.2: [OCR-IBAN-PL] Tolerancyjny wzorzec dla IBAN PL z rozerwanymi grupami (OCR lvl3).
+  Zamiast sztywnych grup (?:\s?\d{4}){6} — lacapcy dowolny uklad cyfr i spacji po "PL".
+  Post-match: sprawdzamy dokladnie 26 cyfr po prefiksie PL (wymaganie normy ISO 13616).
 """
 from __future__ import annotations
 
@@ -20,10 +23,14 @@ from pipeline_core import PipelineState, TokenAllocator
 # Explicit set — "PL" in pat.pattern zlapalby tez NIP-PL i PLN (waluta)
 _FINANCIAL_SOURCES: frozenset[str] = frozenset({
     r"(?<!\d)\d{24}(?!\d)",           # 24-cyfrowy numer konta/przesylki
-    r"\bPL\s?\d{2}(?:\s?\d{4}){6}\b", # IBAN PL (ze spacjami lub bez)
     r"\b\d{2}(?:\s\d{4}){5,6}\b",     # konto bez prefiksu PL (spacje)
     r"\b\d{2}-\d[\d\-]{20,28}\d\b",   # konto bez prefiksu PL (myslniki)
 })
+
+# [OCR-IBAN-PL] Tolerancyjny wzorzec dla PL IBAN z rozerwanymi grupami OCR.
+# Lapiemy: PL + do 40 znakow (cyfry + spacje), post-match walidacja: dokladnie 26 cyfr.
+# Przyklad OCR lvl3: "PL 98 1 053 1 875 0000 0023 4567 8901" -> 26 cyfr po PL.
+_IBAN_PL_OCR_RE = re.compile(r"\bPL[\d\s]{20,45}(?=\D|$)", re.IGNORECASE)
 
 _FINANCIAL_PATTERNS: list[tuple[str, re.Pattern]] = [
     (tok, pat) for tok, pat in STRUCTURAL_PATTERNS
@@ -52,6 +59,13 @@ def apply_financial_layer(state: PipelineState) -> None:
     for token_type, pat in _FINANCIAL_PATTERNS:
         for m in pat.finditer(state.text):
             hits.append((m.start(), m.end(), m.group(0), token_type))
+
+    # [OCR-IBAN-PL] PL IBAN z rozerwanymi grupami (OCR lvl3)
+    for m in _IBAN_PL_OCR_RE.finditer(state.text):
+        raw = m.group(0)
+        digits_after_pl = re.sub(r"\D", "", raw[2:])
+        if len(digits_after_pl) == 26:
+            hits.append((m.start(), m.end(), raw, TOKEN_NUMER))
 
     # [BUG-4] Zagraniczne IBAN — po wzorcach PL
     for m in _IBAN_FOREIGN_RE.finditer(state.text):
