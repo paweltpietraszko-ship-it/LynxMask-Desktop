@@ -1,4 +1,4 @@
-// Pseudominizer — src/screens/SecurityScreen.tsx  v2.2
+// Pseudominizer — src/screens/SecurityScreen.tsx  v2.3
 // ============================================================
 // ZMIANY W TEJ WERSJI (v2.2):
 //   - Sekcja "Hasło" — pełna zmiana hasła przez Tauri invoke("change_password")
@@ -223,6 +223,11 @@ function ChangePasswordSection({ apiToken }: { apiToken: string }) {
         {loading ? "▸ Zmieniam..." : "Zmień hasło"}
       </Btn>
       {status && <Alert type={status.type}>{status.msg}</Alert>}
+      <div style={{ marginTop: 14, fontSize: 12, color: T.textMuted, lineHeight: 1.6 }}>
+        Nie pamiętasz starego hasła? Przejdź do sekcji <strong style={{ color: T.textSecondary }}>Dane</strong> poniżej
+        i usuń wszystkie dane — profil zostanie zresetowany, a przy następnym uruchomieniu
+        ustawisz nowe hasło. Utracisz słownik biura i historię sesji.
+      </div>
     </Section>
   );
 }
