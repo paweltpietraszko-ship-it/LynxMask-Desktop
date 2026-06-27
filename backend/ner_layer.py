@@ -1,9 +1,42 @@
 """
-ner_layer.py  v1.10
+ner_layer.py  v1.18
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
 Historia zmian:
+  v1.16 — [FIX-NER-COURTS] _COURT_PREFIX_RE — każda encja zaczynająca się od
+           "sąd ", "naczelny sąd ", "wojewódzki sąd " lub "trybunał " jest
+           filtrowana niezależnie od miasta (SpaCy widział "Sąd Rejonowy w
+           Gdańsku" jako FIRMA, choć blocklist miał tylko generyczne formy).
+  v1.15 — [BUG-ADJECTIVE-MULTIWORD] Filtr _ADJECTIVE_ENDINGS_RE stosowany tylko
+           dla jednowyrazowych encji OSOBA. Poprzednio "Jana Kowalskiego" było
+           filtrowane bo końcówka -skiego pasuje do przymiotnikowej, ale to
+           dopełniacz osoby w zdaniu, nie przymiotnik. Wielowyrazowe encje OSOBA
+           (imię+nazwisko w dowolnym przypadku) teraz nie są odfiltrowane.
+  v1.14 — [BUG-NER-FP-GRANICE] Trzy nowe filtry redukujące 52 FP dla ORGANIZACJA/FIRMA:
+           1. Nagłówki ALL-CAPS ≤2 słów bez sufiksu prawnego → pomiń jako FIRMA.
+              SpaCy widzi "ZAKRES OBOWIĄZKÓW" → ORG, ale to nagłówek, nie firma.
+           2. Czyste akronimy [A-Z]{2,6} bez cyfr/sufiksu → pomiń.
+              ERP/CRM/IT jako samodzielna encja to skrót systemowy, nie firma.
+           3. Przymiotnik jako jedyne słowo FIRMA — _ADJECTIVE_ENDINGS_RE teraz
+              stosowany też dla FIRMA gdy encja to jedno słowo przymiotnikowe.
+  v1.13 — [BUG-2] Encja SpaCy otoczona cudzysłowem wymusza typ FIRMA.
+           "Wiśniewski i Wspólnicy" w cudzysłowie = nazwa handlowa, nie OSOBA.
+           Wykrycie PRZED strip('"') — ner.start/end w oryginalnym tekście.
+  v1.12 — [BUG-FIRMA-ZUS-MIX] _filter_institutions: encja FIRMA zawierająca
+           fragment instytucji publicznej (ZUS, NFZ itp.) jest pomijana.
+           Regex _INSTITUTION_IN_FIRMA_RE sprawdza całą treść encji.
+           [BUG-OCR-DEDUP] Przed _person_stem w _process_ner aplikujemy
+           normalize_ocr(entity_text) — "P4nina" i "Paulina" dają ten sam
+           stem i trafiają do tego samego tokenu OSOBA. entity_text (wartość
+           tokenu) pozostaje niezmieniona.
+  v1.11 — [BUG-FIRMA-TRUNC] SpaCy zatrzymuje granicę encji przed sufiksem
+           prawnym w cudzysłowie, np. "ALTEX" Sp → "ALTEX" Sp. z o.o.
+           Naprawa: po zebraniu entity_text sprawdzamy czy kończy się na
+           skróconym wskaźniku spółki ("Sp", "S.A" itp.) i czy zaraz za
+           ner.end w oryginalnym tekście jest dopełnienie sufiksu (". z o.o."
+           itp.). Jeśli tak — entity_text rozszerzany o dopełnienie
+           i typ wymuszany na FIRMA.
   v1.10 — [BUG-1] Deduplikacja wieloczłonowych form fleksyjnych OSOBA.
            Poprzednio "Jana Kowalskiego" dostawało osobny token OSOBA_002
            mimo że "Jan Kowalski" był już OSOBA_001. Przyczyną był _ner_stem
@@ -103,6 +136,16 @@ logger = logging.getLogger("pseudominizer.ner_layer")
 _TOKEN_RE      = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
 _ORDER_CODE_RE = re.compile(r"^[A-Z]{2,6}_\d{4,}$")
 
+# [BUG-NER-FP-GRANICE] Czyste akronimy bez cyfr/sufiksu prawnego — skróty systemowe
+# (ERP, CRM, IT, HR, BHP) błędnie klasyfikowane przez SpaCy jako FIRMA/ORG.
+_PURE_ACRONYM_RE = re.compile(r"^[A-Z]{2,6}$")
+
+# Sufiks prawny — jeśli obecny, akronim jest legalną nazwą firmy (ABC S.A.)
+_LEGAL_SUFFIX_RE = re.compile(
+    r'\b(?:S\.A\.?|Sp\.?\s*z\s*o\.?\.?\s*o\.?|Sp\.?\s*k\.?|s\.c\.?|p\.s\.a\.?|Ltd\.?|LLC|GmbH|s\.k\.a\.?|SP\s+Z\s+O\.?O\.?)\b',
+    re.IGNORECASE,
+)
+
 # [FIX-NER-ADDR-PREFIX] Encje zaczynające się od prefiksu adresowego
 # są adresami, nie osobami — pomiń.
 _ADDR_PREFIX_RE = re.compile(
@@ -122,11 +165,42 @@ _ADJECTIVE_ENDINGS_RE = re.compile(
     re.IGNORECASE | re.UNICODE,
 )
 
+# [FIX-NER-COURTS] Sądy powszechne i administracyjne — instytucje publiczne,
+# nie prywatne firmy. Łapie wszystkie formy fleksyjne: "Sąd/Sądu/Sądowi Rejonowy...",
+# "Trybunał/Trybunału Konstytucyjny...", "Naczelny/Naczelnego Sąd/Sądu..." itp.
+# v1.16 łapało tylko mianownik "sąd "; v1.17 dodaje dopełniacz/celownik.
+_COURT_PREFIX_RE = re.compile(
+    r"^(?:"
+    r"sąd(?:u|owi)?\s"
+    r"|naczelny(?:ego)?\s+sąd(?:u|owi)?\s"
+    r"|wojewódzki(?:ego)?\s+sąd(?:u|owi)?\s"
+    r"|trybunał(?:u|owi)?\s"
+    r")",
+    re.IGNORECASE | re.UNICODE,
+)
+
 # [FIX-NER-INTERNAL-ORG] Wewnętrzne działy i jednostki organizacyjne
 # nie są podmiotami zewnętrznymi — pomiń jako FIRMA.
 _INTERNAL_ORG_RE = re.compile(
     r"^(?:dział|oddział|wydział|departament|biuro|sekcja|referat|zespół|jednostka)"
     r"\s+",
+    re.IGNORECASE,
+)
+
+# [BUG-FIRMA-ZUS-MIX] Encja FIRMA zawierająca fragment instytucji publicznej
+# (np. "Sp. z o.o. ZUS-Warszawa") — pomiń, to nie jest prywatna firma.
+# Ryzyko FP ("ZUS-IT Sp. z o.o.") minimalne — takich firm w Polsce nie ma.
+_INSTITUTION_IN_FIRMA_RE = re.compile(
+    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK)\b',
+    re.IGNORECASE,
+)
+
+# [BUG-FIRMA-TRUNC] SpaCy obcina encję przed sufiksem prawnym.
+# Wzorzec dopasowuje dopełnienie sufiksu zaraz za końcem encji w tekście.
+# np. entity="ALTEX Sp", text[ner.end:]=" z o.o." → extend.
+_TRUNC_ENDINGS: tuple = ("Sp", "S.A", "Sp. k", "s.c", "p.s.a", "s.k.a")
+_SUFFIX_COMPLETION_RE = re.compile(
+    r'^[\s.]*(?:z\s+o\.o\.?|o\.o\.|S\.A\.?|k\.\s*a\.?|z\.o\.o\.?)',
     re.IGNORECASE,
 )
 
@@ -156,14 +230,51 @@ def _filter_institutions(ner_results: list) -> list:
         if _ADDR_PREFIX_RE.match(entity_text):
             logger.debug("[FILTER] pominięto adres jako encję: '%s'", entity_text[:40])
             continue
+        # [FIX-NER-COURTS] Pomiń sądy i trybunały — instytucje publiczne, nie firmy
+        if _COURT_PREFIX_RE.match(entity_text):
+            logger.debug("[FILTER] pominięto sąd/trybunał: '%s'", entity_text[:60])
+            continue
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
             logger.debug("[FILTER] pominięto dział wewnętrzny: '%s'", entity_text[:40])
             continue
-        # [BUG-NER-FP] Pomiń encje OSOBA kończące się na polskie końcówki przymiotnikowe.
-        # FIRMA może mieć przymiotnik w nazwie legalnie ("Firma Handlowa X") — bez filtra.
-        if ner.label == "OSOBA" and _ADJECTIVE_ENDINGS_RE.search(entity_text):
+        # [BUG-FIRMA-ZUS-MIX] Pomiń encję FIRMA zawierającą fragment instytucji publicznej
+        if ner.label == "FIRMA" and _INSTITUTION_IN_FIRMA_RE.search(entity_text):
+            logger.debug("[FILTER] pominięto FIRMA z instytucją: '%s'", entity_text[:60])
+            continue
+        # [BUG-NER-FP] Pomiń jednowyrazowe encje OSOBA kończące się na końcówki przymiotnikowe.
+        # TYLKO jednowyrazowe — "Jana Kowalskiego" to dopełniacz osoby, nie przymiotnik.
+        # Wielowyrazowe: "Jan Kowalski", "Jana Kowalskiego" → zawsze OSOBA (fleksja).
+        if (ner.label == "OSOBA"
+                and " " not in entity_text.strip()
+                and _ADJECTIVE_ENDINGS_RE.search(entity_text)):
             logger.debug("[FILTER] pominięto przymiotnik jako OSOBA: '%s'", entity_text[:40])
+            continue
+
+        # [BUG-NER-FP-GRANICE] Jednoslowna FIRMA będąca przymiotnikiem → pomiń.
+        # Wieloslowna nazwa "Firma Handlowa X" jest legalna — filtrujemy tylko jedno słowo.
+        if (ner.label == "FIRMA" and " " not in entity_text.strip()
+                and _ADJECTIVE_ENDINGS_RE.search(entity_text)
+                and not _LEGAL_SUFFIX_RE.search(entity_text)):
+            logger.debug("[FILTER] pominięto jednosłowny przymiotnik jako FIRMA: '%s'", entity_text[:40])
+            continue
+
+        # [BUG-NER-FP-GRANICE] Czyste akronimy bez sufiksu prawnego → pomiń.
+        # "ERP", "CRM", "IT" to skróty systemowe — nie firmy.
+        if (ner.label in ("FIRMA", "ORGANIZACJA") and _PURE_ACRONYM_RE.match(entity_text.strip())
+                and not _LEGAL_SUFFIX_RE.search(entity_text)):
+            logger.debug("[FILTER] pominięto czysty akronim jako FIRMA/ORG: '%s'", entity_text)
+            continue
+
+        # [BUG-NER-FP-GRANICE] Nagłówki ALL-CAPS (≤2 słowa, brak sufiksu) → pomiń.
+        # "ZAKRES OBOWIĄZKÓW", "DANE OSOBOWE" to nagłówki dokumentów, nie firmy.
+        words = entity_text.split()
+        if (ner.label in ("FIRMA", "ORGANIZACJA")
+                and len(words) <= 2
+                and entity_text == entity_text.upper()
+                and not _LEGAL_SUFFIX_RE.search(entity_text)
+                and not any(c.isdigit() for c in entity_text)):
+            logger.debug("[FILTER] pominięto nagłówek ALL-CAPS jako FIRMA/ORG: '%s'", entity_text[:40])
             continue
 
         out.append(ner)
@@ -246,6 +357,13 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         # encję zaczynającą się od " — filtr typograficzny poniżej nie łapie
         # cudzysłowu prostego (sprawdza tylko \u201e \u201c \u2018 \u2019).
         # strip() działa tylko na krawędziach, środek nazwy nienaruszony.
+        # [BUG-2] Wykryj cudzysłów wokół encji PRZED stripem — firma w cudzysłowie
+        # ("Wiśniewski i Wspólnicy") powinna być FIRMA, nie OSOBA.
+        _orig_span = text[ner.start:ner.end]
+        _quoted = (
+            _orig_span.startswith(('"', '„', '“'))
+            or _orig_span.endswith(('"', '”', '“'))
+        )
         entity_text  = entity_text.strip('"')
         if not entity_text:
             continue
@@ -255,8 +373,19 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         entity_text  = entity_text.rstrip(",.;:!?()")
         if not entity_text:
             continue
+        # [BUG-FIRMA-TRUNC] Rozszerz encję o obcięty sufiks prawny
+        # np. "ALTEX" Sp → "ALTEX" Sp. z o.o.
+        if entity_text.endswith(_TRUNC_ENDINGS):
+            after = text[ner.end:]
+            m_suf = _SUFFIX_COMPLETION_RE.match(after)
+            if m_suf:
+                entity_text = entity_text + m_suf.group(0).rstrip()
         typ          = ner.label
         entity_lower = entity_text.lower()
+
+        # [BUG-2] Cudzysłów wokół encji → nazwa handlowa → wymuś FIRMA
+        if _quoted and typ == "OSOBA":
+            typ = "FIRMA"
 
         # [FIX-LEGAL-SUFFIX] Sufiks prawny wymusza FIRMA niezależnie od SpaCy
         # [BUG-F] Usunięta gałąź `s in entity_lower` — substring match powodował
@@ -294,8 +423,16 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         # więc stem_to_token jej nie deduplikuje. Sprawdź _person_stem który
         # jest invariantny na odmiany: ('jan', '', 'kowa') dla obu form.
         # Stosowane tylko dla OSOBA wieloczłonowej — jednoczłonowe obsługuje BUG-5.
+        # [BUG-OCR-DEDUP] Przed _person_stem normalizuj OCR-leet żeby "P4nina"
+        # dało ten sam stem co "Paulina". Normalizacja tylko do celów kluczowania —
+        # entity_text (wartość tokenu) pozostaje oryginalna (lub już znorm. przez pipeline).
         if typ == "OSOBA" and " " in entity_text:
-            pstem = _person_stem(entity_text)
+            try:
+                from layers.ocr_normalizer import normalize_ocr as _norm_ocr
+                _entity_for_stem = _norm_ocr(entity_text)
+            except Exception:
+                _entity_for_stem = entity_text
+            pstem = _person_stem(_entity_for_stem)
             if pstem is not None and pstem in person_stem_to_token:
                 existing_token = person_stem_to_token[pstem]
                 all_variants[entity_text] = existing_token
