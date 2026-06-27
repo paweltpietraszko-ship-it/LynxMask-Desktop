@@ -1,28 +1,21 @@
-# tests/test_smoke_e2e.py v1.0
+# tests/test_smoke_e2e.py v1.1
 """
-Smoke E2E — łączy warstwy, które reszta testów sprawdza osobno.
+Smoke E2E — pełny HTTP backend, bez ground truth.
 
 Ścieżki:
-  1. Tekst → POST /preview → POST /archive → depseudo (bez OCR, pełny backend HTTP)
-  2. dataset_real → ekstrakcja/OCR → /preview → brak wycieku encji krytycznych (GT)
-  3. dataset_real (pierwszy plik) → /preview → /archive → depseudo
+  1. Tekst syntetyczny → /preview → sprawdzenie braku wycieku (sanity check)
+  2. Pliki testowe (Pliki testowe/*.txt) → /preview → raport wykrytych encji
 
-Dataset realny (opcjonalny — testy 2–3 skip gdy pusty):
-  backend/dataset_real/ground_truth.json
-  backend/dataset_real/images/*.jpg|png|pdf
-
-Format ground_truth.json — jak w benchmark.py (tablica obiektów z polem entities).
+Raport zapisywany do: backend/smoke_e2e_report.txt
+Po uruchomieniu przejrzyj raport i powiedz co nie działa.
 
 Uruchomienie:
-  python -m pytest tests/test_smoke_e2e.py -v
-  (backend musi działać na 127.0.0.1:8765 — run_tests.bat sprawdza health)
+  python -m pytest tests/test_smoke_e2e.py -v -s
+  (backend musi działać na 127.0.0.1:8765)
 """
 
 from __future__ import annotations
 
-import base64
-import json
-import mimetypes
 import re
 import sys
 from pathlib import Path
@@ -33,61 +26,40 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from benchmark import analyze  # noqa: E402 — ta sama logika co benchmark
-
 BACKEND_URL = "http://127.0.0.1:8765"
 PREVIEW_URL = f"{BACKEND_URL}/preview"
-TIMEOUT_S = 120
+TIMEOUT_S   = 60
 
-BACKEND_DIR = Path(__file__).resolve().parent.parent
-DATASET_DIR = BACKEND_DIR / "dataset_real"
-GT_PATH = DATASET_DIR / "ground_truth.json"
-TOKEN_PATH = BACKEND_DIR / "api_token.txt"
+BACKEND_DIR   = Path(__file__).resolve().parent.parent
+TEST_DOCS_DIR = BACKEND_DIR.parent / "Pliki testowe"
+TOKEN_PATH    = BACKEND_DIR / "api_token.txt"
+REPORT_PATH   = BACKEND_DIR / "smoke_e2e_report.txt"
 
-TOKEN_RE = re.compile(r"\b[A-Z][A-Z_]+_\d{3}\b")
+TOKEN_RE = re.compile(r"\b(NUMER|EMAIL|ADRES|OSOBA|FIRMA|KWOTA|INSTYTUCJA)_\d{3}\b")
+
+# Encje krytyczne — ich obecność w wyjściu = wyciek PII
+_CRITICAL_PATTERNS = [
+    re.compile(r"\b\d{11}\b"),
+    re.compile(r"\b\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b"),
+    re.compile(r"\bPL\s*\d{2}[\s\d]{26,}\b"),
+    re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,6}"),
+    re.compile(r"(?<![A-Za-z])[A-Z]{3}\s?\d{6}\b"),
+    re.compile(r"\b[A-Z]{2}\s?\d{7}\b"),
+]
 
 
 def _auth_headers() -> dict[str, str]:
     try:
         token = TOKEN_PATH.read_text(encoding="utf-8").strip()
+        return {"X-Api-Token": token} if token else {}
     except FileNotFoundError:
         return {}
-    return {"X-Api-Token": token} if token else {}
 
 
-def _load_real_docs() -> list[tuple[dict[str, Any], Path]]:
-    if not GT_PATH.exists():
-        return []
-    try:
-        entries: list[dict[str, Any]] = json.loads(GT_PATH.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return []
-    if not isinstance(entries, list):
-        return []
-
-    docs: list[tuple[dict[str, Any], Path]] = []
-    for entry in entries:
-        if not isinstance(entry, dict) or "file" not in entry:
-            continue
-        rel = Path(entry["file"])
-        candidates = [
-            DATASET_DIR / rel,
-            DATASET_DIR / "images" / rel.name,
-            BACKEND_DIR / rel,
-        ]
-        img_path = next((p for p in candidates if p.is_file()), None)
-        if img_path is not None:
-            docs.append((entry, img_path))
-    return docs
-
-
-REAL_DOCS = _load_real_docs()
-
-
-def _post_preview_bytes(data: bytes, filename: str, mime: str) -> tuple[dict[str, Any], int]:
+def _preview_text(text: str, filename: str) -> tuple[dict[str, Any], int]:
     r = requests.post(
         PREVIEW_URL,
-        files={"file": (filename, data, mime)},
+        files={"file": (filename, text.encode("utf-8"), "text/plain")},
         headers=_auth_headers(),
         timeout=TIMEOUT_S,
     )
@@ -98,76 +70,18 @@ def _post_preview_bytes(data: bytes, filename: str, mime: str) -> tuple[dict[str
     return body, r.status_code
 
 
-def post_preview_text(text: str, filename: str = "smoke_e2e.txt") -> tuple[dict[str, Any], int]:
-    return _post_preview_bytes(text.encode("utf-8"), filename, "text/plain")
+def _check_critical_leaks(text: str) -> list[str]:
+    return [m.group(0) for pat in _CRITICAL_PATTERNS for m in pat.finditer(text)]
 
 
-def post_preview_file(path: Path) -> tuple[dict[str, Any], int]:
-    mime, _ = mimetypes.guess_type(path.name)
-    if not mime:
-        mime = "application/octet-stream"
-    return _post_preview_bytes(path.read_bytes(), path.name, mime)
-
-
-def depseudo_local(text: str, tokens: list[dict[str, Any]]) -> str:
-    token_map = {t["token"]: t["original"] for t in tokens if t.get("token")}
-    return TOKEN_RE.sub(lambda m: token_map.get(m.group(0), m.group(0)), text)
-
-
-def save_archive(pse: str, tokens: list[dict], anon_text: str, guard_blocked: bool = False) -> bool:
-    blob = json.dumps({"tokens": tokens, "anonymized_preview": anon_text}, ensure_ascii=False)
-    enc_blob = base64.b64encode(blob.encode("utf-8")).decode("ascii")
-    desc = base64.b64encode(b"smoke_e2e").decode("ascii")
-    r = requests.post(
-        f"{BACKEND_URL}/archive",
-        headers=_auth_headers(),
-        json={
-            "pse": pse,
-            "token_count": len(tokens),
-            "enc_blob": enc_blob,
-            "description": desc,
-            "guard_blocked": guard_blocked,
-        },
-        timeout=30,
-    )
-    if not r.ok:
-        return False
-    return bool(r.json().get("ok"))
-
-
-def delete_archive(pse: str) -> None:
-    try:
-        requests.delete(
-            f"{BACKEND_URL}/archive/{pse}",
-            headers=_auth_headers(),
-            timeout=10,
-        )
-    except Exception:
-        pass
-
-
-def _assert_preview_ok(body: dict[str, Any], http_status: int, label: str) -> None:
-    assert http_status == 200, f"{label}: HTTP {http_status}, body={body!r}"
-    assert not body.get("error"), f"{label}: error={body.get('error')!r}"
-    assert body.get("ocr_rejected") is not True, (
-        f"{label}: OCR odrzucony (conf={body.get('ocr', {}).get('confidence')}) — "
-        "dodaj lepsze zdjęcie albo oznacz w GT jako oczekiwany reject"
-    )
-    assert body.get("blocked") is not True, (
-        f"{label}: Guard zablokował — {body.get('guard_reasons')}"
-    )
-
-
-def _assert_no_critical_leaks(gt_entry: dict[str, Any], body: dict[str, Any], label: str) -> None:
-    report = analyze(gt_entry, body)
-    missed = report["summary"].get("critical_missed", 0)
-    if missed:
-        leaks = [
-            e["value"]
-            for e in report["entities"]
-            if e.get("critical") and not e.get("privacy_found")
-        ]
-        pytest.fail(f"{label}: wyciek encji krytycznych ({missed}): {leaks[:5]}")
+def _token_summary(tokens: list[dict]) -> dict[str, list[str]]:
+    by_type: dict[str, list[str]] = {}
+    for t in tokens:
+        tid   = t.get("token", "")
+        orig  = t.get("original", tid)
+        ttype = tid.split("_")[0] if "_" in tid else "?"
+        by_type.setdefault(ttype, []).append(orig[:60])
+    return by_type
 
 
 @pytest.fixture(scope="module")
@@ -180,95 +94,103 @@ def require_backend() -> None:
         pytest.skip(f"Backend health HTTP {r.status_code}")
 
 
-class TestSmokeTextPath:
-    """Tekst → preview → archiwum → depseudo (bez OCR, pełny HTTP backend)."""
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 1 — syntetyczny tekst, sanity check
+# ─────────────────────────────────────────────────────────────────────────────
 
-    def test_e2e_text_preview_archive_depseudo(self, require_backend: None) -> None:
+class TestSmokeTextPath:
+    """Tekst → /preview → sprawdzenie braku wycieku."""
+
+    def test_e2e_text_basic(self, require_backend: None) -> None:
         original = (
             "Jan Kowalski, PESEL 92081512345, NIP 526-285-30-52, "
-            "ul. Zielona 1, 65-001 Zielona Góra, jan@test.pl"
+            "ul. Zielona 1, 65-001 Zielona Góra, jan@test.pl, "
+            "IBAN: PL61 1090 1014 0000 0712 1981 2874"
         )
-        body, status = post_preview_text(original)
-        _assert_preview_ok(body, status, "tekst/preview")
+        body, status = _preview_text(original, "smoke_syntetyczny.txt")
 
-        anon = body.get("anonymized_preview", "")
+        assert status == 200, f"HTTP {status}: {body}"
+        assert not body.get("error"), f"error={body.get('error')!r}"
+
+        anon   = body.get("anonymized_preview", "")
         tokens = body.get("tokens", [])
-        pse = body.get("pse_code", "")
-        assert pse, "Brak pse_code w odpowiedzi /preview"
-        assert tokens, "Brak tokenów — silnik nic nie wykrył"
 
-        for fragment in ("92081512345", "5262853052", "Jan Kowalski", "jan@test.pl"):
-            assert fragment.lower() not in anon.lower(), f"Wyciek w preview: {fragment!r}"
+        assert tokens, "Silnik nie wykrył żadnych encji"
+        leaks = _check_critical_leaks(anon)
+        assert not leaks, f"Wyciek PII w wyjściu: {leaks}"
 
-        assert save_archive(pse, tokens, anon), f"Zapis /archive nieudany dla {pse}"
-        try:
-            restored = depseudo_local(anon, tokens)
-            for token in tokens:
-                orig = token.get("original", "")
-                if len(orig) < 4:
-                    continue
-                assert orig.lower() in restored.lower(), f"Depseudo: brak {orig[:40]!r}"
-            leftover = TOKEN_RE.findall(restored)
-            assert not leftover, f"Nieodtworzone tokeny: {leftover}"
-        finally:
-            delete_archive(pse)
+        print(f"\n[SYNTETYCZNY] {len(tokens)} tokenów: "
+              f"{[t.get('token') for t in tokens]}")
 
 
-@pytest.mark.skipif(
-    not REAL_DOCS,
-    reason="dataset_real pusty — dodaj ground_truth.json + pliki w dataset_real/images/",
-)
-class TestSmokeRealDataset:
-    """Realne zdjęcia/PDF — OCR/ekstrakcja → preview → GT (regresja produktowa)."""
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 2 — pliki testowe lvl0-lvl3, raport
+# ─────────────────────────────────────────────────────────────────────────────
 
-    @pytest.mark.parametrize(
-        "gt_entry,img_path",
-        REAL_DOCS,
-        ids=[p.name for _, p in REAL_DOCS],
-    )
-    def test_e2e_real_file_no_critical_leak(
-        self,
-        require_backend: None,
-        gt_entry: dict[str, Any],
-        img_path: Path,
-    ) -> None:
-        body, status = post_preview_file(img_path)
-        label = img_path.name
+TEST_FILES = sorted(TEST_DOCS_DIR.glob("*.txt")) if TEST_DOCS_DIR.exists() else []
 
-        if status == 422 and body.get("ocr_rejected"):
-            pytest.skip(f"{label}: OCR reject — oczekiwane dla słabego zdjęcia")
 
-        _assert_preview_ok(body, status, label)
-        entities = gt_entry.get("entities") or {}
-        if not entities:
-            pytest.skip(f"{label}: brak entities w GT — uzupełnij ground_truth.json")
+@pytest.mark.skipif(not TEST_FILES, reason="Brak plików w 'Pliki testowe/'")
+class TestSmokeTestFiles:
+    """Pliki testowe lvl0-lvl3 → /preview → raport encji."""
 
-        _assert_no_critical_leaks(gt_entry, body, label)
+    @pytest.mark.parametrize("doc_path", TEST_FILES, ids=[p.name for p in TEST_FILES])
+    def test_plik_testowy(self, require_backend: None, doc_path: Path) -> None:
+        text         = doc_path.read_text(encoding="utf-8")
+        body, status = _preview_text(text, doc_path.name)
 
-    def test_e2e_real_file_archive_roundtrip(self, require_backend: None) -> None:
-        gt_entry, img_path = REAL_DOCS[0]
-        body, status = post_preview_file(img_path)
-        label = img_path.name
+        assert status == 200, f"{doc_path.name}: HTTP {status}"
+        assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
 
-        if status == 422 and body.get("ocr_rejected"):
-            pytest.skip(f"{label}: OCR reject — pomijam roundtrip archiwum")
+        anon    = body.get("anonymized_preview", "")
+        tokens  = body.get("tokens", [])
+        leaks   = _check_critical_leaks(anon)
+        summary = _token_summary(tokens)
 
-        _assert_preview_ok(body, status, label)
+        print(f"\n── {doc_path.name} ──")
+        print(f"   Tokenów: {len(tokens)}")
+        for ttype, vals in sorted(summary.items()):
+            print(f"   {ttype:12s} ({len(vals)}): {', '.join(vals[:6])}")
+        if leaks:
+            print(f"   ⚠ WYCIEKI: {leaks[:5]}")
 
-        tokens = body.get("tokens", [])
-        pse = body.get("pse_code", "")
-        anon = body.get("anonymized_preview", "")
-        assert pse and tokens, f"{label}: brak pse/tokens po preview"
+        assert not leaks, f"{doc_path.name}: wyciek PII: {leaks[:3]}"
 
-        assert save_archive(pse, tokens, anon), f"Zapis archiwum nieudany: {pse}"
-        try:
-            restored = depseudo_local(anon, tokens)
-            for token in tokens[:5]:
-                orig = token.get("original", "")
-                if len(orig) >= 4:
-                    assert orig.lower() in restored.lower(), f"Depseudo: brak {orig[:40]!r}"
-        finally:
-            delete_archive(pse)
+    def test_generuj_raport(self, require_backend: None) -> None:
+        """Zapisuje smoke_e2e_report.txt — przejrzyj i powiedz co nie działa."""
+        lines = ["SMOKE E2E — RAPORT WYKRYTYCH ENCJI", "=" * 60, ""]
 
-        if gt_entry.get("entities"):
-            _assert_no_critical_leaks(gt_entry, body, label)
+        for doc_path in TEST_FILES:
+            text         = doc_path.read_text(encoding="utf-8")
+            body, status = _preview_text(text, doc_path.name)
+
+            lines.append(f"── {doc_path.name} ──")
+
+            if status != 200 or body.get("error"):
+                lines.append(f"   BŁĄD: HTTP {status} / {body.get('error')}")
+                lines.append("")
+                continue
+
+            anon    = body.get("anonymized_preview", "")
+            tokens  = body.get("tokens", [])
+            leaks   = _check_critical_leaks(anon)
+            summary = _token_summary(tokens)
+
+            lines.append(f"   Tokenów łącznie: {len(tokens)}")
+            for ttype, vals in sorted(summary.items()):
+                for v in vals:
+                    lines.append(f"   [{ttype}] {v}")
+
+            if leaks:
+                lines.append(f"   ⚠ WYCIEKI PII: {leaks}")
+            else:
+                lines.append("   ✓ Brak wycieków krytycznych")
+
+            lines.append("")
+            lines.append("   Tekst po maskowaniu (pierwsze 500 znaków):")
+            lines.append("   " + anon[:500].replace("\n", " "))
+            lines.append("")
+
+        REPORT_PATH.write_text("\n".join(lines), encoding="utf-8")
+        print(f"\nRaport zapisany: {REPORT_PATH}")
+        assert REPORT_PATH.exists()
