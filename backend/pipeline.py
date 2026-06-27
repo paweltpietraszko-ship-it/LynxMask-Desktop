@@ -346,7 +346,7 @@ def _apply_guard(
 def _run_pipeline(text: str, state: AppState) -> PipelineResult:
     if USE_NEW_PIPELINE:
         from pipeline_new import run_pipeline_new
-        new_text, new_map, force_block = run_pipeline_new(text, state.spacy_ner_mod, state.anonymizer)
+        new_text, new_map, force_block = run_pipeline_new(text, state.anon_map or {}, state.anonymizer)
         return _apply_guard(new_text, new_map, state, force_block=force_block)
 
     reverse_map: dict = {}
