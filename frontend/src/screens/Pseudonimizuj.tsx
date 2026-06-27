@@ -232,8 +232,9 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
 
   // ── Zapis do biblioteki ─────────────────────────────────────
 
-  async function handleSave() {
+  async function handleSave(forceBypassGuard = false) {
     if (!result || !description.trim() || saving) return;
+    if (guardBlocked && !forceBypassGuard) return;
     setSaving(true);
     setError("");
     try {
@@ -862,41 +863,44 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
           <div style={{ color: T.textMuted, fontSize: 12, marginBottom: 10 }}>
             Zaznacz nierozpoznaną wartość w podglądzie → dodaj do profilu biura → prześlij dokument ponownie.
           </div>
-          <button
-            onClick={async () => {
-              if (!result?.guard_reasons?.length) return;
-              setAddingAllowlist(true);
-              try {
-                const phrases = result.guard_reasons
-                  .map(r => {
-                    const m = r.match(/'([^']+)'/);
-                    return m ? m[1] : null;
-                  })
-                  .filter(Boolean) as string[];
-                for (const phrase of phrases) {
-                  await fetch(`${API}/profile/guard-allowlist`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      ...(apiToken ? { "X-Api-Token": apiToken } : {}),
-                    },
-                    body: JSON.stringify({ phrase }),
-                  });
-                }
-                setGuardBlocked(false);
-              } catch { /* ignoruj błąd sieciowy */ }
-              finally { setAddingAllowlist(false); }
-            }}
-            disabled={addingAllowlist}
-            style={{
-              background: T.surface, border: `1px solid ${T.redBorder}`,
-              borderRadius: 5, padding: "6px 12px",
-              color: T.red, fontSize: 12, cursor: "pointer",
-              opacity: addingAllowlist ? 0.6 : 1,
-            }}
-          >
-            {addingAllowlist ? "Dodaję..." : "To nie PII — ignoruj i zapisz"}
-          </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={async () => {
+                if (!result?.guard_reasons?.length || addingAllowlist) return;
+                setAddingAllowlist(true);
+                try {
+                  const phrases = result.guard_reasons
+                    .map(r => {
+                      const m = r.match(/'([^']+)'/);
+                      return m ? m[1] : null;
+                    })
+                    .filter(Boolean) as string[];
+                  for (const phrase of phrases) {
+                    await fetch(`${API}/profile/guard-allowlist`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...(apiToken ? { "X-Api-Token": apiToken } : {}),
+                      },
+                      body: JSON.stringify({ phrase }),
+                    });
+                  }
+                  setGuardBlocked(false);
+                  await handleSave(true);
+                } catch { /* ignoruj błąd sieciowy */ }
+                finally { setAddingAllowlist(false); }
+              }}
+              disabled={addingAllowlist}
+              style={{
+                background: T.surface, border: `1px solid ${T.redBorder}`,
+                borderRadius: 5, padding: "6px 12px",
+                color: T.red, fontSize: 12, cursor: "pointer",
+                opacity: addingAllowlist ? 0.6 : 1,
+              }}
+            >
+              {addingAllowlist ? "Zapisuję..." : "To nie PII — zapisz mimo to"}
+            </button>
+          </div>
         </div>
       )}
 
