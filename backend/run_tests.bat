@@ -44,14 +44,21 @@ echo === [2/3] Testy pipeline HTTP (test_pipeline.py) === >> %LOG%
 python tests\test_pipeline.py >> %LOG% 2>&1
 
 echo.
-echo === [3/3] Testy adversarialne (bezposredni import) ===
+echo === [3/4] Testy adversarialne (bezposredni import) ===
 echo Trwa...
 echo. >> %LOG%
-echo === [3/3] Testy adversarialne (bezposredni import) === >> %LOG%
+echo === [3/4] Testy adversarialne (bezposredni import) === >> %LOG%
 python -m pytest tests\test_anonymizer_adversarial.py -v --tb=short >> %LOG% 2>&1
 python -m pytest tests\test_output_guard_adversarial.py -v --tb=short >> %LOG% 2>&1
 python -m pytest tests\test_pipeline_adversarial.py -v --tb=short >> %LOG% 2>&1
 python -m pytest tests\test_pipeline_v2.py -v --tb=short >> %LOG% 2>&1
+
+echo.
+echo === [4/4] Testy jednostkowe warstw (financial, credentials, ocr, verbal) ===
+echo Trwa...
+echo. >> %LOG%
+echo === [4/4] Testy jednostkowe warstw (financial, credentials, ocr, verbal) === >> %LOG%
+python -m pytest tests\test_layers.py -v --tb=short >> %LOG% 2>&1
 
 echo. >> %LOG%
 echo ================================================================ >> %LOG%
