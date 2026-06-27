@@ -76,6 +76,14 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `frontend/src/screens/CrashScreen.tsx` v1.0 — NOWY: ekran awarii z kodem błędu i akcjami
 - `frontend/src/App.tsx` v1.6 — CRASH-UX: retry tokenu + detekcja crashu → CrashScreen
 
+### ~~BUG-PROFIL-PIPELINE~~ — NAPRAWIONY (pipeline.py, 2026-06-27)
+`pipeline.py` linia 349 przekazywał `state.spacy_ner_mod` (moduł SpaCy) jako
+`anon_map` do `run_pipeline_new` zamiast `state.anon_map` (słownik encji biura).
+Trie działał bo `anonymizer` był poprawny, ale profil biura nie trafiał do NER.
+Fix: `run_pipeline_new(text, state.anon_map or {}, state.anonymizer)`.
+
+---
+
 ## Otwarte bugi — do naprawienia (priorytet malejący)
 
 ### ~~BUG-IBAN-LETTERS~~ — NAPRAWIONY
@@ -494,7 +502,7 @@ MASTER definiuje dwa słowniki (Mobile = wzorzec):
 | Słownik B | ✅ | ❌ |
 | Eksport .lynxdict | ✅ | ❌ |
 | UX Guard YELLOW: „Maskuj" / „Nie maskuj" | ✅ PseudonymResultPanel | ❌ brak GuardAllowlist |
-| Silnik konsultuje słownik A | ✅ | ✅ trie_layer (gdy profil podpięty — BUG-PROFIL-PIPELINE) |
+| Silnik konsultuje słownik A | ✅ | ✅ trie_layer (gdy profil podpięty) |
 
 ### 6. Bezpieczeństwo i sesja — podobny cel, inna implementacja
 
