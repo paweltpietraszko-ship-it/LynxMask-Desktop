@@ -98,7 +98,8 @@ class TestAddrPatronymic:
         import layers.ner_adapter as _ner_mod
         from pipeline_new import run_pipeline_new
         with patch.object(_ner_mod, "process_ner", return_value=({}, {})):
-            return run_pipeline_new(text, anon_map={})
+            t, rev, _ = run_pipeline_new(text, anon_map={})
+            return t, rev
 
     def test_addr_patronymic_contains_adres_token(self):
         """
@@ -189,7 +190,7 @@ class TestFixNerGlobalPriority:
 
         with patch.object(_ner_mod, "process_ner",
                           return_value=({"OSOBA_001": "Jan Kowalski"}, {})):
-            result_text, reverse_map = run_pipeline_new(
+            result_text, reverse_map, _ = run_pipeline_new(
                 "Zleceniodawca: Jan Kowalski.", anon_map={}
             )
 
@@ -214,7 +215,8 @@ class TestIbanWithSpace:
         import layers.ner_adapter as _ner_mod
         from pipeline_new import run_pipeline_new
         with patch.object(_ner_mod, "process_ner", return_value=({}, {})):
-            return run_pipeline_new(text, anon_map={})
+            t, rev, _ = run_pipeline_new(text, anon_map={})
+            return t, rev
 
     def test_iban_with_spaces_masked(self):
         """
@@ -612,7 +614,8 @@ class TestNewPipelineIntegration:
         from pipeline_new import run_pipeline_new
         with patch.object(_ner_mod, "process_ner",
                           return_value=(ner_mock or {}, {})):
-            return run_pipeline_new(text, anon_map={})
+            t, rev, _ = run_pipeline_new(text, anon_map={})
+            return t, rev
 
     # ── 1. NIP z separatorem OCR ──────────────────────────────────────────────
 

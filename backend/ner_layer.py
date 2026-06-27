@@ -1,5 +1,5 @@
 """
-ner_layer.py  v1.16
+ner_layer.py  v1.17
 Detekcja encji NER (SpaCy) i budowanie mapy tokenów OSOBA/FIRMA.
 Wydzielony z pseudominizer_api.py v1.18.
 
@@ -166,11 +166,16 @@ _ADJECTIVE_ENDINGS_RE = re.compile(
 )
 
 # [FIX-NER-COURTS] Sądy powszechne i administracyjne — instytucje publiczne,
-# nie prywatne firmy. Łapie "Sąd Rejonowy w Gdańsku", "Sąd Okręgowy w Warszawie",
-# "Naczelny Sąd Administracyjny" itp. — każda encja zaczynająca się od "sąd " lub
-# "naczelny sąd" lub "trybunał" (już częściowo w blocklist, ale bez form z miastem).
+# nie prywatne firmy. Łapie wszystkie formy fleksyjne: "Sąd/Sądu/Sądowi Rejonowy...",
+# "Trybunał/Trybunału Konstytucyjny...", "Naczelny/Naczelnego Sąd/Sądu..." itp.
+# v1.16 łapało tylko mianownik "sąd "; v1.17 dodaje dopełniacz/celownik.
 _COURT_PREFIX_RE = re.compile(
-    r"^(?:sąd\s|naczelny\s+sąd\s|wojewódzki\s+sąd\s|trybunał\s)",
+    r"^(?:"
+    r"sąd(?:u|owi)?\s"
+    r"|naczelny(?:ego)?\s+sąd(?:u|owi)?\s"
+    r"|wojewódzki(?:ego)?\s+sąd(?:u|owi)?\s"
+    r"|trybunał(?:u|owi)?\s"
+    r")",
     re.IGNORECASE | re.UNICODE,
 )
 

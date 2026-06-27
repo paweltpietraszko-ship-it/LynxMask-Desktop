@@ -49,7 +49,7 @@ CYAN   = "\033[96m"
 RESET  = "\033[0m"
 BOLD   = "\033[1m"
 
-def ok(msg):   print(f"  {GREEN}✓{RESET} {msg}")
+def ok(msg):   print(f"  {GREEN}[OK]{RESET} {msg}")
 def warn(msg): print(f"  {YELLOW}⚠{RESET} {msg}")
 def info(msg): print(f"  {CYAN}→{RESET} {msg}")
 
@@ -58,7 +58,7 @@ _current_test_failed = False
 def fail(msg):
     global _current_test_failed
     _current_test_failed = True
-    print(f"  {RED}✗{RESET} {msg}")
+    print(f"  {RED}[FAIL]{RESET} {msg}")
 
 # ── Pomocnicze ────────────────────────────────────────────────────────────────
 
