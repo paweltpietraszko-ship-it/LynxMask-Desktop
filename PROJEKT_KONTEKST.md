@@ -70,7 +70,7 @@ Testy po fixie (środowisko zdalne, brak cffi/pyo3): `18 failed (env), 85 passed
 - `layers/contact.py` v1.3 — BUG-EMAIL-GREEDY fix + OCR-tolerancyjny email
 - `layers/address.py` v1.9 — BUG-ADDR-OCR-DIACRITICS fix + SIMC ASCII-folded
 - `layers/identity.py` v1.2 — OCR-tolerancyjny PESEL/NIP (spacje w liczbach)
-- `smoke_test.py` v1.0 — smoke test blokujący start przy wycieku PII (reset_spans fix)
+- `smoke_test.py` v1.1 — smoke test blokujący start przy wycieku PII; pokrywa wszystkie 14 warstw pipeline (credentials, legal, numeric, amount, institution, ocr_normalizer dodane w v1.1); guard FP: ZUS/NFZ nie mogą być zamaskowane
 - `pseudominizer_api.py` v1.32 — CRASH-UX: zapis startup_error.json przed śmiercią
 - `frontend/src-tauri/src/main.rs` v1.6 — CRASH-UX: komendy read_startup_error, restart_app
 - `frontend/src/screens/CrashScreen.tsx` v1.0 — NOWY: ekran awarii z kodem błędu i akcjami
