@@ -70,6 +70,23 @@ def _preview_text(text: str, filename: str) -> tuple[dict[str, Any], int]:
     return body, r.status_code
 
 
+def _preview_file(path: Path) -> tuple[dict[str, Any], int]:
+    import mimetypes
+    mime, _ = mimetypes.guess_type(path.name)
+    mime = mime or "application/octet-stream"
+    r = requests.post(
+        PREVIEW_URL,
+        files={"file": (path.name, path.read_bytes(), mime)},
+        headers=_auth_headers(),
+        timeout=TIMEOUT_S,
+    )
+    try:
+        body = r.json()
+    except Exception:
+        body = {"error": f"Nie-JSON (HTTP {r.status_code})"}
+    return body, r.status_code
+
+
 def _check_critical_leaks(text: str) -> list[str]:
     return [m.group(0) for pat in _CRITICAL_PATTERNS for m in pat.finditer(text)]
 
@@ -127,7 +144,11 @@ class TestSmokeTextPath:
 # Test 2 — pliki testowe lvl0-lvl3, raport
 # ─────────────────────────────────────────────────────────────────────────────
 
-TEST_FILES = sorted(TEST_DOCS_DIR.glob("*.txt")) if TEST_DOCS_DIR.exists() else []
+_EXTENSIONS = ("*.txt", "*.jpg", "*.jpeg", "*.png", "*.pdf")
+TEST_FILES = (
+    sorted(f for ext in _EXTENSIONS for f in TEST_DOCS_DIR.glob(ext))
+    if TEST_DOCS_DIR.exists() else []
+)
 
 
 @pytest.mark.skipif(not TEST_FILES, reason="Brak plików w 'Pliki testowe/'")
@@ -136,10 +157,17 @@ class TestSmokeTestFiles:
 
     @pytest.mark.parametrize("doc_path", TEST_FILES, ids=[p.name for p in TEST_FILES])
     def test_plik_testowy(self, require_backend: None, doc_path: Path) -> None:
-        text         = doc_path.read_text(encoding="utf-8")
-        body, status = _preview_text(text, doc_path.name)
+        if doc_path.suffix == ".txt":
+            body, status = _preview_text(doc_path.read_text(encoding="utf-8"), doc_path.name)
+        else:
+            body, status = _preview_file(doc_path)
 
-        assert status == 200, f"{doc_path.name}: HTTP {status}"
+        assert status in (200, 422), f"{doc_path.name}: HTTP {status}"
+
+        if status == 422 and body.get("ocr_rejected"):
+            pytest.skip(f"{doc_path.name}: OCR odrzucił zdjęcie (za niska jakość)")
+
+        assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
 
         anon    = body.get("anonymized_preview", "")
@@ -147,7 +175,8 @@ class TestSmokeTestFiles:
         leaks   = _check_critical_leaks(anon)
         summary = _token_summary(tokens)
 
-        print(f"\n── {doc_path.name} ──")
+        ocr_conf = body.get("ocr", {}).get("confidence", "—")
+        print(f"\n── {doc_path.name} (OCR conf: {ocr_conf}) ──")
         print(f"   Tokenów: {len(tokens)}")
         for ttype, vals in sorted(summary.items()):
             print(f"   {ttype:12s} ({len(vals)}): {', '.join(vals[:6])}")
@@ -161,8 +190,10 @@ class TestSmokeTestFiles:
         lines = ["SMOKE E2E — RAPORT WYKRYTYCH ENCJI", "=" * 60, ""]
 
         for doc_path in TEST_FILES:
-            text         = doc_path.read_text(encoding="utf-8")
-            body, status = _preview_text(text, doc_path.name)
+            if doc_path.suffix == ".txt":
+                body, status = _preview_text(doc_path.read_text(encoding="utf-8"), doc_path.name)
+            else:
+                body, status = _preview_file(doc_path)
 
             lines.append(f"── {doc_path.name} ──")
 
