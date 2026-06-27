@@ -1,4 +1,4 @@
-# test_layers.py v1.0
+# test_layers.py v1.1
 """
 Testy jednostkowe dla warstw: credentials, ocr_normalizer, verbal_amount.
 """
@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import pytest
 from pipeline_core import PipelineState, TokenAllocator
 from layers.credentials import apply_credentials_layer
+from layers.financial import apply_financial_layer
 from layers.ocr_normalizer import normalize_ocr
 from layers.verbal_amount_layer import apply_verbal_amount_layer
 
@@ -23,6 +24,12 @@ def _state(text: str) -> PipelineState:
     return PipelineState(text, TokenAllocator())
 
 
+def _apply_financial(text: str) -> tuple[str, dict]:
+    s = _state(text)
+    apply_financial_layer(s)
+    return s.text, s.allocator.reverse_map
+
+
 def _apply_credentials(text: str) -> str:
     s = _state(text)
     apply_credentials_layer(s)
@@ -33,6 +40,120 @@ def _apply_verbal(text: str) -> str:
     s = _state(text)
     apply_verbal_amount_layer(s)
     return s.text
+
+
+# ===========================================================================
+# TestFinancialLayer
+# ===========================================================================
+
+class TestFinancialLayer:
+
+    # --- IBAN PL standardowy ---
+
+    def test_iban_pl_compact(self):
+        text, rev = _apply_financial("konto PL58325000032630362440455236")
+        assert "PL58" not in text
+        assert len(rev) == 1
+
+    def test_iban_pl_with_spaces(self):
+        text, rev = _apply_financial("konto PL61 1090 1014 0000 0712 1981 2874")
+        assert "PL61" not in text
+        assert len(rev) == 1
+
+    # --- IBAN PL OCR lvl3 — rozerwane grupy (nowy kod v1.2) ---
+
+    def test_iban_pl_ocr_single_space_in_group(self):
+        # "1 053" zamiast "1053" — OCR rozrywa 4-cyfrową grupę
+        text, rev = _apply_financial("PL98 1 053 1875 0000 0023 4567 8901")
+        assert "PL98" not in text
+        assert len(rev) == 1
+
+    def test_iban_pl_ocr_multiple_broken_groups(self):
+        # Kilka grup rozerwanych spacją
+        text, rev = _apply_financial("Nr konta: PL61 10 90 10 14 0000 0712 1981 2874")
+        assert "PL61" not in text
+        assert len(rev) == 1
+
+    def test_iban_pl_ocr_lvl3_all_groups_split(self):
+        # Maksymalnie rozerwany (OCR lvl3): każda 4-cyfrowa grupa podzielona
+        text, rev = _apply_financial("PL98 1 053 1 875 0000 0023 4567 8901")
+        assert "PL98" not in text
+        assert len(rev) == 1
+
+    def test_iban_pl_ocr_wrong_digit_count_not_masked(self):
+        # Tylko 24 cyfry po PL (nie 26) — nie powinno być zamaskowane
+        text, rev = _apply_financial("PL12 3456 7890 1234 5678 9012")
+        # 24 cyfry — nie spełnia warunku, nie maskujemy
+        assert len(rev) == 0
+
+    def test_iban_pl_ocr_dedup(self):
+        # Ten sam IBAN OCR dwa razy → jeden token
+        iban = "PL98 1 053 1875 0000 0023 4567 8901"
+        text, rev = _apply_financial(f"{iban} oraz {iban}")
+        assert len(rev) == 1
+
+    # --- IBAN zagraniczny ---
+
+    def test_iban_de_with_spaces(self):
+        text, rev = _apply_financial("Konto DE89 3704 0044 0532 0130 00")
+        assert "DE89" not in text
+
+    def test_iban_de_compact(self):
+        text, rev = _apply_financial("DE89370400440532013000")
+        assert "DE89" not in text
+
+    def test_iban_gb(self):
+        text, rev = _apply_financial("GB29 NWBK 6016 1331 9268 19")
+        assert "GB29" not in text
+
+    def test_iban_ua(self):
+        text, rev = _apply_financial("UA213223130000026007233566001")
+        assert "UA21" not in text
+
+    def test_iban_foreign_too_short_not_masked(self):
+        # Krótszy niż 15 znaków — odrzucamy jako false positive
+        text, rev = _apply_financial("AT12 1234")
+        assert "AT12" in text
+        assert len(rev) == 0
+
+    # --- Konto bez prefiksu PL ---
+
+    def test_account_no_prefix_spaces(self):
+        text, rev = _apply_financial("61 1090 1014 0000 0712 1981 2874")
+        assert "1090 1014 0000 0712 1981 2874" not in text
+
+    def test_account_24digits_compact(self):
+        text, rev = _apply_financial("325000032630362440455236")
+        assert "325000032630362440455236" not in text
+
+    # --- Brak false positive ---
+
+    def test_no_fp_nip(self):
+        text, rev = _apply_financial("NIP: 855-019-31-23")
+        assert text == "NIP: 855-019-31-23"
+        assert len(rev) == 0
+
+    def test_no_fp_pln_currency(self):
+        text, rev = _apply_financial("Kwota: 1234 PLN")
+        assert text == "Kwota: 1234 PLN"
+        assert len(rev) == 0
+
+    # --- Deduplication ---
+
+    def test_dedup_same_iban_twice(self):
+        text, rev = _apply_financial(
+            "DE89370400440532013000 i DE89370400440532013000"
+        )
+        assert "DE89" not in text
+        assert len(rev) == 1
+
+    def test_two_different_ibans_two_tokens(self):
+        text, rev = _apply_financial(
+            "PL61109010140000071219812874 i PL58325000032630362440455236"
+        )
+        assert "PL61" not in text
+        assert "PL58" not in text
+        assert len(rev) == 2
 
 
 # ===========================================================================

@@ -6,7 +6,7 @@ v1.1: [BUG-4] Zagraniczne IBAN (DE, UA, GB, FR, NL...) maskowane przez pipeline.
   Stosowany PO wzorcach PL (konto bez prefiksu PL mogloby podlapac prefiks obcego IBAN).
   Walidacja: min. 15 znakow lacznie (najkrotszy IBAN na swiecie = NO, 15 znakow).
 v1.2: [OCR-IBAN-PL] Tolerancyjny wzorzec dla IBAN PL z rozerwanymi grupami (OCR lvl3).
-  Zamiast sztywnych grup (?:\s?\d{4}){6} — lacapcy dowolny uklad cyfr i spacji po "PL".
+  Zamiast sztywnych grup (?: d{4}){6} — lacapcy dowolny uklad cyfr i spacji po "PL".
   Post-match: sprawdzamy dokladnie 26 cyfr po prefiksie PL (wymaganie normy ISO 13616).
 """
 from __future__ import annotations
