@@ -312,14 +312,13 @@ def _apply_guard(
 
     if _GUARD_AVAILABLE and not force_block:
         try:
-            from pathlib import Path as _Path
-            import os as _os, json as _json
             try:
-                _al_path = _Path(_os.environ.get(
-                    “PROFILE_DIR”,
-                    _Path.home() / “.pseudominizer” / “profile”
-                )) / “guard_allowlist.json”
-                _allowlist = _json.loads(_al_path.read_text(encoding=”utf-8”)) if _al_path.exists() else []
+                import pathlib as _alp, os as _alo, json as _alj
+                _alfile = _alp.Path(_alo.environ.get(
+                    "PROFILE_DIR",
+                    str(_alp.Path.home() / ".pseudominizer" / "profile")
+                )) / "guard_allowlist.json"
+                _allowlist = _alj.loads(_alfile.read_text(encoding="utf-8")) if _alfile.exists() else []
             except Exception:
                 _allowlist = []
             guard_result = guard_output_with_map(
@@ -328,7 +327,7 @@ def _apply_guard(
                 mode=GuardMode.REDACT,
                 known_plain=[
                     v for v in reverse_map.values()
-                    if len(re.sub(r'[\s\”\'””„‟]+', '', v)) >= 5
+                    if len(re.sub(r'[\s\"\'“”„‟]+', '', v)) >= 5
                 ],
                 allowlist=_allowlist,
             )
