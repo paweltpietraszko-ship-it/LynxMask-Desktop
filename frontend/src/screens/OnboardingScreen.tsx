@@ -1,4 +1,4 @@
-// Pseudominizer — src/screens/OnboardingScreen.tsx  v1.4
+// Pseudominizer — src/screens/OnboardingScreen.tsx  v1.5
 // ============================================================
 // ZMIANY W TEJ WERSJI (v1.3):
 //   [UI-FONT-01] Czcionki podniesione globalnie
@@ -51,8 +51,14 @@ interface Page {
 const PAGES: Page[] = [
   {
     emoji: "🔒",
-    title: "Pseudominizer ukrywa dane osobowe",
+    title: "LynxMask ukrywa dane osobowe",
     body:  "Zanim wyślesz dokument do modelu AI, aplikacja zastępuje wszystkie wrażliwe dane tokenami — OSOBA_001, FIRMA_001, ADRES_001.\n\nModel widzi treść dokumentu, ale nie widzi żadnych danych osobowych.",
+  },
+  {
+    emoji: "🛡️",
+    title: "Warstwa bezpieczeństwa",
+    body:  "Twoje dane są maskowane lokalnie — żaden serwer nie widzi oryginalnych danych.\n\nAPI modelu AI otrzymuje tylko zanonimizowany tekst z tokenami.",
+    tip:   "Wszystko działa na Twoim komputerze — żaden dokument nie opuszcza urządzenia bez maskowania.",
   },
   {
     emoji: "📄",
