@@ -799,6 +799,24 @@ class AnonymizerMap:
     def get_entity_names(self) -> set[str]:
         return {e["base"] for e in self.data["entities"].values()}
 
+    def list_entities(self) -> list[dict]:
+        """Zwraca listę encji [{token_id, value, type}] posortowaną po type+value."""
+        result = []
+        for token_id, entity in self.data["entities"].items():
+            token_type = token_id.rsplit("_", 1)[0] if "_" in token_id else "INNE"
+            result.append({"token_id": token_id, "value": entity["base"], "type": token_type})
+        return sorted(result, key=lambda x: (x["type"], x["value"].lower()))
+
+    def remove_entity(self, token_id: str) -> bool:
+        """Usuwa encję po token_id. Zwraca True jeśli usunięto."""
+        if token_id not in self.data["entities"]:
+            return False
+        del self.data["entities"][token_id]
+        self._save()
+        self._rebuild_trie()
+        logger.info(f"Usunięto encję: {token_id}")
+        return True
+
     @property
     def version(self) -> str:
         return self.data.get("version", "")

@@ -786,6 +786,97 @@ async def profile_add_entity(request: Request):
         return JSONResponse({"error": "Błąd zapisu profilu"}, status_code=500)
 
 
+@app.get("/profile/entities")
+async def profile_list_entities():
+    """
+    [DICT-LIST] Zwraca listę wszystkich encji profilu biura.
+    Response: {entries: [{token_id, value, type}]}
+    """
+    if not _app_state.anon_map:
+        return JSONResponse({"error": "Profil biura niedostępny"}, status_code=503)
+    entries = _app_state.anon_map.list_entities()
+    return {"entries": entries}
+
+
+@app.delete("/profile/entity/{token_id}")
+async def profile_delete_entity(token_id: str):
+    """
+    [DICT-DELETE] Usuwa encję z profilu biura po token_id.
+    Response: {ok: true} lub 404.
+    """
+    if not _app_state.anon_map:
+        return JSONResponse({"error": "Profil biura niedostępny"}, status_code=503)
+    removed = _app_state.anon_map.remove_entity(token_id)
+    if not removed:
+        return JSONResponse({"error": f"Encja {token_id!r} nie istnieje"}, status_code=404)
+    logger.info(f"[DICT-DELETE] Usunięto encję {token_id}")
+    return {"ok": True}
+
+
+# ── Guard allowlist ────────────────────────────────────────────────────────────
+
+def _guard_allowlist_path() -> "Path":
+    from pathlib import Path as _Path
+    profile_dir = Path(os.environ.get("PROFILE_DIR", Path.home() / ".pseudominizer" / "profile"))
+    return profile_dir / "guard_allowlist.json"
+
+def _load_guard_allowlist() -> list[str]:
+    p = _guard_allowlist_path()
+    if not p.exists():
+        return []
+    try:
+        import json as _j
+        return _j.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+def _save_guard_allowlist(entries: list[str]) -> None:
+    import json as _j
+    p = _guard_allowlist_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(_j.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+@app.get("/profile/guard-allowlist")
+async def guard_allowlist_list():
+    """Zwraca listę fraz ignorowanych przez Guard."""
+    return {"entries": _load_guard_allowlist()}
+
+
+@app.post("/profile/guard-allowlist")
+async def guard_allowlist_add(request: Request):
+    """
+    Dodaje frazę do allowlisty Guarda.
+    Body: {phrase: str}
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Nieprawidłowy JSON"}, status_code=400)
+    phrase = str(body.get("phrase", "")).strip()
+    if not phrase:
+        return JSONResponse({"error": "Brak pola phrase"}, status_code=400)
+    entries = _load_guard_allowlist()
+    if phrase not in entries:
+        entries.append(phrase)
+        _save_guard_allowlist(entries)
+    logger.info(f"[GUARD-ALLOWLIST] Dodano: {phrase!r}")
+    return {"ok": True, "total": len(entries)}
+
+
+@app.delete("/profile/guard-allowlist/{phrase}")
+async def guard_allowlist_remove(phrase: str):
+    """Usuwa frazę z allowlisty Guarda."""
+    from urllib.parse import unquote
+    phrase = unquote(phrase)
+    entries = _load_guard_allowlist()
+    if phrase not in entries:
+        return JSONResponse({"error": "Fraza nie istnieje w allowliście"}, status_code=404)
+    entries.remove(phrase)
+    _save_guard_allowlist(entries)
+    return {"ok": True}
+
+
 @app.post("/preview-express")
 async def preview_express(request: Request, file: UploadFile = File(...)):
     """Express Mode — pipeline bez SpaCy/NER (~5-10x szybszy).

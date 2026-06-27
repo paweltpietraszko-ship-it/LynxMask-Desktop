@@ -344,6 +344,7 @@ def guard_output_with_map(
     anon_map,
     mode: GuardMode = GuardMode.REDACT,
     known_plain: list[str] = None,          # [G3-4] surowe nazwy z reverse_map sesji
+    allowlist: list[str] = None,            # [ALLOWLIST] frazy ignorowane przez guard
 ) -> GuardResult:
     """
     Rozszerzone guard_output() z weryfikacją plain-text encji z mapy.
@@ -400,6 +401,14 @@ def guard_output_with_map(
                     f"[GLOBALNY_PLAIN] Plain text '{name}' — "
                     f"encja z reverse_map sesji obecna w odpowiedzi modelu"
                 )
+    # [ALLOWLIST] Filtruj naruszenia — usuń te, które użytkownik oznaczył jako "nie PII"
+    if allowlist and violations:
+        allow_lower = {a.lower() for a in allowlist}
+        violations = [
+            v for v in violations
+            if not any(a in v.lower() for a in allow_lower)
+        ]
+
     if not violations:
         return result
     for v in violations:

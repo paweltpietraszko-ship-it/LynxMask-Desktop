@@ -1,4 +1,4 @@
-// Pseudominizer — Pseudonimizuj.tsx  v1.7
+// Pseudominizer — Pseudonimizuj.tsx  v1.8
 // ============================================================
 // ZMIANY W TEJ WERSJI (v1.7):
 //   [UI-FONT-01] Czcionki podniesione globalnie we wszystkich elementach
@@ -128,7 +128,8 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
   const [missedType,   setMissedType]   = useState("OSOBA");
   const [addingEntity, setAddingEntity] = useState(false);
   const [addedToken,   setAddedToken]   = useState("");
-  const [guardBlocked, setGuardBlocked] = useState(false);
+  const [guardBlocked,   setGuardBlocked]   = useState(false);
+  const [addingAllowlist, setAddingAllowlist] = useState(false);
   const [pasteText,    setPasteText]    = useState("");
   const [dragOver,     setDragOver]     = useState(false);
   const [ocrWarning,   setOcrWarning]   = useState(false);
@@ -858,9 +859,44 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
               ))}
             </ul>
           )}
-          <div style={{ color: T.textMuted, fontSize: 12 }}>
+          <div style={{ color: T.textMuted, fontSize: 12, marginBottom: 10 }}>
             Zaznacz nierozpoznaną wartość w podglądzie → dodaj do profilu biura → prześlij dokument ponownie.
           </div>
+          <button
+            onClick={async () => {
+              if (!result?.guard_reasons?.length) return;
+              setAddingAllowlist(true);
+              try {
+                const phrases = result.guard_reasons
+                  .map(r => {
+                    const m = r.match(/'([^']+)'/);
+                    return m ? m[1] : null;
+                  })
+                  .filter(Boolean) as string[];
+                for (const phrase of phrases) {
+                  await fetch(`${API}/profile/guard-allowlist`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      ...(apiToken ? { "X-Api-Token": apiToken } : {}),
+                    },
+                    body: JSON.stringify({ phrase }),
+                  });
+                }
+                setGuardBlocked(false);
+              } catch { /* ignoruj błąd sieciowy */ }
+              finally { setAddingAllowlist(false); }
+            }}
+            disabled={addingAllowlist}
+            style={{
+              background: T.surface, border: `1px solid ${T.redBorder}`,
+              borderRadius: 5, padding: "6px 12px",
+              color: T.red, fontSize: 12, cursor: "pointer",
+              opacity: addingAllowlist ? 0.6 : 1,
+            }}
+          >
+            {addingAllowlist ? "Dodaję..." : "To nie PII — ignoruj i zapisz"}
+          </button>
         </div>
       )}
 

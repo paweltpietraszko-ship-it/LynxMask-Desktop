@@ -1,4 +1,4 @@
-// Pseudominizer — src/screens/SecurityScreen.tsx  v2.4
+// Pseudominizer — src/screens/SecurityScreen.tsx  v2.5
 // ============================================================
 // ZMIANY W TEJ WERSJI (v2.2):
 //   - Sekcja "Hasło" — pełna zmiana hasła przez Tauri invoke("change_password")
@@ -357,13 +357,48 @@ function RecoverySection({ apiToken }: { apiToken: string }) {
   );
 }
 
-// ── Sekcja: Eksport / Import słownika ────────────────────────────────────────
+// ── Sekcja: Zarządzanie słownikiem ───────────────────────────────────────────
+
+interface EntityEntry { token_id: string; value: string; type: string; }
 
 function DictSection({ apiToken }: { apiToken: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [status,    setStatus]    = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [entities,  setEntities]  = useState<EntityEntry[] | null>(null);
+  const [loadingList, setLoadingList] = useState(false);
+  const [deletingId,  setDeletingId]  = useState<string | null>(null);
+
+  async function loadEntities() {
+    setLoadingList(true);
+    try {
+      const res = await apiFetch("/profile/entities", { method: "GET" }, apiToken);
+      const data = await res.json();
+      setEntities(data.entries ?? []);
+    } catch {
+      setStatus({ type: "error", msg: "Nie można pobrać listy encji." });
+    } finally {
+      setLoadingList(false);
+    }
+  }
+
+  async function deleteEntity(tokenId: string) {
+    setDeletingId(tokenId);
+    try {
+      const res = await apiFetch(`/profile/entity/${encodeURIComponent(tokenId)}`, { method: "DELETE" }, apiToken);
+      if (res.ok) {
+        setEntities(prev => prev?.filter(e => e.token_id !== tokenId) ?? null);
+      } else {
+        const d = await res.json();
+        setStatus({ type: "error", msg: d.error ?? "Błąd usuwania encji." });
+      }
+    } catch {
+      setStatus({ type: "error", msg: "Błąd połączenia." });
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleExport() {
     setStatus(null);
@@ -432,11 +467,16 @@ function DictSection({ apiToken }: { apiToken: string }) {
     }
   }
 
+  const TYPE_COLOR: Record<string, string> = {
+    OSOBA: T.blue, FIRMA: T.green, ADRES: T.amber,
+    NUMER: "#a78bfa", INSTYTUCJA: T.textMuted, EMAIL: T.textMuted,
+  };
+
   return (
     <Section title="Słownik biura">
       <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
-        Eksportuj listę encji biura (nazwy, adresy, osoby) do pliku .lynxdict,
-        lub importuj gotowy słownik — np. po reinstalacji aplikacji.
+        Lista encji zapisanych w profilu biura (nazwy, adresy, osoby).
+        Możesz usunąć wpisy, eksportować lub importować słownik.
       </div>
 
       {/* Ukryty input pliku */}
@@ -451,14 +491,139 @@ function DictSection({ apiToken }: { apiToken: string }) {
         }}
       />
 
-      <div style={{ display: "flex", gap: 10 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+        <Btn onClick={loadingList ? undefined : loadEntities} disabled={loadingList}>
+          {loadingList ? "▸ Ładuję..." : entities ? "Odśwież listę" : "Pokaż encje"}
+        </Btn>
         <Btn onClick={handleExport} disabled={exporting}>
-          {exporting ? "▸ Eksportuję..." : "Eksportuj słownik (.lynxdict)"}
+          {exporting ? "▸ Eksportuję..." : "Eksportuj (.lynxdict)"}
         </Btn>
         <Btn onClick={() => fileRef.current?.click()} disabled={importing}>
-          {importing ? "▸ Importuję..." : "Importuj słownik (.lynxdict)"}
+          {importing ? "▸ Importuję..." : "Importuj (.lynxdict)"}
         </Btn>
       </div>
+
+      {/* Lista encji */}
+      {entities !== null && (
+        <div style={{
+          border: `1px solid ${T.border}`, borderRadius: 6,
+          maxHeight: 260, overflowY: "auto", marginBottom: 10,
+        }}>
+          {entities.length === 0 ? (
+            <div style={{ padding: "16px", textAlign: "center", color: T.textMuted, fontSize: 13 }}>
+              Słownik jest pusty
+            </div>
+          ) : entities.map(e => (
+            <div key={e.token_id} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "7px 12px",
+              borderBottom: `1px solid ${T.border}`,
+            }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
+                color: TYPE_COLOR[e.type] ?? T.textMuted,
+                minWidth: 70,
+              }}>{e.type}</span>
+              <span style={{ flex: 1, fontSize: 13, color: T.textPrimary }}>{e.value}</span>
+              <button
+                onClick={() => deleteEntity(e.token_id)}
+                disabled={deletingId === e.token_id}
+                style={{
+                  background: "none", border: "none",
+                  color: T.textMuted, cursor: "pointer",
+                  fontSize: 16, lineHeight: 1, padding: "2px 4px",
+                  opacity: deletingId === e.token_id ? 0.4 : 1,
+                }}
+                title="Usuń encję"
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {status && <Alert type={status.type}>{status.msg}</Alert>}
+    </Section>
+  );
+}
+
+// ── Sekcja: Wyjątki Guard (allowlist) ────────────────────────────────────────
+
+function GuardAllowlistSection({ apiToken }: { apiToken: string }) {
+  const [entries,  setEntries]  = useState<string[] | null>(null);
+  const [loading,  setLoading]  = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [status,   setStatus]   = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await apiFetch("/profile/guard-allowlist", { method: "GET" }, apiToken);
+      const data = await res.json();
+      setEntries(data.entries ?? []);
+    } catch {
+      setStatus({ type: "error", msg: "Nie można pobrać listy wyjątków." });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeEntry(phrase: string) {
+    setRemoving(phrase);
+    try {
+      const res = await apiFetch(
+        `/profile/guard-allowlist/${encodeURIComponent(phrase)}`,
+        { method: "DELETE" }, apiToken
+      );
+      if (res.ok) {
+        setEntries(prev => prev?.filter(e => e !== phrase) ?? null);
+      } else {
+        setStatus({ type: "error", msg: "Błąd usuwania wpisu." });
+      }
+    } catch {
+      setStatus({ type: "error", msg: "Błąd połączenia." });
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  return (
+    <Section title="Wyjątki Guard">
+      <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
+        Frazy oznaczone jako „to nie PII" — Guard nie blokuje zapisu gdy je wykryje w odpowiedzi AI.
+      </div>
+      <Btn onClick={loading ? undefined : load} disabled={loading} style={{ marginBottom: 14 }}>
+        {loading ? "▸ Ładuję..." : entries ? "Odśwież" : "Pokaż wyjątki"}
+      </Btn>
+      {entries !== null && (
+        <div style={{
+          border: `1px solid ${T.border}`, borderRadius: 6,
+          maxHeight: 200, overflowY: "auto",
+        }}>
+          {entries.length === 0 ? (
+            <div style={{ padding: "16px", textAlign: "center", color: T.textMuted, fontSize: 13 }}>
+              Brak wyjątków — Guard blokuje wszystkie wykrycia
+            </div>
+          ) : entries.map(phrase => (
+            <div key={phrase} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "7px 12px", borderBottom: `1px solid ${T.border}`,
+            }}>
+              <span style={{ flex: 1, fontSize: 13, color: T.textPrimary }}>{phrase}</span>
+              <button
+                onClick={() => removeEntry(phrase)}
+                disabled={removing === phrase}
+                style={{
+                  background: "none", border: "none",
+                  color: T.textMuted, cursor: "pointer",
+                  fontSize: 16, lineHeight: 1, padding: "2px 4px",
+                  opacity: removing === phrase ? 0.4 : 1,
+                }}
+                title="Usuń wyjątek"
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
       {status && <Alert type={status.type}>{status.msg}</Alert>}
     </Section>
   );
@@ -583,6 +748,7 @@ export default function SecurityScreen({ apiToken = "" }: Props) {
       <ChangePasswordSection apiToken={apiToken} />
       <RecoverySection apiToken={apiToken} />
       <DictSection apiToken={apiToken} />
+      <GuardAllowlistSection apiToken={apiToken} />
 
       {/* ── Sekcje informacyjne ── */}
       <Section title="Kryptografia">
