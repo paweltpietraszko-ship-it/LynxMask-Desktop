@@ -1,6 +1,12 @@
 """
-ner_blocklist.py  v1.4
+ner_blocklist.py  v1.5
 Historia zmian:
+  v1.5 — Dynamiczne ładowanie miast, ulic i placówek medycznych z plików JSON.
+          SpaCy nie będzie klasyfikował "Gdańsk", "Leśna", "klinika" jako OSOBA/FIRMA.
+          Dla każdego wpisu generowany jest wariant ASCII (bez ogonków) — OCR
+          często zwraca "Gdansk" zamiast "Gdańsk". Filtr: min 4 znaki, bez cyfr,
+          tylko jednoliterowe i wieloliterowe — brak krótkich ryzyk FP.
+  v1.4 — Fałszywe pozytywy z dokumentów komorniczych i faktur.
   v1.2 — [BUG-NER-02] Dodano słowa kluczowe dokumentów prawno-administracyjnych
           i komorniczych do _NER_BLOCKLIST. SpaCy klasyfikował je jako OSOBA lub FIRMA,
           przez co trafiały do reverse_map i wywoływały false positive guard MAP_LEAK.
@@ -29,6 +35,65 @@ i sufiksy prawne wymuszające klasyfikację FIRMA.
 Wydzielone z ner_layer.py żeby plik z logiką nie puchł.
 Edycja tutaj nie wymaga znajomości kodu ner_layer.py.
 """
+
+import json as _json
+import os as _os
+import unicodedata as _ud
+
+_BACKEND_DIR = _os.path.dirname(_os.path.abspath(__file__))
+
+
+def _strip_pl(s: str) -> str:
+    return _ud.normalize("NFD", s).encode("ascii", "ignore").decode()
+
+
+def _load_geo_words() -> set:
+    """Ładuje miasta, ulice i placówki medyczne jako słowa do blocklista."""
+    words: set[str] = set()
+
+    # Miasta (min 4 znaki, bez cyfr)
+    cities_path = _os.path.join(_BACKEND_DIR, "cities.json")
+    if _os.path.exists(cities_path):
+        with open(cities_path, encoding="utf-8") as f:
+            cities = _json.load(f)
+        for c in cities:
+            if isinstance(c, str) and len(c) >= 4 and not any(ch.isdigit() for ch in c):
+                low = c.lower()
+                words.add(low)
+                asc = _strip_pl(low)
+                if asc != low:
+                    words.add(asc)
+
+    # Ulice — base forms z kluczy słownika
+    streets_path = _os.path.join(_BACKEND_DIR, "street_names.json")
+    if _os.path.exists(streets_path):
+        with open(streets_path, encoding="utf-8") as f:
+            streets = _json.load(f)
+        for s in streets:
+            if isinstance(s, str) and len(s) >= 4 and not any(ch.isdigit() for ch in s):
+                low = s.lower()
+                words.add(low)
+                asc = _strip_pl(low)
+                if asc != low:
+                    words.add(asc)
+
+    # Placówki medyczne
+    med_path = _os.path.join(_BACKEND_DIR, "medical_facilities.json")
+    if _os.path.exists(med_path):
+        with open(med_path, encoding="utf-8") as f:
+            med = _json.load(f)
+        for m in med:
+            if isinstance(m, str) and len(m) >= 4:
+                low = m.lower()
+                words.add(low)
+                asc = _strip_pl(low)
+                if asc != low:
+                    words.add(asc)
+
+    return words
+
+
+_GEO_WORDS: set = _load_geo_words()
 
 # dowodem że to firma, nie osoba.
 _LEGAL_SUFFIXES: tuple = (
@@ -370,6 +435,9 @@ _NER_BLOCKLIST: set = {
     "doręczono",
 }
 
+
+# Połącz z dynamicznie załadowanymi słowami geo i medycznymi
+_NER_BLOCKLIST = _NER_BLOCKLIST | _GEO_WORDS
 
 # Prefiksy blocklista — obliczane raz przy imporcie.
 # Tylko jednowyrazowe wpisy — wielowyrazowe instytucje (np. "kancelaria

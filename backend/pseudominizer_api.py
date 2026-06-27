@@ -221,6 +221,11 @@ async def _lifespan(app):
         _app_state.anonymizer, _, _app_state.anon_map, _app_state.morf_env = \
             _build_anonymizer(ANON_PROFILE_DIR, HARDWARE_PROFILE)
         logger.info(f"[STARTUP] Anonymizer załadowany: {ANON_PROFILE_DIR}")
+        try:
+            from seed_profile import seed_if_needed as _seed
+            _seed(_app_state.anon_map)
+        except Exception as _se:
+            logger.warning(f"[STARTUP] seed_profile pominięty: {_se}")
     except Exception as e:
         logger.warning(f"[STARTUP] Anonymizer niedostępny: {e}")
 
