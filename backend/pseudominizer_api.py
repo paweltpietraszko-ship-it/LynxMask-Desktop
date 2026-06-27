@@ -1,6 +1,10 @@
 """
-pseudominizer_api.py  v1.34-TAURI
+pseudominizer_api.py  v1.35-TAURI
 Historia zmian (od najnowszej):
+  v1.35-TAURI (2026-06-27):
+    [DICT-EXPORT] GET /profile/export-dict — eksport biblioteki encji jako JSON (.lynxdict).
+    [DICT-IMPORT] POST /profile/import-dict — import encji z pliku .lynxdict.
+    [PROFILE-RESET] POST /profile/reset — usunięcie wszystkich danych użytkownika.
   v1.34-TAURI (2026-06-27):
     [EXPR-TOKEN] Express Mode token sesji — _EXPRESS_TOKEN generowany przy starcie.
                  GET /express/token zwraca token bez auth (dostępny przed logowaniem).
@@ -278,7 +282,7 @@ _TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
-API_VERSION = "1.29-TAURI"  # [OCR-REJECT] Odmowa przy niskiej jakości OCR
+API_VERSION = "1.35-TAURI"  # [DICT-EXPORT/IMPORT/RESET] Zarządzanie profilem
 
 app = FastAPI(
     lifespan=_lifespan,
@@ -865,6 +869,150 @@ async def preview_express(request: Request, file: UploadFile = File(...)):
         "pse_code":           pse_code,
         "express_mode":       True,
     }
+
+
+@app.get("/profile/export-dict")
+async def profile_export_dict():
+    """
+    [DICT-EXPORT] Zwraca bibliotekę encji profilu biura jako plik JSON (.lynxdict).
+    Format: [{\"value\": \"...\", \"type\": \"...\"}]
+    """
+    if not _app_state.anon_map:
+        return JSONResponse({"error": "Profil biura niedostępny"}, status_code=503)
+
+    import json as _json
+    from fastapi.responses import Response
+
+    entities = _app_state.anon_map.data.get("entities", {})
+    entries = []
+    for token_id, entity in entities.items():
+        token_type = token_id.rsplit("_", 1)[0] if "_" in token_id else "INNE"
+        entries.append({"value": entity["base"], "type": token_type})
+
+    payload = _json.dumps(entries, ensure_ascii=False, indent=2)
+    logger.info(f"[DICT-EXPORT] Eksport {len(entries)} encji")
+    return Response(
+        content=payload.encode("utf-8"),
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="slownik.lynxdict"'},
+    )
+
+
+@app.post("/profile/import-dict")
+async def profile_import_dict(request: Request):
+    """
+    [DICT-IMPORT] Importuje encje z pliku .lynxdict (JSON array).
+    Body JSON: {\"entries\": [{\"value\": \"...\", \"type\": \"...\"}]}
+    Response: {\"added\": N, \"skipped\": M, \"total\": T}
+    """
+    if not _app_state.anon_map:
+        return JSONResponse({"error": "Profil biura niedostępny"}, status_code=503)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Nieprawidłowy JSON"}, status_code=400)
+
+    entries = body.get("entries", [])
+    if not isinstance(entries, list):
+        return JSONResponse({"error": "Pole 'entries' musi być listą"}, status_code=400)
+
+    existing_names = _app_state.anon_map.get_entity_names()
+    added = 0
+    skipped = 0
+
+    VALID_TYPES = {"OSOBA", "FIRMA", "NUMER", "ADRES", "INSTYTUCJA", "EMAIL", "KWOTA"}
+
+    for item in entries:
+        value = str(item.get("value", "")).strip()
+        token_type = str(item.get("type", "")).strip().upper()
+
+        if not value or token_type not in VALID_TYPES:
+            skipped += 1
+            continue
+
+        if value in existing_names:
+            skipped += 1
+            continue
+
+        try:
+            _app_state.anon_map.add_entity(value, token_type)
+            existing_names.add(value)
+            added += 1
+        except Exception:
+            skipped += 1
+
+    total = len(_app_state.anon_map.data.get("entities", {}))
+    logger.info(f"[DICT-IMPORT] Dodano: {added}, pominięto: {skipped}, razem w profilu: {total}")
+    return {"added": added, "skipped": skipped, "total": total}
+
+
+@app.post("/profile/reset")
+async def profile_reset(request: Request):
+    """
+    [PROFILE-RESET] Usuwa WSZYSTKIE dane użytkownika. Nieodwracalne.
+    Body JSON: {\"confirm\": true} — wymagane.
+    Response: {\"ok\": true, \"deleted_sessions\": N}
+    """
+    if not _app_state.anon_map:
+        return JSONResponse({"error": "Profil biura niedostępny"}, status_code=503)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Nieprawidłowy JSON"}, status_code=400)
+
+    if not body.get("confirm"):
+        return JSONResponse({"error": "Wymagane pole confirm: true"}, status_code=400)
+
+    import glob as _glob
+    from anonymizer import build_anonymizer as _build_anonymizer
+
+    # 1. Policz i usuń sesje PSE z DB + pliki .enc
+    docs = db_store.list_documents()
+    deleted_sessions = 0
+    for doc in docs:
+        pse = doc["pse"]
+        enc_path = MAPS_DIR / f"{pse}.enc"
+        try:
+            enc_path.unlink(missing_ok=True)
+        except Exception as e:
+            logger.warning(f"[RESET] Nie można usunąć {enc_path}: {e}")
+        try:
+            db_store.delete(pse)
+            deleted_sessions += 1
+        except Exception as e:
+            logger.warning(f"[RESET] Nie można usunąć DB {pse}: {e}")
+
+    # 2. Usuń pozostałe pliki PSE-*.enc (na wypadek braku rekordu DB)
+    for enc_file in _glob.glob(str(MAPS_DIR / "PSE-*.enc")):
+        try:
+            Path(enc_file).unlink(missing_ok=True)
+        except Exception as e:
+            logger.warning(f"[RESET] Nie można usunąć pliku {enc_file}: {e}")
+
+    # 3. Wyczyść bibliotekę encji — usuń mapa.enc i reinicjalizuj
+    profile_path = Path(ANON_PROFILE_DIR)
+    mapa_enc = profile_path / "mapa.enc"
+    mapa_json = profile_path / "mapa.json"
+    try:
+        mapa_enc.unlink(missing_ok=True)
+        mapa_json.unlink(missing_ok=True)
+    except Exception as e:
+        logger.warning(f"[RESET] Nie można usunąć pliku mapy: {e}")
+
+    # 4. Reinicjalizuj anon_map jako pusty obiekt
+    try:
+        _, _, _app_state.anon_map, _app_state.morf_env = \
+            _build_anonymizer(ANON_PROFILE_DIR, HARDWARE_PROFILE)
+        logger.info(f"[RESET] Profil zreinicjalizowany po resecie")
+    except Exception as e:
+        logger.error(f"[RESET] Błąd reinicjalizacji profilu: {e}")
+        return JSONResponse({"error": f"Reset częściowy — błąd reinicjalizacji: {e}"}, status_code=500)
+
+    db_store.record_audit("PROFIL", "reset")
+    logger.info(f"[RESET] Usunięto {deleted_sessions} sesji. Profil wyczyszczony.")
+    return {"ok": True, "deleted_sessions": deleted_sessions}
 
 
 # ── Frontend ──────────────────────────────────────────────────────────────────
