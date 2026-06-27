@@ -335,6 +335,161 @@ fn decrypt_data(ciphertext: Vec<u8>, state: State<AppKey>) -> Result<Vec<u8>, St
         .map_err(|_| "Błąd deszyfrowania — zły klucz lub uszkodzone dane.".into())
 }
 
+/// Ścieżka pliku weryfikatora klucza odzyskiwania.
+fn recovery_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(dir.join("key_recovery.bin"))
+}
+
+/// Generuje klucz odzyskiwania (24 znaki alnum, 4 grupy po 6 rozdzielone myślnikami).
+/// Szyfruje KEY_VERIFY_PLAINTEXT kluczem PBKDF2 wyprowadzonym z tego klucza i zapisuje
+/// wynik jako key_recovery.bin. Zwraca klucz jako String do wyświetlenia użytkownikowi.
+/// Wymaga aktywnej sesji (State musi mieć klucz).
+#[tauri::command]
+fn generate_recovery_key(
+    app: tauri::AppHandle,
+    state: State<AppKey>,
+) -> Result<String, String> {
+    // Upewnij się że użytkownik jest zalogowany
+    {
+        let g = state.0.lock().map_err(|_| "Błąd mutex")?;
+        if g.is_none() {
+            return Err("Aplikacja nie jest odblokowana.".into());
+        }
+    }
+
+    // Generuj 18 losowych bajtów → 24 znaki base32-like (0-9, A-Z bez O,I,L,U)
+    const CHARSET: &[u8] = b"ABCDEFGHJKMNPQRSTVWXYZ0123456789";
+    let mut raw = [0u8; 24];
+    OsRng.fill_bytes(&mut raw);
+    let chars: String = raw.iter()
+        .map(|b| CHARSET[(b % 32) as usize] as char)
+        .collect();
+
+    // Format: XXXXXX-XXXXXX-XXXXXX-XXXXXX
+    let display = format!("{}-{}-{}-{}", &chars[0..6], &chars[6..12], &chars[12..18], &chars[18..24]);
+
+    // Wyprowadź klucz AES z recovery_key (użyj soli z pliku, tak samo jak hasło)
+    let sp = salt_path(&app)?;
+    let salt = load_or_create_salt(&sp)?;
+    let mut rkey = [0u8; KEY_LEN];
+    pbkdf2_hmac::<Sha256>(display.as_bytes(), &salt, PBKDF2_ITER, &mut rkey);
+
+    // Zapisz weryfikator
+    let blob = encrypt_with_key(KEY_VERIFY_PLAINTEXT, &rkey)?;
+    let rp = recovery_path(&app)?;
+    std::fs::write(&rp, &blob).map_err(|e| e.to_string())?;
+
+    Ok(display)
+}
+
+/// Zmiana hasła przy użyciu klucza odzyskiwania (gdy użytkownik zapomniał hasła).
+/// recovery_key — klucz w formacie XXXXXX-XXXXXX-XXXXXX-XXXXXX
+/// new_password  — nowe hasło
+/// Weryfikuje klucz przez key_recovery.bin, re-szyfruje sesje, aktualizuje oba pliki weryfikatorów.
+#[tauri::command]
+async fn reset_password_with_recovery(
+    recovery_key: String,
+    new_password: String,
+    api_token: String,
+    app: tauri::AppHandle,
+    state: State<'_, AppKey>,
+) -> Result<(), String> {
+    use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
+
+    let sp = salt_path(&app)?;
+    let salt = load_or_create_salt(&sp)?;
+
+    // Weryfikuj klucz odzyskiwania
+    let mut rkey = [0u8; KEY_LEN];
+    pbkdf2_hmac::<Sha256>(recovery_key.trim().as_bytes(), &salt, PBKDF2_ITER, &mut rkey);
+
+    let rp = recovery_path(&app)?;
+    if !rp.exists() {
+        return Err("Brak klucza odzyskiwania — nie został wygenerowany.".into());
+    }
+    let rblob = std::fs::read(&rp).map_err(|e| e.to_string())?;
+    let plaintext = decrypt_with_key(&rblob, &rkey)
+        .map_err(|_| "WRONG_RECOVERY_KEY".to_string())?;
+    if plaintext != KEY_VERIFY_PLAINTEXT {
+        return Err("WRONG_RECOVERY_KEY".into());
+    }
+
+    // Wyprowadź nowy klucz główny
+    let mut new_key = [0u8; KEY_LEN];
+    pbkdf2_hmac::<Sha256>(new_password.as_bytes(), &salt, PBKDF2_ITER, &mut new_key);
+
+    // Re-szyfruj sesje (bez starego klucza — sesje są już niedostępne przy zapomnianym haśle,
+    // więc jeśli użytkownik nie jest zalogowany, pomijamy re-szyfrowanie sesji)
+    let is_logged_in = state.0.lock().map_err(|_| "Błąd mutex")?.is_some();
+
+    if is_logged_in {
+        let old_key = *state.0.lock().map_err(|_| "Błąd mutex")?.as_ref().unwrap();
+        let client = reqwest::Client::new();
+        let list_resp = client
+            .get("http://127.0.0.1:8765/archive")
+            .header("x-api-token", &api_token)
+            .send().await
+            .map_err(|e| format!("Błąd połączenia: {e}"))?;
+
+        if list_resp.status().is_success() {
+            let list_json: serde_json::Value = list_resp.json().await.unwrap_or_default();
+            let documents = list_json["documents"].as_array().cloned().unwrap_or_default();
+            let mut blobs_payload: Vec<serde_json::Value> = Vec::new();
+
+            for doc in &documents {
+                let pse = doc["pse"].as_str().unwrap_or("").to_string();
+                if !doc["enc_exists"].as_bool().unwrap_or(false) { continue; }
+
+                let blob_resp = client
+                    .get(format!("http://127.0.0.1:8765/archive/{pse}/blob"))
+                    .header("x-api-token", &api_token)
+                    .send().await;
+                if let Ok(r) = blob_resp {
+                    if r.status().is_success() {
+                        if let Ok(j) = r.json::<serde_json::Value>().await {
+                            if let Some(enc_b64) = j["enc_blob"].as_str() {
+                                if let Ok(enc_bytes) = B64.decode(enc_b64) {
+                                    if let Ok(pt) = decrypt_with_key(&enc_bytes, &old_key) {
+                                        if let Ok(new_enc) = encrypt_with_key(&pt, &new_key) {
+                                            blobs_payload.push(serde_json::json!({
+                                                "pse": pse,
+                                                "enc_blob": B64.encode(&new_enc),
+                                            }));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !blobs_payload.is_empty() {
+                let _ = client
+                    .post("http://127.0.0.1:8765/archive/reencrypt")
+                    .header("x-api-token", &api_token)
+                    .header("content-type", "application/json")
+                    .json(&serde_json::json!({ "blobs": blobs_payload }))
+                    .send().await;
+            }
+        }
+    }
+
+    // Zaktualizuj key_verify.bin
+    let new_verify = encrypt_with_key(KEY_VERIFY_PLAINTEXT, &new_key)?;
+    let vp = verify_path(&app)?;
+    std::fs::write(&vp, &new_verify).map_err(|e| e.to_string())?;
+
+    // Unieważnij stary klucz odzyskiwania (bezpieczeństwo — użyty raz)
+    std::fs::remove_file(&rp).ok();
+
+    // Zaktualizuj klucz w State
+    *state.0.lock().map_err(|_| "Błąd mutex")? = Some(new_key);
+
+    Ok(())
+}
+
 /// Zeruje klucz z pamięci. Wywoływana przy zamknięciu okna.
 #[tauri::command]
 fn clear_key(state: State<AppKey>) {
@@ -604,6 +759,8 @@ fn main() {
             list_depseudo_responses,
             read_depseudo_response,
             change_password,
+            generate_recovery_key,
+            reset_password_with_recovery,
         ])
         .run(tauri::generate_context!())
         .expect("Błąd uruchamiania Pseudominizer");

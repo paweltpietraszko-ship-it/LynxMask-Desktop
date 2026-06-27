@@ -1,4 +1,4 @@
-// Pseudominizer — src/screens/OnboardingScreen.tsx  v1.3
+// Pseudominizer — src/screens/OnboardingScreen.tsx  v1.4
 // ============================================================
 // ZMIANY W TEJ WERSJI (v1.3):
 //   [UI-FONT-01] Czcionki podniesione globalnie
@@ -85,15 +85,18 @@ interface Props {
 }
 
 export default function OnboardingScreen({ onFinished }: Props) {
-  const [page,        setPage]        = useState(0);
-  const [password,    setPassword]    = useState("");
-  const [confirm,     setConfirm]     = useState("");
-  const [showPw,      setShowPw]      = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [pwError,     setPwError]     = useState("");
-  const [saving,      setSaving]      = useState(false);
+  const [page,         setPage]         = useState(0);
+  const [password,     setPassword]     = useState("");
+  const [confirm,      setConfirm]      = useState("");
+  const [showPw,       setShowPw]       = useState(false);
+  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [pwError,      setPwError]      = useState("");
+  const [saving,       setSaving]       = useState(false);
+  const [recoveryKey,  setRecoveryKey]  = useState<string | null>(null);
+  const [keyCopied,    setKeyCopied]    = useState(false);
   const isLastPage  = page === PAGES.length - 1;
   const isSetupPage = page === PAGES.length;
+  const isRecoveryPage = recoveryKey !== null;
   const current = PAGES[page] ?? null;
 
   async function handleSetPassword() {
@@ -102,12 +105,95 @@ export default function OnboardingScreen({ onFinished }: Props) {
     setSaving(true); setPwError("");
     try {
       await invoke("derive_and_store_key", { password });
-      onFinished();
+      const rk = await invoke<string>("generate_recovery_key");
+      setRecoveryKey(rk);
     } catch (e) {
       setPwError(`Błąd: ${String(e)}`);
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleCopyRecovery() {
+    if (!recoveryKey) return;
+    await navigator.clipboard.writeText(recoveryKey);
+    setKeyCopied(true);
+    setTimeout(() => setKeyCopied(false), 2000);
+  }
+
+  // ── Ekran klucza odzyskiwania ─────────────────────────────────
+
+  if (isRecoveryPage) {
+    return (
+      <div style={{
+        width: "100vw", height: "100vh", background: T.bg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{
+          background: T.surface, border: `1px solid ${T.border}`,
+          borderRadius: 12, padding: "40px 48px", width: 460,
+        }}>
+          <div style={{ textAlign: "center", fontSize: 52, marginBottom: 24 }}>🗝️</div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: T.textPrimary, marginBottom: 8, textAlign: "center" }}>
+            Klucz odzyskiwania
+          </div>
+          <div style={{ fontSize: 15, color: T.textMuted, marginBottom: 24, textAlign: "center", lineHeight: 1.6 }}>
+            Jeśli zapomnisz hasła, ten klucz pozwoli Ci ustawić nowe<br />
+            bez utraty danych. Zapisz go w bezpiecznym miejscu.
+          </div>
+
+          {/* Klucz */}
+          <div style={{
+            background: T.bg, border: `1px solid ${T.border}`,
+            borderRadius: 8, padding: "16px 20px", marginBottom: 16,
+            textAlign: "center",
+          }}>
+            <div style={{
+              fontFamily: T.mono, fontSize: 22, letterSpacing: "0.15em",
+              color: T.textPrimary, fontWeight: 600,
+            }}>
+              {recoveryKey}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+            <button
+              onClick={handleCopyRecovery}
+              style={{
+                flex: 1, padding: "10px 0",
+                background: keyCopied ? T.greenBg : T.surface,
+                border: `1px solid ${keyCopied ? T.green : T.border}`,
+                borderRadius: 6, color: keyCopied ? T.green : T.textSecondary,
+                fontSize: 14, cursor: "pointer",
+              }}
+            >
+              {keyCopied ? "✓ Skopiowano" : "Kopiuj"}
+            </button>
+          </div>
+
+          <div style={{
+            background: T.amberBg, border: `1px solid ${T.amberBorder}`,
+            borderRadius: 6, padding: "10px 14px", marginBottom: 20,
+            fontSize: 13, color: T.amber, lineHeight: 1.6,
+          }}>
+            ⚠ Ten klucz zostanie pokazany tylko raz. Nie ma możliwości jego odtworzenia.
+            Możesz wygenerować nowy klucz w Ustawienia → Zabezpieczenia.
+          </div>
+
+          <button
+            onClick={onFinished}
+            style={{
+              width: "100%", padding: "12px 0",
+              background: T.blue, border: "none",
+              borderRadius: 8, color: "#fff",
+              fontSize: 15, fontWeight: 500, cursor: "pointer",
+            }}
+          >
+            Zapisałem klucz — wejdź do aplikacji
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // ── Ekran ustawienia hasła ────────────────────────────────────

@@ -1,4 +1,4 @@
-// Pseudominizer — src/screens/SecurityScreen.tsx  v2.3
+// Pseudominizer — src/screens/SecurityScreen.tsx  v2.4
 // ============================================================
 // ZMIANY W TEJ WERSJI (v2.2):
 //   - Sekcja "Hasło" — pełna zmiana hasła przez Tauri invoke("change_password")
@@ -224,9 +224,134 @@ function ChangePasswordSection({ apiToken }: { apiToken: string }) {
       </Btn>
       {status && <Alert type={status.type}>{status.msg}</Alert>}
       <div style={{ marginTop: 14, fontSize: 12, color: T.textMuted, lineHeight: 1.6 }}>
-        Nie pamiętasz starego hasła? Przejdź do sekcji <strong style={{ color: T.textSecondary }}>Dane</strong> poniżej
-        i usuń wszystkie dane — profil zostanie zresetowany, a przy następnym uruchomieniu
-        ustawisz nowe hasło. Utracisz słownik biura i historię sesji.
+        Nie pamiętasz starego hasła? Użyj <strong style={{ color: T.textSecondary }}>Klucza odzyskiwania</strong> (sekcja poniżej).
+      </div>
+    </Section>
+  );
+}
+
+// ── Sekcja: Klucz odzyskiwania ────────────────────────────────────────────────
+
+function RecoverySection({ apiToken }: { apiToken: string }) {
+  const [recoveryKey, setRecoveryKey] = useState("");
+  const [newPw,       setNewPw]       = useState("");
+  const [confirmPw,   setConfirmPw]   = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [generating,  setGenerating]  = useState(false);
+  const [genKey,      setGenKey]      = useState<string | null>(null);
+  const [genCopied,   setGenCopied]   = useState(false);
+  const [status,      setStatus]      = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  async function handleReset() {
+    setStatus(null);
+    if (!recoveryKey.trim()) { setStatus({ type: "error", msg: "Wpisz klucz odzyskiwania." }); return; }
+    if (!newPw) { setStatus({ type: "error", msg: "Podaj nowe hasło." }); return; }
+    if (newPw !== confirmPw) { setStatus({ type: "error", msg: "Hasła nie są identyczne." }); return; }
+    if (newPw.length < 8) { setStatus({ type: "error", msg: "Nowe hasło musi mieć co najmniej 8 znaków." }); return; }
+    setLoading(true);
+    try {
+      await invoke("reset_password_with_recovery", {
+        recoveryKey: recoveryKey.trim(),
+        newPassword: newPw,
+        apiToken,
+      });
+      setStatus({ type: "success", msg: "Hasło zostało zresetowane. Klucz odzyskiwania jest teraz nieaktywny — wygeneruj nowy." });
+      setRecoveryKey(""); setNewPw(""); setConfirmPw("");
+    } catch (err: unknown) {
+      const msg = typeof err === "string" ? err : "Błąd.";
+      if (msg === "WRONG_RECOVERY_KEY") {
+        setStatus({ type: "error", msg: "Klucz odzyskiwania jest nieprawidłowy." });
+      } else if (msg.includes("nie został wygenerowany")) {
+        setStatus({ type: "error", msg: "Brak klucza odzyskiwania — wygeneruj go poniżej." });
+      } else {
+        setStatus({ type: "error", msg });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGenerate() {
+    setGenerating(true);
+    setGenKey(null);
+    setGenCopied(false);
+    try {
+      const rk = await invoke<string>("generate_recovery_key");
+      setGenKey(rk);
+    } catch (err: unknown) {
+      setStatus({ type: "error", msg: typeof err === "string" ? err : "Błąd generowania klucza." });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!genKey) return;
+    await navigator.clipboard.writeText(genKey);
+    setGenCopied(true);
+    setTimeout(() => setGenCopied(false), 2000);
+  }
+
+  return (
+    <Section title="Klucz odzyskiwania">
+      {/* Reset hasła kluczem */}
+      <div style={{ marginBottom: 8, fontSize: 13, color: T.textMuted }}>
+        Jeśli zapomniałeś hasła, wpisz klucz odzyskiwania i ustaw nowe.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <FieldLabel>Klucz odzyskiwania (XXXXXX-XXXXXX-XXXXXX-XXXXXX)</FieldLabel>
+          <InputPw value={recoveryKey} onChange={setRecoveryKey} placeholder="ABCDEF-123456-GHIJKL-789012" />
+        </div>
+        <div>
+          <FieldLabel>Nowe hasło</FieldLabel>
+          <InputPw value={newPw} onChange={setNewPw} placeholder="••••••••" />
+        </div>
+        <div>
+          <FieldLabel>Potwierdź nowe</FieldLabel>
+          <InputPw value={confirmPw} onChange={setConfirmPw} placeholder="••••••••" />
+        </div>
+      </div>
+      <Btn onClick={handleReset} disabled={loading}>
+        {loading ? "▸ Resetuję..." : "Resetuj hasło kluczem"}
+      </Btn>
+      {status && <Alert type={status.type}>{status.msg}</Alert>}
+
+      {/* Generowanie nowego klucza */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+        <div style={{ marginBottom: 10, fontSize: 13, color: T.textMuted }}>
+          Wygeneruj nowy klucz odzyskiwania (zastępuje poprzedni).
+        </div>
+        <Btn onClick={handleGenerate} disabled={generating}>
+          {generating ? "▸ Generuję..." : "Wygeneruj nowy klucz"}
+        </Btn>
+        {genKey && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{
+              background: T.bg, border: `1px solid ${T.border}`,
+              borderRadius: 8, padding: "12px 16px", marginBottom: 8,
+              fontFamily: T.mono, fontSize: 18, letterSpacing: "0.12em",
+              color: T.textPrimary, textAlign: "center",
+            }}>
+              {genKey}
+            </div>
+            <button
+              onClick={handleCopy}
+              style={{
+                padding: "8px 18px",
+                background: genCopied ? T.greenBg : T.surface,
+                border: `1px solid ${genCopied ? T.green : T.border}`,
+                borderRadius: 6, color: genCopied ? T.green : T.textSecondary,
+                fontSize: 13, cursor: "pointer",
+              }}
+            >
+              {genCopied ? "✓ Skopiowano" : "Kopiuj"}
+            </button>
+            <div style={{ marginTop: 8, fontSize: 12, color: T.textMuted }}>
+              Zapisz go — po zamknięciu tej sekcji nie będzie możliwy do odtworzenia.
+            </div>
+          </div>
+        )}
       </div>
     </Section>
   );
@@ -456,6 +581,7 @@ export default function SecurityScreen({ apiToken = "" }: Props) {
 
       {/* ── Sekcje akcji ── */}
       <ChangePasswordSection apiToken={apiToken} />
+      <RecoverySection apiToken={apiToken} />
       <DictSection apiToken={apiToken} />
 
       {/* ── Sekcje informacyjne ── */}
