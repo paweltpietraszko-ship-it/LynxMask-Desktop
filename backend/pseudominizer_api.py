@@ -289,9 +289,13 @@ app.add_middleware(
 # /health pomijany — Tauri sprawdza go przed odczytem tokenu.
 # OPTIONS pomijany — preflight CORS nie niesie tokenu, musi przejść do CORSMiddleware.
 # Nagłówek: X-Api-Token: <token>
+_EXPRESS_PATHS = {"/preview-express"}
+
 @app.middleware("http")
 async def _require_api_token(request, call_next):
     if request.url.path == "/health" or request.method == "OPTIONS":
+        return await call_next(request)
+    if request.url.path in _EXPRESS_PATHS:
         return await call_next(request)
     token = request.headers.get("x-api-token", "")
     if not _secrets.compare_digest(token, _API_TOKEN):
