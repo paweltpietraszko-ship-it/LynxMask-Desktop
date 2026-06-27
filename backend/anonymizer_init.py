@@ -1,8 +1,15 @@
 """
-anonymizer_init.py  v1.9
+anonymizer_init.py  v2.0
 Inicjalizacja warstw opcjonalnych (postal, stdnum, phonenumbers),
 stałe tokenów, STRUCTURAL_PATTERNS.
 
+v2.0 — [FIX-SLASH-SIG] Sygnatura ukośnikowa: dodano lookahead (?=[0-9A-Za-z/]*\d)
+       wymagający co najmniej jednej cyfry — eliminuje FP na slash-separated słowach
+       jak "PESEL/NIP/IBAN/email". Prawdziwe sygnatury zawsze mają rok lub numer.
+       [FIX-DATE-CONTEXT] Data urodzenia: usunięto bare DD.MM.YYYY (łapało WSZYSTKIE
+       daty w dokumentach — faktury, decyzje, terminy). Decyzja: data sama w sobie
+       nie jest PII (RODO). Zastąpiono wzorcem z kontekstem ur./data urodzenia.
+       Wzorzec "ur. DD.MM.RRRR" w identity.py pozostaje bez zmian.
 v1.9 — [BUG-PASSPORT-SPACE] Paszport: dodano opcjonalna spacje miedzy seria a numerem.
        OcrNormalizer normalizuje "paszport: ZX 1234567" → "ZX1234567" tylko gdy
        slowo "paszport" jest w kontekscie. Bez kontekstu spacja pozostaje i wzorzec
@@ -338,7 +345,8 @@ STRUCTURAL_PATTERNS = [
     # Nie pasuje: 1/2/2024 (same cyfry — data),  Sokola 4/6 (2 segmenty)
     (TOKEN_NUMER, re.compile(
         r"(?<!\w)"
-        r"(?=[0-9A-Za-z/]*[A-Za-z])"   # co najmniej jedna litera w całym dopasowaniu
+        r"(?=[0-9A-Za-z/]*[A-Za-z])"   # co najmniej jedna litera
+        r"(?=[0-9A-Za-z/]*\d)"         # [FIX-SLASH-SIG] co najmniej jedna cyfra — eliminuje "PESEL/NIP/IBAN/email"
         r"[A-Z0-9]{1,8}"               # pierwszy segment (max 8 znaków)
         r"(?:/[A-Z0-9]{1,8}){2,}"      # co najmniej 2 kolejne segmenty /XXX
         r"(?!\w)",
@@ -380,11 +388,13 @@ STRUCTURAL_PATTERNS = [
     (TOKEN_NUMER, re.compile(
         r"(?<!\d)\d{3}[\s\-]\d{2}[\s\-]\d{2}(?!\d)"
     )),
-    # [FIX-DIGITS-CATCHALL] Siatka bezpieczeństwa — wszystkie ciągi cyfr 8+.
-    # Łapie formaty których nie przewidziano: kody EAN, CN, numery zamówień,
-    # Data urodzenia — format DD.MM.YYYY i DD-MM-YYYY
+    # [FIX-DATE-CONTEXT] Data urodzenia z kontekstem — tylko gdy poprzedzona etykietą.
+    # Bare DD.MM.YYYY usunięte (łapało daty faktur, decyzji, terminów — FP).
+    # Decyzja: data sama w sobie nie jest PII (RODO). Wzorzec "ur. DD.MM.RRRR"
+    # w identity.py obsługuje daty urodzenia z prefiksem "ur.".
+    # Ten wzorzec łapie "data urodzenia: 16.07.1985" (bez skrótu "ur.").
     (TOKEN_NUMER, re.compile(
-        r"(?<!\d)\d{2}[.\-]\d{2}[.\-]\d{4}(?!\d)"
+        r"(?i)(?:data\s+urodzeni[ai]|dob|born)\s*[:\-]?\s*\d{2}[.\-]\d{2}[.\-]\d{4}(?!\d)"
     )),
     # Paszport polski — 2 litery + opcjonalna spacja + 7 cyfr (np. ZX1234567 lub ZX 1234567)
     # [BUG-PASSPORT-SPACE] OCR bez kontekstu "paszport:" wstawia spacje — normalizer nie dziala.

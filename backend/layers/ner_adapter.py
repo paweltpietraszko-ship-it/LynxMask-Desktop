@@ -1,5 +1,5 @@
 """
-layers/ner_adapter.py  v1.6
+layers/ner_adapter.py  v1.7
 Adapter NER — wywołuje ner_layer.process_ner() i rejestruje tokeny w allocatorze.
 ner_layer.py nie jest modyfikowany.
 
@@ -74,7 +74,7 @@ _ADDR_PREFIX_RE = re.compile(
 )
 # Odrzuć śmieciowe jednowyrazowe FIRMA (sama forma prawna bez nazwy)
 _BARE_SUFFIX_RE = re.compile(
-    r"^(?:sp\.?\s*z\.?\s*o\.?\s*o\.?|s\.a\.|sp\.?\s*k\.?|sp\.?\s*j\.?|"
+    r"^(?:sp\.?\s*z\.?\s*o\.?\s*o\.?|z\.?\s*o\.?\s*o\.?|s\.a\.|sp\.?\s*k\.?|sp\.?\s*j\.?|"
     r"spółka|spółki|spółce|spółkę|s\.?\s*c\.?)$",
     re.IGNORECASE,
 )
