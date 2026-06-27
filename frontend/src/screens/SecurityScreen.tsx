@@ -1,7 +1,7 @@
-// Pseudominizer — src/screens/SecurityScreen.tsx  v2.0
+// Pseudominizer — src/screens/SecurityScreen.tsx  v2.1
 // ============================================================
-// ZMIANY W TEJ WERSJI (v2.0):
-//   - Sekcja "Hasło" — zmiana hasła (POST /profile/change-password)
+// ZMIANY W TEJ WERSJI (v2.1):
+//   - Sekcja "Hasło" zastąpiona informacją (zmiana hasła wymaga Tauri crypto)
 //   - Sekcja "Słownik biura" — eksport (.lynxdict) i import słownika
 //     Eksport: GET /profile/export-dict → <a download> trick
 //     Import: <input type="file"> → POST /profile/import-dict
@@ -80,41 +80,6 @@ function Section({ title, children }: SectionProps) {
   );
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontSize: 12, color: T.textMuted, textTransform: "uppercase",
-      letterSpacing: "0.08em", marginBottom: 6, fontFamily: T.mono,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-function InputField({ value, onChange, placeholder, type = "text" }: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      style={{
-        width: "100%", boxSizing: "border-box",
-        padding: "9px 12px",
-        background: T.bg, border: `1px solid ${T.border}`,
-        borderRadius: 6, color: T.textPrimary,
-        fontSize: 14, fontFamily: T.sans,
-        outline: "none",
-      }}
-    />
-  );
-}
-
 function Btn({ onClick, disabled, variant = "default", children }: {
   onClick: () => void;
   disabled?: boolean;
@@ -157,74 +122,6 @@ function Alert({ type, children }: { type: "success" | "error"; children: React.
     }}>
       {isOk ? "✓ " : "✕ "}{children}
     </div>
-  );
-}
-
-// ── Sekcja: Zmiana hasła ──────────────────────────────────────────────────────
-
-function ChangePasswordSection({ apiToken }: { apiToken: string }) {
-  const [oldPw,    setOldPw]    = useState("");
-  const [newPw,    setNewPw]    = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [status,   setStatus]   = useState<{ type: "success" | "error"; msg: string } | null>(null);
-
-  async function handleChange() {
-    setStatus(null);
-    if (!oldPw || !newPw || !confirmPw) {
-      setStatus({ type: "error", msg: "Wypełnij wszystkie pola." });
-      return;
-    }
-    if (newPw !== confirmPw) {
-      setStatus({ type: "error", msg: "Nowe hasła nie są identyczne." });
-      return;
-    }
-    if (newPw.length < 8) {
-      setStatus({ type: "error", msg: "Nowe hasło musi mieć co najmniej 8 znaków." });
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await apiFetch("/profile/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ old_password: oldPw, new_password: newPw }),
-      }, apiToken);
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setStatus({ type: "success", msg: "Hasło zostało zmienione." });
-        setOldPw(""); setNewPw(""); setConfirmPw("");
-      } else {
-        setStatus({ type: "error", msg: data.error ?? `Błąd serwera (${res.status})` });
-      }
-    } catch {
-      setStatus({ type: "error", msg: "Błąd połączenia z backendem." });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <Section title="Hasło">
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
-        <div>
-          <Label>Stare hasło</Label>
-          <InputField value={oldPw} onChange={setOldPw} type="password" placeholder="••••••••" />
-        </div>
-        <div>
-          <Label>Nowe hasło</Label>
-          <InputField value={newPw} onChange={setNewPw} type="password" placeholder="••••••••" />
-        </div>
-        <div>
-          <Label>Potwierdź nowe</Label>
-          <InputField value={confirmPw} onChange={setConfirmPw} type="password" placeholder="••••••••" />
-        </div>
-      </div>
-      <Btn onClick={handleChange} disabled={loading}>
-        {loading ? "▸ Zmieniam..." : "Zmień hasło"}
-      </Btn>
-      {status && <Alert type={status.type}>{status.msg}</Alert>}
-    </Section>
   );
 }
 
@@ -451,7 +348,13 @@ export default function SecurityScreen({ apiToken = "" }: Props) {
       </div>
 
       {/* ── Sekcje akcji ── */}
-      <ChangePasswordSection apiToken={apiToken} />
+      <Section title="Hasło">
+        <div style={{ color: T.textMuted, fontSize: 13, lineHeight: 1.6 }}>
+          Zmiana hasła szyfrowania wymaga operacji kryptograficznej po stronie aplikacji Tauri/Rust
+          i zostanie dodana w kolejnej wersji. Hasło możesz zmienić, usuwając profil i tworząc go od nowa
+          (Dane → Usuń wszystkie dane).
+        </div>
+      </Section>
       <DictSection apiToken={apiToken} />
 
       {/* ── Sekcje informacyjne ── */}
