@@ -1,4 +1,4 @@
-# tests/test_smoke_e2e.py v1.1
+# tests/test_smoke_e2e.py v1.2
 """
 Smoke E2E — pełny HTTP backend, bez ground truth.
 
@@ -6,7 +6,7 @@ Smoke E2E — pełny HTTP backend, bez ground truth.
   1. Tekst syntetyczny → /preview → sprawdzenie braku wycieku (sanity check)
   2. Pliki testowe (Pliki testowe/*.txt) → /preview → raport wykrytych encji
 
-Raport zapisywany do: backend/smoke_e2e_report.txt
+Raport zapisywany do: benchmark_results/smoke/smoke_e2e_report.txt
 Po uruchomieniu przejrzyj raport i powiedz co nie działa.
 
 Uruchomienie:
@@ -33,7 +33,8 @@ TIMEOUT_S   = 60
 BACKEND_DIR   = Path(__file__).resolve().parent.parent
 TEST_DOCS_DIR = BACKEND_DIR.parent / "Pliki testowe"
 TOKEN_PATH    = BACKEND_DIR / "api_token.txt"
-REPORT_PATH   = BACKEND_DIR / "smoke_e2e_report.txt"
+_SMOKE_DIR    = BACKEND_DIR / "benchmark_results" / "smoke"
+REPORT_PATH   = _SMOKE_DIR / "smoke_e2e_report.txt"
 
 TOKEN_RE = re.compile(r"\b(NUMER|EMAIL|ADRES|OSOBA|FIRMA|KWOTA|INSTYTUCJA)_\d{3}\b")
 
@@ -222,6 +223,7 @@ class TestSmokeTestFiles:
             lines.append("   " + anon[:500].replace("\n", " "))
             lines.append("")
 
+        _SMOKE_DIR.mkdir(parents=True, exist_ok=True)
         REPORT_PATH.write_text("\n".join(lines), encoding="utf-8")
         print(f"\nRaport zapisany: {REPORT_PATH}")
         assert REPORT_PATH.exists()

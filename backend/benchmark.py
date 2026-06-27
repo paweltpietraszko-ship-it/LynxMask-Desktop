@@ -23,7 +23,7 @@ Wymagania:
   - generator.py w tym samym katalogu
   - pip install requests
 
-Raporty w: benchmark_results/run_YYYYMMDD_HHMMSS/
+Raporty w: benchmark_results/syntetyczny/run_YYYYMMDD_HHMMSS/
   report.json              — pełne dane per dokument (source of truth, nie modyfikować)
   summary.txt              — podsumowanie dla człowieka
   bugs.txt                 — anomalie do przekazania instancji naprawczej
@@ -957,7 +957,7 @@ Przykłady:
           f"spacy={health.get('spacy_ner')}  crypto={health.get('crypto_ok')}")
 
     ts      = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = Path("benchmark_results") / f"run_{ts}"
+    run_dir = Path("benchmark_results") / "syntetyczny" / f"run_{ts}"
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[RUN]   → {run_dir}")
 

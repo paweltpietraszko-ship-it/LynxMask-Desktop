@@ -20,7 +20,7 @@ Uruchomienie:
   python benchmark_real.py --folder "C:/Moje dokumenty/testy"
   python benchmark_real.py --folder "../Pliki testowe" --show-text
 
-Raporty w: benchmark_results_real/run_YYYYMMDD_HHMMSS/
+Raporty w: benchmark_results/real/run_YYYYMMDD_HHMMSS/
   summary.txt    — czytelne podsumowanie dla człowieka
   leaks.txt      — wycieki PII (jeśli jakieś wystąpią)
   report.json    — pełne dane per dokument (do analizy)
@@ -435,7 +435,7 @@ Dodawanie nowych plików:
     print("[CHECK] Backend OK")
 
     ts      = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = Path("benchmark_results_real") / f"run_{ts}"
+    run_dir = Path("benchmark_results") / "real" / f"run_{ts}"
     run_dir.mkdir(parents=True, exist_ok=True)
 
     results = run(folder, args.show_text)
