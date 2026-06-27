@@ -1,4 +1,4 @@
-// Pseudominizer — MainLayout.tsx  v2.2
+// Pseudominizer — MainLayout.tsx  v2.3
 // ============================================================
 // ZMIANY W TEJ WERSJI (v2.2):
 //   [UI-SIDEBAR-04] Logo responsywne na motyw
@@ -33,13 +33,38 @@ const NAV: { id: Screen; label: string }[] = [
   { id: "security",        label: "Zabezpieczenia" },
 ];
 
-function NavBtn({ label, active, onClick, isDark }: {
-  label: string; active: boolean; onClick: () => void; isDark: boolean;
+function NavBtn({ label, active, onClick, isDark, disabled }: {
+  label: string; active: boolean; onClick: () => void; isDark: boolean; disabled?: boolean;
 }) {
-  // [UI-SIDEBAR-05] Ciemny: białe aktywne, jasne nieaktywne. Jasny: niebieskie oba.
-  const colorActive   = isDark ? "#ffffff"        : T.blue;
-  const colorInactive = isDark ? T.textSecondary  : T.blueLight;
-  const colorHover    = isDark ? "#ffffff"        : T.blue;
+  const colorActive   = isDark ? "#ffffff"       : T.blue;
+  const colorInactive = isDark ? T.textSecondary : T.blueLight;
+  const colorHover    = isDark ? "#ffffff"       : T.blue;
+  const colorDisabled = isDark ? "#3a3f4a"       : "#b0bac8";
+
+  if (disabled) {
+    return (
+      <div
+        title="Dostępne w pełnej wersji — zaloguj się"
+        style={{
+          display: "block", width: "100%",
+          padding: "10px 16px",
+          fontSize: 15, fontWeight: 400,
+          fontFamily: T.sans,
+          color: colorDisabled,
+          borderRadius: 6,
+          cursor: "not-allowed",
+          userSelect: "none",
+          boxSizing: "border-box",
+        }}
+      >
+        {label}
+        <span style={{
+          marginLeft: 6, fontSize: 10, fontFamily: T.mono,
+          letterSpacing: "0.06em", color: colorDisabled, opacity: 0.7,
+        }}>🔒</span>
+      </div>
+    );
+  }
 
   return (
     <button
@@ -94,15 +119,17 @@ function ScreenContent({
 }
 
 interface Props {
-  activeScreen: Screen;
-  onNavigate:   (s: Screen) => void;
-  idleWarning:  boolean;
-  apiToken:     string;
-  demaskPse:    string | null;
-  onDemask:     (pse: string) => void;
+  activeScreen:   Screen;
+  onNavigate:     (s: Screen) => void;
+  idleWarning:    boolean;
+  apiToken:       string;
+  expressMode?:   boolean;
+  onExitExpress?: () => void;
+  demaskPse:      string | null;
+  onDemask:       (pse: string) => void;
 }
 
-export default function MainLayout({ activeScreen, onNavigate, idleWarning, apiToken, demaskPse, onDemask }: Props) {
+export default function MainLayout({ activeScreen, onNavigate, idleWarning, apiToken, expressMode, onExitExpress, demaskPse, onDemask }: Props) {
   const [apiAlive,   setApiAlive]   = useState(true);
   const [appVersion, setAppVersion] = useState("v1.0-dev");
   const [themeMode,  setThemeMode]  = useState<ThemeMode>(() => {
@@ -187,18 +214,55 @@ export default function MainLayout({ activeScreen, onNavigate, idleWarning, apiT
 
         {/* Nawigacja */}
         <div style={{ marginTop: 8, flex: 1, padding: "0 8px" }}>
-          {NAV.map(({ id, label }) => (
-            <NavBtn
-              key={id} label={label}
-              active={activeScreen === id}
-              onClick={() => onNavigate(id)}
-              isDark={isDark}
-            />
-          ))}
+          {NAV.map(({ id, label }) => {
+            const lockedInExpress = expressMode && (id === "biblioteka" || id === "depseudonimizuj");
+            return (
+              <NavBtn
+                key={id} label={label}
+                active={activeScreen === id}
+                onClick={() => !lockedInExpress && onNavigate(id)}
+                isDark={isDark}
+                disabled={lockedInExpress}
+              />
+            );
+          })}
         </div>
 
         {/* Dolna sekcja */}
         <div style={{ borderTop: `1px solid ${T.border}`, padding: "12px 16px 8px" }}>
+
+          {/* Banner Express Mode */}
+          {expressMode && (
+            <div style={{
+              marginBottom: 12,
+              background: T.amberBg,
+              border: `1px solid ${T.amberBorder}`,
+              borderRadius: 6,
+              padding: "8px 10px",
+            }}>
+              <div style={{
+                fontSize: 11, fontFamily: T.mono, color: T.amber,
+                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4,
+              }}>
+                ⚡ Tryb demonstracyjny
+              </div>
+              <div style={{ fontSize: 11, color: T.amber, lineHeight: 1.4, marginBottom: 6 }}>
+                Biblioteka i odmaskowanie dostępne po zalogowaniu.
+              </div>
+              <button
+                onClick={onExitExpress}
+                style={{
+                  width: "100%", padding: "5px 8px",
+                  background: T.amber, border: "none", borderRadius: 4,
+                  color: "#000", fontSize: 11, fontWeight: 600,
+                  cursor: "pointer", fontFamily: T.mono,
+                  letterSpacing: "0.06em",
+                }}
+              >
+                → Zaloguj się
+              </button>
+            </div>
+          )}
 
           {/* Triangulum */}
           <div style={{ marginBottom: 12 }}>

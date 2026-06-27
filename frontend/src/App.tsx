@@ -1,4 +1,4 @@
-// Pseudominizer — App.tsx  v1.7
+// Pseudominizer — App.tsx  v1.8
 // [BUG-10] tokenReady: blokuje MainLayout dopóki apiToken nie załadowany.
 //   Poprzednio UI było aktywne z apiToken="" przez chwilę po odblokowaniu → 401.
 // [FIX-TOKEN-API] Ładuje api_token.txt przez read_api_token po odblokowaniu.
@@ -14,7 +14,6 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import LockScreen from "./screens/LockScreen";
 import MainLayout from "./screens/MainLayout";
 import CrashScreen from "./screens/CrashScreen";
-import ExpressModeScreen from "./screens/ExpressModeScreen";
 import { T } from "./theme";
 
 export type Screen = "pseudonimizuj" | "biblioteka" | "depseudonimizuj" | "security";
@@ -33,6 +32,7 @@ export default function App() {
   // [BUG-P4-03] PSE przekazywane z Biblioteki do Depseudonimizuj przy kliknięciu odpowiedzi AI.
   const [demaskPse,    setDemaskPse]    = useState<string | null>(null);
   const [expressMode,  setExpressMode]  = useState(false);
+  const [expressToken, setExpressToken] = useState("");
 
   // ── Zamknięcie okna → clear key ───────────────────────────────────────────
 
@@ -142,12 +142,22 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  if (expressMode) {
-    return <ExpressModeScreen onExit={() => setExpressMode(false)} />;
-  }
-
-  if (!unlocked) {
-    return <LockScreen onUnlock={() => setUnlocked(true)} onExpressMode={() => setExpressMode(true)} />;
+  if (!unlocked && !expressMode) {
+    return (
+      <LockScreen
+        onUnlock={() => setUnlocked(true)}
+        onExpressMode={async () => {
+          try {
+            const res = await fetch("http://127.0.0.1:8765/express/token");
+            const data = await res.json();
+            setExpressToken(data.token ?? "");
+          } catch {
+            setExpressToken("");
+          }
+          setExpressMode(true);
+        }}
+      />
+    );
   }
 
   // [CRASH-UX] Jeśli backend zgłosił błąd startu — pokaż ekran awarii.
@@ -200,7 +210,9 @@ export default function App() {
         activeScreen={activeScreen}
         onNavigate={setActiveScreen}
         idleWarning={idleWarning}
-        apiToken={apiToken}
+        apiToken={expressMode ? expressToken : apiToken}
+        expressMode={expressMode}
+        onExitExpress={() => { setExpressMode(false); setExpressToken(""); }}
         demaskPse={demaskPse}
         onDemask={(pse: string) => {
           setDemaskPse(pse);

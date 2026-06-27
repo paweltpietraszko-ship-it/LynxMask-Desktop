@@ -1,6 +1,11 @@
 """
-pseudominizer_api.py  v1.33-TAURI
+pseudominizer_api.py  v1.34-TAURI
 Historia zmian (od najnowszej):
+  v1.34-TAURI (2026-06-27):
+    [EXPR-TOKEN] Express Mode token sesji — _EXPRESS_TOKEN generowany przy starcie.
+                 GET /express/token zwraca token bez auth (dostępny przed logowaniem).
+                 Middleware akceptuje _API_TOKEN LUB _EXPRESS_TOKEN — Express Mode
+                 ma dostęp do pełnego pipeline (/preview, /profile/add-entity itp.)
   v1.33-TAURI (2026-06-27):
     [EXPR-API] Endpoint /preview-express — Express Mode bez SpaCy/NER.
                Wywołuje run_pipeline_express() zamiast run_pipeline_new().
@@ -132,7 +137,8 @@ MAX_BLOB_BYTES   = 512 * 1024         # 512 KB
 # _lifespan() uruchamia się wyłącznie w procesie workera, dokładnie raz.
 import secrets as _secrets
 _API_TOKEN_PATH = Path(__file__).parent / "api_token.txt"
-_API_TOKEN: str = ""  # ustawiany w _lifespan()
+_API_TOKEN: str         = ""  # ustawiany w _lifespan()
+_EXPRESS_TOKEN: str     = ""  # token dla Express Mode (bez logowania), ustawiany w _lifespan()
 FRONTEND_FILE    = Path(__file__).parent / "pseudominizer.html"
 ANON_PROFILE_DIR = os.getenv("ANONYMIZER_PROFILE_DIR", str(Path(__file__).parent / "anon_profiles" / "pseudominizer"))
 HARDWARE_PROFILE = os.getenv("HARDWARE_PROFILE", "./hardware_profile.json")
@@ -188,7 +194,7 @@ def _write_startup_error(code: str, message: str) -> None:
 
 @asynccontextmanager
 async def _lifespan(app):
-    global _GUARD_AVAILABLE, SYSTEM_PROMPT_SECURITY, _crypto_ok, _API_TOKEN
+    global _GUARD_AVAILABLE, SYSTEM_PROMPT_SECURITY, _crypto_ok, _API_TOKEN, _EXPRESS_TOKEN
 
     # [CRASH-UX] Kasujemy stary plik błędu na początku każdego startu.
     try:
@@ -196,7 +202,8 @@ async def _lifespan(app):
     except Exception:
         pass
 
-    _API_TOKEN = _secrets.token_hex(32)
+    _API_TOKEN     = _secrets.token_hex(32)
+    _EXPRESS_TOKEN = _secrets.token_hex(32)
     try:
         _API_TOKEN_PATH.write_text(_API_TOKEN, encoding="utf-8")
     except Exception as _e:
@@ -289,16 +296,15 @@ app.add_middleware(
 # /health pomijany — Tauri sprawdza go przed odczytem tokenu.
 # OPTIONS pomijany — preflight CORS nie niesie tokenu, musi przejść do CORSMiddleware.
 # Nagłówek: X-Api-Token: <token>
-_EXPRESS_PATHS = {"/preview-express"}
-
 @app.middleware("http")
 async def _require_api_token(request, call_next):
-    if request.url.path == "/health" or request.method == "OPTIONS":
-        return await call_next(request)
-    if request.url.path in _EXPRESS_PATHS:
+    if request.url.path in ("/health", "/express/token") or request.method == "OPTIONS":
         return await call_next(request)
     token = request.headers.get("x-api-token", "")
-    if not _secrets.compare_digest(token, _API_TOKEN):
+    ok = _secrets.compare_digest(token, _API_TOKEN) or (
+        bool(_EXPRESS_TOKEN) and _secrets.compare_digest(token, _EXPRESS_TOKEN)
+    )
+    if not ok:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
     return await call_next(request)
 
@@ -308,6 +314,14 @@ async def _require_api_token(request, call_next):
 @app.get("/version")
 async def version():
     return {"api": API_VERSION, "ocr": "1.0"}
+
+
+@app.get("/express/token")
+async def express_token():
+    """Zwraca token sesji Express Mode (bez logowania).
+    Endpoint nie wymaga auth — token jest tymczasowy, ważny do restartu backendu.
+    """
+    return {"token": _EXPRESS_TOKEN}
 
 
 @app.get("/health")
