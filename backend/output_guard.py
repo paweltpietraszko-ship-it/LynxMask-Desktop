@@ -1,5 +1,5 @@
 """
-Triangulum — output_guard.py  v4.4
+Triangulum — output_guard.py  v4.5
 Zmiany v4.4:
   [IBAN-OCR-TOL] IBAN_OCR: zmieniono {25} na {24,25} — tolerancja ±1 cyfra.
   OCR moze zgubic jedną cyfrę z 26-cyfrowego PL IBAN — {24,25} łapie 25 lub 26 cyfr.
@@ -261,7 +261,9 @@ def guard_output(
             continue
 
         count = len(matches)
-        reason = f"HIGH {label}: {count} wystąpień"
+        first_val = matches[0].group(0)
+        display = f" «{first_val[:50]}»" if first_val else ""
+        reason = f"HIGH {label}{display}: {count} wystąpień"
         reasons.append(reason)
         detection_count += 2 * count  # waga HIGH = 2
         high_hit = True
@@ -287,7 +289,9 @@ def guard_output(
                 continue
 
         count = len(matches)
-        reason = f"MEDIUM {label}: {count} wystąpień (waga {weight})"
+        first_val = matches[0].group(0)
+        display = f" «{first_val[:50]}»" if first_val else ""
+        reason = f"MEDIUM {label}{display}: {count} wystąpień (waga {weight})"
         reasons.append(reason)
         detection_count += weight * count
         logger.warning(f"output_guard [{mode.value}]: {reason}")

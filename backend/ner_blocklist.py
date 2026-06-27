@@ -1,5 +1,5 @@
 """
-ner_blocklist.py  v1.6
+ner_blocklist.py  v1.7
 Historia zmian:
   v1.5 — Dynamiczne ładowanie miast, ulic i placówek medycznych z plików JSON.
           SpaCy nie będzie klasyfikował "Gdańsk", "Leśna", "klinika" jako OSOBA/FIRMA.
@@ -401,7 +401,10 @@ _NER_BLOCKLIST: set = {
     "encja",
     "encji",
     # [BUG-NER-FP-INSTRUKCJE] PSE-2026-0756: słowa z UI/instrukcji klasyfikowane jako encje
+    "guard",
     "guardem",
+    "guardu",
+    "guardzie",
     "wkleić",
     "wklej",
     "wklejam",
