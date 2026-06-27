@@ -43,7 +43,7 @@ const MORE_INFO = [
   },
   {
     title: "Zaznaczanie pominięć",
-    body: "Po pseudonimizacji zaznacz fragment w podglądzie, wybierz typ (OSOBA / FIRMA / ADRES / NUMER) i kliknij „Dodaj i zakryj". Zaznaczone frazy są zapamiętywane na przyszłość.",
+    body: "Po pseudonimizacji zaznacz fragment w podglądzie, wybierz typ (OSOBA / FIRMA / ADRES / NUMER) i kliknij \"Dodaj i zakryj\". Zaznaczone frazy są zapamiętywane na przyszłość.",
   },
   {
     title: "Jak odczytać odpowiedź AI?",
