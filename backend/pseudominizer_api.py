@@ -293,26 +293,37 @@ app = FastAPI(
     redoc_url=None,
 )
 
+# [LYNX-T02] Tylko UI Tauri: dev (devUrl) i wydanie Windows (Tauri 2, domyślny schemat).
+# Origin wydania do potwierdzenia pomiarem po T10-BUILD-TS — nie poszerzać bez dowodu.
+_ALLOWED_ORIGINS = ["http://localhost:1420", "http://tauri.localhost"]
+# [LYNX-T02] DNS rebinding: obca domena wskazująca na 127.0.0.1 ma inny nagłówek Host (z portem).
+_ALLOWED_HOSTS = frozenset({"127.0.0.1:8765", "localhost:8765"})
+# [LYNX-T02] Token Express (bez logowania) — wyłącznie maskowanie, nigdy profil/eksport/archiwum.
+_EXPRESS_PATHS = frozenset({("POST", "/preview"), ("POST", "/preview-express")})
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # localhost-only server — wildcard bezpieczny
+    allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
 
-# [SECURITY-TOKEN] Middleware sprawdzający token API.
+# [SECURITY-TOKEN] Middleware sprawdzający Host i token API.
 # /health pomijany — Tauri sprawdza go przed odczytem tokenu.
 # OPTIONS pomijany — preflight CORS nie niesie tokenu, musi przejść do CORSMiddleware.
 # Nagłówek: X-Api-Token: <token>
 @app.middleware("http")
 async def _require_api_token(request, call_next):
+    if request.headers.get("host", "") not in _ALLOWED_HOSTS:
+        return JSONResponse({"error": "Invalid host"}, status_code=400)
     if request.url.path in ("/health", "/express/token") or request.method == "OPTIONS":
         return await call_next(request)
     token = request.headers.get("x-api-token", "")
-    ok = _secrets.compare_digest(token, _API_TOKEN) or (
-        bool(_EXPRESS_TOKEN) and _secrets.compare_digest(token, _EXPRESS_TOKEN)
-    )
+    # Pusty token serwera (przed lifespanem) nigdy nie pasuje — compare_digest("", "") == True.
+    ok = bool(_API_TOKEN) and _secrets.compare_digest(token, _API_TOKEN)
+    if not ok and (request.method, request.url.path) in _EXPRESS_PATHS:
+        ok = bool(_EXPRESS_TOKEN) and _secrets.compare_digest(token, _EXPRESS_TOKEN)
     if not ok:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
     return await call_next(request)
