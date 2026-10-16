@@ -1,0 +1,31 @@
+PRECHECK BRIEFU — LYNX-T03-TOKEN-ALLOC
+Data: 2026-10-16
+Exact SHA: 9edf872895be864241b6ff86b3a62c9947e26979
+Wynik: PASS PREIMPLEMENTATION
+Etap: brief bez implementacji. Nie jest to PASS kodu ani przywracania.
+
+PRODUCT_TRUTH: arch/spec.md S1, S2, S3; kontrakt T03.
+Materiał pomocniczy: FINDING_2026-10_AUDYT, BUG-TOKEN-COLLISION.
+
+Ocena:
+- Jednoznaczna mapa i przywrócenie właściwej osoby realizują S1.
+  Format tokenów i taksonomia S2 pozostają bez zmian.
+- Kontrakt obejmuje różne osoby, powtórzenia, odmiany tej samej osoby,
+  zajęty token profilu oraz fail-closed przy konflikcie.
+- Istniejący owner TokenAllocator i szew ner_adapter są wskazane.
+  Punktowy odczyt exact SHA potwierdza allocate/register, odrębne ID
+  NER oraz użycie ich w podstawieniach i propagacji wariantów.
+- SOURCE/NECESSITY: S1 — spójna alokacja i mapa w istniejącym ownerze;
+  S3 — nie wypuszczać wyniku z wykrytym konfliktem. Nie potrzeba nowego
+  alokatora, formatu mapy, migracji profilu ani równoległej numeracji.
+- Reproduktor istnieje. Samo jego zazielenienie nie zastępuje kryteriów
+  briefu dotyczących różnych osób i zachowania odmian. To właściwy,
+  wąski zakres testów; znane faile filtra NER nie należą do T03.
+- Limit zakresu i WHERE_MAP jawnie obejmują zmianę szwu. Zmiana ponad
+  kontrakt wraca do uzgodnienia, bez projektowania nowego subsystemu.
+
+Warstwy audytu: kontrakt + punktowy odczyt istniejącego ownera i szwu.
+Zgodnie z BRIEF_ONLY_PRECHECK: bez analizy diffu, testów, reproduktorów,
+where.py i benchmarku. Przy dostawie istotny będzie pion alokator→
+podstawienie/warianty→mapa; precheck nie potwierdza jego działania.
+Brak blokujących braków kontraktu; implementacja może ruszyć w tym zakresie.
