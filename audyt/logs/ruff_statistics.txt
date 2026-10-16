@@ -1,0 +1,13 @@
+31	W605	[*] invalid-escape-sequence
+29	F401	[-] unused-import
+27	F541	[*] f-string-missing-placeholders
+10	F841	[ ] unused-variable
+ 7	E701	[ ] multiple-statements-on-one-line-colon
+ 4	E731	[ ] lambda-assignment
+ 4	F821	[ ] undefined-name
+ 3	W292	[*] missing-newline-at-end-of-file
+ 3	E402	[ ] module-import-not-at-top-of-file
+ 3	E401	[*] multiple-imports-on-one-line
+ 1	E741	[ ] ambiguous-variable-name
+Found 122 errors.
+[*] 83 fixable with `--fix` (14 unsafe fixes available with `--fix --unsafe-fixes`).

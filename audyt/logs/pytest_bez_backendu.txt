@@ -1,0 +1,71 @@
+..............s...x..................................................... [ 43%]
+.......s..........F.................................ssssssssssssssssssss [ 86%]
+ssssssssssssssssss..FF                                                   [100%]
+=================================== FAILURES ===================================
+________________ TestIbanWithSpace.test_iban_reverse_map_entry _________________
+
+self = <test_pipeline_v2.TestIbanWithSpace object at 0x7f8c205f4680>
+
+    def test_iban_reverse_map_entry(self):
+        """
+        IBAN ze spacjami: token NUMER_* ma wpis w reverse_map z wartością IBAN.
+        # v1.1
+        """
+        iban = "PL61 1090 1014 0000 0712 1981 2874"
+        result_text, reverse_map = self._run(f"Przelew na konto: {iban}.")
+        numer_tokens = [k for k in reverse_map if k.startswith("NUMER_")]
+        assert numer_tokens, "[T04d-pre] Brak NUMER_* — test zależny od T04b"
+        token = numer_tokens[0]
+        original = reverse_map[token]
+>       assert "PL" in original or "61" in original, (
+            f"[T04d] reverse_map[{token!r}] = {original!r} — nie przypomina IBANu."
+        )
+E       AssertionError: [T04d] reverse_map['NUMER_001'] = '9010140000071219812874' — nie przypomina IBANu.
+E       assert ('PL' in '9010140000071219812874' or '61' in '9010140000071219812874')
+
+tests/test_pipeline_v2.py:257: AssertionError
+__________ TestFilterFunction.test_prefix_nie_uderza_w_podobne_nazwy ___________
+
+self = <test_pseudominizer.TestFilterFunction testMethod=test_prefix_nie_uderza_w_podobne_nazwy>
+
+    def test_prefix_nie_uderza_w_podobne_nazwy(self):
+        """
+        'Sadowski i Wspólnicy' zaczyna się podobnie do 'Sąd' ale
+        nie jest instytucją — nie może być odfiltrowany.
+        """
+        f, R = self._get()
+        results = [R("Sadowski i Wspólnicy", "FIRMA", 0.8, 0, 20)]
+        filtered = f(results)
+>       self.assertEqual(len(filtered), 1,
+            "[FILT] 'Sadowski i Wspólnicy' błędnie odfiltrowany przez prefix 'sąd'")
+E       AssertionError: 0 != 1 : [FILT] 'Sadowski i Wspólnicy' błędnie odfiltrowany przez prefix 'sąd'
+
+tests/test_pseudominizer.py:547: AssertionError
+------------------------------ Captured log call -------------------------------
+DEBUG    pseudominizer.ner_layer:ner_layer.py:227 [FILTER] pominięto (prefix): 'Sadowski i Wspólnicy'
+___________ TestFilterFunction.test_prywatna_firma_nie_odfiltrowana ____________
+
+self = <test_pseudominizer.TestFilterFunction testMethod=test_prywatna_firma_nie_odfiltrowana>
+
+    def test_prywatna_firma_nie_odfiltrowana(self):
+        f, R = self._get()
+        results = [R("Kowalski i Partnerzy Sp. z o.o.", "FIRMA", 0.85, 0, 30)]
+        filtered = f(results)
+>       self.assertEqual(len(filtered), 1,
+            "[FILT] Prywatna firma błędnie odfiltrowana przez blocklist")
+E       AssertionError: 0 != 1 : [FILT] Prywatna firma błędnie odfiltrowana przez blocklist
+
+tests/test_pseudominizer.py:536: AssertionError
+------------------------------ Captured log call -------------------------------
+DEBUG    pseudominizer.ner_layer:ner_layer.py:227 [FILTER] pominięto (prefix): 'Kowalski i Partnerzy Sp. z o.o.'
+=============================== warnings summary ===============================
+../../venv-lynx/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/user/venv-lynx/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_anonymizer_adversarial.py:480: Morfeusz dostępny — test dla trybu degraded pominięty.
+SKIPPED [1] tests/test_pipeline_adversarial.py:454: C10 wymaga dostępu do decrypt_map() z pseudominizer_api.py. Test ręczny: importuj .enc → wpisz błędne hasło → sprawdź komunikat błędu (powinien być: 'Nieprawidłowe hasło' a nie OperationError stack trace).
+SKIPPED [38] ../../venv-lynx/lib/python3.12/site-packages/_pytest/unittest.py:523: Backend niedostępny — uruchom pseudominizer_api.py przed testami (oczekiwany adres: http://127.0.0.1:8765)
+3 failed, 122 passed, 40 skipped, 1 xfailed, 1 warning in 6.93s

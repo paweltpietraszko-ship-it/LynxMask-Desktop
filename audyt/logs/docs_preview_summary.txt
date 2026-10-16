@@ -1,0 +1,36 @@
+
+=== doc_lvl0_umowa_o_prace.txt: HTTP 200 blocked=False tokens={'OSOBA': 1, 'FIRMA': 5, 'INSTYTUCJA': 1, 'NUMER': 15, 'EMAIL': 1, 'KWOTA': 3, 'ADRES': 3}
+   KANDYDAT CYFRY>=6: 202******
+   KANDYDAT CYFRY>=6: 01 *****
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Kat******
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Tom***
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Kat******
+
+=== doc_lvl1_decyzja_administracyjna.txt: HTTP 200 blocked=False tokens={'OSOBA': 2, 'FIRMA': 2, 'NUMER': 14, 'EMAIL': 1, 'KWOTA': 3, 'ADRES': 2}
+   KANDYDAT CYFRY>=6: 202******
+   KANDYDAT CYFRY>=6: 022**********
+   KANDYDAT CYFRY>=6: 453******
+   KANDYDAT CYFRY>=6: 022**********
+
+=== doc_lvl2_pismo_komornicze.txt: HTTP 200 blocked=False tokens={'OSOBA': 3, 'FIRMA': 4, 'NUMER': 18, 'EMAIL': 1, 'KWOTA': 8, 'ADRES': 4}
+   KANDYDAT CYFRY>=6: 202******
+
+=== doc_lvl3_faktura_zlecenie.txt: HTTP 200 blocked=False tokens={'OSOBA': 3, 'FIRMA': 1, 'NUMER': 23, 'EMAIL': 2, 'KWOTA': 6, 'ADRES': 3}
+   KANDYDAT CYFRY>=6: 202******
+   KANDYDAT CYFRY>=6: 36 ********
+   KANDYDAT CYFRY>=6: 9 0*****
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Rys*****
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Kow*******
+
+=== doc_stresstest_silnik_guard_lvl0_3.txt: HTTP 200 blocked=False tokens={'OSOBA': 6, 'FIRMA': 5, 'INSTYTUCJA': 1, 'NUMER': 40, 'EMAIL': 7, 'KWOTA': 11, 'ADRES': 9}
+   KANDYDAT CYFRY>=6: 202******
+   KANDYDAT CYFRY>=6: 022**********
+
+=== doc_test_guard.txt: HTTP 200 blocked=False tokens={'OSOBA': 1, 'FIRMA': 1, 'NUMER': 25, 'EMAIL': 5}
+   KANDYDAT CYFRY>=6: 202******
+   KANDYDAT CYFRY>=6: 22-*******
+
+=== doc_test_nowe_encje.txt: HTTP 200 blocked=False tokens={'OSOBA': 4, 'FIRMA': 2, 'NUMER': 27, 'EMAIL': 1, 'ADRES': 6}
+   KANDYDAT CYFRY>=6: 202******
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Mał*******
+   KANDYDAT IMIĘ/NAZWISKO(słownik): Jan*

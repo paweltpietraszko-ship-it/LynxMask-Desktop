@@ -1,0 +1,15 @@
+rejonowy             klasy=['adj'] kwalifikatory=[] isAdjective=True nieznane(tags.isEmpty)=False imię/nazwisko=False
+biologiczna          klasy=['adj'] kwalifikatory=[] isAdjective=True nieznane(tags.isEmpty)=False imię/nazwisko=False
+Kowalskiego          klasy=['adj', 'subst'] kwalifikatory=['nazwa_geograficzna', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Wiśniewskiej         klasy=['adj', 'subst'] kwalifikatory=['nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Bartłomiej           klasy=['subst'] kwalifikatory=['imię'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Maciej               klasy=['subst'] kwalifikatory=['imię', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Zając                klasy=['subst'] kwalifikatory=['nazwa_geograficzna', 'nazwa_pospolita', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Piątek               klasy=['subst'] kwalifikatory=['nazwa_geograficzna', 'nazwa_pospolita', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+piątku               klasy=['subst'] kwalifikatory=['nazwa_pospolita'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=False
+niedzielę            klasy=['subst'] kwalifikatory=['nazwa_pospolita'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=False
+Kont0                klasy=['ign'] kwalifikatory=[] isAdjective=False nieznane(tags.isEmpty)=True imię/nazwisko=False
+Brzęczyszczykiewicz  klasy=['ign'] kwalifikatory=[] isAdjective=False nieznane(tags.isEmpty)=True imię/nazwisko=False
+Mazur                klasy=['subst'] kwalifikatory=['człon_nazwy_geograficznej', 'nazwa_geograficzna', 'nazwa_pospolita', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Osoba                klasy=['subst'] kwalifikatory=['nazwa_pospolita', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True
+Zapłata              klasy=['subst'] kwalifikatory=['nazwa_pospolita', 'nazwisko'] isAdjective=False nieznane(tags.isEmpty)=False imię/nazwisko=True

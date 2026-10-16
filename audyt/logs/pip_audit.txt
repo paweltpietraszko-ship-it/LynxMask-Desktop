@@ -1,0 +1,4 @@
+No known vulnerabilities found
+Name            Skip Reason
+--------------- ------------------------------------------------------------------------------
+pl-core-news-lg Dependency not found on PyPI and could not be audited: pl-core-news-lg (3.8.0)

@@ -1,0 +1,15 @@
+== anchor: nowe FP wg typu {'NUMER': 4, 'KWOTA': 25, 'ORGANIZACJA': 2}
+    NUMER ['Syg*.akt', 'Syg*.ala: 1€ 5728/2022', 'Syg* akt: I K9925/2022 Wyg********* ele*', 'Syg* akt: K GBB*****5 Wyg*']
+    KWOTA ['25 tys****', '50 tys****', '06.07', '3. sz', '73 tys****', '06.07', '45 tys****', '76 tys****']
+    ORGANIZACJA ['Prz************* Bud****** MAR*** S.A.', 'Prz************* Bud****** MAR*** S.A.']
+== pakiet: nowe FP wg typu {'NUMER': 10, 'ORGANIZACJA': 5, 'OSOBA': 11, 'KWOTA': 25}
+    NUMER ['Syg*. akt', 'PL84************************\n\n', 'PL49************************\n\n', 'Syg*. ala: 1€ 5728/2022', 'Syg* akt: I K9925/2022 Wyg********* ele*', 'Syg* akt: K GBB*****5 Wyg*', 'PL24************************\n\n', 'PL61************************\n']
+    ORGANIZACJA ['NUM**_003Kom**** Sąd***', 'Prz************* Bud****** MAR*** S.A.', 'Wys*******', 'Wys*******', 'Prz************* Bud****** MAR*** S.A.']
+    OSOBA ['skt', 'Wzz**', 'Wys*****', 'NUM**_004Ter***', 'NUM**_004Ter***', 'Wys*******', 'NUM**_004Ter***', 'Elż***** Dab******']
+    KWOTA ['25 tys****', '50 tys****', '06.07', '3. sz', '73 tys****', '06.07', '45 tys****', '76 tys****']
+== prefix: naprawione vs base (20): Counter({('OSOBA', False): 20})
+    krytyczne: []
+    pozostałe (nie-OSOBA): []
+== pakiet: naprawione vs base (24): Counter({('OSOBA', False): 20, ('NUMER', True): 3, ('NUMER', False): 1})
+    krytyczne: [('NUMER', 'iban', True, 'PL84************************'), ('NUMER', 'iban', True, 'PL61************************'), ('NUMER', 'iban', True, 'PL60************************')]
+    pozostałe (nie-OSOBA): [('NUMER', 'numer_umowy', False, 'U-00***/2020')]
