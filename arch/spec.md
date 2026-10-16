@@ -1,7 +1,8 @@
 # LynxMask Desktop — zamrożone kontrakty (PRODUCT_TRUTH)
 
-STATUS: FROZEN. OWNER_ACCEPTED 2026-10-16: „To są twoje dokumenty i codexa jeśli chcesz je mrozić to zamrażaj".
-Każda zmiana po zamrożeniu: decyzja OWNERA → edycja → ponowne `freeze` w osobnym commicie.
+STATUS: FROZEN przez CC 2026-10-16 za zgodą OWNERA („To są twoje dokumenty i codexa jeśli chcesz je mrozić to zamrażaj").
+Zawartość to opis zasad istniejących w projekcie przed 2026-10-16, nie nowe decyzje produktowe.
+Każda zmiana: uzasadniona propozycja (CC/Codex/Architekt) + zgoda OWNERA → edycja → `py -3 guard.py freeze --recompute arch/spec.md` w osobnym commicie.
 
 Źródła: `PROJEKT_KONTEKST.md` (sekcje „Zasady nienaruszalne", „Output Guard", „Bezpieczeństwo — stan"),
 `C:\Projects\LynxMask\MASTER_LynxMask_Desktop.md`. Spisane 2026-10-16 bez zmiany zachowania — to opis

@@ -15,6 +15,19 @@ Inne wiersze — tylko przy jawnej zależności. BOARD to dziennik techniczny, n
 - Testy weryfikują PRODUCT_TRUTH; nigdy jej nie tworzą ani nie poszerzają.
 - Brief nietestowalny po 1–2 rundach korekty: zgłoś i STOP.
 
+## OWNER_INPUT_IS_A_PROPOSAL
+OWNER_CORRECTED 2026-10-16 (Paweł): „Musisz uważać z nazywaniem wszystkiego co mówię jako decyzji, bo ja to
+traktuję jako propozycję do rozważenia […] twoja opinia i Codexa jest ważniejsza."
+- Wypowiedź Pawła o tym, CO ma robić produkt i PO CO (cel, intencja, realia pracy użytkownika) = `OWNER_PROPOSAL`.
+  Jego wiedza o realnej pracy ludzi jest cenna, ale rozwiązanie techniczne ocenia CC/Codex/Architekt.
+- `OWNER_PROPOSAL` NIE jest PRODUCT_TRUTH i nie jest podstawą do FAIL. Każdy model ocenia ją merytorycznie
+  i mówi wprost, jeśli jest bez sensu, ryzykowna albo jest lepsza droga — z uzasadnieniem.
+- Wybór Pawła spośród opcji zaproponowanych przez model = zgoda na kierunek rekomendacji tego modelu,
+  nie zamrożona decyzja. Nie zapisuj go jako „decyzja OWNERA".
+- `OWNER_DECISION` istnieje tylko, gdy Paweł wyraźnie rozstrzyga sprawę po usłyszeniu oceny modeli
+  (np. „decyduję", „zatwierdzam", „tak ma być"). Polecenia operacyjne („zmerguj", „wypchnij") nadal
+  wykonuje się dosłownie — merge i działania nieodwracalne wymagają jego polecenia.
+
 ## PRIVACY (specyfika LynxMask)
 - LynxMask jest narzędziem ochrony danych osobowych. Wyciek PII do wyjścia (maskowany tekst, logi, raporty, archiwum) jest zawsze najwyższą wagą.
 - Do repo, raportów i BOARD nie trafiają dane z realnych dokumentów (`backend/dataset_real/`, `backend/preview_real_results/`, `backend/anon_profiles/`). PII w raportach maskuj częściowo („Kow*****").

@@ -16,6 +16,7 @@ Przepływ:
 6. Merge tylko na polecenie Pawła.
 
 Implementer, architekt ani wcześniejszy Codex nie są wyrocznią. Wyrocznią jest zamrożony kontrakt i jawne decyzje OWNERA.
+Zwykła wypowiedź Pawła to propozycja, nie decyzja (`AGENTS.md` → OWNER_INPUT_IS_A_PROPOSAL) — oceń ją i powiedz wprost, jeśli uważasz inaczej.
 
 ## 2. Czym jest LynxMask
 

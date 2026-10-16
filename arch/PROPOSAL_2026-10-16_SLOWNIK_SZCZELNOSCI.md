@@ -1,9 +1,11 @@
-# OWNER_DECISION 2026-10-16 — test szczelności na dużych słownikach + słownik „zawsze maskuj" w programie
+# PROPOSAL 2026-10-16 — test szczelności na dużych słownikach + słownik „zawsze maskuj" w programie
 
 Autor zapisu: CC (lokalnie), na podstawie rozmowy z OWNEREM 2026-10-16. Ocena merytoryczna CC w §4.
 To zlecenie dla Architekta (brief), nie brief. Status w `BOARD.md`: LYNX-DICT-LEAKTEST.
+Nic w tym pliku nie jest zamrożoną decyzją OWNERA (`AGENTS.md` → OWNER_INPUT_IS_A_PROPOSAL).
+Architekt i Codex mogą każdy punkt zakwestionować z uzasadnieniem.
 
-## 1. Zachowanie zamówione przez OWNERA (dosłownie)
+## 1. Propozycja OWNERA (dosłownie)
 
 > „Musimy zrobić z dużego słownika nazwisk, imion, miast, testy, przepuścić po poprawkach przez silnik
 > i to co nie będzie zamaskowane wprowadzić do czarnego słownika programu. On korzysta z niego i nasze
@@ -14,7 +16,10 @@ UWAGA NA NAZWY: w kodzie `ner_blocklist.py` („blocklista") oznacza odwrotnoś�
 traktować jako encji. Słownik z tego zlecenia NIE trafia do `ner_blocklist.py`. Jego odpowiednikiem
 w kodzie jest słownik profilu (trie, `layers/trie_layer.py`) / seed (`seed_profile.py`).
 
-## 2. Decyzje OWNERA (2026-10-16, odpowiedzi na pytania CC, opcje rekomendowane)
+## 2. Kierunek wstępnie uzgodniony (rekomendacje CC, które OWNER wybrał spośród opcji)
+
+To rekomendacje CC — OWNER wybrał je z przedstawionych opcji, co oznacza zgodę na kierunek, nie zamrożoną
+decyzję. Jeśli architekt lub Codex widzi lepsze rozwiązanie, proponuje je z uzasadnieniem.
 
 D1. **Miasta — tylko w adresie.** Nazwa miejscowości jest maskowana jako część adresu (ulica, kod,
     miasto). Samo „pracuje w Radomiu" zostaje. Test miast = zdania adresowe.

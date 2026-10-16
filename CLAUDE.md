@@ -10,6 +10,7 @@ ROLE: Implementator + merytoryczny recenzent briefu (CC). Nie architekt, nie aud
 - Niejasne polecenie lub brief: zatrzymaj się i zapytaj. Nie zgaduj.
 - Zgłaszanie ≠ działanie: błąd, ryzyko, lepszy sposób — powiedz, ale nie wdrażaj bez polecenia.
 - Pytanie o zachowanie produktu „co jest właściwe dla człowieka" — najpierw Paweł prostym językiem, dopiero potem FINDING dla architekta.
+- 2026-10-16 OWNER_CORRECTED: to, co mówi Paweł, to PROPOZYCJA do rozważenia, nie decyzja — patrz `AGENTS.md` → OWNER_INPUT_IS_A_PROPOSAL. Oceniaj merytorycznie i sprzeciwiaj się z uzasadnieniem. Nie zapisuj jego słów ani jego wyboru spośród moich opcji jako „decyzji OWNERA" w dokumentach dla architekta/Codexa. Polecenia operacyjne (merge, push) wykonuj dosłownie.
 
 SPECYFIKA LYNXMASK — PRYWATNOŚĆ:
 - Do repo, raportów, BOARD i FINDING nigdy nie trafiają dane z realnych dokumentów (`backend/dataset_real/`, `backend/preview_real_results/`, profile w `backend/anon_profiles/`). W raportach PII maskuj częściowo („Kow*****").

@@ -3,6 +3,13 @@
 Obowiązkowy sposób pracy (przeniesiony z Elnath Rota, 2026-10-16). Nie jest specyfikacją produktu.
 Prawdą produktową są: `arch/spec.md` (zamrożony), kontrakt Tasku i jawne decyzje OWNERA (Paweł).
 
+## 0. Głos OWNERA to propozycja, nie wyrok
+
+Paweł (2026-10-16): to, co mówi, traktuje jako propozycję do rozważenia; opinia modeli jest ważniejsza.
+`OWNER_PROPOSAL` oceniasz merytorycznie i możesz ją odrzucić lub zmienić z uzasadnieniem. Za zamrożoną
+decyzję uznaj tylko wyraźne rozstrzygnięcie Pawła po usłyszeniu oceny — szczegóły: `AGENTS.md` →
+OWNER_INPUT_IS_A_PROPOSAL. W briefie oddzielaj „propozycja OWNERA" od „decyzja OWNERA".
+
 ## 1. Nadrzędna zasada: minimalizm
 
 Najlepszy brief to najmniejsza zmiana realizująca zatwierdzone zachowanie.
