@@ -12,7 +12,7 @@
 // ZMIANY v2.3: ZERO szarości w tekście (ciemny motyw)
 // ============================================================
 
-export type Theme = typeof DARK;
+export type Theme = { readonly [K in keyof typeof DARK]: string };  // [LYNX-T10] klucze palety, wartości string (nie literały DARK)
 
 export const DARK = {
   bg:      "#0f1117",

@@ -83,7 +83,7 @@ function Section({ title, children }: SectionProps) {
 }
 
 function Btn({ onClick, disabled, variant = "default", children }: {
-  onClick: () => void;
+  onClick?: () => void;  // [LYNX-T10] brak callbacku = przycisk nieaktywny
   disabled?: boolean;
   variant?: "default" | "destructive";
   children: React.ReactNode;
@@ -94,7 +94,7 @@ function Btn({ onClick, disabled, variant = "default", children }: {
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || !onClick}
       style={{
         padding: "9px 18px",
         background: disabled ? bgDisabled : bg,
@@ -591,7 +591,7 @@ function GuardAllowlistSection({ apiToken }: { apiToken: string }) {
       <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
         Frazy oznaczone jako „to nie PII" — Guard nie blokuje zapisu gdy je wykryje w odpowiedzi AI.
       </div>
-      <Btn onClick={loading ? undefined : load} disabled={loading} style={{ marginBottom: 14 }}>
+      <Btn onClick={loading ? undefined : load} disabled={loading}>
         {loading ? "▸ Ładuję..." : entries ? "Odśwież" : "Pokaż wyjątki"}
       </Btn>
       {entries !== null && (

@@ -1,0 +1,35 @@
+src/App.tsx(175,18): error TS2339: Property 'muted' does not exist on type '{ readonly bg: "#0f1117"; readonly surface: "#22252b"; readonly sidebar: "#0d0f14"; readonly border: "#2e3138"; readonly borderActive: "#3b82f6"; readonly textPrimary: "#F5F7FA"; readonly textSecondary: "#D1D5DB"; ... 17 more ...; readonly mono: "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace"; }'.
+src/screens/MainLayout.tsx(178,9): error TS6133: 'logoBadgeBg' is declared but its value is never read.
+src/screens/MainLayout.tsx(179,9): error TS6133: 'logoBadgeText' is declared but its value is never read.
+src/screens/MainLayout.tsx(180,9): error TS6133: 'logoNameColor' is declared but its value is never read.
+src/screens/MainLayout.tsx(181,9): error TS6133: 'logoVerColor' is declared but its value is never read.
+src/screens/Pseudonimizuj.tsx(776,17): error TS2322: Type '(forceBypassGuard?: boolean) => Promise<void>' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
+  Types of parameters 'forceBypassGuard' and 'event' are incompatible.
+    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'boolean | undefined'.
+src/screens/SecurityScreen.tsx(495,14): error TS2322: Type '(() => Promise<void>) | undefined' is not assignable to type '() => void'.
+  Type 'undefined' is not assignable to type '() => void'.
+src/screens/SecurityScreen.tsx(594,12): error TS2322: Type '(() => Promise<void>) | undefined' is not assignable to type '() => void'.
+  Type 'undefined' is not assignable to type '() => void'.
+src/theme.ts(54,3): error TS2322: Type '"#E2E6ED"' is not assignable to type '"#0f1117"'.
+src/theme.ts(55,3): error TS2322: Type '"#F0F2F6"' is not assignable to type '"#22252b"'.
+src/theme.ts(56,3): error TS2322: Type '"#D4D9E2"' is not assignable to type '"#0d0f14"'.
+src/theme.ts(58,3): error TS2322: Type '"#B0B8C8"' is not assignable to type '"#2e3138"'.
+src/theme.ts(59,3): error TS2322: Type '"#1D4ED8"' is not assignable to type '"#3b82f6"'.
+src/theme.ts(62,3): error TS2322: Type '"#0A0E1A"' is not assignable to type '"#F5F7FA"'.
+src/theme.ts(63,3): error TS2322: Type '"#1A2540"' is not assignable to type '"#D1D5DB"'.
+src/theme.ts(64,3): error TS2322: Type '"#2D4070"' is not assignable to type '"#B8BEC8"'.
+src/theme.ts(65,3): error TS2322: Type '"#4A6090"' is not assignable to type '"#8899bb"'.
+src/theme.ts(66,3): error TS2322: Type '"#0A0E1A"' is not assignable to type '"#F5F7FA"'.
+src/theme.ts(69,3): error TS2322: Type '"#1D4ED8"' is not assignable to type '"#3b82f6"'.
+src/theme.ts(70,3): error TS2322: Type '"#2563EB"' is not assignable to type '"#60A5FA"'.
+src/theme.ts(71,3): error TS2322: Type '"#DBEAFE"' is not assignable to type '"#1e2d4a"'.
+src/theme.ts(72,3): error TS2322: Type '"#C8D4EE"' is not assignable to type '"#1a1f2e"'.
+src/theme.ts(75,3): error TS2322: Type '"#16A34A"' is not assignable to type '"#22c55e"'.
+src/theme.ts(76,3): error TS2322: Type '"#DCFCE7"' is not assignable to type '"#052e16"'.
+src/theme.ts(77,3): error TS2322: Type '"#34D468"' is not assignable to type '"#166534"'.
+src/theme.ts(80,3): error TS2322: Type '"#DC2626"' is not assignable to type '"#f87171"'.
+src/theme.ts(81,3): error TS2322: Type '"#FEE2E2"' is not assignable to type '"#1c0808"'.
+src/theme.ts(82,3): error TS2322: Type '"#F06060"' is not assignable to type '"#7f1d1d"'.
+src/theme.ts(85,3): error TS2322: Type '"#D97706"' is not assignable to type '"#fbbf24"'.
+src/theme.ts(86,3): error TS2322: Type '"#FEF3C7"' is not assignable to type '"#2d1a00"'.
+src/theme.ts(87,3): error TS2322: Type '"#F0A020"' is not assignable to type '"#92400e"'.

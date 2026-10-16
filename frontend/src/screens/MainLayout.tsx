@@ -175,10 +175,6 @@ export default function MainLayout({ activeScreen, onNavigate, idleWarning, apiT
   }, []);
 
   // [UI-SIDEBAR-04] Kolory logo zależne od motywu
-  const logoBadgeBg   = isDark ? "#ffffff"   : T.blue;
-  const logoBadgeText = isDark ? T.blue      : "#ffffff";
-  const logoNameColor = isDark ? "#ffffff"   : T.blue;
-  const logoVerColor  = isDark ? T.textMuted : T.blueLight;
   const navLabelColor = isDark ? T.textSecondary : T.blueLight;
 
   return (
