@@ -207,6 +207,18 @@ def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
         state.ner_error = True
 
 
+def _remap_ner_ids(state: PipelineState, ner_reverse: dict) -> tuple[dict, dict]:
+    """[LYNX-T03] process_ner numeruje lokalnie od 001 — numery z alokatora, który zna tokeny
+    profilu (rezerwacja w trie_layer) i wcześniejszych warstw, więc bez kolizji.
+    Zwraca (local: lokalny_id → wartość, remap: lokalny_id → id alokatora). Numer tylko dla
+    wartości obecnej w tekście; odmiany dostają go później, gdy są w tekście. Fragmenty email
+    ("@firma.pl" jako OSOBA po rozbiciu przez OCR) — pomijane."""
+    local = {tid: val for tid, val in ner_reverse.items() if not val.startswith("@")}
+    remap = {tid: state.allocator.assign(tid.rsplit("_", 1)[0], val)
+             for tid, val in local.items() if val in state.text}
+    return local, remap
+
+
 def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
     """Rejestruje tokeny OSOBA/FIRMA w state.allocator i zastępuje w tekście.
 
@@ -237,15 +249,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         state.ner_error = True
         return
 
-    for token_id, value in ner_reverse.items():
-        # Odrzuć fragmenty email (OCR rozbija "user@firma.pl" na dwa tokeny,
-        # część "@firma.pl" trafia do SpaCy jako OSOBA — filtrujemy).
-        if value.startswith("@"):
-            continue
-        start = state.text.find(value)
-        if start >= 0:
-            end = start + len(value)
-            state.allocator.register(token_id, value, start, end)
+    local, remap = _remap_ner_ids(state, ner_reverse)  # [LYNX-T03]
+    ner_reverse = {remap[tid]: local[tid] for tid in remap}
 
     for token_id, value in sorted(
         ner_reverse.items(),
@@ -278,7 +283,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         key=lambda x: state.text.find(x[0]),
         reverse=True,
     ):
-        if _var_text.startswith("@"):
+        _local = _tok_id  # [LYNX-T03] lokalny numer NER → numer alokatora (niżej, gdy odmiana jest w tekście)
+        if _local not in local or _var_text.startswith("@"):
             continue
         if _TOKEN_RE.search(_var_text):
             continue
@@ -288,8 +294,11 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             continue
         _stripped = re.sub(r"[,\.;:!?\s]+$", "", _var_text).rstrip()
         _target = _stripped if _stripped else _var_text
-        if not _target:
+        if not _target or _target not in state.text:
             continue
+        if _local not in remap:
+            remap[_local] = state.allocator.assign(_local.rsplit("_", 1)[0], local[_local])
+        _tok_id = remap[_local]
         if _stripped and _stripped != _var_text:
             state.text = state.text.replace(_var_text, _tok_id)
         state.text = state.text.replace(_target, _tok_id)
