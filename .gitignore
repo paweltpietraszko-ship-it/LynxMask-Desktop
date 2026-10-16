@@ -28,3 +28,4 @@ backend/pseudominizer_audit.jsonl
 desktop.ini
 backend/smoke_e2e_report.txt
 backend/dict_templates/generated/
+backend/preview_real_results/
