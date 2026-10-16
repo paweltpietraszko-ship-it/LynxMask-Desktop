@@ -5,7 +5,7 @@ Zawartość to opis zasad istniejących w projekcie przed 2026-10-16, nie nowe d
 Każda zmiana: uzasadniona propozycja (CC/Codex/Architekt) + zgoda OWNERA → edycja → `py -3 guard.py freeze --recompute arch/spec.md` w osobnym commicie.
 
 Źródła: `PROJEKT_KONTEKST.md` (sekcje „Zasady nienaruszalne", „Output Guard", „Bezpieczeństwo — stan"),
-`C:\Projects\LynxMask\MASTER_LynxMask_Desktop.md`. Spisane 2026-10-16 bez zmiany zachowania — to opis
+GitHub `paweltpietraszko-ship-it/LynxMask` (master), plik `MASTER_LynxMask_Desktop.md`. Spisane 2026-10-16 bez zmiany zachowania — to opis
 istniejących zasad, nie nowe wymagania.
 
 ## S1. Cel produktu

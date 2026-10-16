@@ -152,7 +152,7 @@ Następnie: `_apply_guard()` → Output Guard v4.5
 ## Planowana integracja z Elnath Rota (dopisane 16.10.2026 przez CC z repo Elnath Rota)
 
 **Najpierw testy na dokumentach (decyzja Pawła), integracja potem.** Usługa online Roty (osobne repo, w budowie) ma pomocnika AI; pytania użytkownika wolnym tekstem (nazwiska, L4, przyczyny nieobecności) muszą przejść przez maskowanie LynxMask przed wysłaniem do zewnętrznego modelu, a odpowiedź wraca z przywróconymi nazwami. Potrzebne po stronie LynxMask: silnik backend uruchamialny na serwerze Linux bez Tauri/UI/GPU/sieci, `mask(text, known_people) -> {masked_text, mapping}` (lista osób z obsady konta jako wymuszony słownik z odmianami), `unmask(text, mapping)`, bezstanowo; format tokenu/TOKEN_RE bez zmian (wspólny z Mobile, decyduje Paweł). Test szczelności na bazie imion/nazwisk z odmianami w zdaniach koordynatora = dowód należytej staranności RODO. To propozycja do uzgodnienia z Pawłem, nie zamrożony kontrakt.
-Pełny opis: `C:\Projects\LynxMask\MASTER_LynxMask_Desktop.md`, sekcja 9. Strona Roty: `C:\Projects\Elnath Rota\BOARD.md`, wiersz ROTA-SERVICE-ONBOARDING.
+Pełny opis: GitHub `paweltpietraszko-ship-it/LynxMask` (gałąź master), plik `MASTER_LynxMask_Desktop.md`, sekcja 9. Strona Roty: GitHub `paweltpietraszko-ship-it/elnath-rota`, plik `BOARD.md`, wiersz ROTA-SERVICE-ONBOARDING.
 
 ## Dokumenty testowe
 

@@ -33,7 +33,7 @@ D3. **Słownik żyje w programie.** Plik dołączony do aplikacji, ładowany prz
 
 ## 3. Źródła danych (istniejące)
 
-| Dane | Desktop `backend/` | Mobile `C:\Projects\LynxMask\app\src\main\assets\` (repo `LynxMask@master`) |
+| Dane | Desktop `backend/` | Mobile: GitHub `paweltpietraszko-ship-it/LynxMask` (master), `app/src/main/assets/` |
 |---|---|---|
 | Imiona + odmiany | `names_inflected.json` (199) | `names_inflected.json` (~3 600, ze zdrobnieniami) |
 | Nazwiska | `surnames_top1000.json` (1 000) | `surnames_top1000.json`, `surnames_extended.json` (~38 800), `surname_suffixes.json` |
