@@ -1,0 +1,62 @@
+BENCHMARK LYNXMASK — RAPORT
+Data: 2026-10-16 13:09:19
+Run:  benchmark_results/syntetyczny/run_20261016_125957
+════════════════════════════════════════════════════════════
+
+════════════════════════════════════════════════════════════
+  GŁÓWNY KPI — CRITICAL LEAKAGE RATE
+  7.7%  (14 wycieków / 181 krytycznych encji)
+  Cel: 0.0%  |  Encje: PESEL, NIP, IBAN, dowód, paszport
+════════════════════════════════════════════════════════════
+
+PRZEPUSTOWOŚĆ
+  Dokumentów łącznie:        100
+  Zaakceptowanych przez OCR: 80  (80%)
+  Odrzuconych (conf<70%):    19  — poprawne zachowanie systemu
+  Błędy HTTP/timeout:        0
+  Guard zablokował:          1
+
+METRYKI (tylko zaakceptowane dokumenty)
+
+  A. PRIVACY — czy dane zostały ukryte?
+     Recall:     88.2%  (456/517 encji zamaskowanych)
+     Precision:  59.8%  (overmasking: 307 FP)
+     F1:         71.3%
+
+  B. SEMANTIC — czy zamaskowano pod właściwym typem?
+     Accuracy:   86.4%  (394/456 poprawny typ)
+     (metryka pomocnicza — PESEL jako NUMER = sukces privacy)
+
+  INTERPRETACJA:
+  Privacy Recall < 95%   → pipeline gubi encje — ryzyko wycieku
+  Precision < 85%        → pipeline maskuje za dużo — dokument traci użyteczność
+  Semantic Accuracy < 80% → typy tokenu wymagają korekty (nie wpływa na RODO)
+
+PRIVACY RECALL PER TYP ENCJI (zaakceptowane)
+  ADRES        R= 94.5% P= 68.8%  [███████████████░]  (86/91  FP=39)
+  EMAIL        R= 40.0% P=100.0%  [██████░░░░░░░░░░]  (4/10  FP=0)
+  KWOTA        R=  0.0% P=  0.0%  [░░░░░░░░░░░░░░░░]  (0/0  FP=31)
+  NUMER        R= 91.0% P= 59.8%  [██████████████░░]  (222/244  FP=149)
+  ORGANIZACJA  R=  0.0% P=  0.0%  [░░░░░░░░░░░░░░░░]  (0/0  FP=53)
+  OSOBA        R= 80.2% P= 70.8%  [████████████░░░░]  (85/106  FP=35)
+  SYGNATURA    R= 87.5% P=100.0%  [██████████████░░]  (28/32  FP=0)
+  TELEFON      R= 91.2% P=100.0%  [██████████████░░]  (31/34  FP=0)
+
+PRIVACY RECALL PER POZIOM DEGRADACJI (zaakceptowane)
+  Lvl 0 perfect scan   [██████████████████░░]  91.1%  docs=25 ent=158
+  Lvl 1 light noise    [██████████████████░░]  91.4%  docs=25 ent=175
+  Lvl 2 noise+blur     [██████████████████░░]  92.8%  docs=11 ent=69
+  Lvl 3 phone (good)   [███████████████░░░░░]  76.5%  docs=19 ent=115
+
+ODRZUCONE PRZEZ OCR (19 dok.) — poza metrykami
+  images/doc_00005.png  lvl=2  qs=85
+  images/doc_00007.png  lvl=2  qs=83
+  images/doc_00010.png  lvl=2  qs=78
+  images/doc_00013.png  lvl=2  qs=84
+  images/doc_00032.png  lvl=2  qs=83
+  images/doc_00034.png  lvl=2  qs=85
+  images/doc_00037.png  lvl=2  qs=84
+  images/doc_00046.png  lvl=2  qs=82
+  images/doc_00050.png  lvl=3  qs=77
+  images/doc_00053.png  lvl=2  qs=80
+  ... i 9 więcej

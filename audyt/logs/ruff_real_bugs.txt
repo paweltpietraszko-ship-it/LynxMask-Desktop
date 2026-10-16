@@ -1,0 +1,16 @@
+backend/anonymizer.py:731:27: F821 Undefined name `MAX_ONBOARD_BATCH`
+backend/anonymizer.py:733:32: F821 Undefined name `MAX_ONBOARD_BATCH`
+backend/anonymizer.py:1530:23: F821 Undefined name `MAX_ONBOARD_BATCH`
+backend/anonymizer.py:1532:28: F821 Undefined name `MAX_ONBOARD_BATCH`
+backend/benchmark.py:601:9: F841 Local variable `gt_values` is assigned to but never used
+backend/benchmark.py:687:5: F841 Local variable `total_miss` is assigned to but never used
+backend/benchmark.py:866:5: F841 Local variable `raw_candidates` is assigned to but never used
+backend/pipeline_new.py:239:5: F841 Local variable `found_in_text` is assigned to but never used
+backend/pipeline_new.py:244:5: F841 Local variable `tokens_in_text` is assigned to but never used
+backend/scripts/generuj_obrazy_ocr.py:116:11: F841 Local variable `nazwisko_d` is assigned to but never used
+backend/scripts/generuj_obrazy_ocr.py:116:24: F841 Local variable `nazwiska` is assigned to but never used
+backend/tests/test_anonymizer_adversarial.py:644:9: F841 Local variable `result` is assigned to but never used
+backend/tests/test_pipeline.py:409:5: F841 Local variable `anon` is assigned to but never used
+backend/tests/test_pipeline.py:536:5: F841 Local variable `results_detail` is assigned to but never used
+Found 14 errors.
+10 unsafe fixes available with `--fix --unsafe-fixes`.

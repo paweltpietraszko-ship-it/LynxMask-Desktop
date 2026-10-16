@@ -1,0 +1,45 @@
+doc_lvl0_umowa_o_prace.txt                 identyczny=False tylko_białe_znaki=False różnic=21 ratio=0.9930
+     insert: '' -> 'To***** '
+     insert: '' -> 'eg*'
+     insert: '' -> 'To***** '
+     insert: '' -> 'eg*'
+doc_lvl1_decyzja_administracyjna.txt       identyczny=False tylko_białe_znaki=False różnic=28 ratio=0.9841
+     delete: 'ow*' -> ''
+     insert: '' -> ' Ro*'
+     replace: 'mu' -> 'rt No********'
+     insert: '' -> ':'
+     replace: 'z' -> '2'
+     replace: 'lo' -> '10'
+     ... +6 innych nie-białych różnic
+doc_lvl2_pismo_komornicze.txt              identyczny=False tylko_białe_znaki=False różnic=23 ratio=0.9946
+     replace: '©' -> '@'
+     insert: '' -> 'a'
+     insert: '' -> 'eg*'
+     replace: '1' -> 'i'
+doc_lvl3_faktura_zlecenie.txt              identyczny=False tylko_białe_znaki=False różnic=22 ratio=0.9959
+     replace: '©' -> '@'
+     insert: '' -> ':'
+doc_stresstest_silnik_guard_lvl0_3.txt     identyczny=False tylko_białe_znaki=False różnic=24 ratio=0.9932
+     insert: '' -> ':'
+     replace: 'Zl' -> '21'
+     insert: '' -> 'Ro***** '
+     insert: '' -> 'ow******'
+     replace: 'Ja** Ko*********' -> 'OS***_00*'
+     replace: '©' -> '@'
+     ... +5 innych nie-białych różnic
+doc_test_guard.txt                         identyczny=False tylko_białe_znaki=False różnic=53 ratio=0.9846
+     insert: '' -> ':'
+     insert: '' -> '9'
+     delete: '9' -> ''
+     insert: '' -> '1'
+     delete: '1' -> ''
+     replace: '.' -> '-'
+     ... +4 innych nie-białych różnic
+doc_test_nowe_encje.txt                    identyczny=False tylko_białe_znaki=False różnic=21 ratio=0.9912
+     replace: '1' -> 'i'
+     replace: '1' -> 'i'
+     replace: '1' -> 'i'
+     replace: 'Pi***' -> 'Ja*'
+     replace: 'N' -> 'K'
+     insert: '' -> 'ls'
+     ... +3 innych nie-białych różnic

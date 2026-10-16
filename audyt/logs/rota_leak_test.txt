@@ -1,0 +1,15 @@
+zdania: 36, form: 60; zimny start (import+spaCy): 5.9s; RSS max: 959 MB
+
+[prod] init 0.00s | formy jawnie: 18/60 (30%) | zdania z wyciekiem: 14/36 | czas/zdanie mediana 18 ms, max 43 ms
+   per przypadek (jawne/razem): {'nom': '1/10', 'gen': '4/10', 'dat': '3/10', 'acc': '4/10', 'inst': '5/10', 'loc': '1/10'}
+
+[seed] init 1.20s | formy jawnie: 2/60 (3%) | zdania z wyciekiem: 2/36 | czas/zdanie mediana 62 ms, max 93 ms
+   per przypadek (jawne/razem): {'nom': '0/10', 'gen': '1/10', 'dat': '0/10', 'acc': '1/10', 'inst': '0/10', 'loc': '0/10'}
+
+[known] init 0.00s | formy jawnie: 0/60 (0%) | zdania z wyciekiem: 0/36 | czas/zdanie mediana 24 ms, max 33 ms
+   per przypadek (jawne/razem): {'nom': '0/10', 'gen': '0/10', 'dat': '0/10', 'acc': '0/10', 'inst': '0/10', 'loc': '0/10'}
+
+[express] init 0.00s | formy jawnie: 60/60 (100%) | zdania z wyciekiem: 36/36 | czas/zdanie mediana 0 ms, max 1 ms
+   per przypadek (jawne/razem): {'nom': '10/10', 'gen': '10/10', 'dat': '10/10', 'acc': '10/10', 'inst': '10/10', 'loc': '10/10'}
+
+RSS max po wszystkim: 2578 MB

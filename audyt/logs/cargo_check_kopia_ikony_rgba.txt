@@ -1,0 +1,2 @@
+   Compiling pseudominizer v1.0.0 (/tmp/claude-0/-home-user/155db09a-6b75-5b78-904a-01492deeea25/scratchpad/tauri_copy/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.45s
