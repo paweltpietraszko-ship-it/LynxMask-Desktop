@@ -1,4 +1,4 @@
-xxxxxxxxxxxxxxxxxxxxxxx                                                  [100%]
+xxxxxxxxxxxxxxxxxxxxxxxxxx                                               [100%]
 =============================== warnings summary ===============================
 tests/test_audyt_2026_10.py::test_express_token_nie_otwiera_profilu
   /home/user/venv-lynx/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
@@ -12,14 +12,17 @@ XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_osob[Katarzyna Wi\
 XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_osob[Kowalski] - BUG-NER-PREFIX-FILTER: _NER_BLOCKLIST_PREFIXES (ulice/miejscowości) odrzuca osoby wykryte przez spaCy
 XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_osob[Wi\u015bniewski] - BUG-NER-PREFIX-FILTER: _NER_BLOCKLIST_PREFIXES (ulice/miejscowości) odrzuca osoby wykryte przez spaCy
 XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_osob[Aleksandra Kwiatkowska] - BUG-NER-PREFIX-FILTER: _NER_BLOCKLIST_PREFIXES (ulice/miejscowości) odrzuca osoby wykryte przez spaCy
+XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_odmienionych_imion[Bart\u0142omiej] - BUG-NER-ADJ-FILTER: filtr końcówek przymiotnikowych odrzuca pojedyncze odmienione imiona/nazwiska (Mobile: słownik przed filtrem)
+XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_odmienionych_imion[Maciej] - BUG-NER-ADJ-FILTER: filtr końcówek przymiotnikowych odrzuca pojedyncze odmienione imiona/nazwiska (Mobile: słownik przed filtrem)
+XFAIL tests/test_audyt_2026_10.py::test_filtr_ner_nie_odrzuca_odmienionych_imion[Nowakowej] - BUG-NER-ADJ-FILTER: filtr końcówek przymiotnikowych odrzuca pojedyncze odmienione imiona/nazwiska (Mobile: słownik przed filtrem)
 XFAIL tests/test_audyt_2026_10.py::test_iban_pl_bez_jawnej_resztki[Przelew na konto: PL61 1090 1014 0000 0712 1981 2874.] - BUG-IBAN-RECEPTA: wzorzec 'Numer recepty' \d{22}(?!\d) w credentials łapie końcówkę IBAN, 'PL6110' zostaje jawne
 XFAIL tests/test_audyt_2026_10.py::test_iban_pl_bez_jawnej_resztki[Konto 61109010140000071219812874 w banku.] - BUG-IBAN-RECEPTA: wzorzec 'Numer recepty' \d{22}(?!\d) w credentials łapie końcówkę IBAN, 'PL6110' zostaje jawne
 XFAIL tests/test_audyt_2026_10.py::test_express_fail_closed - BUG-EXPRESS-FAIL-OPEN: wyjątek w run_pipeline_express zwraca oryginał z force_block=False (S3)
 XFAIL tests/test_audyt_2026_10.py::test_guard_map_leak_nie_odslania_pesel - BUG-GUARD-MAPLEAK-UNREDACTED: przy MAP_LEAK guard zwraca redacted_text=text, zamazanie HIGH ginie
 XFAIL tests/test_audyt_2026_10.py::test_allowlist_nie_wylacza_innych_naruszen - BUG-ALLOWLIST-SUBSTRING: allowlista porównuje frazę z treścią komunikatu naruszenia, nie z wartością
 XFAIL tests/test_audyt_2026_10.py::test_dwie_osoby_dwa_tokeny - BUG-TOKEN-COLLISION: NER nadaje numery niezależnie od alokatora; dwie osoby dostają ten sam token
-XFAIL tests/test_audyt_2026_10.py::test_token_re_zgodny_z_spec[PL6110NUMER_001-NUMER_001] - BUG-TOKEN-RE-SPEC: TOKEN_RE używa \b, spec S2 wymaga (?!\d)
-XFAIL tests/test_audyt_2026_10.py::test_token_re_zgodny_z_spec[OSOBA_1001 przyszed\u0142-OSOBA_1001] - BUG-TOKEN-RE-SPEC: TOKEN_RE używa \b, spec S2 wymaga (?!\d)
+XFAIL tests/test_audyt_2026_10.py::test_token_re_zgodny_z_spec[Zobacz OSOBA_001x tutaj-OSOBA_001] - BUG-TOKEN-RE-SPEC: koniec TOKEN_RE to \b, spec S2/Mobile wymaga (?!\d)
+XFAIL tests/test_audyt_2026_10.py::test_token_re_zgodny_z_spec[NUMER_004Teresa-NUMER_004] - BUG-TOKEN-RE-SPEC: koniec TOKEN_RE to \b, spec S2/Mobile wymaga (?!\d)
 XFAIL tests/test_audyt_2026_10.py::test_fix_ocr_email_nie_skleja_zdan[Pacjent by\u0142 w szpitalu. D\u0142u\u017cnik mieszka w Radomiu.-szpitalu. D\u0142u\u017cnik] - BUG-GLOBAL-SPACE-GLUE: _fix_ocr_email usuwa białe znaki po każdej kropce (nie tylko w e-mailach) — spec S2
 XFAIL tests/test_audyt_2026_10.py::test_fix_ocr_email_nie_skleja_zdan[1. Strony zawieraj\u0105 umow\u0119 na czas nieokre\u015blony.\n2. Umowa wchodzi w \u017cycie.-nieokre\u015blony.\n2.] - BUG-GLOBAL-SPACE-GLUE: _fix_ocr_email usuwa białe znaki po każdej kropce (nie tylko w e-mailach) — spec S2
 XFAIL tests/test_audyt_2026_10.py::test_ocr_normalizer_nie_psuje_slow - BUG-OCR-NORMALIZER-WORDS: normalizator OCR zamienia litery na cyfry w zwykłych słowach
@@ -29,4 +32,4 @@ XFAIL tests/test_audyt_2026_10.py::test_kont0_nie_jest_osoba - BUG-NER-FP: 'Kont
 XFAIL tests/test_audyt_2026_10.py::test_express_token_nie_otwiera_profilu - BUG-EXPRESS-TOKEN-SCOPE: token z /express/token (bez auth) otwiera wszystkie endpointy
 XFAIL tests/test_audyt_2026_10.py::test_cors_nie_wpuszcza_obcego_origin - BUG-CORS-WILDCARD: allow_origins=['*'] pozwala obcej stronie czytać odpowiedzi backendu
 XFAIL tests/test_audyt_2026_10.py::test_pusty_token_nie_przepuszcza - BUG-AUTH-EMPTY-TOKEN: przed lifespanem _API_TOKEN='' i compare_digest('', '') przepuszcza żądanie bez tokenu
-23 xfailed, 1 warning in 7.21s
+26 xfailed, 1 warning in 7.88s

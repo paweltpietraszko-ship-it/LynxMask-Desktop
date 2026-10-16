@@ -1,0 +1,24 @@
+=== 1. BUG-IBAN-LETTERS: Guard Desktop vs regex Mobile (OutputGuard.kt:75 + :88)
+  'Konto GB29 NWBK 6016 1331 9268 19 W TE'   desktop='GB29 NWBK 6016 1331 9268 19 W TERMINIE 7 DNI' mobile='GB29 NWBK 6016 1331 9268' mobilePL=[]
+  'IE29 AIBK 9311 5212 3456 78 ok'           desktop='IE29 AIBK 9311 5212 3456 78'            mobile='IE29 AIBK 9311 5212 3456' mobilePL=[]
+  'MT84 MALT 0110 0001 2345 MTLC AST0 01S'   desktop='MT84 MALT 0110 0001 2345 MTLC AST0 01S' mobile='MT84 MALT 0110 0001 2345 MTLC AST0' mobilePL=[]
+  'konto gb29 nwbk 6016 1331 9268 19'        desktop=None                                     mobile=None mobilePL=[]
+  'NIP: PL65 51 97 93 13 ok'                 desktop=None                                     mobile=None mobilePL=['PL65 51 97 93 13 ok']
+  'PL6110NUMER_001 reszta'                   desktop=None                                     mobile=None mobilePL=[]
+=== 2. BUG-NER-FP: OSOBA_DENYLIST / końcówki przymiotnikowe
+  Kont0          Desktop filtr: zachowane   w OSOBA_DENYLIST Mobile: False
+  KONTROLNA      Desktop filtr: ODRZUCONE   w OSOBA_DENYLIST Mobile: False
+  Encje          Desktop filtr: ODRZUCONE   w OSOBA_DENYLIST Mobile: False
+  Kowalskiego    Desktop filtr: ODRZUCONE   w OSOBA_DENYLIST Mobile: False
+  Wiśniewskiej   Desktop filtr: ODRZUCONE   w OSOBA_DENYLIST Mobile: False
+  Bartłomiej     Desktop filtr: ODRZUCONE   w OSOBA_DENYLIST Mobile: False
+  Maciej         Desktop filtr: ODRZUCONE   w OSOBA_DENYLIST Mobile: False
+  Zapłata        Desktop filtr: zachowane   w OSOBA_DENYLIST Mobile: True
+  Osoba          Desktop filtr: zachowane   w OSOBA_DENYLIST Mobile: True
+=== 2b. powód odrzucenia (Desktop ner_layer._filter_institutions)
+  Kowalskiego   ['exact', 'prefix:kowalski', 'końcówka przymiotnikowa']
+  Wiśniewskiej  ['prefix:wiśniews', 'końcówka przymiotnikowa']
+  Bartłomiej    ['prefix:bartłomi', 'końcówka przymiotnikowa']
+  Maciej        ['końcówka przymiotnikowa']
+  Kowalski      ['prefix:kowalski']
+  Nowakowej     ['końcówka przymiotnikowa']

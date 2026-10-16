@@ -79,6 +79,13 @@ def test_filtr_ner_nie_odrzuca_osob(name):
     assert _filter_institutions([_NER(name, "OSOBA", 0.9, 0, len(name))]), f"odrzucono OSOBA {name[:3]}***"
 
 
+@pytest.mark.xfail(strict=True, reason="BUG-NER-ADJ-FILTER: filtr końcówek przymiotnikowych odrzuca pojedyncze odmienione imiona/nazwiska (Mobile: słownik przed filtrem)")
+@pytest.mark.parametrize("name", ["Bartłomiej", "Maciej", "Nowakowej"])
+def test_filtr_ner_nie_odrzuca_odmienionych_imion(name):
+    from ner_layer import _filter_institutions
+    assert _filter_institutions([_NER(name, "OSOBA", 0.9, 0, len(name))]), f"odrzucono OSOBA {name[:3]}***"
+
+
 @pytest.mark.xfail(strict=True, reason="BUG-IBAN-RECEPTA: wzorzec 'Numer recepty' \\d{22}(?!\\d) w credentials łapie końcówkę IBAN, 'PL6110' zostaje jawne")
 @pytest.mark.parametrize("text", [
     "Przelew na konto: PL61 1090 1014 0000 0712 1981 2874.",
@@ -132,8 +139,11 @@ def test_dwie_osoby_dwa_tokeny():
     assert "Piotr Nowak" in r.reverse_map.values(), r.reverse_map
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-TOKEN-RE-SPEC: TOKEN_RE używa \\b, spec S2 wymaga (?!\\d)")
-@pytest.mark.parametrize("text,token", [("PL6110NUMER_001", "NUMER_001"), ("OSOBA_1001 przyszedł", "OSOBA_1001")])
+# Korekta 2026-10-16 (FINDING_2026-10_MOBILE_PORT): Mobile TOKEN_RE = \b(...)_(\d{3})(?!\d)
+# (PseudonymEngine.kt:89) — \b na początku zostaje, (?!\d) dotyczy końca. Tokeny 4-cyfrowe
+# i token przyklejony z przodu do cyfr/liter nie pasują także w Mobile, więc nie są tu testowane.
+@pytest.mark.xfail(strict=True, reason="BUG-TOKEN-RE-SPEC: koniec TOKEN_RE to \\b, spec S2/Mobile wymaga (?!\\d)")
+@pytest.mark.parametrize("text,token", [("Zobacz OSOBA_001x tutaj", "OSOBA_001"), ("NUMER_004Teresa", "NUMER_004")])
 def test_token_re_zgodny_z_spec(text, token):
     from anonymizer_init import TOKEN_SPAN_RE
     assert [m.group(0) for m in TOKEN_SPAN_RE.finditer(text)] == [token]
