@@ -1,0 +1,9 @@
+STATUS: PASS
+HEAD_SHA: 0c3680489fcb7a61243224c44d3c6646dc5f065a
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-T10-BUILD-TS/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-T10-BUILD-TS/round_01/implementation/header_capture.py
+  - tasks/LYNX-T10-BUILD-TS/round_01/implementation/naglowki_release_windows.jsonl
+  - tasks/LYNX-T10-BUILD-TS/round_01/implementation/npm_build_after.txt
+  - tasks/LYNX-T10-BUILD-TS/round_01/implementation/tsc_before.txt
