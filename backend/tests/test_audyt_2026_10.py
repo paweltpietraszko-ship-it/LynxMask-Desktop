@@ -90,6 +90,8 @@ def test_filtr_ner_nie_odrzuca_odmienionych_imion(name):
 @pytest.mark.parametrize("text,label", [
     ("Warszawie", "OSOBA"), ("KONTROLNA", "OSOBA"), ("Piątek", "OSOBA"), ("Encje", "OSOBA"),
     ("Warszawa", "FIRMA"), ("ZUS", "FIRMA"), ("Sąd Rejonowy w Krakowie", "FIRMA"),
+    # r2: FP z benchmarku r1 — wielowyrazowe instytucje bez imienia/nazwiska nadal łapie filtr prefiksów
+    ("Samorządowego Kolegium Odwoławczego", "FIRMA"), ("Komornik Sądowy'", "FIRMA"),
 ])
 def test_filtr_ner_nadal_odrzuca_nie_osoby(text, label):
     from ner_layer import _filter_institutions

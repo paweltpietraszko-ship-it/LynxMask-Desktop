@@ -244,11 +244,17 @@ def _is_person_word(word: str) -> bool:
 
 
 def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
-    """Filtr prefiksów geo tylko dla encji jednowyrazowych. Bez Morfeusza nie odrzuca
-    nierozstrzygniętej OSOBA (wolimy fałszywy alarm niż wyciek — S1/S3)."""
-    if " " in entity_text or name_lower[:8] not in _NER_BLOCKLIST_PREFIXES:
+    """Filtr prefiksów geo. Encja wielowyrazowa z imieniem/nazwiskiem (OSOBA: dowolne słowo,
+    FIRMA: pierwsze — „Kowalski i Partnerzy”) go omija; „Samorządowego Kolegium…” nie.
+    Bez Morfeusza nie odrzuca nierozstrzygniętej OSOBA (wolimy fałszywy alarm niż wyciek — S1/S3)."""
+    if name_lower[:8] not in _NER_BLOCKLIST_PREFIXES:
         return False
-    return not (label == "OSOBA" and _get_morfeusz() is None)
+    if label == "OSOBA" and _get_morfeusz() is None:
+        return False
+    words = entity_text.split()
+    if len(words) > 1:
+        return not any(_is_person_word(w) for w in (words if label == "OSOBA" else words[:1]))
+    return True
 
 
 def _filter_institutions(ner_results: list) -> list:
