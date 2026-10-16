@@ -1,0 +1,28 @@
+PRECHECK BRIEFU — LYNX-T01-NER-PREFIX
+Data: 2026-10-16
+Exact SHA: 851bc26607bd8615afac7cc94ae6df8e31f8c91d
+Wynik: PASS PREIMPLEMENTATION
+Etap: brief bez implementacji. Nie jest to PASS kodu ani potwierdzenie szczelności.
+
+PRODUCT_TRUTH: arch/spec.md S1, S3, S4; S2 pozostaje bez zmian.
+Materiały pomocnicze: brief na wskazanym SHA; FINDING_2026-10_AUDYT
+(BUG-NER-PREFIX-FILTER); FINDING_2026-10_MOBILE_PORT (§1 pkt 1,
+BUG-NER-ADJ-FILTER). Raporty implementera nie stanowią werdyktu.
+
+Ocena:
+- Cel to naprawa odrzucania już wykrytej OSOBA, bez nowego trybu produktu.
+- Kontrakt wskazuje reproduktory prefiksu i końcówek przymiotnikowych,
+  ochronę słów pospolitych/adresów/instytucji oraz zachowanie S3/S4.
+- Istniejący owner: ner_layer._filter_institutions i ner_blocklist.
+  Punktowy odczyt na exact SHA potwierdza wskazane filtry.
+- SOURCE/NECESSITY: S1 — zachować wykrytą osobę do maskowania;
+  S3/S4 — zachować blokadę i Guard. Wystarczą istniejące filtry i dane,
+  bez nowego NER, pipeline, seedowania profilu lub dodatkowego walidatora.
+- Benchmark jest wymaganiem briefu na etap implementacji/dostawy;
+  wyniki prototypu nie są progiem akceptacji. Znane faile innych ownerów
+  nie blokują Tasku.
+
+Warstwy audytu: kontrakt + punktowy odczyt istniejącego ownera.
+Zgodnie z BRIEF_ONLY_PRECHECK: bez analizy diffu, testów, reproduktorów,
+where.py i benchmarku. WHERE_MAP obowiązuje przy dostawie.
+Brak blokujących braków kontraktu; implementacja może ruszyć w tym zakresie.

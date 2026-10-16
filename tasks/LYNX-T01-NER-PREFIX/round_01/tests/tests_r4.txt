@@ -1,0 +1,28 @@
+ZAMKNIĘCIE AUDYTU — LYNX-T01-NER-PREFIX r2
+Data: 2026-10-16
+Exact SHA implementacji: b5a190e887cb954dbfdb9ef258e1c0db6d017675
+Wynik: PASS wyłącznie dla tego SHA i zakresu briefu T01.
+Dowody techniczne: tests_r3.txt i tests_r3_repro.py, commit 559cf50.
+
+OWNER_ACCEPTED w tej rozmowie, dosłownie:
+"Akceptuję 9,5:1 — zamknij PASS".
+Decyzja zamyka ostatni formalny punkt RATIO 105/11 = 9.5:1.
+Nie zmieniono kodu produktu; nie powtarzano testów po samej decyzji.
+
+Zachowane wyniki: 24/24 testów celowanych; niezależny reproduktor,
+pion pipeline->Guard i wymuszone awarie NER/Guard zielone.
+Niezależny benchmark na stałych 50 syntetycznych obrazach, wspólnym
+cache OCR i zweryfikowanym hash GT: OSOBA 41/54->54/54, FP 164->164,
+krytyczne wycieki 0/107->0/107. Poprzedni PARTIAL zamknięty.
+
+Doprecyzowanie chronologii współdzielonego checkoutu: na początku
+tests_r3_repro.py sprawdzono exact SHA, po czym załadowano kod i wykonano
+zachowany reproduktor. Podczas OCR checkout zmieniono na aad0504
+(kod backend/audyt identyczny), a następnie na main. Porównanie pipeline
+wykorzystało już załadowane moduły BEFORE/r2, nie ponowne importy plików
+z main. Wyniki dotyczą badanego kodu w procesie audytu. Raport i skrypt
+ostatecznie opublikowano na gałęzi Tasku jako 559cf50.
+
+PASS nie oznacza globalnej szczelności programu. Znane GEO-EXACT,
+granice firm spaCy, T02/T03, UI oraz inne zbiory pozostają poza zakresem.
+Brak merge; raport i status publikowane na GitHub.
