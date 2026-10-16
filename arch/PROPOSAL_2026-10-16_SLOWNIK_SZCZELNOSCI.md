@@ -75,3 +75,36 @@ Morfeusz 2 (już zależność) daje kwalifikatory `imię` / `nazwisko` / `nazwa_
 - Dopisywanie czegokolwiek do `ner_blocklist.py` w tym zadaniu.
 - Zmiana formatu tokenu / TOKEN_RE (S2, osobno LYNX-T08).
 - Import słownika do profilu użytkownika (wykluczone przez D3).
+
+## 6. Rozszerzenie 2026-10-16: pomiar stanu silnika (propozycja CC, OWNER: „dopisz”)
+
+Kontekst: OWNER nie przetestuje ręcznie tylu dokumentów, ile przerobi pomiar automatyczny; obecny benchmark
+(`benchmark.py`/`generator.py`) jest użyteczny jako regresja przed/po (T01: wykrył nowe FP, których nie złapały testy),
+ale jego liczby bezwzględne nie opisują silnika (`LynxMask/docs/BRIEF_Wlasciciel_Benchmark_v2.md`, 2026-06-22:
+OCR zmieszany z silnikiem; generator z tych samych list co słownik; KWOTA i warianty OCR liczone jako FP;
+klucze GT spoza mapowania — np. `autor` — liczone jako FP). Propozycja: test szczelności z §1–4 jako część
+jednego pomiaru o trzech osobnych warstwach, bez jednej zbiorczej liczby.
+
+**M1. Szczelność silnika na czystym tekście (bez OCR).** Szablony zdań z realnych rodzajów pism (pismo urzędowe,
+faktura, umowa, pytanie koordynatora) × encje z danych ROZŁĄCZNYCH ze słownikiem silnika (np. Mobile
+`surnames_extended.json`, imiona spoza `names_inflected.json`) × generowane warianty: 7 przypadków, formy żeńskie
+i odmężowskie, CAPS, brak polskich znaków, inicjały, nazwiska dwuczłonowe, tytuł przed nazwiskiem („mec.”, „Pan”,
+„dr”), nazwisko w dopełniaczu po rzeczowniku („wniosek Kowalskiego”), sąsiedztwo tokenu i interpunkcji.
+Wynik: macierz wycieków (forma jawna w wyniku) wariant × kategoria (OSOBA, FIRMA, ADRES, PESEL/NIP/IBAN, telefon,
+e-mail), z przykładami. Odpowiada na pytanie „co przecieka”, a nie „ile procent”. Wzorzec: `holdout_measure.py` z T01.
+
+**M2. Zbiór bez PII (fałszywe trafienia wprost).** Zdania, w których nie ma żadnej danej osobowej, ale są pułapki:
+ulice patronimiczne, instytucje (sądy, SKO, urzędy), nazwiska będące słowami pospolitymi („w piątek”, „zapłata”),
+miasta poza adresem (kierunek D1), nagłówki CAPS, akronimy, kwoty, daty. Każdy token = FP, bez dopasowywania do GT.
+
+**M3. Wierność tekstu.** Zamaskuj → Przywróć → porównanie z oryginałem: ile znaków zmieniło się POZA spanami tokenów
+(sklejanie spacji, OCR-normalizacja słów — BUG-GLOBAL-SPACE-GLUE, BUG-OCR-NORMALIZER-WORDS, BUG-UNMASK-FIDELITY;
+audyt: dziś 0/7 dokumentów wraca 1:1).
+
+**Wymagania:** deterministyczny (ziarno), uruchamiany jednym poleceniem, bez backendu HTTP i bez profilu użytkownika
+(profil tymczasowy), wynik z SHA silnika i datą (artefakt RODO z §4 pkt 6); porównanie przed/po dla każdego Tasku
+silnika. OCR oceniany osobno jako bramka przyjęcia dokumentu (zgodnie z briefem z 22.06), nie mieszany z M1–M3.
+
+**Ograniczenie (świadome):** pomiar nie wykryje klas błędów, których nikt nie przewidział w wariantach
+(„dokument #101”, `LynxMask/MASTER_LynxMask_Mobile.md` §7) — okresowy przegląd realnych dokumentów pozostaje
+uzupełnieniem, nie główną metodą. Kandydaci na słownik programu (§1–4) wynikają z M1, akceptowani tylko po M2.
