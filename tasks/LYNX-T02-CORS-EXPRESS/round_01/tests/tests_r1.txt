@@ -1,0 +1,40 @@
+PRECHECK BRIEFU — LYNX-T02-CORS-EXPRESS
+Data: 2026-10-16
+Exact SHA: c14c71028b0b3fc3ff8682db2729fa65f86b2865
+Wynik: ZAMKNIĘTA LISTA BRAKÓW KONTRAKTU (2); do Architekta.
+Etap: brief bez implementacji. Bez werdyktu PASS/FAIL kodu.
+
+PRODUCT_TRUTH: arch/spec.md S1, S5, S6; kontrakt T02.
+S2, pipeline Express i pytanie o osoby bez słownika pozostają poza oceną.
+
+1. Niespójna dodatnia ścieżka Express i TASK_SCOPE.
+TRACE: brief wymaga działającego uprawnionego Express, token ogranicza
+do /preview-express, a UI pozostawia poza zakresem.
+Na exact SHA App.tsx pobiera /express/token i przekazuje expressToken
+do MainLayout jako apiToken. MainLayout renderuje ScreenContent,
+a ten Pseudonimizuj; Pseudonimizuj.handleFile wysyła POST /preview
+z X-Api-Token. Ograniczenie uprawnień według briefu da tej ścieżce 401.
+Osobny ExpressModeScreen wysyła /preview-express, lecz MainLayout
+go nie renderuje; samo istnienie pliku nie dowodzi połączenia UI.
+Uzupełnienie: wskazać rzeczywistą ścieżkę użytkownika i uzgodnić zakres
+niezbędnego szwu UI/API z wymaganiem działającego Express.
+Nie rozszerzać po cichu uprawnień tokenu ani nie usuwać testu dodatniego.
+
+2. Brak konkretnej listy dozwolonych Originów / warunków jej weryfikacji.
+Brief sam wymaga sprawdzenia Origin przed wyborem listy.
+tauri.conf.json i vite.config.ts wskazują devUrl http://localhost:1420;
+nie jest to dowód nagłówka Origin z wydania aplikacji Windows.
+Uzupełnienie: podać obsługiwane środowiska i dozwolone Originy,
+rozstrzygnąć żądania bez Origin oraz wskazać dowód dla wydania Tauri.
+Nie dopuszczać ogólnego null ani wildcard jako zastępstwa dowodu.
+Rzeczywisty nagłówek wydania: NOT_CHECKED (statyczny precheck).
+
+Istniejący owner uwierzytelniania/CORS jest właściwy.
+SOURCE/NECESSITY: S1/S5/S6 — ograniczyć dostęp do danych w obecnym
+middleware; nie potrzeba nowego systemu sesji/proxy ani walidacji pipeline.
+
+Warstwy audytu: kontrakt + punktowy odczyt łańcucha UI/API i konfiguracji
+na exact SHA. Bez analizy diffu, uruchamiania aplikacji, testów,
+reproduktorów i where.py (BRIEF_ONLY_PRECHECK).
+To braki briefu, nie odtworzone defekty dostawy ani nowe decyzje OWNERA.
+Po jednej korekcie ponownie sprawdzić wyłącznie powyższe dwa punkty.
