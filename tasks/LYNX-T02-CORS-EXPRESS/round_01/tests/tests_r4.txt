@@ -1,0 +1,66 @@
+AUDYT IMPLEMENTACJI r1 — LYNX-T02-CORS-EXPRESS
+Data: 2026-10-16
+Exact SHA: dc498366368b0b4d4767a61e6c6d56c939630713
+BEFORE: 286b9648a6f48d1c524be6fda4bb3b804457c66b
+Dostawa/gate: f1d9ce7
+Wynik: PARTIAL — sprawdzony backend PASS; końcowy PASS/merge czeka na
+wymagany kontraktem pomiar Origin/Host z wydania Windows po T10-BUILD-TS.
+Brak nowego findingu spełniającego DEFECT_GATE dla FAIL.
+
+PRODUCT_TRUTH: brief T02, spec S1/S5/S6. S2 i pipeline/Guard bez zmian.
+OWNER_CONFIRMED: Host, Origin i uprawnienia dokładnie według briefu.
+TECHNICAL_ONLY: zmiana istniejącego middleware, bez nowego ownera/sesji.
+Nie wprowadzono nowego zachowania wymagającego wyjaśnienia OWNEROWI.
+
+ZAKRES I WARSTWY
+- Wąski diff BEFORE->exact SHA: pseudominizer_api.py i test_audyt_2026_10.py;
+  kod API 11 dodanych/16 usuniętych linii; testy 54/7. Bez zmian UI.
+- Odczyt dostawy oraz gate CC: STATUS PASS (dowód pomocniczy).
+- where.py _require_api_token: 4 surowe trafienia. Dekorator middleware
+  rejestruje ownera dla rzeczywistego ASGI app; tekst w mapie architektury
+  nie jest dodatkowym wywołaniem. Middleware testowano przez TestClient.
+- Izolowany checkout exact SHA; stan API/profil/Guard/archiwum tymczasowy.
+  Bez lifespanu, bez odczytu danych realnych i bez startu serwera użytkownika.
+
+TESTY CELOWANE
+cd backend
+py -3 -m pytest tests/test_audyt_2026_10.py -q -o log_file=NUL
+  -k "express_token or cors or pusty_token or maskowanie_przechodzi_auth
+      or obcy_host or lokalny_host"
+Wynik: 16 passed, 23 deselected, 13.54 s.
+Ostrzeżenia zależności/legacy docstringów, bez awarii testów.
+
+NIEZALEŻNY REPRODUKTOR / MACIERZ / PION
+tests_r4_repro.py (z korzenia repo, py -3 <ścieżka skryptu>):
+88 sprawdzeń HTTP — PASS.
+- Hosty lokalne i błędne, zła domena/port/brak portu/brak Host;
+  kontrola działa także na publicznym tokenie i z pełnym tokenem.
+- Token pusty/błędny/Express na odczycie, zapisie, usuwaniu i eksporcie
+  profilu/archiwum; alternatywne metody i kodowana ścieżka.
+- Pełny token działa na rzeczywistych /version i /archive.
+- Dozwolone Originy, niedozwolona domena/schemat/port/null;
+  preflight i brak Origin, bez nieuprawnionych nagłówków CORS.
+- Pion: rzeczywiste POST /preview i /preview-express z tokenami pełnym
+  i Express zwracają 200 oraz maskują syntetyczny e-mail. Nie wystarczało
+  samo przejście auth: sprawdzono zawartość anonymized_preview.
+- Oba tokeny serwera puste: prywatne endpointy zwracają 401.
+
+KLASYFIKACJA ZGŁOSZONYCH 7 FAILI ARCHIWUM
+Na dokładnym SHA odtworzono TestClient(app) -> 400 (Host testserver),
+oraz dozwolony Host bez tokenu -> 401. Takie żądania mają być odrzucane.
+Następnie WYŁĄCZNIE w pamięci audytu podano TestClient poprawny base_url
+i pełny syntetyczny token, bez edycji pliku testów ani kodu produktu.
+Oryginalne 7 przypadków (D1, D5, D6, D8, D8b, D10, D12) -> 7/7 PASS
+na tymczasowym archiwum.
+Wniosek: nieaktualne przygotowanie klienta testowego względem kontraktu
+T02, nie regresja endpointów archiwum. Przypisanie poprawki fixture do
+T02 lub T12 pozostaje organizacją zakresu przez Architekta; nie blokuje
+wyniku technicznego i nie wymaga osłabienia auth/Host.
+
+POZOSTAŁY WARUNEK
+Rzeczywiste Origin i Host z uruchomionego Windows release: NOT_CHECKED.
+Brief jawnie wymaga pomiaru po osobnym T10-BUILD-TS; dokumentacja Tauri,
+symulowany nagłówek ani TestClient nie zastępują tego dowodu.
+Po T10 domknąć tę warstwę; nie powtarzać powyższych testów bez nowej
+zmiany kodu lub ujawnionej sprzeczności. Nie wykonano pełnej suity,
+benchmarku ani prac nad T10/UI. Bez merge.
