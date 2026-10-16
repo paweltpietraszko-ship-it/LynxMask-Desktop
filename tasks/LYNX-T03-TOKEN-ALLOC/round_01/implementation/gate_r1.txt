@@ -1,0 +1,26 @@
+STATUS: PASS
+HEAD_SHA: 51ff9760bb71265026d212956ccff0ffac442429
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\trace_layers.py
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - backend\layers\address.py
+  - backend\layers\amount.py
+  - backend\layers\contact.py
+  - backend\layers\credentials.py
+  - backend\layers\fallback.py
+  - backend\layers\financial.py
+  - backend\layers\identity.py
+  - backend\layers\institution.py
+  - backend\layers\legal.py
+  - backend\layers\numeric.py
+  - backend\layers\ocr_normalizer.py
+  - backend\layers\validation.py
+  - backend\layers\verbal_amount_layer.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_pipeline_v2.py
+  - backend\tests\test_pseudominizer.py
+EXCLUDED_ARTIFACTS: NONE
