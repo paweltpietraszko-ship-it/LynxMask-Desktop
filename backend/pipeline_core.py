@@ -52,22 +52,27 @@ class TokenAllocator:
         """
         if self.is_occupied(start, end, overlap="partial"):
             return None
-
-        canon = _canonical(value)
-        key = (canon, token_type)
-
-        if key in self._canonical_to_token:
-            existing = self._canonical_to_token[key]
-            self._spans.append((start, end, existing))
-            return existing
-
-        self._counters[token_type] = self._counters.get(token_type, 0) + 1
-        tid = f"{token_type}_{self._counters[token_type]:03d}"
-
-        self._reverse[tid] = value
-        self._canonical_to_token[key] = tid
+        tid = self.assign(token_type, value)
         self._spans.append((start, end, tid))
         return tid
+
+    def assign(self, token_type: str, value: str) -> str:
+        """[LYNX-T03] Token dla wartości bez sprawdzania spanu (NER sam zamienia tekst).
+        Dedup po canonical value; nowy numer zawsze powyżej rezerwacji (profil, wcześniejsze warstwy)."""
+        key = (_canonical(value), token_type)
+        if key in self._canonical_to_token:
+            return self._canonical_to_token[key]
+        self._counters[token_type] = self._counters.get(token_type, 0) + 1
+        tid = f"{token_type}_{self._counters[token_type]:03d}"
+        self._reverse[tid] = value
+        self._canonical_to_token[key] = tid
+        return tid
+
+    def reserve(self, token_id: str) -> None:
+        """[LYNX-T03] Rezerwuje numer (np. encji profilu nieobecnej w dokumencie) — bez wartości i spanu."""
+        token_type, _, num = token_id.rpartition("_")
+        if token_type and num.isdigit():
+            self._counters[token_type] = max(self._counters.get(token_type, 0), int(num))
 
     def register(
         self, token_id: str, value: str, start: int, end: int
@@ -76,6 +81,10 @@ class TokenAllocator:
         Rejestruje istniejący token (z trie lub NER adaptera).
         Podnosi podłogę licznika — przyszłe allocate() nie kolidują numerycznie.
         """
+        # [LYNX-T03] Jeden token = jedna wartość. Konflikt → wyjątek → pipeline blokuje wynik (S3, WYS-2).
+        existing = self._reverse.get(token_id)
+        if existing is not None and _canonical(existing) != _canonical(value):
+            raise ValueError(f"[TOKEN-COLLISION] {token_id} wskazuje już inną wartość")
         parts = token_id.rsplit("_", 1)
         if len(parts) == 2:
             token_type, num_str = parts

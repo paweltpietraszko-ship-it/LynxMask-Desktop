@@ -129,14 +129,53 @@ def test_allowlist_nie_wylacza_innych_naruszen():
 
 # ── Integralność tokenów / przywracanie ───────────────────────────────────────
 
+# BUG-TOKEN-COLLISION — naprawione w LYNX-T03 (xfail zdjęty).
 @needs_spacy
-@pytest.mark.xfail(strict=True, reason="BUG-TOKEN-COLLISION: NER nadaje numery niezależnie od alokatora; dwie osoby dostają ten sam token")
 def test_dwie_osoby_dwa_tokeny():
     from pipeline import pseudonymize_document
     st = _fresh_state(with_ner=True)
     st.anon_map.add_entity("Jan Kowalski", "OSOBA")
     r = pseudonymize_document("Pacjent Jan Kowalski był w szpitalu. Dłużnik Piotr Nowak mieszka w Radomiu.", st)
     assert "Piotr Nowak" in r.reverse_map.values(), r.reverse_map
+
+
+# LYNX-T03: numer z profilu nigdy nie trafia do innej osoby — także w dokumencie bez tej osoby.
+@needs_spacy
+def test_token_profilu_zarezerwowany_miedzy_dokumentami():
+    from pipeline import pseudonymize_document
+    st = _fresh_state(with_ner=True)
+    jan = st.anon_map.add_entity("Jan Kowalski", "OSOBA")
+    r1 = pseudonymize_document("Dłużnik Piotr Nowak mieszka w Radomiu.", st)
+    piotr = [t for t, v in r1.reverse_map.items() if v == "Piotr Nowak"]
+    assert piotr and piotr[0] != jan, r1.reverse_map
+    assert jan not in r1.reverse_map, "encja profilu nieobecna w dokumencie nie może trafić do jego mapy"
+    r2 = pseudonymize_document("Pacjent Jan Kowalski był w szpitalu.", st)
+    assert r2.reverse_map.get(jan) == "Jan Kowalski", r2.reverse_map
+
+
+# LYNX-T03: dwie formy osoby z profilu → ten sam token profilu, bez drugiego tokenu dla niej.
+@needs_spacy
+def test_formy_osoby_z_profilu_jeden_token():
+    from pipeline import pseudonymize_document
+    st = _fresh_state(with_ner=True)
+    jan = st.anon_map.add_entity("Jan Kowalski", "OSOBA")
+    r = pseudonymize_document("Pacjent Jan Kowalski był w szpitalu. Wniosek Jana Kowalskiego odrzucono.", st)
+    assert "Kowalsk" not in r.text, r.text
+    jana = [t for t, v in r.reverse_map.items() if "Kowalsk" in v]
+    assert jana == [jan], r.reverse_map
+
+
+# LYNX-T03: alokator — jeden token = jedna wartość; konflikt zatrzymuje pipeline (fail-closed przez WYS-2).
+def test_alokator_odrzuca_drugą_wartosc_dla_tego_samego_tokenu():
+    from pipeline_core import TokenAllocator
+    a = TokenAllocator()
+    a.register("OSOBA_001", "Jan Kowalski", 0, 12)
+    a.register("OSOBA_001", "Jan  Kowalski", 20, 33)  # ta sama wartość kanoniczna — OK
+    with pytest.raises(ValueError):
+        a.register("OSOBA_001", "Piotr Nowak", 40, 51)
+    a.reserve("OSOBA_007")
+    assert a.assign("OSOBA", "Piotr Nowak") == "OSOBA_008"
+    assert a.assign("OSOBA", "Piotr  Nowak") == "OSOBA_008"
 
 
 # Korekta 2026-10-16 (FINDING_2026-10_MOBILE_PORT): Mobile TOKEN_RE = \b(...)_(\d{3})(?!\d)

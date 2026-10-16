@@ -25,6 +25,11 @@ def apply_trie_layer(state: PipelineState, anonymizer: Anonymizer) -> None:
     if anonymizer is None:
         return
 
+    # [LYNX-T03] Rezerwacja numerów CAŁEGO profilu (także encji nieobecnych w dokumencie):
+    # token profilu nigdy nie wskaże innej osoby. Tylko liczniki — bez wartości w mapie dokumentu.
+    for tok_id in getattr(getattr(anonymizer, "anon_map", None), "data", {}).get("entities", {}):
+        state.allocator.reserve(tok_id)
+
     # Zaseeduj liczniki typów już obecnych w allocatorze
     seed: dict[str, str] = {}
     for tok_id in state.allocator.reverse_map:
