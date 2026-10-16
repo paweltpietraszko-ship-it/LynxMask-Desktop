@@ -228,10 +228,12 @@ def _get_morfeusz():
     return _morfeusz or None
 
 
-def _is_person_word(word: str) -> bool:
-    """Słowo z wielkiej litery, które jest formą imienia/nazwiska, a nie miejscowością ani słowem pospolitym."""
+def _is_person_word(word: str, strict: bool = True) -> bool:
+    """Słowo z wielkiej litery będące formą imienia/nazwiska. strict: dodatkowo nie miejscowość ani
+    słowo pospolite (jednowyrazowe encje, FIRMA). strict=False: w wielowyrazowej OSOBIE wystarczy
+    imię/nazwisko — „Karolina”, „Aleksandra”, „Zając” są też nazwami geo, a i tak wskazują osobę."""
     low = word.lower()
-    if not word[:1].isupper() or low in _GEO_WORDS:
+    if not word[:1].isupper() or (strict and low in _GEO_WORDS):
         return False
     if low in _PERSON_FORMS:
         return True
@@ -240,7 +242,7 @@ def _is_person_word(word: str) -> bool:
         return False
     # Kwalifikatory z doprecyzowaniem, np. "nazwisko_(odmężowskie)" → "nazwisko"
     quals = {q.split("_(")[0] for interp in morf.analyse(word) for q in interp[2][3]}
-    return bool(quals & _PERSON_QUALS) and not (quals & _NOT_PERSON_QUALS)
+    return bool(quals & _PERSON_QUALS) and not (strict and quals & _NOT_PERSON_QUALS)
 
 
 def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
@@ -253,7 +255,9 @@ def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
         return False
     words = entity_text.split()
     if len(words) > 1:
-        return not any(_is_person_word(w) for w in (words if label == "OSOBA" else words[:1]))
+        if label == "OSOBA":
+            return not any(_is_person_word(w, strict=False) for w in words)
+        return not _is_person_word(words[0])
     return True
 
 

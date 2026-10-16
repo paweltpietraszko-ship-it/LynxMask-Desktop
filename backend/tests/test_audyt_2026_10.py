@@ -73,7 +73,9 @@ def test_seed_profile_zasila_trie():
 # ── Wycieki PII ───────────────────────────────────────────────────────────────
 
 # BUG-NER-PREFIX-FILTER — naprawione w LYNX-T01 (xfail zdjęty).
-@pytest.mark.parametrize("name", ["Katarzyna Wiśniewska", "Kowalski", "Wiśniewski", "Aleksandra Kwiatkowska"])
+@pytest.mark.parametrize("name", ["Katarzyna Wiśniewska", "Kowalski", "Wiśniewski", "Aleksandra Kwiatkowska",
+                                  # r2: imię/nazwisko będące też nazwą miejscowości (benchmark 27.06, lvl0/1)
+                                  "Aleksandra Piotrowska", "Karolina Kozłowska", "Karolina Zając"])
 def test_filtr_ner_nie_odrzuca_osob(name):
     from ner_layer import _filter_institutions
     assert _filter_institutions([_NER(name, "OSOBA", 0.9, 0, len(name))]), f"odrzucono OSOBA {name[:3]}***"
