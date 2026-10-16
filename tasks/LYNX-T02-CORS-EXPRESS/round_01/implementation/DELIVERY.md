@@ -39,3 +39,10 @@ nie regresja produktu. Plik nie jest w TASK_SCOPE — **nie zmieniono go**. Mini
 dopisanie do TASK_SCOPE T02 albo w LYNX-T12-TEST-ISOLATION): `TestClient(app, base_url="http://127.0.0.1:8765")` +
 nagłówek `X-Api-Token` z podstawionym `_API_TOKEN` (jak fixture `api_client`). Uwaga z audytu: te testy piszą też do
 produkcyjnego `backend/archive/` — temat T12.
+
+## Exact SHA i bramka
+
+- Implementacja: `f49f861` (pierwsza wersja) → **`dc498366368b0b4d4767a61e6c6d56c939630713`** (końcowa). Pierwsza wersja
+  powiększała `pseudominizer_api.py` (1128 → 1139) — `gate.py` FAIL `SIZE_FILE` (reguła „nie pogarszaj”); w końcowej
+  blok CORS/Host zagęszczony i docstring `/express/token` zaktualizowany (opisywał token bez ograniczeń) → plik 1123 linie.
+- `gate.py` na `dc49836` (dosłownie): `STATUS: PASS` (`gate_r1.txt`). Suita jak w tabeli wyżej (10 failed = 3 znane + 7 archiwum).
