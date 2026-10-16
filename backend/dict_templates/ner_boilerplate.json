@@ -1,0 +1,68 @@
+{
+  "_schema": "lynxmask-ner-blocklist-import v1",
+  "_purpose": "Słowa dokumentu — NIE maskować. Claude merguje do ner_blocklist.py (_NER_BLOCKLIST)",
+  "_warning": "NIE importować do mapa.json / profilu biura — to anty-słownik dla NER",
+  "_format": "words = małe litery, bez ogonków jeśli OCR tak czyta; min. 4 znaki dla Guard",
+  "groups": {
+    "etykiety_faktury_umowy": [
+      "platnosc",
+      "platnosci",
+      "platnosc gotowka",
+      "nabywca",
+      "sprzedawca",
+      "wierzyciel",
+      "dluznik",
+      "dluznika",
+      "zleceniodawca",
+      "zleceniobiorca",
+      "zamawiajacy",
+      "wykonawca",
+      "faktura",
+      "fakturavvat",
+      "odebral",
+      "odebrala",
+      "doreczone",
+      "doreczono",
+      "wplate",
+      "wplata",
+      "wpłata",
+      "wpłatę"
+    ],
+    "pisma_urzedowe_komornicze": [
+      "orzekam",
+      "pouczenie",
+      "pouczam",
+      "nakazuje",
+      "uchylam",
+      "oddalam",
+      "wezwanie",
+      "nakaz zaplaty",
+      "komornik sa dowy",
+      "dluznik",
+      "wierzyciel"
+    ],
+    "naglowki_sekcji": [
+      "podpis",
+      "podpisi",
+      "podnisi",
+      "poucze",
+      "oswiadczenia",
+      "zalacznik",
+      "zalaczniki"
+    ],
+    "ocr_smieci_fp": [
+      "fakturavvat",
+      "platnosc",
+      "meditech",
+      "odebrał"
+    ]
+  },
+  "entries_custom": [
+    {
+      "_example": true,
+      "word": "twoje_slowo_z_dokumentu",
+      "source": "ręczny test — dopisz formę bez ogonków",
+      "seen_as_token": "OSOBA_006"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# guard.py hashuje bajty arch/spec.md — ten sam plik musi mieć identyczne końce linii na Windows i Linux
+arch/** text eol=lf

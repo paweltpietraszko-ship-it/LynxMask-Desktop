@@ -1,0 +1,35 @@
+{
+  "_schema": "lynxmask-dict-import v1",
+  "_purpose": "Szpitale, przychodnie, NZOZ, uczelnie medyczne — type zwykle FIRMA",
+  "_allowed_types": ["FIRMA", "ADRES"],
+  "_notes": {
+    "FIRMA": "Pełna nazwa placówki z 'Szpital', 'Przychodnia', 'NZOZ', 'im.' itd.",
+    "ADRES": "Gdy sama nazwa własna placówki bez formy prawnej (rzadko)"
+  },
+  "entries": [
+    {
+      "_example": true,
+      "value": "Szpital Specjalistyczny im. sw. Jana Pawla II w Tarnowie",
+      "type": "FIRMA",
+      "forms": [
+        "Szpital Specjalistyczny im. św. Jana Pawła II w Tarnowie",
+        "Szpital Specjalistyczny im. Jana Pawla II w Tarnowie"
+      ],
+      "source": "doc_lvl3_faktura — nabywca"
+    },
+    {
+      "_example": true,
+      "value": "NZOZ Przychodnia Rejonowa w Example",
+      "type": "FIRMA",
+      "forms": [],
+      "source": "szablon — usuń"
+    },
+    {
+      "_example": true,
+      "value": "Uniwersytet Medyczny im. Example w Example",
+      "type": "FIRMA",
+      "forms": [],
+      "source": "szablon — usuń"
+    }
+  ]
+}

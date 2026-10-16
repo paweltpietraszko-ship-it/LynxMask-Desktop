@@ -1,0 +1,8 @@
+# Port z Elnath Rota pyproject.toml [tool.ruff] — używane przez gate.py
+line-length = 600
+
+[lint]
+select = ["E", "F", "W"]
+
+[lint.per-file-ignores]
+"backend/tests/*" = ["E501"]

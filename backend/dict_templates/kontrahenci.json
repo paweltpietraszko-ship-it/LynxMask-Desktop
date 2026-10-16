@@ -1,0 +1,45 @@
+{
+  "_schema": "lynxmask-dict-import v1",
+  "_purpose": "Firmy, kontrahenci, wierzyciele — maskowanie przed NER (trie / profil biura)",
+  "_allowed_types": ["FIRMA", "OSOBA", "ADRES", "EMAIL"],
+  "_notes": {
+    "FIRMA": "Pełna nazwa spółki / JDG / fundacji — z formą prawną w środku lub na końcu",
+    "OSOBA": "Stały pełnomocnik, komornik, lekarz — tylko jeśli wraca w wielu sprawach",
+    "ADRES": "Cały adres siedziby gdy OCR go rozbija (ul. + kod + miasto osobno)",
+    "EMAIL": "Stałe adresy biura/kontrahenta poza regexem"
+  },
+  "entries": [
+    {
+      "_example": true,
+      "value": "MEDITECH SOLUTIONS SP Z O.O",
+      "type": "FIRMA",
+      "forms": [
+        "MEDITECH SOLUTIONS SP Z O.O",
+        "Meditech Solutions Sp. z o.o.",
+        "MEDITECH SOLUTIONS"
+      ],
+      "source": "doc_lvl3_faktura — miss benchmark"
+    },
+    {
+      "_example": true,
+      "value": "Example Kancelaria Prawna Nowak i Wspólnicy Sp. k.",
+      "type": "FIRMA",
+      "forms": [],
+      "source": "szablon — usuń"
+    },
+    {
+      "_example": true,
+      "value": "Jan Kowalski",
+      "type": "OSOBA",
+      "forms": ["Jana Kowalskiego", "Janem Kowalskim"],
+      "source": "szablon — usuń"
+    },
+    {
+      "_example": true,
+      "value": "ul. Przemyslowa 7/4, 32-500 Chrzanow",
+      "type": "ADRES",
+      "forms": ["ul. Przemysłowa 7/4, 32-500 Chrzanów"],
+      "source": "OCR bez ogonków — adres rozbity w dokumencie"
+    }
+  ]
+}
