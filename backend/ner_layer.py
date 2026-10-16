@@ -126,9 +126,11 @@ import re
 import logging
 
 from ner_blocklist import (
+    _GEO_WORDS,
     _LEGAL_SUFFIXES_LOWER,
     _NER_BLOCKLIST,
     _NER_BLOCKLIST_PREFIXES,
+    _PERSON_FORMS,
 )
 
 logger = logging.getLogger("pseudominizer.ner_layer")
@@ -207,6 +209,48 @@ _SUFFIX_COMPLETION_RE = re.compile(
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+# [LYNX-T01] Potwierdzenie osoby przed filtrami geo/prefiks/przymiotnik (port zasady
+# Mobile NameEngine.isAdjective: słownik imion/nazwisk sprawdzany przed odrzuceniem).
+_PERSON_QUALS = frozenset({"imię", "nazwisko"})
+_NOT_PERSON_QUALS = frozenset({"nazwa_pospolita", "nazwa_geograficzna"})
+_morfeusz = None  # None = nie próbowano, False = niedostępny (tryb degraded)
+
+
+def _get_morfeusz():
+    global _morfeusz
+    if _morfeusz is None:
+        try:
+            import morfeusz2
+            _morfeusz = morfeusz2.Morfeusz()
+        except Exception as exc:  # brak modułu / DLL — tylko słowniki
+            logger.warning("[NER] Morfeusz niedostępny (%s) — potwierdzanie osób tylko słownikiem", type(exc).__name__)
+            _morfeusz = False
+    return _morfeusz or None
+
+
+def _is_person_word(word: str) -> bool:
+    """Słowo z wielkiej litery, które jest formą imienia/nazwiska, a nie miejscowością ani słowem pospolitym."""
+    low = word.lower()
+    if not word[:1].isupper() or low in _GEO_WORDS:
+        return False
+    if low in _PERSON_FORMS:
+        return True
+    morf = _get_morfeusz()
+    if morf is None:
+        return False
+    # Kwalifikatory z doprecyzowaniem, np. "nazwisko_(odmężowskie)" → "nazwisko"
+    quals = {q.split("_(")[0] for interp in morf.analyse(word) for q in interp[2][3]}
+    return bool(quals & _PERSON_QUALS) and not (quals & _NOT_PERSON_QUALS)
+
+
+def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
+    """Filtr prefiksów geo tylko dla encji jednowyrazowych. Bez Morfeusza nie odrzuca
+    nierozstrzygniętej OSOBA (wolimy fałszywy alarm niż wyciek — S1/S3)."""
+    if " " in entity_text or name_lower[:8] not in _NER_BLOCKLIST_PREFIXES:
+        return False
+    return not (label == "OSOBA" and _get_morfeusz() is None)
+
+
 def _filter_institutions(ner_results: list) -> list:
     """Usuwa instytucje publiczne, słowa pospolite i tokeny PSE z wyników NER."""
     out = []
@@ -223,9 +267,6 @@ def _filter_institutions(ner_results: list) -> list:
         if name_lower in _NER_BLOCKLIST:
             logger.debug("[FILTER] pominięto (exact): '%s'", entity_text)
             continue
-        if name_lower[:8] in _NER_BLOCKLIST_PREFIXES:
-            logger.debug("[FILTER] pominięto (prefix): '%s'", entity_text)
-            continue
         # [FIX-NER-ADDR-PREFIX] Pomiń encje będące adresami (ul., os., gen. itp.)
         if _ADDR_PREFIX_RE.match(entity_text):
             logger.debug("[FILTER] pominięto adres jako encję: '%s'", entity_text[:40])
@@ -233,6 +274,12 @@ def _filter_institutions(ner_results: list) -> list:
         # [FIX-NER-COURTS] Pomiń sądy i trybunały — instytucje publiczne, nie firmy
         if _COURT_PREFIX_RE.match(entity_text):
             logger.debug("[FILTER] pominięto sąd/trybunał: '%s'", entity_text[:60])
+            continue
+        # [LYNX-T01] Jednowyrazowa OSOBA potwierdzona słownikiem/Morfeuszem — bez filtrów prefiks/przymiotnik
+        if ner.label == "OSOBA" and " " not in entity_text and _is_person_word(entity_text):
+            out.append(ner)
+            continue
+        if _prefix_rejects(ner.label, entity_text, name_lower):
             continue
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
@@ -242,17 +289,14 @@ def _filter_institutions(ner_results: list) -> list:
         if ner.label == "FIRMA" and _INSTITUTION_IN_FIRMA_RE.search(entity_text):
             logger.debug("[FILTER] pominięto FIRMA z instytucją: '%s'", entity_text[:60])
             continue
-        # [BUG-NER-FP] Pomiń jednowyrazowe encje OSOBA kończące się na końcówki przymiotnikowe.
-        # TYLKO jednowyrazowe — "Jana Kowalskiego" to dopełniacz osoby, nie przymiotnik.
-        # Wielowyrazowe: "Jan Kowalski", "Jana Kowalskiego" → zawsze OSOBA (fleksja).
+        # [BUG-NER-FP] Jednowyrazowa OSOBA z końcówką przymiotnikową (wielowyrazowe = fleksja osoby).
         if (ner.label == "OSOBA"
                 and " " not in entity_text.strip()
                 and _ADJECTIVE_ENDINGS_RE.search(entity_text)):
             logger.debug("[FILTER] pominięto przymiotnik jako OSOBA: '%s'", entity_text[:40])
             continue
 
-        # [BUG-NER-FP-GRANICE] Jednoslowna FIRMA będąca przymiotnikiem → pomiń.
-        # Wieloslowna nazwa "Firma Handlowa X" jest legalna — filtrujemy tylko jedno słowo.
+        # [BUG-NER-FP-GRANICE] Jednosłowna FIRMA-przymiotnik → pomiń (wielosłowna jest legalna).
         if (ner.label == "FIRMA" and " " not in entity_text.strip()
                 and _ADJECTIVE_ENDINGS_RE.search(entity_text)
                 and not _LEGAL_SUFFIX_RE.search(entity_text)):

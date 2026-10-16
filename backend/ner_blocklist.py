@@ -95,6 +95,23 @@ def _load_geo_words() -> set:
 
 _GEO_WORDS: set = _load_geo_words()
 
+
+def _load_person_forms() -> frozenset:
+    """[LYNX-T01] Wszystkie formy imion i nazwisk (lowercase) — potwierdzenie OSOBA przed filtrami geo."""
+    forms: set[str] = set()
+    for fname in ("names_inflected.json", "surnames_top1000.json"):
+        path = _os.path.join(_BACKEND_DIR, fname)
+        if not _os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            for base, variants in _json.load(f).items():
+                forms.add(base.lower())
+                forms.update(v.lower() for v in variants)
+    return frozenset(forms)
+
+
+_PERSON_FORMS: frozenset = _load_person_forms()
+
 # dowodem że to firma, nie osoba.
 _LEGAL_SUFFIXES: tuple = (
     "sp. z o.o.", "sp.z o.o.", "spółka z o.o.",

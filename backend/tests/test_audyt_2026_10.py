@@ -72,18 +72,37 @@ def test_seed_profile_zasila_trie():
 
 # ── Wycieki PII ───────────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="BUG-NER-PREFIX-FILTER: _NER_BLOCKLIST_PREFIXES (ulice/miejscowości) odrzuca osoby wykryte przez spaCy")
+# BUG-NER-PREFIX-FILTER — naprawione w LYNX-T01 (xfail zdjęty).
 @pytest.mark.parametrize("name", ["Katarzyna Wiśniewska", "Kowalski", "Wiśniewski", "Aleksandra Kwiatkowska"])
 def test_filtr_ner_nie_odrzuca_osob(name):
     from ner_layer import _filter_institutions
     assert _filter_institutions([_NER(name, "OSOBA", 0.9, 0, len(name))]), f"odrzucono OSOBA {name[:3]}***"
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-NER-ADJ-FILTER: filtr końcówek przymiotnikowych odrzuca pojedyncze odmienione imiona/nazwiska (Mobile: słownik przed filtrem)")
+# BUG-NER-ADJ-FILTER — naprawione w LYNX-T01 (xfail zdjęty).
 @pytest.mark.parametrize("name", ["Bartłomiej", "Maciej", "Nowakowej"])
 def test_filtr_ner_nie_odrzuca_odmienionych_imion(name):
     from ner_layer import _filter_institutions
     assert _filter_institutions([_NER(name, "OSOBA", 0.9, 0, len(name))]), f"odrzucono OSOBA {name[:3]}***"
+
+
+# LYNX-T01: potwierdzenie osoby nie może otworzyć drogi miejscowościom, przymiotnikom i słowom pospolitym.
+@pytest.mark.parametrize("text,label", [
+    ("Warszawie", "OSOBA"), ("KONTROLNA", "OSOBA"), ("Piątek", "OSOBA"), ("Encje", "OSOBA"),
+    ("Warszawa", "FIRMA"), ("ZUS", "FIRMA"), ("Sąd Rejonowy w Krakowie", "FIRMA"),
+])
+def test_filtr_ner_nadal_odrzuca_nie_osoby(text, label):
+    from ner_layer import _filter_institutions
+    assert not _filter_institutions([_NER(text, label, 0.9, 0, len(text))]), text
+
+
+# LYNX-T01 (tryb degraded): bez Morfeusza nierozstrzygnięta jednowyrazowa OSOBA nie ginie w filtrze prefiksów.
+def test_filtr_ner_bez_morfeusza_nie_odrzuca_osoby_prefiksem():
+    import ner_layer
+    with patch.object(ner_layer, "_morfeusz", False):
+        assert ner_layer._filter_institutions([_NER("Wiśniewska", "OSOBA", 0.9, 0, 10)])
+        # dokładna nazwa miejscowości nadal odrzucana (filtr exact, nie prefiks)
+        assert not ner_layer._filter_institutions([_NER("Radom", "OSOBA", 0.9, 0, 5)])
 
 
 @pytest.mark.xfail(strict=True, reason="BUG-IBAN-RECEPTA: wzorzec 'Numer recepty' \\d{22}(?!\\d) w credentials łapie końcówkę IBAN, 'PL6110' zostaje jawne")
