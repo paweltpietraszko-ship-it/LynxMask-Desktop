@@ -50,3 +50,45 @@ EXCLUDED_ARTIFACTS:
 
 ## Następny krok (osobna decyzja)
 Po merge: aktualizacja WIP `task/LYNX-DOCX-TABLES` na nowym main, ponowienie czerwonych testów integracyjnych tabel i oddanie Codexowi.
+
+## Runda 2 — po FAIL r2 (`tests_r2.txt`, `7938685`)
+IMPLEMENTATION_SHA: `61ef3a84d54b17eee6bbe89ffb464453a8c46f89`.
+- **F1 (trafne — mój błąd):** „liczby tylko w obrębie linii” zabrało rozpoznanie JEDNEGO telefonu przełamanego przez OCR („512\n987 654”, z etykietą, z +48) — brief wprost wymagał jego zachowania; w Express wynik był jawny. Mój przegląd sprawdzał tylko pary wartości w sąsiednich liniach, nie pojedynczą wartość przełamaną.
+- `contact.line_matches`: najpierw dopasowania w obrębie linii; dopasowanie PRZEZ nową linię dopuszczone, gdy (a) ma czysty start (nie w cyfrach tokenu, nie po „cyfra-”) i (b) **nie nakłada się na żadną samodzielną wartość którejkolwiek z linii** — czyli łączy kawałki jednego numeru, nie dwie kompletne wartości z sąsiednich wierszy. `ocr_normalizer._PHONE_AFTER_KW_RE` przywrócony do bazy (koniec numeru i tak pilnuje `_phone_number_len` z T11 — słowo z następnej linii nietknięte, sprawdzone). Zmiany e-mail/PESEL w normalizatorze bez zmian.
+- Nowy przegląd **`implementation/split_sweep.py`** (z `backend/`, baza `cbfa3c1` w worktree): 9 wartości (telefon goły/z etykietą/+48, NIP z/bez etykiety, PESEL z/bez, IBAN PL, e-mail) przełamane nową linią w każdym możliwym miejscu + całe, × full/Express = 64. Na tej rundzie: **regresje 0, wyciek 0**. Kontrola, że przegląd wykrywa błąd: na `2619eab` → **24 regresje** (wszystkie przełamane telefony).
+- `line_pairs_sweep.py` nadal 16 → 0 (dwie wartości w sąsiednich liniach nie są łączone); `phone_sweep` 30 000, `number_sweep` 724, `iban_sweep` 420, `email_sweep` 1980 — 0 regresji.
+- Testy: `test_jeden_telefon_przelamany_nowa_linia` ×4 (r2: goły, z etykietą, +48; plus przełamanie po drugiej grupie) w obu trybach — jeden token, mapa = wejście, Przywróć 1:1. `test_layers.py` `98 passed`; `test_audyt` + layout `139 passed, 10 xfailed`; pełna suita `129 passed, 40 skipped, 1 xfailed`. `ocr_normalizer.py` 696 linii.
+- Zachowanie „+48\n512 987 654”: numer tokenem, „+48” jawne w swojej linii (prefiks kraju, nie PII).
+
+gate.py (stdout dosłownie):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 61ef3a84d54b17eee6bbe89ffb464453a8c46f89
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 76/12 = 6.3:1 (threshold 5:1)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - backend\ner_layer.py
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\implementation\phone_sweep.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r5_repro.py
+  - tasks\LYNX-IBAN-FOREIGN-ALNUM\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-EMAIL-LOCALPART-OCR\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-EMAIL-LOCALPART-OCR\round_01\tests\tests_r7_repro.py
+  - backend\tests\test_audyt_2026_10.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/implementation/gate.txt
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/implementation/line_pairs_sweep.py
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/implementation/split_sweep.py
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/tests/tests_r2.txt
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/tests/tests_r2_repro.py
+  - tasks/LYNX-NEWLINE-CROSSING/round_01/tests/tests_r2_vertical.py
+  - tasks/LYNX-NEWLINE-CROSSING/brief.md
+```
