@@ -4,7 +4,8 @@ import contextlib, io, itertools, json, os, re, subprocess, sys, tempfile
 from unittest.mock import patch
 BASE = "5dd5c6ece1ebb511695c763524d5193f00a2b944"
 sys.path[:0] = [".", "../audyt"]
-LOCALS = ["anna. nowak", "anna.nowak", "a. nowak", "anna. nowak.k", "ANNA. NOWAK", "anna.  nowak", "anna.\tnowak", "jan_k. nowak", "anna. nowak_2"]
+LOCALS = ["anna. nowak", "anna.nowak", "a. nowak", "anna. nowak.k", "ANNA. NOWAK", "Anna. Nowak", "anna.  nowak", "anna.   nowak",
+          "anna.\tnowak", "jan_k. nowak", "anna. nowak_2"]  # kontrakt: brief §OWNER_ACCEPTED (1–3 odstępy, dowolna wielkość liter)
 BEFORE = ["Kontakt: ", "Kontakt. ", "Podpisano. ", "dane. ", ""]
 ATS = ["@", " @", "@ "]
 DOMS = ["example.pl", "wp. pl"]

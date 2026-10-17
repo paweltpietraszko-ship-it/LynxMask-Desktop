@@ -401,25 +401,34 @@ def _apply_contact(text: str):
 
 
 class TestContactEmailLocalpartOcr:
+    """Kontrakt OWNER_ACCEPTED 2026-10-17 (brief §OWNER_ACCEPTED): cały adres jednym EMAIL, surowy span w mapie."""
 
     @pytest.mark.parametrize("text,value", [
         ("Kontakt: anna. nowak@example.pl. Termin płatności.", "anna. nowak@example.pl"),
-        ("Kontakt: anna.nowak@example.pl.", "anna.nowak@example.pl"), ("Kontakt: anna.  nowak@example.pl.", "anna.  nowak@example.pl"),
+        ("Kontakt: ANNA. NOWAK@example.pl.", "ANNA. NOWAK@example.pl"), ("Kontakt: ANNA.  NOWAK@example.pl.", "ANNA.  NOWAK@example.pl"),
+        ("Kontakt: Anna. Nowak@example.pl.", "Anna. Nowak@example.pl"), ("Kontakt: anna.   nowak@example.pl.", "anna.   nowak@example.pl"),
+        ("Kontakt: anna.\tnowak@example.pl.", "anna.\tnowak@example.pl"), ("Kontakt: anna.nowak@example.pl.", "anna.nowak@example.pl"),
         ("Kontakt: 123456789012345@example.pl.", "123456789012345@example.pl"),
+        # zaakceptowane nadmaskowanie jednego słowa przed kropką (ten sam wiersz), Przywróć 1:1
+        ("Prosimy o kontakt. jan@example.pl", "kontakt. jan@example.pl"), ("Podpisano. Jan@example.pl", "Podpisano. Jan@example.pl"),
     ])
     def test_caly_adres_jednym_tokenem(self, text, value):
         out, rev = _apply_contact(text)
         assert list(rev.values()) == [value] and out == text.replace(value, next(iter(rev))), (out, rev)
 
     @pytest.mark.parametrize("text,email", [
-        ("Kontakt. jan@example.pl", "jan@example.pl"), ("Podpisano. Jan@example.pl", "Jan@example.pl"),
-        ("Mail nowak@example.pl. Termin", "nowak@example.pl"), ("Koniec.\njan@example.pl", "jan@example.pl"),
+        ("Kontakt.\njan@example.pl", "jan@example.pl"),  # K1: słowo z poprzedniego wiersza nie dołączane
+        ("Mail jan@example.pl. Termin płatności", "jan@example.pl"),  # nic po adresie
     ])
-    def test_koniec_zdania_nie_wchodzi_do_adresu(self, text, email):
+    def test_granice_wiersza_i_konca_adresu(self, text, email):
         out, rev = _apply_contact(text)
         assert list(rev.values()) == [email] and out == text.replace(email, next(iter(rev))), (out, rev)
 
-    @pytest.mark.parametrize("text", ["Kontakt: jan @example.pl.", "Kontakt: jan@ example.pl.", "Kontakt: jan@wp. pl."])
-    def test_ocr_przy_at_i_tld_nadal_jeden_email(self, text):
+    def test_bez_emaila_tekst_nietkniety(self):
+        assert _apply_contact("Kontakt. nie podano adresu.") == ("Kontakt. nie podano adresu.", {})
+
+    @pytest.mark.parametrize("text", ["Mail: jan@\nexample.pl koniec", "Mail: jan\n@example.pl koniec",
+                                      "Mail: jan @example.pl koniec", "Mail: jan@wp. pl koniec"])
+    def test_ocr_przy_at_i_tld_nadal_jeden_email(self, text):  # wartość kanoniczna — znane F3
         out, rev = _apply_contact(text)
-        assert out == "Kontakt: EMAIL_001." and len(rev) == 1 and "jan" not in out, (out, rev)
+        assert out == "Mail: EMAIL_001 koniec" and len(rev) == 1, (out, rev)
