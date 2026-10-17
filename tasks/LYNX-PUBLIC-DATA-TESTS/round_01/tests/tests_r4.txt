@@ -1,0 +1,31 @@
+LYNX-PUBLIC-DATA-TESTS — r4 — independent narrow recheck
+Date: 2026-10-17
+Technical result: F1 CLOSED; no remaining demonstrated functional blocker in rechecked scope.
+Final status: OWNER_DECISION_NEEDED solely for Task size gates, not a technical FAIL.
+Exact implementation: d82709c11b77dc51d8cca1107776aa3355674182
+Incremental diff base: 638b31813962d2ba071ac02bc7d21cb98481dd9a
+Whole Task base / contract: b074fa69793ce169a898dfdb2d479c899f211a22
+Recipient: Owner / Architect
+Publication parent: fd1db23 (delivery/gate documentation only beyond implementation).
+
+F1 CLOSURE
+Retained original duplicate and substring-overlap reproducers from r2/r3 now correctly return EXTRACTION_UNVERIFIED for unread/unproven cell occurrences, never masked. Unique missing value stays EXTRACTION_MISSING; actual two paragraph occurrences with two expected fields remain masked. The earlier false-green finding is closed on this exact SHA.
+New _own_occurrences is confined to the existing layout runner: counts standalone matches and excludes spans inside longer manifest values. This is measurement evidence handling required by the existing brief, not a new production masking policy. No production extractor/pipeline/Guard/category changes, no new dependency or subsystem.
+
+INDEPENDENT AUDIT LAYERS
+- Only narrow production/test diff read, current Task BOARD/brief and retained oracle/evidence used.
+- tests_r4_repro.py preserves r3 reproduction/control structure with exact updated SHA and corrected expected result; original reports/scripts remain untouched. Four real synthetic DOCX -> _extract_text -> production pipeline/NER/Guard -> runner/M3 cases pass: original duplicate ambiguity, unique missing control, two actual occurrences, unread shorter-email substring sibling. No extractor/NER stub. Report output contains only anonymous case labels/statuses/counts.
+- Eight independent helper boundary checks pass: email suffix; surname inside longer full name; numeric prefix; standalone surname outside a full-name span; two separated actual emails; sentence punctuation; unlisted longer email boundary; complete multiword name. These are same-class checks, not a broader parser specification.
+- Targeted backend tests:
+  py -3 -m pytest tests/test_engine_quality_layout.py tests/test_audyt_2026_10.py -k "layout or quality" -q
+  13 passed, 136 deselected, 12.73s; only existing dependency warning.
+- where.py _own_occurrences: declaration plus sole runner call; actual source inspected. git diff --check PASS.
+- Independent gate on b074fa6..d82709c: WYMAGA_DECYZJI only RATIO 190/1=190:1 and TOTAL_LINES 191 (>150). Other gates green.
+
+SIZE DISPOSITION REQUIRED
+Brief explicitly requires Owner decision above 150 changed lines or ratio >5:1. This delivery has 191 changed lines and 190 added/1 removed; increase is largely focused tests of the retained bug family. Recommend accepting this bounded size and closing final PASS without shrinking meaningful tests. No approval inferred from earlier IBAN Task or the retracted ambiguous "Akceptuję pass" exchange. Await explicit size acceptance for this delivery.
+No functional change or test rerun is needed merely to record that acceptance. No final Task PASS is issued before this gate is resolved.
+
+PROPORTIONAL LIMITS / RETAINED PRIOR EVIDENCE
+Full suite, official two-form sample and old-CLI benchmark not repeated for this local classification micro-fix. r2 independently established 129 passed/40 skipped/1 xfailed (+8 subtests), old/new CLI JSON equality apart from date/SHA with the same synthetic holdout, and local numeric sample 2 docs/7 fields (DOCX table 3 missing, other 4 masked). These are prior-SHA checks, not re-labelled as newly run on d82709c. CC's latest suite/sample are supporting evidence only.
+No new sample eligibility/provenance, HTTP/UI/AcroForm/OCR claim. The runner remains a small synthetic-layout measurement, not a guarantee that document extraction is complete. No real documents read, no product code edited, no merge performed or authorized.

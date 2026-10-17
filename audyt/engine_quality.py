@@ -240,11 +240,70 @@ def _out_path(path):
     return full
 
 
+def _own_occurrences(text, value, values):
+    """Wystąpienia wartości, które są samodzielne (nie przyklejone do znaków słowa/adresu) i nie leżą wewnątrz dłuższej
+    wartości z klucza („jan@x.pl” w „anna.jan@x.pl”, „Kowalski” w „Jan Kowalski”) — Codex r2/r3 F1."""
+    claimed = [(m.start(), m.end()) for longer in values if len(longer) > len(value) and value in longer
+               for m in re.finditer(re.escape(longer), text)]
+    return sum(1 for m in re.finditer(rf"(?<![\w.@%+-]){re.escape(value)}(?![\w@%+-]|\.\w)", text)
+               if not any(a <= m.start() and m.end() <= b for a, b in claimed))
+
+
+def _layout_doc(did, entry, directory, run):
+    """[LYNX-PUBLIC-DATA-TESTS] Jeden plik z lokalnego manifestu: produkcyjny _extract_text, potem pipeline. Wiersze bez wartości."""
+    from document_processor import _extract_text
+    fpath = os.path.join(directory, entry["file"])
+    base = {"doc": did, "type": entry["type"]}
+    rows = [dict(base, category=f["category"], in_table=bool(f.get("in_table"))) for f in entry["fields"]]
+    if not os.path.exists(fpath):
+        return {"id": did, "type": entry["type"], "status": "NOT_RUN", "reason": "brak pliku"}, [dict(r, status="NOT_RUN") for r in rows]
+    content = open(fpath, "rb").read()
+    info = {"id": did, "type": entry["type"], "sha256": hashlib.sha256(content).hexdigest()[:16], "n_fields": len(rows)}
+    text, err, _ = _extract_text(content, os.path.basename(fpath))
+    if err or not text.strip():
+        return dict(info, status="NOT_RUN", reason="ekstrakcja: błąd lub pusty tekst"), [dict(r, status="NOT_RUN") for r in rows]
+    res = run(text)
+    for row, f in zip(rows, entry["fields"]):
+        v = f["value"]
+        expected = sum(g["value"] == v for g in entry["fields"])  # ta sama wartość w kilku polach (np. akapit + komórka)
+        if _own_occurrences(text, v, [g["value"] for g in entry["fields"]]) >= expected:
+            row["status"] = classify_m1(text, v, f["category"], res)
+        elif v in text:  # mniej wystąpień niż pól — nie wiadomo, które pole dotarło; nie sukces (Codex r2 F1)
+            row["status"] = "EXTRACTION_UNVERIFIED"
+        else:  # pole nie dotarło do tekstu — błąd EKSTRAKCJI, nigdy „masked”
+            row["status"] = "EXTRACTION_CHANGED" if _norm(v) and _norm(v) in _norm(text) else "EXTRACTION_MISSING"
+    present = [f["value"] for f in entry["fields"] if f["value"] in text]
+    return dict(info, status="MEASURED", m3=roundtrip(text, res, present)["status"]), rows
+
+
+def measure_layout(directory, run):
+    """Tryb layout: prawdziwe puste wzory DOCX/PDF wypełnione syntetyką; klucz = lokalny manifest.json. Raport tylko liczbowy."""
+    path = os.path.join(directory, "manifest.json")
+    if not os.path.exists(path):
+        return {"status": "NOT_RUN", "reason": "brak manifest.json"}
+    with open(path, encoding="utf-8") as f:
+        entries = json.load(f)
+    docs, rows = [], []
+    for i, entry in enumerate(entries, 1):
+        info, doc_rows = _layout_doc(f"L-{i:03d}", entry, directory, run)
+        docs.append(info)
+        rows += doc_rows
+    measured = [r for r in rows if r["status"] != "NOT_RUN"]
+    by = {}
+    for r in rows:
+        key = f"{r['type']}/{'tabela' if r['in_table'] else 'tekst'}"
+        by.setdefault(key, {}).setdefault(r["status"], 0)
+        by[key][r["status"]] += 1
+    return {"status": "OK" if measured else "NO_FIELDS_MEASURED", "docs": docs, "fields_measured": len(measured),
+            "fields_not_run": len(rows) - len(measured), "by_type_location": by}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--out", default=os.path.join(tempfile.gettempdir(), "lynx_engine_quality.json"))
     ap.add_argument("--holdout")
+    ap.add_argument("--layout", help="lokalny katalog z manifest.json i wypełnionymi wzorami DOCX/PDF (poza repo lub ignorowany)")
     args = ap.parse_args(argv)
     out = _out_path(args.out)
     logging.disable(logging.CRITICAL)
@@ -264,11 +323,15 @@ def main(argv=None):
     try:
         st = build_state(tmp.name)
         rows = measure(cases, lambda t: pipeline.pseudonymize_document(t, st))
+        layout = measure_layout(os.path.abspath(os.path.join(ROOT, args.layout)), lambda t: pipeline.pseudonymize_document(t, st)) if args.layout else None
     finally:
         st = None
         gc.collect()
         tmp.cleanup()
-    return _write(out, report(rows, meta, hinfo), 0)
+    rep = report(rows, meta, hinfo)
+    if layout is not None:
+        rep["LAYOUT"] = layout
+    return _write(out, rep, 0)
 
 
 def _write(out, rep, code):
@@ -277,6 +340,9 @@ def _write(out, rep, code):
     m3 = rep.get("M3", {})
     print(f"[{rep['status']}] sha={rep['git_sha'][:8]} seed={rep['seed']} M1={rep.get('M1')} HOLDOUT={rep.get('HOLDOUT')} "
           f"M2={rep.get('M2')} M3 identical={m3.get('identical')}/{m3.get('checked')} -> {out}")
+    if "LAYOUT" in rep:
+        lay = rep["LAYOUT"]
+        print(f"LAYOUT [{lay['status']}] pola zmierzone={lay.get('fields_measured')} not_run={lay.get('fields_not_run')} {lay.get('by_type_location')}")
     return code
 
 
