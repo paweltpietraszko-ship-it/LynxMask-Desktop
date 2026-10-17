@@ -1,0 +1,34 @@
+LYNX-T11-TEXT-FIDELITY — zamknięcie audytu r6
+WYNIK: PASS Z KOMENTARZEM / znane ograniczenie F2-B1.
+Exact SHA implementacji: 240f6b6aa45ee7e2d49a19e1c9ffa90d732d66ea
+Baza diffu: 576d133e21035ad5c34f7bf1216da6ab02086720
+Odbiorca: Architekt. Etap: zamknięcie po ocenie proporcjonalności.
+
+PODSTAWA ZAMKNIĘCIA
+2026-10-17: po wyjaśnieniu, że wycieki telefonu są naprawione, a pozostały
+przypadek dotyczy wierności tekstu, Codex zalecił nie blokować całego Tasku.
+Paweł: „Też mi się wydaje, że tu wystarczy pass z komentarzem, co w określonym
+przypadku może się zadziać”. Jest to dyspozycja zamknięcia tego audytu jako
+PASS z jawnym ograniczeniem, nie nowa globalna zasada produktu ani zmiana
+specyfikacji pozwalająca dowolnie zmieniać słowa. F2-B1 przestaje blokować
+odbiór tej dostawy; dowód błędu pozostaje zachowany, bez oznaczania go jako
+naprawionego. Ten wynik zastępuje końcowy FAIL r5 w zakresie odbioru Tasku.
+
+KOMENTARZ — CO MOŻE SIĘ ZDARZYĆ
+Przy krajowym numerze telefonu zaczynającym się od 48, z końcową grupą cyfr
+zapisaną znakami OCR (Ill, Ooo lub Tll), następujące po numerze „To jest”
+może zostać zmienione na „70 jest”. Zmiana pozostaje po Przywróć.
+To wąski błąd wierności tekstu, nie wykazany w tych przypadkach wyciek PII.
+Pełne syntetyczne reproduktory i TRACE/OWNERSHIP/REPRO: tests_r5.txt oraz
+tests_r5_repro.py. Ograniczenie pozostaje jawnie znane, nie jest naprawione.
+
+ZACHOWANE DOWODY I GRANICE
+- R1: poprzednie regresje jawnego telefonu zamknięte; 30 niezależnych pionów
+  prefiksów i końcówek OCR przeszło na exact SHA.
+- R2: granica e-maila zamknięta w r3; późniejszy kod jej nie zmieniał.
+- Ostatnie testy celowane: 29 passed; niezależny gate: PASS.
+- Wcześniejszy pomiar na identycznym digest: M3 11/56 -> 44/56; M1/M2
+  bez zmian. Nie oznacza to pełnej szczelności ani pełnej wierności tekstu.
+- F3 (oryginalny zapis PESEL/telefonu), IBAN i pozostałe wyłączenia bez zmian.
+Brak nowych zmian kodu/briefu i brak ponawiania testów dla samej dyspozycji
+zamknięcia. Wcześniejsze raporty zachowane. Bez merge.
