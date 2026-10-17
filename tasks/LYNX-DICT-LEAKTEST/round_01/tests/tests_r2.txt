@@ -1,0 +1,67 @@
+LYNX-DICT-LEAKTEST etap 1 — independent delivery audit r2
+VERDICT: FAIL (R1-R3); separate gate: WYMAGA_DECYZJI TOTAL_LINES 347.
+Audited implementation SHA: e102fd87dd105caaa57baae5145ed4a017c00c9f
+Diff base: e5e2e7f5e5d835d79d6745f23003cb2f8c262fc1
+Recipient: Architect. Scope: measurement runner and its targeted tests only.
+Publication parent 4e411c8 adds DELIVERY/gate artifacts only, no code delta.
+Oracle: Task brief at audited SHA, frozen arch/spec.md S1/S2/S3/S5.
+No product edits, engine repairs, full regression or OCR benchmark.
+
+R1 [P1] M1 can certify incorrect masking as masked.
+TRACE: brief M1 requires expected span/category and separate wrong-category
+and missing-mapping outcomes; PASS 3 requires injected failures not to
+produce false success. PASS 5 requires a trustworthy measurement.
+OWNERSHIP: audyt/engine_quality.py:96 _covering_tokens and :104 classify_m1.
+REPRO at exact SHA, retained tests_r2_repro.py:
+- Two-word synthetic person split between OSOBA and FIRMA tokens => masked.
+- Same person split between EMAIL and OSOBA tokens => masked.
+- Output deletes the person without placing any token, while reverse_map
+  contains the full original value => masked.
+The classifier accepts any matching category and reverse-map coverage
+without verifying the actual token replacement of the expected span.
+Expected: these are not correct masking; wrong-category/mapping/error
+outcomes must remain visible. This is a runner defect, not a request to
+change which entities the engine recognizes.
+
+R2 [P1] M2 category permission hides a real false positive.
+TRACE: brief M2 defines FP as a token without a corresponding entity that
+requires masking; only actual authorized amount/address/etc. is exempt.
+OWNERSHIP: audyt/engine_quality.py:125 classify_m2 receives allowed categories
+but no expected entity span/value; measure/report propagate its result.
+REPRO: existing M2-kwota input, injected result replaces the ordinary word
+for payment with KWOTA_001 and maps it back to that word; the actual amount
+is left unchanged. Result => contract; report FP count remains zero and
+M3 is identical. Thus round-trip does not catch this scoring error.
+Expected: the ordinary-word replacement is FP despite its KWOTA category.
+The actual authorized amount replacement must remain non-FP.
+
+R3 [P2] Windows case variation bypasses the repository output prohibition.
+TRACE: brief Report expressly forbids saving reports inside the repository.
+OWNERSHIP: audyt/engine_quality.py:221 _out_path, sole main() output check.
+REPRO: canonical repository output path is rejected; identical Windows path
+with letter case swapped is accepted. os.path.normcase confirms equality.
+No file was written to demonstrate this; the accepted path goes directly
+to _write. Expected: equivalent Windows paths retain the same prohibition.
+
+OTHER INDEPENDENT EVIDENCE
+- Targeted test_audyt_2026_10.py: 58 passed, 15 xfailed.
+- Two real offline runner executions, seed 2026, profile TEMP, output TEMP:
+  56 cases; digest ac6a7ca1e033b862; reports equal except date;
+  holdout NOT_MEASURED (not supplied); M1 44 masked + 4 partial_mask;
+  M2 5 clean + 3 contract; simulated M3 11/56 identical.
+  These are observed runner classifications, not independently validated
+  quality scores given R1/R2. No claim of complete engine leak coverage.
+- Independent injected blocked/error remain blocked/error; ordinary
+  disallowed-category FP and changed-space M3 boundaries work.
+- No engine code changed; temporary-state setup/finally and absence of
+  HTTP/API-token imports reviewed. Delivered cleanup/NOT_RUN tests pass.
+- Independent gate at exact SHA: WYMAGA_DECYZJI, only TOTAL_LINES 347.
+  No advance size exception was granted by precheck. Architect/Owner must
+  resolve that gate separately; this is not a reproduced product defect.
+- CC's 40-case external holdout/full-suite results are supporting evidence,
+  not independently rerun in this proportional audit.
+
+CLOSED RECHECK SCOPE
+Retain the original R1/R2/R3 reproducers; verify corrected classification
+and sibling positive/negative cases plus targeted runner tests. Reuse the
+real-run baseline; do not repair the measured engine defects in this Task.
