@@ -163,3 +163,58 @@ def test_obie_wartosci_odczytane_osobno(tmp_path, run):  # kontrola: dwa osobne 
     d.save(str(tmp_path / "a.docx"))
     _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": [{"category": "EMAIL", "value": EMAIL}] * 2}])
     assert eq.measure_layout(str(tmp_path), run)["by_type_location"] == {"docx/tekst": {"masked": 2}}
+
+
+# LYNX-ZUS-BOXED-IDS: PESEL/NIP w polu kratkowym (comb) AcroForm — get_text() daje cyfrę na linię; extractor oddaje wartość pola.
+PESEL, NIP = "44051401359", "5260001246"
+
+
+def _comb_form(fields, singles=""):
+    """Pusty formularz reportlab, wypełniony pypdf (jak próbka ZUS). fields: (wartość, comb); singles: osobne pola 1-znakowe."""
+    import io
+    import pypdf
+    from reportlab.pdfgen import canvas
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf)
+    c.drawString(50, 800, "Dane ubezpieczonego")
+    vals = {}
+    for i, (v, comb) in enumerate(fields):  # pola jedno pod drugim: cyfry sąsiednich pól w kolejnych liniach
+        c.acroForm.textfield(name=f"f{i}", x=150, y=740 - 30 * i, width=18 * len(v), height=17, maxlen=len(v),
+                             fieldFlags="comb" if comb else "", borderWidth=1)
+        vals[f"f{i}"] = v
+    for k, ch in enumerate(singles):
+        c.acroForm.textfield(name=f"s{k}", x=150 + 18 * k, y=400, width=18, height=17, maxlen=1, borderWidth=1)
+        vals[f"s{k}"] = ch
+    c.save()
+    w = pypdf.PdfWriter()
+    w.clone_document_from_reader(pypdf.PdfReader(io.BytesIO(buf.getvalue())))
+    w.update_page_form_field_values(w.pages[0], vals)
+    out = io.BytesIO()
+    w.write(out)
+    return out.getvalue()
+
+
+def test_pole_kratkowe_pesel_nip_cala_wartosc_bez_fuzji():
+    from document_processor import _extract_text
+    blob = _comb_form([(PESEL, True), (NIP, True), ("512987654", True), ("14051944", True)], singles="90090515836")
+    lines = _extract_text(blob, "zus.pdf")[0].split("\n")
+    assert lines.count(PESEL) == 1 and lines.count(NIP) == 1, lines  # dwa sąsiednie identyfikatory, każdy osobno
+    assert lines[lines.index(NIP) + 1:lines.index(NIP) + 10] == list("512987654"), lines  # telefon (comb, 9) bez zmian
+    assert sum(ln.isdigit() and len(ln) == 1 for ln in lines) == 9 + 8 + 11, lines  # telefon, data, 11 osobnych pól nie łączone
+    ambiguous = _comb_form([(PESEL, True)], singles=PESEL)  # te same cyfry także w 11 osobnych kratkach: granica niepewna
+    assert _extract_text(ambiguous, "zus.pdf")[0].split("\n").count(PESEL) == 0  # bez zgadywania — tekst jak dotąd
+
+
+@pytest.mark.parametrize("fields", [[(PESEL, True), (PESEL, True)], [(PESEL[:10], True), (PESEL, True)], [(PESEL, False)]])
+def test_pole_kratkowe_powtorzone_prefiks_i_zwykle(fields):
+    from document_processor import _extract_text
+    lines = _extract_text(_comb_form(fields), "zus.pdf")[0].split("\n")
+    assert sorted(ln for ln in lines if ln.isdigit()) == sorted(v for v, _ in fields), lines  # każde pole raz, w całości
+
+
+def test_pole_kratkowe_maskowane_jednym_tokenem(tmp_path, run):
+    (tmp_path / "zus.pdf").write_bytes(_comb_form([(PESEL, True), (NIP, True)]))
+    _manifest(tmp_path, [{"file": "zus.pdf", "type": "pdf", "fields": [{"category": "NUMER", "value": PESEL, "in_table": True},
+                                                                      {"category": "NUMER", "value": NIP, "in_table": True}]}])
+    rep = eq.measure_layout(str(tmp_path), run)
+    assert rep["by_type_location"] == {"pdf/tabela": {"masked": 2}} and rep["docs"][0]["m3"] == "identical", rep

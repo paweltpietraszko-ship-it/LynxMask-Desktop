@@ -100,6 +100,29 @@ def _docx_body_text(doc) -> str:
     return "\n".join(t for t in parts if t.strip())
 
 
+_PDF_COMB = 1 << 24  # flaga Ff „comb” pola tekstowego AcroForm: jeden znak na kratkę
+
+
+def _pdf_page_text(page) -> str:
+    """[LYNX-ZUS-BOXED-IDS] Tekst strony PDF. PESEL/NIP z pola kratkowego AcroForm get_text() podaje cyfrą na linię;
+    taki ciąg zastępujemy wartością pola — granice wyłącznie z pola, nigdy z sąsiednich linii. Gdy wygląd pola
+    nie daje dokładnie tych znaków albo ciąg występuje więcej razy niż pól z tą wartością — tekst bez zmian."""
+    import re
+    text = page.get_text()
+    boxed: dict[str, int] = {}
+    for w in page.widgets():
+        value = w.field_value if isinstance(w.field_value, str) else ""
+        if w.field_flags & _PDF_COMB and len(value) in (10, 11) and value.isascii() and value.isdigit():
+            per_char = "\n".join(value) + "\n"
+            if page.get_text(clip=w.rect) == per_char:
+                boxed[per_char] = boxed.get(per_char, 0) + 1
+    for per_char, n_fields in sorted(boxed.items(), key=lambda kv: -len(kv[0])):  # PESEL przed NIP-em, który może być jego początkiem
+        pattern = re.compile(r"(?<![^\n])" + re.escape(per_char))  # od początku linii
+        if len(pattern.findall(text)) == n_fields:
+            text = pattern.sub(per_char.replace("\n", "") + "\n", text)
+    return text
+
+
 def _extract_text(content: bytes, filename: str) -> tuple[str, str | None, dict | None]:
     """
     Wyciąga tekst z pliku. Zwraca (tekst, błąd, ocr_meta).
@@ -136,7 +159,7 @@ def _extract_text(content: bytes, filename: str) -> tuple[str, str | None, dict 
             return "", "Biblioteka pymupdf niedostępna — zainstaluj: pip install pymupdf", None
         try:
             with fitz.open(stream=content, filetype="pdf") as doc:
-                text = "\n".join(page.get_text() for page in doc)
+                text = "\n".join(_pdf_page_text(page) for page in doc)
             return text, None, None
         except Exception as e:
             return "", f"Błąd odczytu PDF: {e}", None
