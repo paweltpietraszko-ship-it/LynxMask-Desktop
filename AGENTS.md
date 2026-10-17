@@ -31,7 +31,7 @@ traktuję jako propozycję do rozważenia […] twoja opinia i Codexa jest ważn
 ## PRIVACY (specyfika LynxMask)
 - LynxMask jest narzędziem ochrony danych osobowych. Wyciek PII do wyjścia (maskowany tekst, logi, raporty, archiwum) jest zawsze najwyższą wagą.
 - Do repo, raportów i BOARD nie trafiają dane z realnych dokumentów (`backend/dataset_real/`, `backend/preview_real_results/`, `backend/anon_profiles/`). PII w raportach maskuj częściowo („Kow*****").
-- Dane w `Pliki testowe/`, `backend/test_docs/`, benchmarku są syntetyczne. Konflikt powstały przez zestawienie niezależnych danych syntetycznych nie jest dowodem realnego scenariusza — przy wątpliwości zapytaj OWNERA.
+- Dane w `Pliki testowe/`, benchmarku są syntetyczne. Konflikt powstały przez zestawienie niezależnych danych syntetycznych nie jest dowodem realnego scenariusza — przy wątpliwości zapytaj OWNERA.
 - Format tokenu, `TOKEN_RE`, taksonomia kategorii i `.lynxdict` są wspólne z LynxMask Mobile — ich zmiana bez decyzji OWNERA to FAIL niezależnie od jakości kodu.
 
 ## BRIEF_ONLY_PRECHECK

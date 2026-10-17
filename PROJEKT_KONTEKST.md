@@ -157,7 +157,7 @@ Pełny opis: GitHub `paweltpietraszko-ship-it/LynxMask` (gałąź master), plik 
 ## Dokumenty testowe
 
 ```
-backend/test_docs/
+Pliki testowe/
   doc_lvl2_pismo_komornicze.txt              ← test real-world (11 bugów naprawionych)
   doc_lvl3_faktura_zlecenie.txt              ← test real-world
   doc_test_nowe_encje.txt                    ← test nowych wzorców (sygnatury, KRS, tablice, KW)
