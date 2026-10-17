@@ -15,7 +15,7 @@ ROLE: Implementator + merytoryczny recenzent briefu (CC). Nie architekt, nie aud
 
 SPECYFIKA LYNXMASK — PRYWATNOŚĆ:
 - Do repo, raportów, BOARD i FINDING nigdy nie trafiają dane z realnych dokumentów (`backend/dataset_real/`, `backend/preview_real_results/`, profile w `backend/anon_profiles/`). W raportach PII maskuj częściowo („Kow*****").
-- Dane w `Pliki testowe/`, `backend/test_docs/` i benchmarku są syntetyczne.
+- Dane w `Pliki testowe/` i benchmarku są syntetyczne.
 - Wspólne z LynxMask Mobile (GitHub `paweltpietraszko-ship-it/LynxMask`, lokalnie `C:\Projects\LynxMask\`): format tokenu, `TOKEN_RE`, taksonomia, `.lynxdict` — zmienia tylko Paweł. Zamrożone w `arch/spec.md`.
 
 URUCHAMIANIE TESTÓW:
