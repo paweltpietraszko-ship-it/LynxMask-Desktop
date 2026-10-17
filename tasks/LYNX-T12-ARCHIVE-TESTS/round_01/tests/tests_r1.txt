@@ -1,0 +1,31 @@
+WĄSKI PRECHECK — LYNX-T12-ARCHIVE-TESTS
+Data: 2026-10-17
+Exact SHA: 0da298d4802306694065cab464583916fcacd571
+Wynik: PASS PREIMPLEMENTATION. Brief bez implementacji.
+
+Zakres oceny: bieżący wiersz BOARD, brief, punktowy odczyt istniejącego
+importu API/setup klienta w test_archive_adversarial.py. Wykorzystano
+zachowane dowody T02 r4: 7/7 przypadków przechodziło z poprawnym Host
+oraz tokenem. Bez ponownego przeglądu repo lub testowania tych endpointów.
+
+PRODUCT_TRUTH: spec S3/S5/S6, kontrakt T02 oraz brief T12.
+SOURCE/NECESSITY: test ma docierać do walidacji endpointów przy poprawnym
+uwierzytelnieniu, a syntetyczne zapisy nie mogą dotykać sesji użytkownika.
+Istniejący owner fixture w jednym wskazanym pliku wystarcza; bez zmian
+produkcji, dodatkowego walidatora, nowego modułu lub rozszerzenia API.
+
+Kryteria są jednoznaczne i testowalne: dodatnie/ujemne przypadki dochodzą
+przez właściwe auth/Host; tymczasowe SQLite i .enc; pierwszy import oraz
+API obecne w sys.modules; jawna zmiana aktywnej ścieżki db_store, nie
+pozorny _init_db; odtworzenie globali i cleanup również po niepowodzeniu.
+Powtórzenie w procesie i syntetyczny sentinel dają dowód izolacji oraz
+idempotencji, bez potrzeby czytania rzeczywistych sesji.
+
+Minimalizm: jeden wspólny setup/teardown istniejących klas, jeden plik;
+bez zmian asercji produktu dla wygody testów. Pełna suita jest jawnie
+wymagana przez brief PO implementacji, nie na etapie tego prechecku.
+Benchmark nie jest potrzebny. Brak nowych decyzji produktowych.
+
+Nie uruchamiano testów, reproduktorów, where.py ani suity (BRIEF_ONLY).
+Brak blokujących braków kontraktu. Dowód cleanup/stanu globalnego
+pozostaje do niezależnej weryfikacji na SHA przyszłej implementacji.
