@@ -458,3 +458,42 @@ class TestForeignIbanLayers:
         rev = state.allocator.reverse_map
         assert len(rev) == 1 and state.text == text.replace(iban, next(iter(rev))), (state.text, rev)
 
+
+
+# ---------------------------------------------------------------------------
+# LYNX-NEWLINE-CROSSING: dwie kompletne encje w kolejnych wierszach — bez sklejania, przecinania i tokenu w tokenie
+# ---------------------------------------------------------------------------
+
+def _pipelines(text: str):
+    from unittest.mock import patch
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new, run_pipeline_express
+    for fn in (run_pipeline_new, run_pipeline_express):
+        with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+            yield fn(text, anon_map={})
+
+
+class TestNewlineCrossing:
+
+    @pytest.mark.parametrize("first,second", [
+        ("k.zalewska@example.pl", "m.nowicka@example.pl"), ("a@example.pl", "b1@example.pl"),
+        ("526-000-12-46", "512 987 654"), ("44051401359", "512 987 654"), ("512 987 654", "526-000-12-46"),
+        ("NIP: 526-000-12-46", "tel: 512 987 654"), ("PESEL 44051401359", "Tel. 512 987 654"),
+    ])
+    def test_dwie_encje_w_kolejnych_wierszach(self, first, second):
+        text = f"{first}\n{second}"
+        for out, rev, blocked in _pipelines(text):
+            assert not blocked and out.count("\n") == 1 and len(rev) == 2, (out, rev)
+            assert "_NUMER" not in out and not any(t in v for v in rev.values() for t in rev), (out, rev)  # brak tokenu w tokenie
+            line1, line2 = out.split("\n")
+            assert ("_" in line1) and ("_" in line2), (out, rev)  # każda linia ma własny token
+
+    @pytest.mark.parametrize("text,label", [("PESEL 44051401359\nOpis pozycji", "Opis pozycji"),
+                                            ("PESEL 44051401359\nTel. 512 987 654", "Tel.")])
+    def test_normalizator_nie_rusza_nastepnej_linii(self, text, label):
+        assert label in normalize_ocr(text)
+
+    @pytest.mark.parametrize("text", ["Mail: jan@\nexample.pl koniec", "Mail: jan\n@example.pl koniec"])
+    def test_ocr_newline_wewnatrz_emaila_zachowany(self, text):
+        for out, rev, _ in _pipelines(text):
+            assert out == "Mail: EMAIL_001 koniec" and list(rev.values()) == ["jan@example.pl"], (out, rev)

@@ -132,10 +132,10 @@ _EMAIL_TLDSPACE = re.compile(
 )
 _EMAIL_SPACE_AFTER_AT = re.compile(r'(@)\s+([a-zA-Z0-9])')
 _EMAIL_SPACE_BEFORE_AT_DOT = re.compile(
-    r'([a-zA-Z0-9._%+\-]*\.[a-zA-Z0-9._%+\-]+)\s+([a-zA-Z0-9._%+\-]+@)'
+    r'(?<![\w.@%+-])([a-zA-Z0-9._%+\-]*\.[a-zA-Z0-9._%+\-]+)[^\S\n]+([a-zA-Z0-9._%+\-]+@)'  # [NEWLINE-CROSSING]
 )
 _EMAIL_SPACE_BEFORE_AT_DIGITS = re.compile(
-    r'([a-zA-Z0-9._%+\-]+)\s+([a-zA-Z0-9._%+\-]*\d[a-zA-Z0-9._%+\-]*@)'
+    r'(?<![\w.@%+-])([a-zA-Z0-9._%+\-]+)[^\S\n]+([a-zA-Z0-9._%+\-]*\d[a-zA-Z0-9._%+\-]*@)'  # [NEWLINE-CROSSING]
 )
 # TLD z OCR-cyframi: "prawnik.p1" → "prawnik.pl" (1→l, 0→o)
 _EMAIL_TLD_OCR_RE = re.compile(
@@ -161,7 +161,7 @@ _PESEL_WORD_RE = re.compile(
 )
 _PESEL_SPLIT_RE = re.compile(
     r'(?i)(P[^\S\n]?[E3][^\S\n]?[S5B8][^\S\n]?[E3][^\S\n]?[LlI1i|]\s{0,3}:?\s{0,3})'
-    r'([TIlOo0-9][TIlOo0-9\s]{10,14}[TIlOo0-9])'
+    r'([TIlOo0-9][TIlOo0-9 \t]{10,14}[TIlOo0-9])'  # [NEWLINE-CROSSING] wnętrze bez \n
 )
 
 # ── Krok 3: NIP po słowie kluczowym ──────────────────────────────────────────
@@ -293,7 +293,7 @@ def _fix_postal(m: re.Match) -> str:
 _PHONE_AFTER_KW_RE = re.compile(
     r'(?i)\b(tel(?:efon)?|kom(?:\.?|orkowy)?|mob(?:\.?|ile)?|fax|faks)'
     r'\.?[^\S\n]*[:–\-]?[^\S\n]*'
-    r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d\s\-(). ]{7,22}[TIlOSBGZzo\d])'
+    r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d \t\-().]{7,22}[TIlOSBGZzo\d])'
 )
 
 def _phone_number_len(num_raw: str, next_char: str) -> int:

@@ -90,6 +90,18 @@ def _normalize_email(raw: str) -> str:
     return result.strip()
 
 
+def line_matches(pattern: re.Pattern, text: str):
+    """[LYNX-NEWLINE-CROSSING] Dopasowania wzorca LICZBOWEGO w obrębie jednej linii (wartość z sąsiedniego wiersza, np.
+    komórki tabeli, nie zostaje doklejona) i nie startujące w cyfrach tokenu („NUMER_001”) ani tuż po „cyfra-” (fragment
+    dłuższego numeru, np. „000-12-46” z „526-000-12-46”). Zwraca (start, end, wartość) w układzie całego tekstu."""
+    pos = 0
+    for line in text.split("\n"):
+        for m in pattern.finditer(line):
+            if not re.search(r"(?:[A-Za-z]_\d*|\d-)$", line[:m.start()]):
+                yield pos + m.start(), pos + m.end(), m.group(0)
+        pos += len(line) + 1
+
+
 def apply_contact_layer(state: PipelineState) -> None:
     """Stosuje wzorce email i telefon na state.text."""
     hits: list[tuple[int, int, str, str]] = []
@@ -101,16 +113,17 @@ def apply_contact_layer(state: PipelineState) -> None:
             hits.append((m.start(), m.end(), canonical, TOKEN_EMAIL))
 
     # [NUMER-RECALL] Context-aware telefon — przed REGON
-    for m in _PHONE_CONTEXT_RE.finditer(state.text):
-        hits.append((m.start(), m.end(), m.group(0), TOKEN_NUMER))
+    for start, end, value in line_matches(_PHONE_CONTEXT_RE, state.text):
+        hits.append((start, end, value, TOKEN_NUMER))
 
     # Numer wewnętrzny 3-2-2
-    for m in _PHONE_322_RE.finditer(state.text):
-        hits.append((m.start(), m.end(), m.group(0), TOKEN_NUMER))
+    for start, end, value in line_matches(_PHONE_322_RE, state.text):
+        hits.append((start, end, value, TOKEN_NUMER))
 
     for token_type, pat in _CONTACT_PATTERNS:
-        for m in pat.finditer(state.text):
-            hits.append((m.start(), m.end(), m.group(0), token_type))
+        found = (line_matches(pat, state.text) if token_type == TOKEN_NUMER  # e-mail: OCR-newline przy @ zostaje
+                 else ((m.start(), m.end(), m.group(0)) for m in pat.finditer(state.text)))
+        hits += [(start, end, value, token_type) for start, end, value in found]
 
     # Wiekszy span wygrywa (tak jak w address.py v1.8)
     hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
