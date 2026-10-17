@@ -46,3 +46,34 @@ WYMAGA_DECYZJI tylko RATIO 137/1: zmiana w całości addytywna (nowy tryb + nowy
 ## Findings (nie naprawiane — brief)
 - **LYNX-DOCX-TABLES**: `_extract_text` dla DOCX pomija tabele (oraz nagłówki/stopki) — w realnym wzorze 3/3 wartości z komórek nie docierają do silnika. Skutek dla użytkownika: tekst z tabel w ogóle nie jest analizowany ani pokazywany — przy kopii dokumentu (LYNX-LAYOUT-COPY) byłby to wyciek.
 - PDF formularz z polami AcroForm nie był w próbce (wybrany wzór ich nie ma) — wartość wpisana w pole formularza (widget) to osobny wariant do zmierzenia; skan/OCR — osobny wariant.
+
+## Runda 2 — po FAIL r2 (`tests_r2.txt`, `33c7423`)
+IMPLEMENTATION_SHA: `638b31813962d2ba071ac02bc7d21cb98481dd9a`.
+- **F1 (trafne):** status pola liczony z samego „wartość jest gdzieś w tekście” — ta sama wartość w akapicie i w nieodczytanej komórce dawała oba pola `masked`. Teraz `_layout_doc` porównuje liczbę wystąpień w tekście z liczbą pól klucza o tej samej wartości: wystarczająco → `classify_m1`; mniej (ale >0) → **`EXTRACTION_UNVERIFIED` dla wszystkich tych pól** (nie sukces, brief pkt 3); 0 → `EXTRACTION_MISSING`/`CHANGED` jak dotąd.
+- Test `test_powtorzona_wartosc_bez_dowodu_wystapienia` = scenariusz `tests_r2_repro.py` (ten sam e-mail w akapicie i komórce) → oba pola `EXTRACTION_UNVERIFIED`; na `d7a0868` FAIL, teraz PASS. Kontrola z unikalną wartością (`test_komorka_tabeli_to_brak_ekstrakcji_nie_maskowanie`) bez zmian: tabela `EXTRACTION_MISSING`, akapit `masked`. `test_engine_quality_layout.py` `4 passed`; runner `-k quality` `5 passed`; pełna suita `129 passed, 40 skipped, 1 xfailed` (0 failed).
+- Pomiar na lokalnej próbce (wartości unikalne) bez zmian: DOCX/tabela 3 EXTRACTION_MISSING, DOCX/akapit 1 masked, PDF 3 masked.
+- Rozmiar: 154 linie zmienione (4 ponad próg 150) — kod nieupychany pod próg (zgodnie z uwagą Codexa); decyzja o rozmiarze dla OWNERA.
+
+gate.py (stdout dosłownie, finalny SHA):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 638b31813962d2ba071ac02bc7d21cb98481dd9a
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 153/1 = 153.0:1 (threshold 5:1)
+  - TOTAL_LINES: 154 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_evidence.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r4_repro.py
+  - backend\tests\test_audyt_2026_10.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/implementation/gate.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r1.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2_evidence.py
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2_repro.py
+```
