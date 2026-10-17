@@ -51,3 +51,46 @@ EXCLUDED_ARTIFACTS:
 - **Numery 8–14 cyfr z separatorami** (np. „6110 9010”, 11 cyfr w grupach) — jawne w obu trybach; w Express także 8–14 ciągłe. Brief świadomie zachowuje dotychczasowe zasady; do decyzji, czy rozszerzyć fallback pełnego trybu na 8–14 z separatorami (ryzyko FP: daty, kwoty, kody).
 - **F3 / wartość mapy**: IBAN „PL61 1090 …” i 15 cyfr ze spacjami mają w mapie wartość znormalizowaną (bez spacji / z myślnikami przy deduplikacji alokatora), więc Przywróć nie oddaje oryginalnego zapisu. Wierność, nie wyciek — istniejący LYNX-TEXT-FIDELITY-F3.
 - „(+48) 606 …” w nawiasie nie łapane przez wzorzec telefonu po słowie kluczowym (z T11) — bez zmian.
+
+## Runda 2 — po FAIL r3 (`tests_r3.txt`, `47c6424`)
+IMPLEMENTATION_SHA: `9f9eefc7e3931aa3c4839238559dbab9e00c8869` (E3 w briefie `437b794` przed kodem).
+- **F1 (trafne — mój błąd):** dwa przejścia fallbacku; po zamianie długiego numeru stare spany alokatora zostawały na przesuniętych pozycjach i blokowały 8-cyfrowy numer dalej w tekście. Teraz jedno przejście: trafienia 15+ i (full) 8+ zbierane z tego samego tekstu, dłuższe wygrywa, nakładające się krótsze pomijane, jedna zamiana od końca.
+- **F2 (trafne):** separator między cyframi tylko pojedynczy. Teraz `[ \t]*-[ \t]*` lub `[ \t]*` (wielokrotne spacje/taby, myślnik z odstępami); nadal bez newline/interpunkcji/wyrazu. Wydajność sprawdzona: ~2 ms na 15 000 znaków patologicznych spacji.
+- **O1 → ROZSZERZENIE CC E3** (`financial.py`, w briefie przed kodem): ta sama wspólna reguła `cuts_long_number` — 30-cyfrowy ciąg nie jest już cięty na 26-cyfrowy IBAN + jawne 4 cyfry.
+- Konsekwencja F2 (zgodna z decyzją „szczelność ważniejsza od kategorii”): kilka liczb w wierszu tabeli rozdzielonych samymi spacjami/tabami, łącznie ≥15 cyfr, staje się jednym `NUMER_NNN` (nadmaskowanie, mapa i Przywróć poprawne).
+- Testy: reproduktory r3 jako stałe — F1 (15 ciągłe / z grupami + 8 cyfr: full maskuje oba, Express tylko długi), F2 (podwójne spacje, podwójne taby, mieszane) i E3 (30 cyfr) w obu trybach. Na `2e34d1d`: 9 FAIL, teraz zielone. Celowane: `230 passed, 10 xfailed`; **pełna suita `127 passed, 40 skipped, 1 xfailed` — 0 failed**; autotesty warstw: financial 12/12, fallback 9/9, contact 16/16, credentials 13/13, pipeline_new 11/11.
+- `number_sweep.py` rozszerzony (separatory „  ”, tab, „ \t”; długość 30; para długi+krótki): **724 przypadki, regresje 0, naprawione 440, zmieniony tekst po numerze 0**; pozostałe jawne wyłącznie <15 cyfr (Express 8/11 i 8-cyfrowy ref w parze; full 8/11 z separatorami) — poza zakresem briefu. Pomiar seed 2026 + holdout bez zmian względem rundy 1 (NUMER 16 masked, M2 0 FP, M3 84/96).
+
+gate.py (stdout dosłownie, finalny SHA):
+```
+STATUS: PASS
+HEAD_SHA: 9f9eefc7e3931aa3c4839238559dbab9e00c8869
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\rota_leak_test.py
+  - audyt\trace_layers.py
+  - backend\pseudominizer_api.py
+  - backend\smoke_test.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r5_repro.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\implementation\number_sweep.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T03-TOKEN-ALLOC\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\implementation\holdout_measure.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\implementation\geo_measure.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\implementation\geo_vertical.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - backend\tests\test_layers.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-T07-IBAN-RECEPTA/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-T07-IBAN-RECEPTA/round_01/implementation/gate.txt
+  - tasks/LYNX-T07-IBAN-RECEPTA/round_01/implementation/number_sweep.py
+  - tasks/LYNX-T07-IBAN-RECEPTA/round_01/tests/tests_r2.txt
+  - tasks/LYNX-T07-IBAN-RECEPTA/round_01/tests/tests_r3.txt
+  - tasks/LYNX-T07-IBAN-RECEPTA/round_01/tests/tests_r3_repro.py
+  - tasks/LYNX-T07-IBAN-RECEPTA/brief.md
+```
