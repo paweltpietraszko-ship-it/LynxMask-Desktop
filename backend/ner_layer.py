@@ -262,6 +262,12 @@ def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
     return True
 
 
+def _street_person(label: str, entity_text: str) -> bool:
+    """[LYNX-NER-GEO-EXACT] OSOBA, której forma koliduje z geo wyłącznie jako nazwa ulicy („ul. Kowalskiego”) —
+    filtry exact/strict geo jej nie odrzucają. Miasta, placówki i ręczna blocklista nadal tak."""
+    return label == "OSOBA" and entity_text[:1].isupper() and entity_text.lower() in _STREET_ONLY_PERSON_FORMS
+
+
 def _filter_institutions(ner_results: list) -> list:
     """Usuwa instytucje publiczne, słowa pospolite i tokeny PSE z wyników NER."""
     out = []
@@ -275,9 +281,7 @@ def _filter_institutions(ner_results: list) -> list:
         if _ORDER_CODE_RE.match(entity_text.strip()):
             logger.debug("[FILTER] pominięto kod zamówienia: '%s'", entity_text)
             continue
-        # [LYNX-NER-GEO-EXACT] nazwisko z kolizją wyłącznie z nazwą ulicy — exact/strict geo go nie odrzuca
-        street_person = ner.label == "OSOBA" and entity_text[:1].isupper() and name_lower in _STREET_ONLY_PERSON_FORMS
-        if name_lower in _NER_BLOCKLIST and not street_person:
+        if name_lower in _NER_BLOCKLIST and not _street_person(ner.label, entity_text):
             logger.debug("[FILTER] pominięto (exact): '%s'", entity_text)
             continue
         # [FIX-NER-ADDR-PREFIX] Pomiń encje będące adresami (ul., os., gen. itp.)
@@ -289,7 +293,7 @@ def _filter_institutions(ner_results: list) -> list:
             logger.debug("[FILTER] pominięto sąd/trybunał: '%s'", entity_text[:60])
             continue
         # [LYNX-T01] Jednowyrazowa OSOBA potwierdzona słownikiem/Morfeuszem — bez filtrów prefiks/przymiotnik
-        if ner.label == "OSOBA" and " " not in entity_text and (street_person or _is_person_word(entity_text)):
+        if ner.label == "OSOBA" and " " not in entity_text and (_street_person(ner.label, entity_text) or _is_person_word(entity_text)):
             out.append(ner)
             continue
         if _prefix_rejects(ner.label, entity_text, name_lower):
