@@ -28,6 +28,13 @@ generatora, użyte jako dane treningowe (ryzyko: model uczy się generatora i na
 Kolejność wg CC: pomiar M1/M2 (LYNX-DICT-LEAKTEST) → reguły kontekstowe (LYNX-CONTEXT-ANCHORS) → douczenie tylko jeśli M1
 pokaże istotną grupę wycieków bez kotwicy. Dane treningowe: syntetyczne, z nazwiskami rozłącznymi ze słownikiem; ocena na
 zbiorze rozłącznym; mierzyć „zapominanie” (FIRMA/miejsca) przed/po. Bez realnych dokumentów w zbiorze treningowym (RODO).
+**Uzupełnienie 2026-10-17 (propozycja Pawła):** uczyć spaCy na przypadkach, które silnik przepuści na danych z LYNX-PUBLIC-DATA-TESTS
+(wzory + dane syntetyczne, odpisy KRS; etykiety z konstrukcji/API lub od innego modelu). Ocena CC — wykonalne, warunki:
+(1) najpierw rozbić wycieki: „spaCy nie wykrył” vs „wykrył, a nasz filtr odrzucił” — T01 i GEO-EXACT pokazały, że duża część to
+filtr; trening pomaga tylko pierwszej grupie; (2) trening na całych dokumentach, nie tylko na samych pominięciach (inaczej model
+zapomina resztę) + pomiar zapominania; (3) twardy podział dokumentów na treningowe i testowe — nigdy nie mierzyć na tym, na czym
+uczono; (4) dane jawne rejestrowe dopuszczalne wg tej samej oceny co PUBLIC-DATA-TESTS, prywatne (`dataset_real/`) — nie;
+(5) nowy model to plik ~500 MB z wersją i powtarzalnym treningiem — osobny Task po wynikach pomiaru na danych prawdziwych.
 
 ## 2026-10-16 Redakcja wizualna obrazu (blur twarzy, prostokąty na pikselach)
 
