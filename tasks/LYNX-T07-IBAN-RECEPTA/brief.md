@@ -24,8 +24,9 @@ TASK_SCOPE:
 - backend/tests/test_pipeline_v2.py
 - backend/layers/contact.py
 - backend/layers/credentials.py
+- backend/layers/financial.py
 
-OUT_OF_SCOPE: globalna przebudowa detektorów/centralnego resolvera, przepisywanie `financial.py`, `credentials.py` / `contact.py` (poza ROZSZERZENIEM CC E1/E2 niżej), `validation.py`, `ocr_normalizer.py`, zmiany ich kolejności bez reproduktora, `output_guard.py`, UI, tokeny/S2, T11/F3, EMAIL-LOCALPART-OCR (OCR-spacja w imieniu localpart), nowe zależności, nowe pliki, rzeczywiste dokumenty i profil.
+OUT_OF_SCOPE: globalna przebudowa detektorów/centralnego resolvera, przepisywanie `financial.py` / `credentials.py` / `contact.py` (poza ROZSZERZENIEM CC E1–E3 niżej), `validation.py`, `ocr_normalizer.py`, zmiany ich kolejności bez reproduktora, `output_guard.py`, UI, tokeny/S2, T11/F3, EMAIL-LOCALPART-OCR (OCR-spacja w imieniu localpart), nowe zależności, nowe pliki, rzeczywiste dokumenty i profil.
 
 ## Minimalne testy / kryteria PASS
 1. Istniejący `test_iban_pl_bez_jawnej_resztki` (dwa warianty: PL z odstępami, 26 cyfr NRB bez PL): zdjąć `xfail(strict=True)` dopiero gdy test potwierdza **jeden** token `NUMER_NNN` za CAŁY pierwotnie wykrywalny span, brak `PL61`/jawnych końcówek, pełną wartość spanu w `reverse_map`, `force_block=False`. Nie wystarczy „brak substringu 6110”.
@@ -52,3 +53,4 @@ Ta sama klasa co BUG-IBAN-RECEPTA — warstwa specjalistyczna maskuje FRAGMENT d
 - Poprawka: w `apply_contact_layer` odrzucić trafienie telefonu, którego span bezpośrednio sąsiaduje z kolejną cyfrą (po pojedynczym separatorze spacja/tab/myślnik albo bez) — „pełna wartość albo zostaw”; całość przejmuje końcowy fallback. Bez zmiany wzorców e-mail ani kolejności warstw.
 - Testy: obie postacie 15 cyfr (spacje, myślniki) w full i Express jako jeden `NUMER_NNN`; zwykły telefon „tel. 512 987 654.” nadal maskowany przez warstwę kontaktów.
 - **E2** (dopisane po przeglądzie rodziny numerów `implementation/number_sweep.py`, przed kodem E2) `backend/layers/credentials.py::apply_credentials_layer`: wzorzec „Tablica rejestracyjna pojazdu” łapie „PL6110” z „PL6110 9010 1400 000” → reszta (11 cyfr) jawna, w obu trybach, także przed T07. Bez zmiany wzorców JSON (zakaz briefu): jedna wspólna reguła w `fallback.py` (`long_number_runs` / `cuts_long_number`) — trafienie warstwy, które przecina ciąg ≥15 cyfr, ale go w całości nie obejmuje, jest pomijane; całość przejmuje końcowy fallback. Ta sama reguła zastępuje filtr E1 w `contact.py`. Recepta z etykietą obejmuje cały ciąg — nadal rozpoznawana. Plik dopisany do TASK_SCOPE.
+- **E3** (po audycie r3, obserwacja O1 Codexa, przed kodem E3) `backend/layers/financial.py::apply_financial_layer`: 30-cyfrowy ciąg (2 cyfry + siedem grup po 4) — `financial` bierze 26-cyfrowy prefiks, 4 cyfry jawne, oba tryby, także przed T07. Ta sama klasa; ta sama wspólna reguła `cuts_long_number` (bez zmiany wzorców IBAN/NRB) — całość przejmuje fallback. Plik dopisany do TASK_SCOPE. Poprawki F1/F2 z r3 dotyczą `fallback.py` (już w zakresie).
