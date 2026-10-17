@@ -1,7 +1,13 @@
 STATUS: WYMAGA_DECYZJI
-HEAD_SHA: e102fd87dd105caaa57baae5145ed4a017c00c9f
+HEAD_SHA: ec0c505205c7bb6511626818ee23cc3c13e4f640
 CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
 WYMAGA_DECYZJI:
-  - TOTAL_LINES: 347 lines changed (threshold 150)
+  - TOTAL_LINES: 370 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r2_repro.py
 EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-DICT-LEAKTEST/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-DICT-LEAKTEST/round_01/implementation/gate.txt
   - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r1.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2_repro.py

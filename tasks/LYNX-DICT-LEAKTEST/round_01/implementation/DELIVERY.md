@@ -30,7 +30,7 @@ Zgodny z kodem; przyjęty. `pipeline.pseudonymize_document` zwraca `PipelineResu
 - **F1 utrata spacji po kropce**: „Faktura nr 12/2026. Termin…” → „…12/2026.Termin…”, „Ala ma kota. Kot…” → „…kota.Kot…” — także bez encji w zdaniu; Przywróć nie odtwarza oryginału. Źródło 45/96 różnic M3.
 - **F2 normalizacja OCR psuje tekst**: „tel. +48 512 987 654. Termin” → po przywróceniu „…654.7ermin” (T→7 po cyfrach).
 - **F3 PESEL**: „PESEL 44051401359” → „PESEL: NUMER_001” (dopisany dwukropek); **telefon**: „+” zostaje poza tokenem, wartość w mapie bez spacji → po przywróceniu „+48512987654”.
-- **F4 FP osoby**: „Ala ma kota.” → „OSOBA_001 ma kota.” (ręczna próba przy diagnozie F1; nie należy do zestawu M2).
+- ~~F4~~ **wycofane** (korekta Pawła): „Ala ma kota.” → OSOBA to poprawne maskowanie — „Ala” jest imieniem w słowniku.
 
 ## gate.py (stdout dosłownie)
 ```
@@ -43,3 +43,29 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r1.txt
 ```
 Uzasadnienie: brief przewiduje WYMAGA_DECYZJI >150 i zabrania osłabiania M1–M3 dla gate. Runner 269 l. (wszystkie funkcje ≤50, ruff czysto), testy 78 l.
+
+## Runda 2 — poprawki po FAIL Codexa r2 (`tests_r2.txt`, `a212f05`)
+IMPLEMENTATION_SHA: `ec0c505205c7bb6511626818ee23cc3c13e4f640`. Wszystkie trzy zarzuty trafne.
+- **R1** `classify_m1`: liczą się wyłącznie tokeny **obecne w wyniku** i mające wpis w mapie (`_output_tokens`); jeśli którykolwiek token pokrywający span ma inną kategorię → `wrong_category` (wcześniej wystarczył jeden zgodny); wpis w mapie bez tokenu w tekście → `no_mapping`. Przy okazji `TOKEN_RE` bez `` na początku — token sklejony z cyframi („PL6110NUMER_001”) był niewidoczny (wyszło przy teście IBAN po zawężeniu do tokenów z wyniku).
+- **R2** `M2_CASES`: kontrakt to `{kategoria: [oczekiwane wartości]}` (ZUS/GUS, „ul. Kowalskiego 7”, „1 250,00 zł”); token dozwolonej kategorii na innym słowie → `fp`. Brane pod uwagę tylko tokeny obecne w wyniku.
+- **R3** `_out_path`: porównanie `normcase(realpath)` — ta sama ścieżka repo inną wielkością liter odrzucana.
+- Testy: scenariusze z `tests_r2_repro.py` przeniesione jako asercje regresyjne (R1 ×3, R2 ×1, R3 na Windows) obok istniejących granic (masked, blocked, error, leak, partial_mask, fp/contract/clean). `test_audyt_2026_10.py`: `58 passed, 15 xfailed`.
+- Realny runner po poprawkach (seed 2026): dwa przebiegi z holdoutem identyczne (`e089762029f7a27b`, 96 przypadków); bez holdoutu digest `ac6a7ca1e033b862`, 56, `NOT_MEASURED` — zgodny z niezależnym przebiegiem Codexa. Wynik bazowy bez zmian (M1 jak wyżej, M2 5 clean + 3 contract, M3 51/96) — zaostrzony klasyfikator nie zmienił oceny realnego silnika na tym zestawie.
+- Pełna suita: `1 failed (IBAN-RECEPTA), 126 passed, 40 skipped, 1 xfailed`.
+
+gate.py (stdout dosłownie):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: ec0c505205c7bb6511626818ee23cc3c13e4f640
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 370 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r2_repro.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-DICT-LEAKTEST/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-DICT-LEAKTEST/round_01/implementation/gate.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r1.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2_repro.py
+```
