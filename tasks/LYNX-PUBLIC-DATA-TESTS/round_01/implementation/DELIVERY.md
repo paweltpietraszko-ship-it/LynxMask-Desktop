@@ -77,3 +77,37 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2_evidence.py
   - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2_repro.py
 ```
+
+## Runda 3 — po FAIL r3 (`tests_r3.txt`, `d5ad279`)
+IMPLEMENTATION_SHA: `d82709c11b77dc51d8cca1107776aa3355674182`.
+- **F1 resztkowe (trafne — za wąska poprawka w rundzie 2):** `str.count` liczył wystąpienie krótszej wartości wewnątrz dłuższej („k.zalewska@…” w „anna.k.zalewska@…”). Tym razem poprawka na całą rodzinę: `_own_occurrences` liczy tylko wystąpienia (a) samodzielne — nie przyklejone do znaków słowa/adresu (`[\w.@%+-]` przed, `[\w@%+-]` lub „.znak” po) i (b) nie leżące wewnątrz dłuższej wartości tego samego klucza. Reszta logiki bez zmian (za mało → `EXTRACTION_UNVERIFIED`, zero → `MISSING/CHANGED`).
+- Testy rodziny (komórka tabeli nieodczytana, jej wartość jest tylko fragmentem wartości z akapitu): sufiks e-maila (scenariusz r3), nazwisko w „imię + nazwisko”, prefiks dłuższego numeru → tabela nigdy `masked`. Kontrole: dwa osobne wystąpienia tej samej wartości → oba `masked`; unikalna brakująca komórka → `EXTRACTION_MISSING`; scenariusz r2 → `EXTRACTION_UNVERIFIED`. Na `638b318`: 2 z nowych FAIL (sufiks e-maila, nazwisko), teraz wszystkie PASS. `test_engine_quality_layout.py` `8 passed`; runner `-k quality` `5 passed`; pełna suita `129 passed, 40 skipped, 1 xfailed` (0 failed).
+- Próbka z gov.pl bez zmian (DOCX tabela 3 MISSING, akapit 1 masked, PDF 3 masked).
+- Rozmiar: 191 linii (próg 150) — przyrost to głównie testy rodziny przypadków, nie upychane. Decyzja rozmiaru dla OWNERA.
+
+gate.py (stdout dosłownie, finalny SHA):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: d82709c11b77dc51d8cca1107776aa3355674182
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 190/1 = 190.0:1 (threshold 5:1)
+  - TOTAL_LINES: 191 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_evidence.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r4_repro.py
+  - backend\tests\test_audyt_2026_10.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/implementation/gate.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r1.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2_evidence.py
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r2_repro.py
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r3.txt
+  - tasks/LYNX-PUBLIC-DATA-TESTS/round_01/tests/tests_r3_repro.py
+```
