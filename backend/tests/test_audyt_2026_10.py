@@ -277,6 +277,9 @@ def test_fix_ocr_email_nie_skleja_zdan(text, fragment):
     ("Pan (nr tel. 512 987 654) zglosil sie do urzedu", "654) zglosil"),
     ("tel. +48 512 987 654. Termin płatności", "654. Termin"),
     ("Tel: +48 606 219 T2T", "606 219 727"),  # cyfry OCR w samym numerze nadal poprawiane
+    # Codex r2 R1: ostatnia grupa złożona wyłącznie ze znaków OCR domyka 9 cyfr — nadal część numeru
+    ("Tel: +48 606 219 TTT", "606 219 777"), ("Tel: +48 606 219 OOO", "606 219 000"), ("Tel: +48 606 219 III", "606 219 111"),
+    ("tel. 123 45 To jest", "45 To jest"),  # człon bez cyfry niedomykający numeru zostaje słowem
 ])
 def test_ocr_normalizer_nie_psuje_slow(text, expected):
     from pipeline_core import PipelineState, TokenAllocator
@@ -291,6 +294,9 @@ def test_ocr_normalizer_nie_psuje_slow(text, expected):
     ("Faktura nr 12/2026. Kontakt: anna.nowak@example.pl. Termin płatności 14 dni.", "anna.nowak@example.pl"),  # E1
     ("Faktura nr 12/2026. Kontakt: tel. 512 987 654. Termin płatności 14 dni.", "512987654"),
     ("Faktura nr 12/2026. Kontakt: jan@wp. pl. Termin płatności 14 dni.", "jan@wp.pl"),  # OCR TLD nadal łączony
+    # Codex r2 R2: pełna domena + „. słowo” małą literą to koniec zdania, nie TLD
+    ("Faktura nr 12/2026. Kontakt: nowak@example.pl. termin. Termin płatności 14 dni.", "nowak@example.pl"),
+    ("Faktura nr 12/2026. Kontakt: nowak@example.pl. dalej. Termin płatności 14 dni.", "nowak@example.pl"),
 ])
 def test_wiernosc_tekstu_i_maskowanie(text, value):
     import layers.ner_adapter as ner_mod
@@ -298,8 +304,19 @@ def test_wiernosc_tekstu_i_maskowanie(text, value):
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
         out, rev, _ = run_pipeline_new(text, anon_map={})
     assert "12/2026. Kontakt" in out and ". Termin płatności 14 dni." in out, out
-    assert [v for v in rev.values() if value in v.replace(" ", "")] and "Termin" not in "".join(rev.values()), (out, rev)
+    joined = "".join(rev.values()).lower()
+    assert [v for v in rev.values() if value in v.replace(" ", "")] and "termin" not in joined and "dalej" not in joined, (out, rev)
     assert value not in out.replace(" ", ""), out
+
+
+# Codex r2 R1 (pion): telefon z ostatnią grupą wyłącznie ze znaków OCR nadal zamaskowany, końcówka nie jest jawna.
+@pytest.mark.parametrize("tail", ["TTT", "OOO", "III"])
+def test_telefon_ocr_ostatnia_grupa_zamaskowany(tail):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = run_pipeline_new(f"Kontakt: Tel: +48 606 219 {tail}", anon_map={})
+    assert tail not in out and any(v.startswith("48606219") for v in rev.values()), (out, rev)
 
 
 # ── False negatives / false positives ─────────────────────────────────────────

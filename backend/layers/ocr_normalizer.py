@@ -85,9 +85,6 @@ _SERIES_MAP: dict[str, str] = {
     '2': 'Z', '1': 'I', '0': 'O', '8': 'B', '5': 'S', '6': 'G', '7': 'T',
 }
 
-_NUMERIC_CHARS = r'TIlOSBGZJzo0-9ЗзОоІі'
-
-
 def _fix_seg(seg: str) -> str:
     """Zamienia znaki OCR w segmencie numerycznym na cyfry."""
     return ''.join(_OCR_TO_DIGIT.get(c, c) for c in seg)
@@ -191,9 +188,6 @@ _NIP_BARE3223_RE = re.compile(
     r'([TIlOSBGZ0-9ЗзОоo]{3})\b'
 )
 _NIP_DOT_RE = re.compile(r'(\d{3}-\d{3}-\d{2})\.(\d{2})(?!\d)')
-_NIP_SPLIT_RE = re.compile(r'(?i)(NIP\s{0,3}:?\s{0,3})([0-9][0-9\-\s]{10,16}[0-9])')
-
-
 def _nip_fix_bare(m: re.Match) -> str:
     segs = [m.group(1), m.group(3), m.group(5), m.group(7)]
     seps = [m.group(2), m.group(4), m.group(6)]
@@ -211,17 +205,6 @@ _DOWOD_DIGITS_RE = re.compile(
     r'([A-Z]{2,3})[^\S\n]?'
     r'([TIlOSBGZ0-9]{1,3}[^\S\n]?[TIlOSBGZ0-9]{3,5}|[TIlOSBGZ0-9]{6})'
 )
-
-
-def _fix_dowod(m: re.Match) -> str:
-    series_raw = m.group(1)
-    num_raw = m.group(2)
-    # Seria: cyfra na pozycji litery → litera (OCR_SERIES_CHAR_MAP)
-    series_fixed = ''.join(_SERIES_MAP.get(c, c) for c in series_raw)
-    # Numer: litera na pozycji cyfry → cyfra
-    num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) if not c.isspace() else c for c in num_raw)
-    prefix = m.group(0)[:m.start(1) - m.start()]
-    return prefix + series_fixed + num_raw[:1].replace(num_raw[0], ' ' if num_raw[0].isspace() else '') + num_fixed
 
 
 # ── Krok 6: Paszport ─────────────────────────────────────────────────────────
@@ -314,11 +297,19 @@ _PHONE_AFTER_KW_RE = re.compile(
 )
 
 def _phone_number_len(num_raw: str, next_char: str) -> int:
-    """[LYNX-T11 F2] Długość numeru w dopasowaniu: bez końcowych członów bez cyfry („T” z „Termin”) i członu urwanego w słowie."""
-    chunks = list(re.finditer(r'[^\s\-().]+', num_raw))
-    while chunks and (not any(c.isdigit() for c in chunks[-1].group()) or next_char.isalpha()):
-        next_char, _ = "", chunks.pop()
-    return chunks[-1].end() if chunks else 0
+    """[LYNX-T11 F2] Długość numeru w dopasowaniu. Człon bez cyfry („TTT”) należy do numeru, gdy domyka 9 cyfr krajowych
+    lub stoi przed członem z cyfrą; człony po 9 cyfrach i człon urwany w słowie („T” z „Termin”) zostają tekstem."""
+    chunks, count, keep = list(re.finditer(r'[^\s\-().]+', num_raw)), 0, 0
+    for i, c in enumerate(chunks):
+        g = c.group()
+        if i == 0 and len(chunks) > 1 and g.lstrip('+') in ('48', '0048'):
+            keep = c.end()
+        elif count >= 9 or (i == len(chunks) - 1 and next_char.isalpha()):
+            break
+        else:
+            count += len(g)
+            keep = c.end() if any(ch.isdigit() for ch in g) or count == 9 else keep
+    return keep
 
 
 # ── Krok 12: OCR_DIGIT_IN_CONTEXT (safety net) ───────────────────────────────
