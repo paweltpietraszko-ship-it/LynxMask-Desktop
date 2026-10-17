@@ -313,16 +313,11 @@ _PHONE_AFTER_KW_RE = re.compile(
     r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d\s\-(). ]{7,22}[TIlOSBGZzo\d])'
 )
 
-_PHONE_CHUNK_RE = re.compile(r'[^\s\-().]+')
-
-
 def _phone_number_len(num_raw: str, next_char: str) -> int:
-    """[LYNX-T11 F2] Długość części dopasowania, która jest numerem: odcina końcowe człony bez cyfry („T” z „Termin”,
-    „z” z „zglosil”) i człon urwany w środku słowa (następny znak to litera). Niepewna granica → słowo bez zmian."""
-    chunks = list(_PHONE_CHUNK_RE.finditer(num_raw))
+    """[LYNX-T11 F2] Długość numeru w dopasowaniu: bez końcowych członów bez cyfry („T” z „Termin”) i członu urwanego w słowie."""
+    chunks = list(re.finditer(r'[^\s\-().]+', num_raw))
     while chunks and (not any(c.isdigit() for c in chunks[-1].group()) or next_char.isalpha()):
-        next_char = ""
-        chunks.pop()
+        next_char, _ = "", chunks.pop()
     return chunks[-1].end() if chunks else 0
 
 
