@@ -1,0 +1,43 @@
+DOMKNIĘCIE AUDYTU — LYNX-T02-CORS-EXPRESS
+Data: 2026-10-17
+Exact SHA backendu: dc498366368b0b4d4767a61e6c6d56c939630713
+Frontend wydania: 5b874072cfe818e12f3f81714d9af8944c3b8f55 (T10)
+Wynik: PASS dla powyższego backendu i zadeklarowanego zestawienia z T10.
+Poprzedni PARTIAL z tests_r4.txt zamknięty. Bez merge i bez certyfikacji
+przyszłego stanu main po integracji.
+
+ZACHOWANE DOWODY WŁASNE
+Raport r4 / commit 03cac4b: 16 testów celowanych, 88 niezależnych
+sprawdzeń HTTP, pion prawdziwych endpointów maskowania, 7 testów
+archiwum po korekcie fixture w pamięci audytu. Backend niezmieniony,
+nie powtarzano tych testów wyłącznie z powodu nowego pomiaru.
+
+BRAKUJĄCA WARSTWA — WERYFIKACJA DOWODÓW WYDANIA
+Oceniono DELIVERY T10, header_capture.py i naglowki_release_windows.jsonl
+na 4f82794. Wrapper opakowuje rzeczywiste app T02, nie symuluje odpowiedzi
+middleware; zapisuje wyłącznie metodę/ścieżkę/Origin/Host/status oraz bool
+obecności tokenu. Bez PII i wartości tokenów.
+39 rekordów i jeden separator ---EXPRESS---. Wszystkie rekordy mają:
+  Origin: http://tauri.localhost
+  Host: 127.0.0.1:8765
+Sekcja standard: GET /archive 200, POST /preview 200, POST /archive 200.
+Sekcja Express: GET /express/token 200, POST /preview 200, GET /archive 401.
+Nagłówki i wynik ścieżek zgodne z allowlist/uprawnieniami exact SHA T02.
+
+Dowód pomiaru/builda Windows dostarczyli CC oraz relacjonowany smoke
+OWNERA. Codex ocenił spójność surowych rekordów, wrappera, zachowanego
+kontraktu i uprzednio niezależnie testowanego middleware. Nie deklaruje
+własnego ponowienia pomiaru z EXE/WebView2 ani buildu Tauri.
+To jawna granica warstwy dowodowej, nie nowy wymóg dostarczenia
+hash binarnego, którego brief nie stawiał.
+
+NIEZALEŻNY AUDYT T10
+Raport T10 tests_r2.txt / a111d95: czysty npm ci + npm run build exit 0,
+własny smoke rzeczywistego renderera z syntetycznym API/mostem Tauri,
+Zapisz aktywny i blokowany (klik/Enter), motywy i loading list. Warstwa
+UI zablokowanego wyniku wcześniej NOT_CHECKED została sprawdzona
+w rendererze. Nie zastępuje to pomiaru Origin z Windows; ten oceniono
+osobno z dowodów powyżej.
+
+Fixture archiwum pozostaje przypisana do T12 zgodnie z briefem T10.
+Nie zmieniono kodu produktu, tokenów, CORS ani zakresu API.
