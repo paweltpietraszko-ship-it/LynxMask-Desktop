@@ -78,11 +78,6 @@ _BARE_SUFFIX_RE = re.compile(
     r"spółka|spółki|spółce|spółkę|s\.?\s*c\.?)$",
     re.IGNORECASE,
 )
-# Oczyść token z przyrostka prawnego: "FIRMA_001 S.A." → "FIRMA_001"
-_FIRMA_CLEANUP_RE = re.compile(
-    r"(FIRMA_\d{3})\s+(?:S\.A\.|Sp\.?\s*z\s*o\.o\.|Sp\.?\s*k\.|Sp\.?\s*j\.|S\.C\.)",
-    re.IGNORECASE,
-)
 
 # ── Polskie diakrytyki do strip (NFD) ────────────────────────────────────────
 def _strip_diacritics(s: str) -> str:
@@ -304,8 +299,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             state.text = state.text.replace(_var_text, _tok_id)
         state.text = state.text.replace(_target, _tok_id)
 
-    # Oczyść "FIRMA_001 S.A." → "FIRMA_001" (forma prawna przyklejona do tokenu)
-    state.text = _FIRMA_CLEANUP_RE.sub(r"\1", state.text)
+    # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje w tekście: mapa jej nie ma,
+    # więc usunięcie gubiło ją przy Przywróć. Sama forma nie identyfikuje firmy.
 
 
 # ─────────────────────────────────────────────────────────────────────────────

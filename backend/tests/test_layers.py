@@ -565,3 +565,19 @@ def test_firma_cala_nazwa_z_forma_full_ner(_full_ner, name):
     for tok, val in res.reverse_map.items():
         restored = restored.replace(tok, val)
     assert restored == text  # Przywróć 1:1, forma prawna nie ginie
+
+
+# LYNX-FIRMA-LEGAL-FORM-RESTORE: forma prawna za tokenem nie jest usuwana — mapa jej nie ma, Przywróć musi ją odtworzyć.
+@pytest.mark.parametrize("form", ["Sp.k.", "S.A.", "Sp. z o.o.", "Sp. j."])
+@pytest.mark.parametrize("first,second", [("{n}", "{n} {f}"), ("{n} {f}", "{n} {f}")])
+def test_forma_prawna_nie_ginie_przy_przywroc(_full_ner, form, first, second):
+    import contextlib
+    import io
+    n = "Mega-Pack Polska"
+    text = f"Umowa z firmą {first.format(n=n, f=form)} została podpisana. Wykonawca: {second.format(n=n, f=form)}\nTermin: 30 dni."
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = _full_ner(text)
+    restored = res.text
+    for tok, val in sorted(res.reverse_map.items(), key=lambda kv: -len(kv[0])):
+        restored = restored.replace(tok, val)
+    assert not res.guard_blocked and "Mega" not in res.text and restored == text, (res.text, res.reverse_map)
