@@ -195,6 +195,10 @@ def test_credentials_recepta_cala_wartosc(text, masked):
     ("Nr 123 456 789 012 345.", ["123 456 789 012 345"]),  # E1: telefon nie zabiera pierwszych 9 cyfr
     ("Nr 123-456-789-012-345.", ["123-456-789-012-345"]),
     ("Konto PL6110 9010 1400 000.", ["PL6110 9010 1400 000"]),  # E2: tablica rejestracyjna nie zabiera „PL6110”
+    # Codex r3 F2: wielokrotne spacje/taby między grupami; O1/E3: 30 cyfr nie cięte przez financial
+    ("Id 123  456  789  012  345.", ["123  456  789  012  345"]), ("Id 123\t\t456\t\t789\t\t012\t\t345.", ["123\t\t456\t\t789\t\t012\t\t345"]),
+    ("Id 123 \t456 \t789 \t012 \t345.", ["123 \t456 \t789 \t012 \t345"]),
+    ("Ciąg 12 3456 7890 1234 5678 9012 3456 7890 koniec.", ["12 3456 7890 1234 5678 9012 3456 7890"]),
     ("Wiersz 123456789012345\nDalej.", ["123456789012345"]),
     ("Kontakt: 123456789012345@example.pl. Numer: 123456789012345.", ["123456789012345@example.pl", "123456789012345"]),
 ])
@@ -219,6 +223,19 @@ def test_fallback_8_14_tylko_pelny_tryb():
         full = run_pipeline_new("Ref 12345678.", anon_map={})
         expr = run_pipeline_express("Ref 12345678.", anon_map={})
     assert full[0] == "Ref NUMER_001." and expr[0] == "Ref 12345678.", (full, expr)
+
+
+# Codex r3 F1: krótki numer 8+ po długim 15+ nadal maskowany w pełnym trybie (jedno przejście fallbacku).
+@pytest.mark.parametrize("long", ["123456789012345", "123 456 789 012 345"])
+def test_fallback_krotki_po_dlugim(long):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new, run_pipeline_express
+    text = f"Nr {long}, ref 12345678."
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        full = run_pipeline_new(text, anon_map={})
+        expr = run_pipeline_express(text, anon_map={})
+    assert full[0] == "Nr NUMER_001, ref NUMER_002." and sorted(full[1].values()) == sorted([long, "12345678"]), full
+    assert expr[0] == "Nr NUMER_001, ref 12345678." and expr[1] == {"NUMER_001": long}, expr
 
 
 @pytest.mark.xfail(strict=True, reason="BUG-EXPRESS-FAIL-OPEN: wyjątek w run_pipeline_express zwraca oryginał z force_block=False (S3)")

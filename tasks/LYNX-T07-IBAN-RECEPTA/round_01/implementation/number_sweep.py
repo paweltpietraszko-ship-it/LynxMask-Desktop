@@ -17,12 +17,13 @@ def run_all(cases):
     return res
 
 def cases():
-    digits = "61109010140000071219812874"
+    digits = "611090101400000712198128743456"
     out = []
-    for n, sep, label, cc in itertools.product([8, 11, 15, 22, 26], ["", " ", "-"], ["", "Konto ", "Nr ", "tel. ", "numer recepty: "], ["", "PL"]):
+    for n, sep, label, cc in itertools.product([8, 11, 15, 22, 26, 30], ["", " ", "-", "  ", "	", " 	"], ["", "Konto ", "Nr ", "tel. ", "numer recepty: "], ["", "PL"]):
         d = digits[:n]
         val = sep.join(d[i:i + 4] for i in range(0, n, 4)) if sep else d
         out.append(f"Dane: {label}{cc}{val}. Dalej tekst.")
+    out += [f"Dane: {d}, ref 12345678. Dalej tekst." for d in ("123456789012345", "123 456 789 012 345")]  # r3 F1: krótki po długim
     return out
 
 def leaks(text, out):
