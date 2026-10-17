@@ -284,6 +284,9 @@ def test_fix_ocr_email_nie_skleja_zdan(text, fragment):
     ("Tel: +48606 219 TTT", "606 219 777"), ("Tel: +48606 219 OOO", "606 219 000"), ("Tel: +48606 219 III", "606 219 111"),
     ("Tel: 0048 606 219 TTT", "606 219 777"), ("Tel: 48 606 219 TTT", "606 219 777"),
     ("tel. 48 362 12 34 To jest", "34 To jest"),  # 9 cyfr bez prefiksu + słowo „To” — słowo nietknięte
+    # Codex r4 R1: grupy OCR wielką + małymi literami to nadal cyfry numeru
+    ("Tel: +48 606 219 Ill", "606 219 111"), ("Tel: +48 606 219 Ooo", "606 219 000"), ("Tel: +48 606 219 Tll", "606 219 711"),
+    ("tel. +48 512 987 654 To jest", "654 To jest"),
 ])
 def test_ocr_normalizer_nie_psuje_slow(text, expected):
     from pipeline_core import PipelineState, TokenAllocator
@@ -315,7 +318,7 @@ def test_wiernosc_tekstu_i_maskowanie(text, value):
 
 # Codex r2 R1 (pion): telefon z ostatnią grupą wyłącznie ze znaków OCR nadal zamaskowany, końcówka nie jest jawna.
 @pytest.mark.parametrize("prefix", ["+48 ", "+48"])  # Codex r3: także prefiks sklejony z pierwszą grupą
-@pytest.mark.parametrize("tail", ["TTT", "OOO", "III"])
+@pytest.mark.parametrize("tail", ["TTT", "OOO", "III", "Ill", "Ooo", "Tll"])  # Codex r4: także wielka + małe
 def test_telefon_ocr_ostatnia_grupa_zamaskowany(tail, prefix):
     import layers.ner_adapter as ner_mod
     from pipeline_new import run_pipeline_new
