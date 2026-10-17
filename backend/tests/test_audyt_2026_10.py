@@ -194,6 +194,7 @@ def test_credentials_recepta_cala_wartosc(text, masked):
     ("Nr 123456789012345.", ["123456789012345"]),
     ("Nr 123 456 789 012 345.", ["123 456 789 012 345"]),  # E1: telefon nie zabiera pierwszych 9 cyfr
     ("Nr 123-456-789-012-345.", ["123-456-789-012-345"]),
+    ("Konto PL6110 9010 1400 000.", ["PL6110 9010 1400 000"]),  # E2: tablica rejestracyjna nie zabiera „PL6110”
     ("Wiersz 123456789012345\nDalej.", ["123456789012345"]),
     ("Kontakt: 123456789012345@example.pl. Numer: 123456789012345.", ["123456789012345@example.pl", "123456789012345"]),
 ])

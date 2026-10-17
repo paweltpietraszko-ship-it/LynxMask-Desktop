@@ -19,6 +19,16 @@ _FALLBACK_RE = re.compile(r"(?<!\d)\d{8,}(?!\d)")
 _LONG_NUMBER_RE = re.compile(r"(?<!\w)(?:[A-Z]{2}(?=\d{2}))?\d(?:[ \t-]?\d){14,}(?!\w)")
 
 
+def long_number_runs(text: str) -> list[tuple[int, int]]:
+    """[LYNX-T07] Spany całych ciągów ≥15 cyfr w tekście (to samo, co przejmie końcowy fallback)."""
+    return [(m.start(), m.end()) for m in _LONG_NUMBER_RE.finditer(text)]
+
+
+def cuts_long_number(runs: list[tuple[int, int]], start: int, end: int) -> bool:
+    """Trafienie warstwy przecina długi numer, ale nie obejmuje go całego — pełna wartość albo nic."""
+    return any(a < end and start < b and not (start <= a and b <= end) for a, b in runs)
+
+
 def apply_fallback_layer(state: PipelineState, full: bool = True) -> None:
     """Ostatnia warstwa: całe resztki ≥15 cyfr (oba tryby), w pełnym trybie także ciągi 8+ cyfr."""
     for pattern in (_LONG_NUMBER_RE, _FALLBACK_RE) if full else (_LONG_NUMBER_RE,):
