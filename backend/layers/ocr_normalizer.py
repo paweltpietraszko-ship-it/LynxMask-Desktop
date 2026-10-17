@@ -293,7 +293,7 @@ def _fix_postal(m: re.Match) -> str:
 _PHONE_AFTER_KW_RE = re.compile(
     r'(?i)\b(tel(?:efon)?|kom(?:\.?|orkowy)?|mob(?:\.?|ile)?|fax|faks)'
     r'\.?[^\S\n]*[:–\-]?[^\S\n]*'
-    r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d \t\-().]{7,22}[TIlOSBGZzo\d])'
+    r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d\s\-(). ]{7,22}[TIlOSBGZzo\d])'
 )
 
 def _phone_number_len(num_raw: str, next_char: str) -> int:

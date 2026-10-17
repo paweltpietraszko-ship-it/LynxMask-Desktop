@@ -90,16 +90,22 @@ def _normalize_email(raw: str) -> str:
     return result.strip()
 
 
-def line_matches(pattern: re.Pattern, text: str):
-    """[LYNX-NEWLINE-CROSSING] Dopasowania wzorca LICZBOWEGO w obrębie jednej linii (wartość z sąsiedniego wiersza, np.
-    komórki tabeli, nie zostaje doklejona) i nie startujące w cyfrach tokenu („NUMER_001”) ani tuż po „cyfra-” (fragment
-    dłuższego numeru, np. „000-12-46” z „526-000-12-46”). Zwraca (start, end, wartość) w układzie całego tekstu."""
-    pos = 0
+def _clean_start(text: str, start: int) -> bool:
+    """Start nie w cyfrach tokenu („NUMER_001”) ani tuż po „cyfra-” (fragment dłuższego numeru, „000-12-46” z „526-000-12-46”)."""
+    return not re.search(r"(?:[A-Za-z]_\d*|\d-)$", text[:start].rsplit("\n", 1)[-1])
+
+
+def line_matches(pattern: re.Pattern, text: str) -> list[tuple[int, int, str]]:
+    """[LYNX-NEWLINE-CROSSING] Dopasowania wzorca LICZBOWEGO: najpierw w obrębie każdej linii; dopasowanie przez nową linię
+    tylko gdy żadna jego część nie jest już samodzielną wartością swojej linii (OCR przełamał JEDEN numer: „512\\n987 654”),
+    a nie dwie kompletne wartości z sąsiednich wierszy (komórki tabeli). Zawsze z czystym startem (_clean_start)."""
+    found, pos = [], 0
     for line in text.split("\n"):
-        for m in pattern.finditer(line):
-            if not re.search(r"(?:[A-Za-z]_\d*|\d-)$", line[:m.start()]):
-                yield pos + m.start(), pos + m.end(), m.group(0)
+        found += [(pos + m.start(), pos + m.end(), m.group(0)) for m in pattern.finditer(line) if _clean_start(text, pos + m.start())]
         pos += len(line) + 1
+    found += [(m.start(), m.end(), m.group(0)) for m in pattern.finditer(text) if "\n" in m.group(0) and _clean_start(text, m.start())
+              and not any(a < m.end() and m.start() < b for a, b, _ in found)]
+    return found
 
 
 def apply_contact_layer(state: PipelineState) -> None:

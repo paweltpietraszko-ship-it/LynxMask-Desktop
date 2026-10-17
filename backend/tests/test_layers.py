@@ -497,3 +497,9 @@ class TestNewlineCrossing:
     def test_ocr_newline_wewnatrz_emaila_zachowany(self, text):
         for out, rev, _ in _pipelines(text):
             assert out == "Mail: EMAIL_001 koniec" and list(rev.values()) == ["jan@example.pl"], (out, rev)
+
+    # Codex r2 F1: JEDEN telefon przełamany przez OCR nową linią — nadal jeden token, Przywróć 1:1 (oba tryby).
+    @pytest.mark.parametrize("text", ["512\n987 654", "Tel. 512\n987 654", "+48 512\n987 654", "512 987\n654"])
+    def test_jeden_telefon_przelamany_nowa_linia(self, text):
+        for out, rev, blocked in _pipelines(text):
+            assert not blocked and out == "NUMER_001" and rev == {"NUMER_001": text}, (out, rev)
