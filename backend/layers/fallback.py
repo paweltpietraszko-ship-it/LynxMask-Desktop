@@ -14,26 +14,36 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pipeline_core import PipelineState, TokenAllocator
 
 _FALLBACK_RE = re.compile(r"(?<!\d)\d{8,}(?!\d)")
+# [LYNX-T07] Resztka ≥15 cyfr łącznie, ze spacjami/tabami (także wielokrotnymi) lub myślnikiem między cyframi, jako JEDNA
+# wartość (także z przyklejonym prefiksem kraju „PL61…”). Bez przejścia przez newline, interpunkcję, wyraz ani token.
+_LONG_NUMBER_RE = re.compile(r"(?<!\w)(?:[A-Z]{2}(?=\d{2}))?\d(?:(?:[ \t]*-[ \t]*|[ \t]*)\d){14,}(?!\w)")
 
 
-def apply_fallback_layer(state: PipelineState) -> None:
-    """Maskuje ciągi 8+ cyfr które przeżyły wszystkie wcześniejsze warstwy."""
-    hits: list[tuple[int, int, str]] = [
-        (m.start(), m.end(), m.group(0))
-        for m in _FALLBACK_RE.finditer(state.text)
-    ]
+def long_number_runs(text: str) -> list[tuple[int, int]]:
+    """[LYNX-T07] Spany całych ciągów ≥15 cyfr w tekście (to samo, co przejmie końcowy fallback)."""
+    return [(m.start(), m.end()) for m in _LONG_NUMBER_RE.finditer(text)]
 
-    hits.sort(key=lambda x: x[0], reverse=True)
 
-    text = state.text
-    for start, end, value in hits:
-        if state.allocator.is_occupied(start, end):
+def cuts_long_number(runs: list[tuple[int, int]], start: int, end: int) -> bool:
+    """Trafienie warstwy przecina długi numer, ale nie obejmuje go całego — pełna wartość albo nic."""
+    return any(a < end and start < b and not (start <= a and b <= end) for a, b in runs)
+
+
+def apply_fallback_layer(state: PipelineState, full: bool = True) -> None:
+    """Ostatnia warstwa: całe resztki ≥15 cyfr (oba tryby), w pełnym trybie także ciągi 8+ cyfr. Jedno przejście —
+    dłuższe dopasowanie wygrywa, krótsze nakładające się pominięte (LYNX-T07 r3 F1)."""
+    hits = [(m.start(), m.end(), m.group(0)) for pat in ((_LONG_NUMBER_RE, _FALLBACK_RE) if full else (_LONG_NUMBER_RE,))
+            for m in pat.finditer(state.text)]
+    taken: list[tuple[int, int, str]] = []
+    for start, end, value in sorted(hits, key=lambda h: (h[0] - h[1], h[0])):
+        if any(a < end and start < b for a, b, _ in taken) or state.allocator.is_occupied(start, end):
             continue
         tid = state.allocator.allocate("NUMER", value, start, end)
-        if tid is None:
-            continue
+        if tid is not None:
+            taken.append((start, end, tid))
+    text = state.text
+    for start, end, tid in sorted(taken, reverse=True):
         text = text[:start] + tid + text[end:]
-
     state.text = text
 
 

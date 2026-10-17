@@ -18,6 +18,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pipeline_core import PipelineState, TokenAllocator
+from layers.fallback import cuts_long_number, long_number_runs
 
 _HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _PATTERNS_FILE = os.path.join(_HERE, "credential_patterns.json")
@@ -61,9 +62,10 @@ def apply_credentials_layer(state: PipelineState) -> None:
 
     # Większy span wygrywa (jak w pozostałych warstwach)
     hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
+    long_runs = long_number_runs(state.text)  # [LYNX-T07 E2] np. tablica „PL6110” z dłuższego numeru — całość dla fallbacku
     valid: list[tuple[int, int, str]] = []
     for start, end, value, token_type in hits:
-        if state.allocator.is_occupied(start, end):
+        if cuts_long_number(long_runs, start, end) or state.allocator.is_occupied(start, end):
             continue
         tid = state.allocator.allocate(token_type, value, start, end)
         if tid is None:

@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from anonymizer_init import STRUCTURAL_PATTERNS, TOKEN_EMAIL, TOKEN_NUMER
 from pipeline_core import PipelineState, TokenAllocator
+from layers.fallback import cuts_long_number, long_number_runs
 
 _CONTACT_EMAIL_PATTERNS: list[tuple[str, re.Pattern]] = [
     (tok, pat) for tok, pat in STRUCTURAL_PATTERNS if tok == TOKEN_EMAIL
@@ -109,8 +110,11 @@ def apply_contact_layer(state: PipelineState) -> None:
 
     # Wiekszy span wygrywa (tak jak w address.py v1.8)
     hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
+    long_runs = long_number_runs(state.text)  # [LYNX-T07 E1] fragment liczby ≥15 cyfr zostaje dla fallbacku
     valid: list[tuple[int, int, str]] = []
     for start, end, value, token_type in hits:
+        if token_type == TOKEN_NUMER and cuts_long_number(long_runs, start, end):
+            continue
         if state.allocator.is_occupied(start, end):
             continue
         tid = state.allocator.allocate(token_type, value, start, end)

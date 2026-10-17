@@ -157,17 +157,85 @@ def test_filtr_ner_bez_morfeusza_nie_odrzuca_osoby_prefiksem():
         assert not ner_layer._filter_institutions([_NER("Radom", "OSOBA", 0.9, 0, 5)])
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-IBAN-RECEPTA: wzorzec 'Numer recepty' \\d{22}(?!\\d) w credentials łapie końcówkę IBAN, 'PL6110' zostaje jawne")
-@pytest.mark.parametrize("text", [
-    "Przelew na konto: PL61 1090 1014 0000 0712 1981 2874.",
-    "Konto 61109010140000071219812874 w banku.",
+# BUG-IBAN-RECEPTA — naprawione w LYNX-T07 (xfail zdjęty): jeden NUMER za cały numer, nic jawnego.
+@pytest.mark.parametrize("text,span", [
+    ("Przelew na konto: PL61 1090 1014 0000 0712 1981 2874.", "PL61 1090 1014 0000 0712 1981 2874"),
+    ("Konto 61109010140000071219812874 w banku.", "61109010140000071219812874"),
 ])
-def test_iban_pl_bez_jawnej_resztki(text):
+def test_iban_pl_bez_jawnej_resztki(text, span):
     import layers.ner_adapter as ner_mod
     from pipeline_new import run_pipeline_new
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
-        out, rev, _ = run_pipeline_new(text, anon_map={})
-    assert "6110" not in out, out
+        out, rev, blocked = run_pipeline_new(text, anon_map={})
+    tok = [t for t in rev if t.startswith("NUMER_")]
+    assert len(rev) == 1 and len(tok) == 1 and out == text.replace(span, tok[0]) and not blocked, (out, rev)
+    assert rev[tok[0]].replace(" ", "") == span.replace(" ", ""), rev  # cała wartość (financial normalizuje spacje — F3)
+
+
+# LYNX-T07: recepta tylko z etykietą i jako cała wartość; credentials nie tnie dłuższych numerów.
+@pytest.mark.parametrize("text,masked", [
+    ("numer recepty: 1234567890123456789012", True), ("Recepta nr 1234567890123456789012", True),
+    ("Ciąg 1234567890123456789012 bez etykiety.", False), ("Konto 61109010140000071219812874 w banku.", False),
+    ("recepta 61109010140000071219812874", False),
+])
+def test_credentials_recepta_cala_wartosc(text, masked):
+    from pipeline_core import PipelineState, TokenAllocator
+    from layers.credentials import apply_credentials_layer
+    s = PipelineState(text=text, allocator=TokenAllocator())
+    apply_credentials_layer(s)
+    rev = s.allocator.reverse_map
+    assert bool(rev) == masked and (not masked or s.text == next(iter(rev))), (s.text, rev)  # całość jednym tokenem
+
+
+# LYNX-T07: końcowy fallback ≥15 cyfr (oba tryby) — jedna wartość, tekst wokół bez zmian; K1 Codexa (e-mail z cyframi).
+@pytest.mark.parametrize("express", [False, True])
+@pytest.mark.parametrize("text,spans", [
+    ("Ciąg 1234567890123456789012 bez etykiety.", ["1234567890123456789012"]),
+    ("Nr 123456789012345.", ["123456789012345"]),
+    ("Nr 123 456 789 012 345.", ["123 456 789 012 345"]),  # E1: telefon nie zabiera pierwszych 9 cyfr
+    ("Nr 123-456-789-012-345.", ["123-456-789-012-345"]),
+    ("Konto PL6110 9010 1400 000.", ["PL6110 9010 1400 000"]),  # E2: tablica rejestracyjna nie zabiera „PL6110”
+    # Codex r3 F2: wielokrotne spacje/taby między grupami; O1/E3: 30 cyfr nie cięte przez financial
+    ("Id 123  456  789  012  345.", ["123  456  789  012  345"]), ("Id 123\t\t456\t\t789\t\t012\t\t345.", ["123\t\t456\t\t789\t\t012\t\t345"]),
+    ("Id 123 \t456 \t789 \t012 \t345.", ["123 \t456 \t789 \t012 \t345"]),
+    ("Ciąg 12 3456 7890 1234 5678 9012 3456 7890 koniec.", ["12 3456 7890 1234 5678 9012 3456 7890"]),
+    ("Wiersz 123456789012345\nDalej.", ["123456789012345"]),
+    ("Kontakt: 123456789012345@example.pl. Numer: 123456789012345.", ["123456789012345@example.pl", "123456789012345"]),
+])
+def test_fallback_dlugie_numery_w_calosci(text, spans, express):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new, run_pipeline_express
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, blocked = (run_pipeline_express if express else run_pipeline_new)(text, anon_map={})
+    expected = text
+    for span in spans:
+        tok = next(t for t, v in rev.items() if v == span)
+        expected = expected.replace(span, tok, 1)
+    assert out == expected and len(rev) == len(spans) and not blocked, (out, rev)
+    assert not any(t in v for v in rev.values() for t in rev), rev  # brak zagnieżdżonych tokenów w mapie
+
+
+# LYNX-T07: pełny tryb zachowuje fallback 8–14 cyfr; Express go nie dostaje (tylko ≥15).
+def test_fallback_8_14_tylko_pelny_tryb():
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new, run_pipeline_express
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        full = run_pipeline_new("Ref 12345678.", anon_map={})
+        expr = run_pipeline_express("Ref 12345678.", anon_map={})
+    assert full[0] == "Ref NUMER_001." and expr[0] == "Ref 12345678.", (full, expr)
+
+
+# Codex r3 F1: krótki numer 8+ po długim 15+ nadal maskowany w pełnym trybie (jedno przejście fallbacku).
+@pytest.mark.parametrize("long", ["123456789012345", "123 456 789 012 345"])
+def test_fallback_krotki_po_dlugim(long):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new, run_pipeline_express
+    text = f"Nr {long}, ref 12345678."
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        full = run_pipeline_new(text, anon_map={})
+        expr = run_pipeline_express(text, anon_map={})
+    assert full[0] == "Nr NUMER_001, ref NUMER_002." and sorted(full[1].values()) == sorted([long, "12345678"]), full
+    assert expr[0] == "Nr NUMER_001, ref 12345678." and expr[1] == {"NUMER_001": long}, expr
 
 
 @pytest.mark.xfail(strict=True, reason="BUG-EXPRESS-FAIL-OPEN: wyjątek w run_pipeline_express zwraca oryginał z force_block=False (S3)")
