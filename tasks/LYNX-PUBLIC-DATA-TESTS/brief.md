@@ -39,3 +39,6 @@ WHERE_MAP:
 - REASON: skorzystać z istniejących M1/M3 i jedynego czytnika dokumentów, ustalić szew pomiędzy wejściem pliku a maskowaniem; produkcja tylko odczyt.
 
 PASS: prawdziwe układy formularzy, syntetyczne wartości i niezależny klucz odpowiedzi; `EXTRACTION_MISSING` nigdy nie daje fałszywego PASS; czytelny liczbowy wynik także przy brakach; dawne pomiary i zachowanie produkcyjne nienaruszone. Etap 2 KRS i etap 3 KW to osobne decyzje.
+
+## OWNER_ACCEPTED — rozmiar dostawy, 2026-10-17
+Po niezależnym zamknięciu F1 w audycie r4 i wyjaśnieniu przekroczenia progów Paweł odpowiedział: „Akceptuję rozmiar — zamknij PASS”. Akceptacja dotyczy dostawy `d82709c11b77dc51d8cca1107776aa3355674182`: 191 zmienionych linii oraz RATIO 190 dodanych / 1 usunięta (190:1). Zamyka wyłącznie decyzję rozmiaru tego Tasku; nie zmienia kryteriów wiarygodności pomiaru i nie jest zgodą na merge. Finalny audyt PASS: `round_01/tests/tests_r5.txt`; dowody zamknięcia F1 pozostają w r4.
