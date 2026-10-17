@@ -61,7 +61,7 @@ def test_komorka_tabeli_to_brak_ekstrakcji_nie_maskowanie(tmp_path, run):
     ])
     rep = eq.measure_layout(str(tmp_path), run)
     by = rep["by_type_location"]
-    assert by["docx/tabela"] == {"EXTRACTION_MISSING": 1}, by  # dzisiejszy extractor nie czyta tabel DOCX
+    assert by["docx/tabela"] == {"masked": 1}, by  # LYNX-DOCX-TABLES: komórka czytana i maskowana (wcześniej EXTRACTION_MISSING)
     assert by["docx/tekst"] == {"masked": 1} and by["pdf/tekst"] == {"masked": 1}, by  # klasyfikacja po prawdziwym pipeline
     assert rep["status"] == "OK" and rep["fields_measured"] == 3 and all(d["status"] == "MEASURED" for d in rep["docs"])
     dump = json.dumps(rep, ensure_ascii=False)
@@ -82,17 +82,37 @@ def test_zmieniony_zapis_to_extraction_changed(tmp_path, run):
     assert eq.measure_layout(str(tmp_path), run)["by_type_location"] == {"pdf/tekst": {"EXTRACTION_CHANGED": 1}}
 
 
-# Codex r2 F1: ta sama wartość w akapicie i w nieodczytanej komórce — żadne z pól nie może dostać „masked”.
-def test_powtorzona_wartosc_bez_dowodu_wystapienia(tmp_path, run):
+def _docx_with_unread(path, para, unread):
+    """Akapit (czytany) + nagłówek strony (nieczytany przez _extract_text — poza zakresem LYNX-DOCX-TABLES)."""
     import docx
+    d = docx.Document()
+    d.add_paragraph(f"Dane: {para}")
+    d.sections[0].header.paragraphs[0].text = unread
+    d.save(path)
+
+
+# Codex r2 F1: ta sama wartość w akapicie i w nieodczytanym miejscu — żadne z pól nie może dostać „masked”.
+# Po LYNX-DOCX-TABLES komórki są czytane, więc nieodczytanym miejscem jest nagłówek strony.
+def test_powtorzona_wartosc_bez_dowodu_wystapienia(tmp_path, run):
+    _docx_with_unread(str(tmp_path / "a.docx"), EMAIL, EMAIL)
+    _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": [{"category": "EMAIL", "value": EMAIL}] * 2}])
+    assert eq.measure_layout(str(tmp_path), run)["by_type_location"] == {"docx/tekst": {"EXTRACTION_UNVERIFIED": 2}}
+
+
+# LYNX-DOCX-TABLES: ta sama wartość w akapicie i w komórce to teraz dwa rzeczywiste wystąpienia — oba maskowane.
+def test_powtorzona_wartosc_akapit_i_tabela_obie_odczytane(tmp_path, run):
+    import docx
+    from document_processor import _extract_text
     d = docx.Document()
     d.add_paragraph(f"Adres do korespondencji: {EMAIL}")
     d.add_table(rows=1, cols=2).rows[0].cells[1].text = EMAIL
     d.save(str(tmp_path / "a.docx"))
     fields = [{"category": "EMAIL", "value": EMAIL}, {"category": "EMAIL", "value": EMAIL, "in_table": True}]
     _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": fields}])
-    by = eq.measure_layout(str(tmp_path), run)["by_type_location"]
-    assert by == {"docx/tekst": {"EXTRACTION_UNVERIFIED": 1}, "docx/tabela": {"EXTRACTION_UNVERIFIED": 1}}, by
+    assert eq.measure_layout(str(tmp_path), run)["by_type_location"] == {"docx/tekst": {"masked": 1}, "docx/tabela": {"masked": 1}}
+    text = _extract_text((tmp_path / "a.docx").read_bytes(), "a.docx")[0]
+    res = run(text)
+    assert text.count(EMAIL) == 2 and EMAIL not in res.text and list(res.reverse_map.values()) == [EMAIL], (res.text, res.reverse_map)
 
 
 # Codex r3 F1 i rodzina: wartość nieodczytanej komórki występuje w tekście tylko jako fragment innej wartości.
@@ -102,15 +122,37 @@ def test_powtorzona_wartosc_bez_dowodu_wystapienia(tmp_path, run):
     ("526-000-12-467", "526-000-12-46", "NUMER"),                        # prefiks dłuższego numeru
 ])
 def test_wartosc_tylko_jako_fragment_innej(tmp_path, run, para, cell, cat):
-    import docx
-    d = docx.Document()
-    d.add_paragraph(f"Dane: {para}")
-    d.add_table(rows=1, cols=2).rows[0].cells[1].text = cell
-    d.save(str(tmp_path / "a.docx"))
-    fields = [{"category": cat, "value": para}, {"category": cat, "value": cell, "in_table": True}]
-    _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": fields}])
+    _docx_with_unread(str(tmp_path / "a.docx"), para, cell)  # krótsza wartość tylko w nieczytanym nagłówku
+    _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": [{"category": cat, "value": para}, {"category": cat, "value": cell}]}])
     by = eq.measure_layout(str(tmp_path), run)["by_type_location"]
-    assert "masked" not in by["docx/tabela"], by  # nieodczytana komórka nigdy „masked”
+    assert by["docx/tekst"].get("masked", 0) <= 1 and sum(by["docx/tekst"].values()) == 2, by  # nieodczytane pole nigdy „masked”
+
+
+# LYNX-DOCX-TABLES: produkcyjny extractor — akapity i tabele w kolejności dokumentu, każda komórka raz, bez sklejania.
+def test_docx_tabele_w_kolejnosci_bez_duplikatow():
+    import io
+    import docx
+    from document_processor import _extract_text
+    d = docx.Document()
+    t0 = d.add_table(rows=1, cols=2)
+    t0.rows[0].cells[0].text, t0.rows[0].cells[1].text = "T0A", "T0B"  # tabela przed pierwszym akapitem
+    d.add_paragraph("PA")
+    t = d.add_table(rows=3, cols=3)
+    t.cell(0, 0).text = EMAIL
+    t.cell(0, 1).merge(t.cell(0, 2)).text = "MERGEH"
+    t.cell(1, 0).merge(t.cell(2, 0)).text = "MERGEV"
+    c = t.cell(1, 1)
+    c.text = "L1"
+    c.add_paragraph("L2")  # komórka wieloakapitowa; (1,2) pusta
+    t.cell(2, 2).text = "526-000-12-46"
+    d.add_paragraph("PB")
+    d.add_table(rows=1, cols=1).rows[0].cells[0].text = "T2"
+    d.add_paragraph("PC")
+    buf = io.BytesIO()
+    d.save(buf)
+    text, err, meta = _extract_text(buf.getvalue(), "x.docx")
+    assert err is None and meta is None
+    assert text.split("\n") == ["T0A", "T0B", "PA", EMAIL, "MERGEH", "MERGEV", "L1", "L2", "526-000-12-46", "PB", "T2", "PC"], text
 
 
 def test_obie_wartosci_odczytane_osobno(tmp_path, run):  # kontrola: dwa osobne wystąpienia → oba zmierzone przez pipeline
