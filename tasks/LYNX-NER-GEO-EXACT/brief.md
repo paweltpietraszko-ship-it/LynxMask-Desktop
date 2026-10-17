@@ -20,6 +20,8 @@ TASK_SCOPE:
 - backend/ner_blocklist.py
 - backend/ner_layer.py
 - backend/tests/test_audyt_2026_10.py
+- backend/layers/ner_adapter.py
+- backend/pseudominizer_api.py
 
 OUT_OF_SCOPE: T01 ponownie, kontekstowy AnchorEngine/P05, dodawanie nieznanych nazwisk, seed/T04, profile/trie, TokenAllocator/T03, OCR, firmy w cudzysłowach (T20/FIX-QUOTES), nazwy miast poza adresem, format TOKEN_RE/taksonomia/.lynxdict (S2), Output Guard/fail-closed (S3/S4), GUI, generowanie „zawsze maskuj” i zmiana zestawów benchmarku.
 
@@ -38,3 +40,12 @@ WHERE_MAP:
 - REASON: zmiana dokładnej reguły odrzucania encji i pochodzenia geo; przed implementacją sprawdzić istniejących odbiorców tych zbiorów.
 KOREKTA B1 po prechecku Codexa `round_01/tests/tests_r1.txt`: oddzielono bazowy FP „Zapłata” od negatywów regresyjnych; powtórny precheck wyłącznie B1, bez otwierania pozostałych granic.
 GATE: max 2 nowe pliki (cel: 0), plik ≤600 i funkcja ≤50 linii dla nowych elementów, dla starszych nie pogarszać; >150 linii zmienionych lub ratio >5:1 = WYMAGA_DECYZJI. Każdy zmieniony plik musi znajdować się w TASK_SCOPE.
+
+## ROZSZERZENIE CC (2026-10-17, przed audytem implementacji)
+Zasada z polecenia Pawła 2026-10-17: ta sama klasa błędu znaleziona przy Tasku jest naprawiana na tej samej gałęzi, z jawnym rozszerzeniem briefu przed implementacją; Codex audytuje rozszerzenie razem z Taskiem.
+Klasa: forma nazwiska kolidująca wyłącznie z nazwą ulicy odrzucana przez exact `_NER_BLOCKLIST` (zawiera `_GEO_WORDS`). Ten sam zbiór `_STREET_ONLY_PERSON_FORMS`, bez nowych danych.
+- E1 `backend/layers/ner_adapter.py::_apply_initials` (l.178): „K. Kowalskiego” — warstwa inicjałów (zapas, gdy spaCy nie rozpozna osoby) pomija nazwisko z blocklisty → jawne. Reproduktor: `run_pipeline_new` z `process_ner` → `({}, {})`: „Zgoda K. Nowaka na zabieg.” zostaje bez zmian. Poprawka: nie pomijać, gdy nazwisko ∈ `_STREET_ONLY_PERSON_FORMS`.
+- E2 `backend/pseudominizer_api.py::profile_add_entity` (l.762): ręczne dodanie „Kowalskiego” jako OSOBA odrzucane jako „słowo pospolite” → użytkownik nie może sam uszczelnić profilu. Poprawka: dopuścić tylko dla `token_type == "OSOBA"` i formy ∈ `_STREET_ONLY_PERSON_FORMS`; miasta, placówki, ręczna blocklista, stop-words i inne typy bez zmian.
+Testy (w `test_audyt_2026_10.py`): E1 pozytyw z wyłączonym spaCy; E2 pozytyw OSOBA + negatywy „Radom”/OSOBA i „Kowalskiego”/FIRMA (400).
+
+Rozszerzenie zakresu: `backend/layers/ner_adapter.py` (E1) i `backend/pseudominizer_api.py` (E2) dopisane do listy TASK_SCOPE powyżej (gate czyta tylko tę listę).
