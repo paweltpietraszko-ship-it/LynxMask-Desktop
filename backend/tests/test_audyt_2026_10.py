@@ -414,16 +414,23 @@ def test_quality_m1_blocked_i_bledy_nie_sa_sukcesem():
     assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: FIRMA_001.", {"FIRMA_001": s})) == "wrong_category"
     iban = "PL61 1090 1014 0000 0712 1981 2874"
     assert eq.classify_m1(f"Konto {iban}.", iban, "NUMER", _res("Konto PL6110NUMER_001.", {"NUMER_001": "9010140000071219812874"})) == "partial_mask"
-    boom = eq.measure([("X", "M1", "OSOBA", t, s, set())], lambda _: 1 / 0)
+    # Codex r2 R1: tokeny o różnych kategoriach na jednej osobie i wpis w mapie bez tokenu w wyniku to nie sukces
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: OSOBA_001 FIRMA_001.", {"OSOBA_001": "Jan", "FIRMA_001": "Kowalski"})) == "wrong_category"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: EMAIL_001 OSOBA_001.", {"EMAIL_001": "Jan", "OSOBA_001": "Kowalski"})) == "wrong_category"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: .", {"OSOBA_001": s})) == "no_mapping"
+    boom = eq.measure([("X", "M1", "OSOBA", t, s, {})], lambda _: 1 / 0)
     assert boom[0]["status"] == "error" and boom[0]["m3"]["status"] == "blocked_or_error"
 
 
 def test_quality_m2_fp_a_kontrakt():
     eq = _eq()
-    assert eq.classify_m2(set(), _res("w OSOBA_001", {"OSOBA_001": "piątek"})) == "fp"
-    assert eq.classify_m2({"KWOTA"}, _res("Do zapłaty KWOTA_001.", {"KWOTA_001": "10 zł"})) == "contract"
-    assert eq.classify_m2(set(), _res("Zapłata przelewem.")) == "clean"
-    assert eq.classify_m2(set(), _res("x", blocked=True)) == "blocked"
+    kwota = {"KWOTA": ["10 zł"]}
+    assert eq.classify_m2({}, _res("w OSOBA_001", {"OSOBA_001": "piątek"})) == "fp"
+    assert eq.classify_m2(kwota, _res("Do zapłaty KWOTA_001.", {"KWOTA_001": "10 zł"})) == "contract"
+    # Codex r2 R2: dozwolona kategoria na zwykłym słowie (kwota prawdziwa jawna) to FP
+    assert eq.classify_m2(kwota, _res("Do KWOTA_001 10 zł.", {"KWOTA_001": "zapłaty"})) == "fp"
+    assert eq.classify_m2({}, _res("Zapłata przelewem.")) == "clean"
+    assert eq.classify_m2({}, _res("x", blocked=True)) == "blocked"
 
 
 def test_quality_m3_spacja_i_brak_mapy():
@@ -441,6 +448,9 @@ def test_quality_profil_tylko_w_temp_i_sprzatany_przy_bledzie(tmp_path, monkeypa
     eq = _eq()
     with pytest.raises(SystemExit):
         eq.main(["--out", os.path.join(eq.ROOT, "quality.json")])  # zapis do repo zabroniony
+    if os.name == "nt":  # Codex r2 R3: ta sama ścieżka inną wielkością liter
+        with pytest.raises(SystemExit):
+            eq._out_path(os.path.join(eq.ROOT, "quality.json").swapcase())
     seen = []
     def boom(tmp):
         seen.append(tmp)

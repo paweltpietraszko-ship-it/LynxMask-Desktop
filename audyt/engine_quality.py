@@ -26,7 +26,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND = os.path.join(ROOT, "backend")
 sys.path[:0] = [BACKEND, os.path.join(ROOT, "audyt")]
 
-TOKEN_RE = re.compile(r"\b(?:OSOBA|FIRMA|INSTYTUCJA|NUMER|EMAIL|KWOTA|ADRES)_\d{3,}\b")
+# bez \b na początku: token bywa sklejony z cyframi („PL6110NUMER_001” — IBAN-RECEPTA)
+TOKEN_RE = re.compile(r"(?<![A-Za-z_])(?:OSOBA|FIRMA|INSTYTUCJA|NUMER|EMAIL|KWOTA|ADRES)_\d{3,}(?!\d)")
 
 M1_TEMPLATES = {  # typ pisma → szablon ze slotem {E}
     "urzedowe": "Organ prowadzący postępowanie wskazuje stronę: {E}. Sprawę prowadzi referat B.",
@@ -48,15 +49,15 @@ M1_ENTITIES = [  # (kategoria oczekiwana, wariant, wstawiany tekst, oczekiwany s
     ("NUMER", "telefon", "tel. +48 512 987 654", "+48 512 987 654"),
     ("EMAIL", "email", "jan.kowalski@example.pl", "jan.kowalski@example.pl"),
 ]
-M2_CASES = [  # (wariant, tekst bez encji OSOBA/FIRMA, kategorie maskowane zgodnie z kontraktem)
-    ("piatek", "Spotkanie odbędzie się w piątek o godzinie dziesiątej.", set()),
-    ("zaplata", "Zapłata nastąpi przelewem w terminie czternastu dni.", set()),
-    ("miasto", "Pracownik od lat pracuje w Radomiu i dojeżdża autobusem.", set()),
-    ("instytucje", "Kontrolę przeprowadził ZUS, a dane zebrał GUS.", {"INSTYTUCJA"}),
-    ("naglowek_caps", "ZAKRES OBOWIĄZKÓW\nOpis stanowiska znajduje się poniżej.", set()),
-    ("akronimy", "System ERP i CRM wdrożono w dziale IT w zeszłym roku.", set()),
-    ("ulica_patronimiczna", "Biuro mieści się przy ul. Kowalskiego 7 w centrum.", {"ADRES"}),
-    ("kwota", "Do zapłaty pozostaje 1 250,00 zł brutto.", {"KWOTA"}),
+M2_CASES = [  # (wariant, tekst bez encji OSOBA/FIRMA, {kategoria: wartości maskowane zgodnie z kontraktem})
+    ("piatek", "Spotkanie odbędzie się w piątek o godzinie dziesiątej.", {}),
+    ("zaplata", "Zapłata nastąpi przelewem w terminie czternastu dni.", {}),
+    ("miasto", "Pracownik od lat pracuje w Radomiu i dojeżdża autobusem.", {}),
+    ("instytucje", "Kontrolę przeprowadził ZUS, a dane zebrał GUS.", {"INSTYTUCJA": ["ZUS", "GUS"]}),
+    ("naglowek_caps", "ZAKRES OBOWIĄZKÓW\nOpis stanowiska znajduje się poniżej.", {}),
+    ("akronimy", "System ERP i CRM wdrożono w dziale IT w zeszłym roku.", {}),
+    ("ulica_patronimiczna", "Biuro mieści się przy ul. Kowalskiego 7 w centrum.", {"ADRES": ["ul. Kowalskiego 7"]}),
+    ("kwota", "Do zapłaty pozostaje 1 250,00 zł brutto.", {"KWOTA": ["1 250,00 zł"]}),
 ]
 HOLDOUT_N = 40
 HOLDOUT_TEMPLATE = "Wniosek złożył Pan {E} w dniu wczorajszym."
@@ -64,7 +65,7 @@ HOLDOUT_TEMPLATE = "Wniosek złożył Pan {E} w dniu wczorajszym."
 
 def build_cases():
     """Deterministyczna lista M1/M2: (id, sekcja, kategoria, tekst, span|None, dozwolone kategorie)."""
-    cases = [(f"M1-{doc}-{cat}-{var}", "M1", cat, tpl.format(E=ins), span, set())
+    cases = [(f"M1-{doc}-{cat}-{var}", "M1", cat, tpl.format(E=ins), span, {})
              for doc, tpl in M1_TEMPLATES.items() for cat, var, ins, span in M1_ENTITIES]
     cases += [(f"M2-{var}", "M2", None, text, None, allowed) for var, text, allowed in M2_CASES]
     return cases
@@ -85,7 +86,7 @@ def load_holdout(path, seed):
     info = {"status": "OK" if not overlap else "SEPARATION_FAILED", "pool": len(pool), "sample": len(sample),
             "rejected_overlap": len(data) - len(pool), "overlap_in_sample": len(overlap)}
     cases = [(f"H-{i:03d}", "HOLDOUT", "OSOBA", HOLDOUT_TEMPLATE.format(E=f"Jan {s.capitalize()}"),
-              f"Jan {s.capitalize()}", set()) for i, s in enumerate(sample)]
+              f"Jan {s.capitalize()}", {}) for i, s in enumerate(sample)]
     return (cases if not overlap else None), info
 
 
@@ -93,10 +94,20 @@ def _norm(s):
     return re.sub(r"\W", "", s).lower()
 
 
+def _output_tokens(result):
+    """Tokeny faktycznie obecne w wyniku i mające wpis w mapie — sam wpis w mapie nie dowodzi zamaskowania."""
+    return {t: result.reverse_map[t] for t in TOKEN_RE.findall(result.text) if t in result.reverse_map}
+
+
+def _overlaps(val, ref):
+    nv, nr = _norm(val), _norm(ref)
+    return bool(nv) and (nv in nr or nr in nv)
+
+
 def _covering_tokens(span, rev):
     """Tokeny, których wartość (bez spacji/interpunkcji) leży w spanie lub go zawiera; drugi wynik: pełne pokrycie."""
     ns = _norm(span)
-    toks = [tok for tok, val in rev.items() if _norm(val) and (_norm(val) in ns or ns in _norm(val))]
+    toks = [tok for tok, val in rev.items() if _overlaps(val, span)]
     covered = sum(len(_norm(rev[t])) for t in toks if _norm(rev[t]) in ns)
     return toks, any(ns in _norm(rev[t]) for t in toks) or covered >= len(ns)
 
@@ -114,24 +125,25 @@ def classify_m1(text, span, cat, result):
     words = [w for w in re.findall(r"\w{3,}", span) if not w.isdigit() or len(w) >= 4]
     if any(re.search(rf"\b{re.escape(w)}\b", result.text) for w in words):
         return "leak_partial"
-    toks, full = _covering_tokens(span, result.reverse_map)
+    toks, full = _covering_tokens(span, _output_tokens(result))
     if not toks:
         return "no_mapping"
-    if not full:
-        return "partial_mask"  # część wartości została jawna w wyniku (np. początek IBAN)
-    return "masked" if any(t.split("_")[0] == cat for t in toks) else "wrong_category"
+    if any(t.split("_")[0] != cat for t in toks):
+        return "wrong_category"  # każdy token pokrywający span musi mieć oczekiwaną kategorię
+    return "masked" if full else "partial_mask"  # partial: część wartości jawna w wyniku (np. początek IBAN)
 
 
 def classify_m2(allowed, result):
-    """Status M2: error / blocked / fp (token spoza kontraktu) / contract (tylko dozwolone kategorie) / clean."""
+    """Status M2: error / blocked / fp / contract / clean. Kontrakt = token dozwolonej kategorii NA oczekiwanej wartości
+    (allowed: {kategoria: [wartości]}); ta sama kategoria na innym słowie to FP."""
     if result.error:
         return "error"
     if result.guard_blocked:
         return "blocked"
-    cats = {t.split("_")[0] for t in result.reverse_map}
-    if cats - allowed:
+    toks = _output_tokens(result)
+    if any(not any(_overlaps(v, ref) for ref in allowed.get(t.split("_")[0], ())) for t, v in toks.items()):
         return "fp"
-    return "contract" if cats else "clean"
+    return "contract" if toks else "clean"
 
 
 def _insertion_unmask(text, rev):
@@ -220,7 +232,8 @@ def report(rows, meta, holdout_info):
 
 def _out_path(path):
     full = os.path.abspath(path)
-    if os.path.commonpath([full, ROOT]) == ROOT:
+    canon = [os.path.normcase(os.path.realpath(x)) for x in (full, ROOT)]  # Windows: wielkość liter / skróty ścieżek
+    if os.path.commonpath(canon) == canon[1]:
         raise SystemExit("--out wskazuje do repo — raporty zapisuj poza repozytorium")
     return full
 
