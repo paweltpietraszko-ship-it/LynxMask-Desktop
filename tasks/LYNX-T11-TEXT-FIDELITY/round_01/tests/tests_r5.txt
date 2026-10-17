@@ -1,0 +1,51 @@
+LYNX-T11-TEXT-FIDELITY — narrow phone-boundary recheck r5
+VERDICT: FAIL — one residual F2 boundary B1 (ordinary following word changed).
+R1 phone-masking regression CLOSED; R2 email boundary remains CLOSED.
+Exact implementation SHA: 240f6b6aa45ee7e2d49a19e1c9ffa90d732d66ea
+Diff base: 8ce05b8da26e6eec0a0280b701e4d430c5d7b1a5
+Recipient: Architect. Scope: R1 OCR digits versus following-word boundaries.
+Publication parent 2ab29b9 differs only in delivery artifacts.
+
+R1 CLOSED
+All retained TTT/OOO/III/Ill/Ooo/Tll tails with spaced +48, attached +48,
+0048, bare 48 and no country prefix: 30 independent normalizer/vertical
+cases pass; mapped, no visible OCR tail, unblocked. Six named OCR-positive
+and following-word boundaries also pass. No confirmed residual phone leak
+in these retained cases. R2 code unchanged; closure from r3 retained.
+
+B1 [P2] — F2 ordinary-word boundary still broken for national 48 + OCR.
+TRACE: brief F2 says normalization must stop before the following ordinary
+word, and explicitly: if the boundary is uncertain, do not correct the
+ordinary word. Minimal tests 2 and PASS require preserving that text.
+OWNERSHIP: ocr_normalizer._phone_number_len, changed bare-48 heuristic:
+digit_total counts chunks containing a literal digit, omitting an all-OCR
+numeric chunk. A nine-digit national number starting 48 can then be treated
+as a country-prefixed number, consuming the following word as more digits.
+REPRO on exact SHA (tests_r5_repro.py): synthetic national number formatted
+as 483 / 621 / OCR tail, followed by 'To jest'. Tails Ill, Ooo, Tll all
+reproduce. Expected normalizer output preserves 'To jest'; observed ends
+in '70 jest'. The OCR tail is converted, but the following word is too.
+Real relevant pipeline with controlled empty spaCy result and simulated
+restoration also loses 'To' and retains '70'; blocked=False in three paths.
+This is not a newly invented phone type or product requirement: it is the
+following-word side of the exact changed bare-48 boundary, already in scope.
+It is not labeled a new regression relative to pre-T11: it is unclosed F2.
+The explicit uncertainty priority supplies TRACE without requiring the
+runner to guess a new phone policy. No implementation design is prescribed.
+
+VERIFICATION / LIMITS
+Retained independent repro: 30 masked phone paths, six named boundaries,
+three residual ordinary-word normalizer/pipeline/restoration paths.
+Targeted tests: 29 passed, 80 deselected.
+Independent gate.py: PASS on exact SHA.
+CC's 30,000-case sweep uses national bodies beginning 606 (or OCR equivalent)
+and separate word checks on a fully numeric body; it does not cover this
+cross-boundary case of national 48 + OCR tail + following word. Its positive
+result does not contradict the independent reproducer.
+No full suite, M3/holdout rerun or R2 re-audit: prior evidence retained,
+CC broader results supporting only. No product edits. F3 and previously
+excluded parenthesized-prefix cases remain outside this Task.
+
+NEXT RECHECK
+Only B1 and its neighboring legitimate OCR/country-prefix/word boundaries;
+retain R1/R2 closures unless a later change contradicts their evidence.

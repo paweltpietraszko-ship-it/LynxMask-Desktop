@@ -85,9 +85,6 @@ _SERIES_MAP: dict[str, str] = {
     '2': 'Z', '1': 'I', '0': 'O', '8': 'B', '5': 'S', '6': 'G', '7': 'T',
 }
 
-_NUMERIC_CHARS = r'TIlOSBGZJzo0-9ЗзОоІі'
-
-
 def _fix_seg(seg: str) -> str:
     """Zamienia znaki OCR w segmencie numerycznym na cyfry."""
     return ''.join(_OCR_TO_DIGIT.get(c, c) for c in seg)
@@ -191,9 +188,6 @@ _NIP_BARE3223_RE = re.compile(
     r'([TIlOSBGZ0-9ЗзОоo]{3})\b'
 )
 _NIP_DOT_RE = re.compile(r'(\d{3}-\d{3}-\d{2})\.(\d{2})(?!\d)')
-_NIP_SPLIT_RE = re.compile(r'(?i)(NIP\s{0,3}:?\s{0,3})([0-9][0-9\-\s]{10,16}[0-9])')
-
-
 def _nip_fix_bare(m: re.Match) -> str:
     segs = [m.group(1), m.group(3), m.group(5), m.group(7)]
     seps = [m.group(2), m.group(4), m.group(6)]
@@ -211,17 +205,6 @@ _DOWOD_DIGITS_RE = re.compile(
     r'([A-Z]{2,3})[^\S\n]?'
     r'([TIlOSBGZ0-9]{1,3}[^\S\n]?[TIlOSBGZ0-9]{3,5}|[TIlOSBGZ0-9]{6})'
 )
-
-
-def _fix_dowod(m: re.Match) -> str:
-    series_raw = m.group(1)
-    num_raw = m.group(2)
-    # Seria: cyfra na pozycji litery → litera (OCR_SERIES_CHAR_MAP)
-    series_fixed = ''.join(_SERIES_MAP.get(c, c) for c in series_raw)
-    # Numer: litera na pozycji cyfry → cyfra
-    num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) if not c.isspace() else c for c in num_raw)
-    prefix = m.group(0)[:m.start(1) - m.start()]
-    return prefix + series_fixed + num_raw[:1].replace(num_raw[0], ' ' if num_raw[0].isspace() else '') + num_fixed
 
 
 # ── Krok 6: Paszport ─────────────────────────────────────────────────────────
@@ -312,6 +295,24 @@ _PHONE_AFTER_KW_RE = re.compile(
     r'\.?[^\S\n]*[:–\-]?[^\S\n]*'
     r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d\s\-(). ]{7,22}[TIlOSBGZzo\d])'
 )
+
+def _phone_number_len(num_raw: str, next_char: str) -> int:
+    """[LYNX-T11 F2] Długość numeru w dopasowaniu. Człon bez cyfry („TTT”, „Ill”) należy do numeru, gdy domyka 9 cyfr
+    krajowych (+ prefiks +48/0048, także sklejony; „48” bez plusa tylko gdy człony z cyframi nie tworzą już 9 cyfr)
+    lub stoi przed członem z cyfrą. Człony po numerze i człon urwany w słowie („T” z „Termin”) zostają tekstem."""
+    chunks, count, keep = list(re.finditer(r'[^\s\-().]+', num_raw)), 0, 0
+    head = num_raw.lstrip(' \t(')
+    total = sum(len(c.group().lstrip('+')) for c in chunks)
+    digit_total = sum(len(c.group().lstrip('+')) for c in chunks if any(ch.isdigit() for ch in c.group()))
+    target = 9 + next((len(p) for p in ('0048', '48') if head.lstrip('+').startswith(p)
+                       and (head[:1] == '+' or p == '0048' or (total >= 11 and digit_total != 9))), 0)
+    for i, c in enumerate(chunks):
+        if count >= target or (i == len(chunks) - 1 and next_char.isalpha()):
+            break
+        count += len(c.group().lstrip('+'))
+        keep = c.end() if any(ch.isdigit() for ch in c.group()) or count == target else keep
+    return keep
+
 
 # ── Krok 12: OCR_DIGIT_IN_CONTEXT (safety net) ───────────────────────────────
 
@@ -507,19 +508,11 @@ def normalize_ocr(text: str) -> str:
     # Krok 10: Kod pocztowy spacja → myślnik (kontekst adresowy)
     text = _POSTAL_SPACE_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}-{m.group(3)}", text)
 
-    # Krok 11: Telefon po kw
-    def _fix_phone(m: re.Match) -> str:
-        kw = m.group(1)
-        num = m.group(2)
-        fixed_num = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num)
-        prefix_len = m.start(1) - m.start()
-        prefix = m.group(0)[:prefix_len]
-        return prefix + kw + m.group(0)[len(kw) + prefix_len:len(kw) + prefix_len + (m.start(2) - m.start(1))] + fixed_num
-    # Prostsze podejście:
+    # Krok 11: Telefon po kw — cyfry OCR poprawiane tylko w części numeru (LYNX-T11 F2: bez następnego słowa)
     def _fix_phone_simple(m: re.Match) -> str:
-        full = m.group(0)
-        num_raw = m.group(2)
-        num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num_raw)
+        full, num_raw = m.group(0), m.group(2)
+        keep = _phone_number_len(num_raw, m.string[m.end():m.end() + 1])
+        num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num_raw[:keep]) + num_raw[keep:]
         return full[:full.rfind(num_raw)] + num_fixed
     text = _PHONE_AFTER_KW_RE.sub(_fix_phone_simple, text)
 

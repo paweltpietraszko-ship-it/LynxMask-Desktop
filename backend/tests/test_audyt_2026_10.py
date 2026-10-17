@@ -259,23 +259,72 @@ def test_token_re_zgodny_z_spec(text, token):
     assert [m.group(0) for m in TOKEN_SPAN_RE.finditer(text)] == [token]
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-GLOBAL-SPACE-GLUE: _fix_ocr_email usuwa białe znaki po każdej kropce (nie tylko w e-mailach) — spec S2")
+# BUG-GLOBAL-SPACE-GLUE — naprawione w LYNX-T11 F1 (xfail zdjęty).
 @pytest.mark.parametrize("text,fragment", [
     ("Pacjent był w szpitalu. Dłużnik mieszka w Radomiu.", "szpitalu. Dłużnik"),
     ("1. Strony zawierają umowę na czas nieokreślony.\n2. Umowa wchodzi w życie.", "nieokreślony.\n2."),
+    ("Faktura nr 12/2026. Termin płatności 14 dni.", "12/2026. Termin"),
+    ("Kontakt. jan@example.pl", "Kontakt. jan@"),
+    ("Adres: anna. nowak@example.pl", "anna.nowak@example.pl"),  # OCR w lokalnej części e-maila nadal sklejany
 ])
 def test_fix_ocr_email_nie_skleja_zdan(text, fragment):
     from layers.ner_adapter import _fix_ocr_email
     assert fragment in _fix_ocr_email(text)
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-OCR-NORMALIZER-WORDS: normalizator OCR zamienia litery na cyfry w zwykłych słowach")
-def test_ocr_normalizer_nie_psuje_slow():
+# BUG-OCR-NORMALIZER-WORDS — naprawione w LYNX-T11 F2 (xfail zdjęty).
+@pytest.mark.parametrize("text,expected", [
+    ("Pan (nr tel. 512 987 654) zglosil sie do urzedu", "654) zglosil"),
+    ("tel. +48 512 987 654. Termin płatności", "654. Termin"),
+    ("Tel: +48 606 219 T2T", "606 219 727"),  # cyfry OCR w samym numerze nadal poprawiane
+    # Codex r2 R1: ostatnia grupa złożona wyłącznie ze znaków OCR domyka 9 cyfr — nadal część numeru
+    ("Tel: +48 606 219 TTT", "606 219 777"), ("Tel: +48 606 219 OOO", "606 219 000"), ("Tel: +48 606 219 III", "606 219 111"),
+    ("tel. 123 45 To jest", "45 To jest"),  # człon bez cyfry niedomykający numeru zostaje słowem
+    # Codex r3 R1: prefiks +48 sklejony z pierwszą grupą; 0048 i 48 bez plusa
+    ("Tel: +48606 219 TTT", "606 219 777"), ("Tel: +48606 219 OOO", "606 219 000"), ("Tel: +48606 219 III", "606 219 111"),
+    ("Tel: 0048 606 219 TTT", "606 219 777"), ("Tel: 48 606 219 TTT", "606 219 777"),
+    ("tel. 48 362 12 34 To jest", "34 To jest"),  # 9 cyfr bez prefiksu + słowo „To” — słowo nietknięte
+    # Codex r4 R1: grupy OCR wielką + małymi literami to nadal cyfry numeru
+    ("Tel: +48 606 219 Ill", "606 219 111"), ("Tel: +48 606 219 Ooo", "606 219 000"), ("Tel: +48 606 219 Tll", "606 219 711"),
+    ("tel. +48 512 987 654 To jest", "654 To jest"),
+])
+def test_ocr_normalizer_nie_psuje_slow(text, expected):
     from pipeline_core import PipelineState, TokenAllocator
     from layers.ocr_normalizer import apply_ocr_normalizer
-    s = PipelineState(text="Pan (nr tel. 512 987 654) zglosil sie do urzedu", allocator=TokenAllocator())
+    s = PipelineState(text=text, allocator=TokenAllocator())
     apply_ocr_normalizer(s)
-    assert "zglosil" in s.text, s.text
+    assert expected in s.text, s.text
+
+
+# LYNX-T11: pion pipeline — tekst poza tokenami wierny, e-mail i telefon nadal maskowane (wynik + reverse_map).
+@pytest.mark.parametrize("text,value", [
+    ("Faktura nr 12/2026. Kontakt: anna.nowak@example.pl. Termin płatności 14 dni.", "anna.nowak@example.pl"),  # E1
+    ("Faktura nr 12/2026. Kontakt: tel. 512 987 654. Termin płatności 14 dni.", "512987654"),
+    ("Faktura nr 12/2026. Kontakt: jan@wp. pl. Termin płatności 14 dni.", "jan@wp.pl"),  # OCR TLD nadal łączony
+    # Codex r2 R2: pełna domena + „. słowo” małą literą to koniec zdania, nie TLD
+    ("Faktura nr 12/2026. Kontakt: nowak@example.pl. termin. Termin płatności 14 dni.", "nowak@example.pl"),
+    ("Faktura nr 12/2026. Kontakt: nowak@example.pl. dalej. Termin płatności 14 dni.", "nowak@example.pl"),
+])
+def test_wiernosc_tekstu_i_maskowanie(text, value):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = run_pipeline_new(text, anon_map={})
+    assert "12/2026. Kontakt" in out and ". Termin płatności 14 dni." in out, out
+    joined = "".join(rev.values()).lower()
+    assert [v for v in rev.values() if value in v.replace(" ", "")] and "termin" not in joined and "dalej" not in joined, (out, rev)
+    assert value not in out.replace(" ", ""), out
+
+
+# Codex r2 R1 (pion): telefon z ostatnią grupą wyłącznie ze znaków OCR nadal zamaskowany, końcówka nie jest jawna.
+@pytest.mark.parametrize("prefix", ["+48 ", "+48"])  # Codex r3: także prefiks sklejony z pierwszą grupą
+@pytest.mark.parametrize("tail", ["TTT", "OOO", "III", "Ill", "Ooo", "Tll"])  # Codex r4: także wielka + małe
+def test_telefon_ocr_ostatnia_grupa_zamaskowany(tail, prefix):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = run_pipeline_new(f"Kontakt: Tel: {prefix}606 219 {tail}", anon_map={})
+    assert tail not in out and any(v.startswith("48606219") for v in rev.values()), (out, rev)
 
 
 # ── False negatives / false positives ─────────────────────────────────────────

@@ -1,0 +1,36 @@
+LYNX-T11-TEXT-FIDELITY — independent brief precheck r1
+VERDICT: PASS PREIMPLEMENTATION
+Exact brief SHA: 576d133e21035ad5c34f7bf1216da6ab02086720
+BOARD ID: LYNX-TEXT-FIDELITY
+Recipient: Architect. Stage: BRIEF_ONLY_PRECHECK.
+
+ORACLE / TESTABILITY
+Task brief and frozen arch/spec.md S1/S2/S3/S5; previously documented
+DICT-LEAKTEST F1/F2/F3 evidence. F1/F2 repair existing behavior, without
+new masking categories, UI policy, or permission to modify token formats.
+F1 requires preserving ordinary sentence whitespace/newlines while keeping
+OCR email repairs within a credible same-email boundary. F2 requires
+preserving the word after a phone while retaining OCR correction inside
+the full number. Concrete negative and positive examples are testable.
+Existing xfails, owner tests and a masking/reverse-map or blocked-outcome
+check prevent vacuous success from disabled PII recognition.
+Identical input digest and separate M1/M2/M3 comparisons constrain the
+before/after measurement. Holdout is compared only when identically available.
+F3 is explicitly excluded; neither 96/96 nor repair of every round-trip
+difference is required. Remaining differences must be attributed honestly.
+
+REDUCTION / OWNERS
+F1 SOURCE: S2 and documented F1; NECESSITY: remove global whitespace change.
+Use existing ner_adapter._fix_ocr_email, no parallel email normalizer.
+F2 SOURCE: documented F2 and text-preservation contract; NECESSITY: bound
+phone correction before ordinary following words. Use existing
+ocr_normalizer._PHONE_AFTER_KW_RE and its existing substitution.
+Targeted source inspection confirms these mechanisms exist. Keep the
+three-file TASK_SCOPE; no pipeline reorder, mapping redesign or new files.
+Required where.py maps belong to implementation, not this brief precheck.
+No additional responsibility or product decision is needed to start.
+Size/ratio gates remain binding; this PASS grants no advance exception.
+
+No implementation diff, tests, reproducer, where.py, build or M3 run.
+PASS concerns this brief's testability and minimal scope at the exact SHA,
+not implemented behavior, complete text fidelity, F3 closure or merge.

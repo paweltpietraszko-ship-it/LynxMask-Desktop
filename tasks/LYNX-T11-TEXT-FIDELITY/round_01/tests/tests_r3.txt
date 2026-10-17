@@ -1,0 +1,51 @@
+LYNX-T11-TEXT-FIDELITY — narrow delivery recheck r3
+VERDICT: FAIL — residual R1 (SAFETY_PRIVACY). R2 closed in tested scope.
+Exact implementation SHA: b3d09f81dda037eb905418fb532a6d3c8f6dcf9b
+Diff base: 0bd2a57946b383e11024c6a7694c235a5271d55d
+Recipient: Architect. Scope: R1/R2 retained reproducers and direct boundaries.
+Publication parent 0507fd5 adds delivery artifacts only.
+
+R1 STILL OPEN — country prefix attached to first national digit group.
+TRACE: brief F2 retains OCR-digit recognition throughout a matched phone;
+minimal tests 2 / PASS require actual masking/map or blocking. Previous
+R1 specifically covers final groups made entirely of supported OCR digits.
+OWNERSHIP: ocr_normalizer._phone_number_len counts 9 national digits but
+excludes +48 only when the country prefix is a separate whitespace chunk.
+Attached prefix is counted as national data, so the loop stops too early.
+REPRO at exact SHA, retained tests_r3_repro.py:
+- Original +48 / space / numeric groups / TTT, OOO, III inputs now normalize
+  correctly, become mapped and have no visible OCR tail (3 closures).
+- Same numbers with no space between +48 and first national group:
+  +48606 219 TTT / OOO / III. Before T11 these normalize to a complete phone;
+  current normalizer leaves terminal OCR letters unchanged.
+- Real relevant pipeline with controlled empty spaCy result: all three
+  attached-prefix variants have an empty reverse map, visible OCR tail,
+  blocked=False. This is the same recognized phone class and country prefix,
+  only a spacing boundary changes. No downstream duplicate validation or
+  new product category is requested.
+Classification: confirmed privacy regression, highest severity; synthetic
+inputs only, no actual user documents or profile accessed.
+
+R2 CLOSED
+Original complete-email followed by '. Termin', '. termin', '. dalej':
+following text preserved exactly; EMAIL map contains only the actual email;
+output unblocked. Both original OCR TLD forms with dot/comma spacing still
+map as the canonical email. Five independent vertical paths pass.
+The new boundary repairs the prior ambiguous outcome within E1 without a
+new subsystem/policy; no unresolved TRACE ambiguity in these retained cases.
+Following-phone ordinary-word negatives and named T2T->727 positive pass.
+
+OTHER CHECKS / LIMITS
+Targeted affected tests: 15 passed, 75 deselected.
+Independent gate.py: PASS on exact SHA.
+Removed definitions _NUMERIC_CHARS, _NIP_SPLIT_RE, _fix_dowod: no exact-name
+references remain in backend; no product behavior inferred from raw hits.
+Earlier independent M3 baseline 11/56->44/56 retained; no full suite, M3
+rerun or holdout rerun for this small recheck. CC's unchanged 84/96 M3 and
+broader tests are supporting evidence, not independent reruns.
+No product code edited. F3 and unrelated findings remain outside scope.
+
+NEXT RECHECK
+Only residual R1: retain original spaced-prefix reproducers and the three
+attached-prefix siblings, named OCR positive and following-word negatives.
+Keep R2 closed unless subsequent changes/evidence contradict its closure.
