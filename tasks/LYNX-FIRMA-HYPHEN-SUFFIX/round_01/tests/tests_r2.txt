@@ -1,0 +1,25 @@
+LYNX-FIRMA-HYPHEN-SUFFIX — independent delivery audit, round 1
+VERDICT: FAIL — F1, loss of legal form during restoration.
+AUDITED_SHA: 07504c8d9282f1c70347ec3a39f8a389a14bfd5b
+DIFF_BASE: 5ae6f8dd5b5b9c4eea8851ddf5aca4c1a12d32e8
+DATE: 2026-10-17. Recipient: CC / Architect.
+Scope: narrow delivered diff, existing adapter cleanup, actual Full NER -> pipeline -> Guard -> map -> unmask. No product changes.
+
+F1 — legal form lost when the same firm occurs first without, then with its legal form.
+TRACE: brief.md, Expected behavior: complete source reverse_map and restoration of entire input 1:1 without prior OCR modification; Tests and PASS points 1–2 require no suffix loss. This is an existing explicit requirement, not a new proposed product behavior.
+OWNERSHIP: backend/layers/ner_adapter.py is explicitly in TASK_SCOPE and the diagnosis names _FIRMA_CLEANUP_RE. Its line 308 removes the form following a FIRMA token; the final map in this reproducer does not preserve Sp.k. Deferral as a new product decision does not fulfill this contract.
+REPRO: tests_r2_repro.py, repeat-form-0, exact audited SHA, real NER and public pipeline wrapper, no detector mocks. Synthetic same-company sentence: first bare name, second name with Sp.k. Output is neither errored nor Guard-blocked. Source legal forms=1, restored legal forms=0, one FIRMA map, no Sp.k. anywhere in reverse_map. Restoration is not equal to source. Reversed occurrence order (repeat-form-1) restores exactly. This is data loss, not evidence of a new privacy leak. No claim that this bug was introduced by this commit.
+Additional repeat-form-2 also restores inexactly; no separate finding or expanded diagnosis is claimed.
+Required closure: satisfy the existing full-name/map/restoration contract for the retained F1 reproducer and its reversed order. Do not broaden company detection to close this finding.
+
+Independent evidence:
+- Three synthetic controls (Sp.k., S.A., Sp. z o.o.): whole FIRMA map and exact restoration PASS with real NER/Guard chain.
+- F1 independently reproduced twice; retained executable assertions include missing suffix in both restoration and map.
+- py -3 -m pytest tests/test_layers.py -q -o log_file=NUL: 113 passed.
+- py -3 -m pytest -q -o log_file=NUL: 129 passed, 40 skipped, 1 xfailed, 8 subtests passed. Skipped HTTP/backend paths are NOT_CHECKED independently here; implementer's running-backend result is supporting evidence only.
+- gate.py brief.md <base> <exact SHA> backend_output.txt: WYMAGA_DECYZJI solely RATIO 100/1=100:1; no scope/size/frozen-lock/lint blocker. Current task ratio still needs Owner acceptance before any later PASS; no size question is needed to establish functional F1.
+
+Proportional scope / limits:
+CC's two repaired partial-name cases and three no-useful-candidate cases remain separately classified. STOP for no candidate is explicitly permitted by the brief; this audit does not turn that boundary into a new global-detector requirement. No independent rerun of the 160-case sweep, local document benchmark, or complete real-NER negative matrix: NOT_CHECKED, with implementer evidence supporting only. No certification of all five local fields or a full privacy pass. Broader work is unnecessary to establish this single reproducible contract defect. Express source unchanged; no new Express guarantee claimed.
+
+Publication: report and synthetic reproducer on task branch; BOARD.md on main. No real document text, profiles, maps, or product code committed.
