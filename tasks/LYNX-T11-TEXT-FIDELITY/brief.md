@@ -23,8 +23,9 @@ TASK_SCOPE:
 - backend/layers/ner_adapter.py
 - backend/layers/ocr_normalizer.py
 - backend/tests/test_audyt_2026_10.py
+- backend/layers/contact.py
 
-OUT_OF_SCOPE: F3 (PESEL/telefon — przywrócenie oryginalnych spanów); `layers/identity.py`, `layers/contact.py`, alokator, mapowanie tokenów, `Depseudonimizuj.tsx`, OCR engine/Tesseract, `pipeline_new.py`, zmiana Guard/fail-closed, seed/T04, słowniki, architektura AnchorEngine, szeroka refaktoryzacja normalizacji, poprawki regex dla IBAN (osobny T07), prawdziwe dokumenty klienta.
+OUT_OF_SCOPE: F3 (PESEL/telefon — przywrócenie oryginalnych spanów); `layers/identity.py`, `layers/contact.py` (poza ROZSZERZENIEM CC E1 niżej), alokator, mapowanie tokenów, `Depseudonimizuj.tsx`, OCR engine/Tesseract, `pipeline_new.py`, zmiana Guard/fail-closed, seed/T04, słowniki, architektura AnchorEngine, szeroka refaktoryzacja normalizacji, poprawki regex dla IBAN (osobny T07), prawdziwe dokumenty klienta.
 
 ## Minimalne testy i dowody
 1. Zdjąć `xfail(strict=True)` i doprowadzić do PASS istniejące `test_fix_ocr_email_nie_skleja_zdan` (dwie parametryzacje) i `test_ocr_normalizer_nie_psuje_slow` w `backend/tests/test_audyt_2026_10.py`. Dodać minimalne przypadki „12/2026. Termin”, „654. Termin” oraz dopasowanie `Tel: +48 606 219 T2T` i „anna. nowak@wp.pl”, bez duplikowania testów warstw.
@@ -40,3 +41,9 @@ WHERE_MAP:
 - TARGETS: backend/layers/ocr_normalizer.py --symbol _PHONE_AFTER_KW_RE
 - REASON: zmiana dwóch istniejących reguł normalizacji; przed implementacją sprawdzić ich wywołania i odbiorców.
 GATE: nowych plików 0, nie zwiększać niepotrzebnie dużych istniejących funkcji/plików; >150 zmienionych linii lub ratio >5:1 wymaga decyzji. Jeżeli CC odkryje inne F1/F2 w analogicznym mechanizmie, obowiązuje `ROZSZERZENIE CC` z jawnie dopisanym TASK_SCOPE, nie samowolna przebudowa pipeline.
+
+## ROZSZERZENIE CC (2026-10-17, przed kodem rozszerzenia)
+Ta sama klasa co F1 (kropka + spacja po adresie e-mail sklejana z następnym słowem), mechanizm analogiczny — klauzula GATE tego briefu. Plik dopisany do TASK_SCOPE.
+- **E1** `backend/layers/contact.py::_EMAIL_OCR_RE`: separator TLD `[ \t]?[.,][ \t]?` + TLD `[a-zA-Z]{2,6}` z IGNORECASE łapie „nowak@example.pl. Termin” jako e-mail z TLD „Termin” → tekst traci słowo „Termin”, a reverse_map dostaje „nowak@example.pl.Termin” (Przywróć oddaje sklejony tekst). Reproduktor (bez spaCy): `run_pipeline_new("Kontakt: nowak@example.pl. Termin płatności 14 dni.")` → `"Kontakt: EMAIL_001 płatności 14 dni."`, `{EMAIL_001: "nowak@example.pl.Termin"}` — także przed T11.
+- Poprawka: TLD po separatorze ze spacją OCR tylko małymi literami (`(?-i:[a-z]{2,6})`); „wp. pl”, „wp ,pl” itp. nadal łączone. Bez zmian w kanonizacji, telefonach i kolejności warstw.
+- Test: pion z e-mailem przed „. Termin” — tekst wierny, wartość w mapie bez „Termin”; OCR „jan@wp. pl” nadal jeden e-mail.
