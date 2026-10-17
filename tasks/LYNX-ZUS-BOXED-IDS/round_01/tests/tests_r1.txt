@@ -1,0 +1,33 @@
+LYNX-ZUS-BOXED-IDS — r1 — independent brief precheck
+Date: 2026-10-17
+VERDICT: PASS PREIMPLEMENTATION for the staged contract (diagnosis first; repair conditional on its result).
+Exact brief SHA: 466698472f1bb8840ed3662932e4eaa1596d4262
+Current main used for owner/dependency check: 9c39f01103ec1970907efc7dc48dced9d7225aff
+Recipient: Architect / CC
+Stage: BRIEF_ONLY. No implementation, sample diagnosis or fix certified.
+
+PRECHECK / ORACLE
+Reviewed current Task BOARD row and explicitly dependent layout-finding context, brief and frozen-spec lock; S1–S5 retained from prior audits. Agent/start rules unchanged. Historical 70-field sample and reported 4/6 un-tokenized identifiers are supporting reports, not new independent measurement after the merges.
+One targeted source read on current main confirms the PDF branch of _extract_text currently joins page.get_text() results and does not explicitly read widgets. This alone does NOT identify the origin of digits or prove a safe single-field grouping in any ZUS file.
+No tests, reproducer, pipeline run, widget inspection, benchmark, gate or document-content read performed: AGENTS BRIEF_ONLY is respected. Krok 0 is the first execution work for CC, not an unperformed check disguised as completed diagnosis.
+
+READINESS
+1. Product grounding: safely recovering one complete PESEL/NIP value for existing masking is consistent with S1 and preserves S2–S5. Global digit/newline joining and rollback of NEWLINE-CROSSING protection are explicitly forbidden.
+2. Testability: conditional decision is explicit. Determine TEXT_LAYER/WIDGET_GROUP/AMBIGUOUS, prove individual field bounds and actual first relevant chain on synthetic local inputs before code. Start with PESEL; include NIP only when the same extraction mechanism/owner is independently established. Do not assume all six cases share a cause.
+3. Existing ownership: document_processor._extract_text PDF branch is a plausible minimal seam for document-field representation. Existing pipeline owns recognition/tokenization after extraction. A new PDF parser, broad identity normalization or a duplicate PII engine is not authorized. If a safe field boundary cannot be established there, the existing STOP rule applies; precheck does not waive it.
+4. No further product ruling is needed to BEGIN the prescribed diagnosis. Implementation is authorized by this brief only after that diagnosis demonstrates the bounded same-owner repair. PASS PREIMPLEMENTATION is not permission to guess missing grouping metadata, merge arbitrary digits, or silently add another owner.
+
+MINIMAL RESPONSIBILITY / REDUCTION
+- Establish one trustworthy field boundary from existing PDF information. SOURCE: Task Krok 0 and S1/S2; NECESSITY: masking a string assembled from unrelated digits would fabricate an identifier and corrupt text. No generic layout inference platform needed for this first step.
+- Pass a complete local field value through the existing reader contract to existing masking. SOURCE: Task expected behavior; NECESSITY: pipeline cannot match an identifier whose field representation lost its bounds. Preserve source/representation distinction and explicitly document extractor canonicalization; text restoration is not visual-PDF reconstruction.
+- Existing layout test file covers a source-faithful synthetic PDF and specified negative controls. SOURCE: Task tests; NECESSITY: plain text is not a substitute when actual source uses widget fields. Ambiguous independent digits, two neighboring identifiers, dates/amounts and prior working cases define no-fusion/recall boundaries.
+Keep the two-file Task scope. No new validator/parser/dependency, export/UI or change to DOCX/runner/Guard is necessary to start diagnosis. If diagnosis contradicts this, return a narrow evidence-backed contract correction before code rather than expanding it.
+
+DEPENDENCY / BASE CORRECTION BEFORE EXECUTION
+Current main contains merged NEWLINE-CROSSING impl 61ef3a8 and DOCX-TABLES impl 57e39fb (ancestry verified). Task branch at brief SHA 4666984 contains neither implementation (ancestry verified). The refreshed text correctly says they are merged but does not itself synchronize source.
+CC must first update this Task branch from the actual merged main, retain the brief/report and state the exact new diagnostic/gate base. Do not diagnose the obsolete branch state and attribute its behavior to current main, or revert the merged fixes. This is routine preparation before the brief's Krok 0, not a request for new product behavior or merge into main. Auditor did not synchronize product source during a brief-only audit.
+
+HANDOFF / LIMITS
+No blocking contract gap found in this staged brief. CC may proceed with Krok 0 on the synchronized base; safe grouping and source type remain NOT_CHECKED until that evidence exists. Missing local sample -> NOT_RUN, not success. Fresh same-input/digest/hash comparison is required at delivery; historical six-field numbers do not substitute for it.
+Actual repair, real vertical, authoritatively grouped PESEL/NIP source, standard/targeted tests, unchanged old metrics and gate are delivery checks. Unsupported or ambiguous grouping must produce STOP / OWNER_DECISION_NEEDED without implementation. An additional owner needs contract correction, not a workaround in tests.
+Task-specific size gates still apply; previous size approvals do not transfer. No source/sample values, private data or document fragments published. No product code changed, tests run or merge performed/authorized. This PASS does not certify any ZUS fix or current raw leak on the latest main.
