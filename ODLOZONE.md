@@ -43,3 +43,12 @@ Istnieje tylko w Mobile. W `PROJEKT_KONTEKST.md` oznaczone jako „wymaga osobne
 ## 2026-10-16 AUD-13/14 PBKDF2 — zmiana iteracji/soli
 
 Zmiana parametrów KDF unieważnia istniejące `mapy.enc`. Wymaga planu migracji przed dystrybucją; nie ruszać bez osobnego Tasku. Źródło: `PROJEKT_KONTEKST.md` → Bezpieczeństwo.
+
+## 2026-10-17 Teksty nie po polsku (np. ukraiński cyrylicą) — LYNX-FOREIGN-LANG-FP
+
+Z pomiaru DOCX-TABLES (próbka LAYOUT-SAMPLES, dwujęzyczny formularz PL/UA): polski NER na tekście ukraińskim daje ~15 fałszywych OSOBA,
+a jeden token przypięty do dwóch form powoduje, że Przywróć dopisuje słowo. Nie wyciek — nadmaskowanie i psucie tekstu.
+Uwaga Pawła: produkt jest dla tekstu polskiego; każdy kolejny taki finding ciągnąłby w stronę dwujęzycznego LynxMask — nie rozwijać.
+Ocena CC: zgoda na odłożenie (nie dotyczy S1). Nazwiska ukraińskie zapisane łacinką w polskim tekście są obsługiwane jak każde inne.
+Jeśli wróci: najtańszy wariant to nie przyjmować OSOBA z NER dla fragmentów pisanych cyrylicą (numery/e-maile i tak maskowane regexami) —
+bez wykrywania języka i bez drugiego modelu.
