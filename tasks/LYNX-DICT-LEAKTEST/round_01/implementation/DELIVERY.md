@@ -69,3 +69,29 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2.txt
   - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2_repro.py
 ```
+
+## Runda 3 — R2 po recheck r3 (`tests_r3.txt`, `9f80d17`)
+IMPLEMENTATION_SHA: `528856b9b4c07d4fac2d623d0dab23c709c6c4ee`. Zarzut trafny: kontrakt M2 dalej opierał się na zawieraniu się liter po `_norm`, więc „w” lub „kowal” zamaskowane jako ADRES obok nietkniętego „ul. Kowalskiego 7” dawały `contract`.
+- `classify_m2`: token dozwolonej kategorii jest kontraktem tylko gdy jego wartość po `_norm` **równa się całej** oczekiwanej wartości i ta wartość **nie występuje już w wyniku**; inaczej `fp`. M1 (`_overlaps`) bez zmian — R1 zamknięte.
+- Testy regresyjne: oba warianty z `tests_r3_repro.py` („w” → ADRES, „kowal” → ADRES przy jawnym adresie) → `fp`; granice dodatnie: cały adres → `contract`, prawdziwa kwota → `contract`, „zapłaty” → KWOTA → `fp`. Przez `measure → report`: wstrzyknięte FP raportowane jako `{'fp': 1}`.
+- `test_audyt_2026_10.py`: `58 passed, 15 xfailed`. Realny runner seed 2026 z holdoutem: dwa przebiegi identyczne (`e089762029f7a27b`), wynik bazowy bez zmian (M2 5 clean + 3 contract).
+
+gate.py (stdout dosłownie):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 528856b9b4c07d4fac2d623d0dab23c709c6c4ee
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 377 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-DICT-LEAKTEST\round_01\tests\tests_r3_repro.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-DICT-LEAKTEST/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-DICT-LEAKTEST/round_01/implementation/gate.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r1.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r2_repro.py
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r3.txt
+  - tasks/LYNX-DICT-LEAKTEST/round_01/tests/tests_r3_repro.py
+```
