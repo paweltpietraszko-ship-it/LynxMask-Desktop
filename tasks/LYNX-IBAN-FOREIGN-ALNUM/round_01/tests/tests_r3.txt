@@ -1,0 +1,24 @@
+LYNX-IBAN-FOREIGN-ALNUM — r3 — final disposition after explicit Owner acceptance
+Date: 2026-10-17
+VERDICT: PASS WITH COMMENT
+Exact audited implementation: a7809540efe254b12eac9b657b3d795664689d57
+Diff base: 23a103e
+Recipient: Architect / Owner
+Publication parent / retained evidence: 65dfa4778d44b1bde819eefcebae4ae2ab3a2b09 (tests_r2.txt and both independent reproducers).
+
+OWNER_ACCEPTED
+After the auditor explained O1 and recommended PASS with a comment, Owner replied "Akceptuję". This explicitly accepts the described adjacent-uppercase-word limitation for this delivery. It is recorded in brief.md; it does not authorize arbitrary overmasking, irreversible loss, or merge.
+Prior explicit line-count acceptance covers gate RATIO 66/6 = 11:1. No size decision remains outstanding.
+
+COMMENT / KNOWN LIMITATION
+With some foreign IBAN, an ordinary uppercase word immediately following on the same line (e.g. DANE; independently reproduced with RO and ES) may be included in the same NUMER token. The masked text omits that word; the full value is in the local reverse_map and one-pass Przywróć restores the original exactly. This is bounded overmasking/context loss, not a demonstrated identifier leak. The underlying financial pattern also exhibits this on the baseline. O1 is accepted as an explicit exception to the adjacent-word boundary for this Task, not falsely reported as fixed.
+
+RETAINED AUDIT LAYERS
+Original O2 and same-class E1/E2 independently confirmed in r2: 39 layer checks + 35 full + 35 Express paths, real pipeline and Guard, complete foreign map/restoration. E1 compact IBAN no longer loses its numeric tail to identity; E2 preserves PL trailing whitespace. No new identifier leak found in checked cases.
+Targeted: 227 passed, 1 skipped, 10 xfailed, 8 subtests passed.
+Standard suite, once on exact implementation: 129 passed, 40 skipped, 1 xfailed, 8 subtests passed.
+Gate: all checks green except explicitly Owner-accepted RATIO; frozen spec verified, scope and diff checks passed. Required owner map inspected.
+No product changes or additional tests in r3: only documentation of explicit acceptance and final verdict, reusing exact-SHA evidence. Earlier report and reproducers remain unchanged.
+
+SCOPE / LIMITS
+PASS closes O2 and accepted E1/E2 repair scope on the exact implementation SHA above. O1 and existing PL formatting F3 remain documented limitations. Skipped/live paths, HTTP/UI, severely degraded OCR rejection, all-country ISO validation and broad benchmark coverage are not certified. No real documents read, no production code edited, no merge performed or authorized.

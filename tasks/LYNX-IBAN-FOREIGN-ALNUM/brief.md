@@ -47,3 +47,7 @@ Ta sama klasa (warstwa maskuje fragment pełnego zagranicznego IBAN) — wymagan
 
 ## OWNER_ACCEPTED — rozmiar dostawy, 2026-10-17
 Paweł przy przekazaniu dostawy do audytu: „Jest dostawa od CC, ilość linii kodu akceptuję”. Akceptacja dotyczy rozmiaru tej dostawy `a7809540efe254b12eac9b657b3d795664689d57`, w tym zgłoszonego przez gate RATIO 66/6 = 11:1. Nie jest akceptacją innych, dopiero wykrytych zachowań produktu ani zgodą na merge.
+## OWNER_ACCEPTED — ograniczenie O1, 2026-10-17
+Po wyjaśnieniu ograniczenia O1 w raporcie r2 i rekomendacji PASS z komentarzem Paweł odpowiedział: „Akceptuję”. Akceptacja dotyczy dostawy `a7809540efe254b12eac9b657b3d795664689d57`: istniejący wzorzec niektórych zagranicznych IBAN może objąć także sąsiadujące w tym samym wierszu słowo pisane wersalikami, np. „DANE” (potwierdzone RO i ES). Wtedy słowo znika z maskowanego tekstu wraz z numerem, lecz pełny span jest w lokalnej mapie, a Przywróć odtwarza wejście 1:1; w odtworzonych przypadkach nie ma wycieku. To jawny wyjątek od granicy sąsiednich słów wyłącznie dla opisanego O1, nie ogólna zgoda na dowolne nadmaskowanie ani utratę tekstu. O1 pozostaje znanym ograniczeniem, bez wymagania rozbudowy parsera w tym Tasku.
+
+Wraz z wcześniejszą akceptacją rozmiaru zamyka to OWNER_EXPLANATION_GATE dla opisanej dostawy. Wynik audytu: PASS z komentarzem, raport `round_01/tests/tests_r3.txt`, dowody techniczne pozostają w r2. Brak zgody na merge.
