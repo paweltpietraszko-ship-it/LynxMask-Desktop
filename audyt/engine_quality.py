@@ -256,8 +256,11 @@ def _layout_doc(did, entry, directory, run):
     res = run(text)
     for row, f in zip(rows, entry["fields"]):
         v = f["value"]
-        if v in text:
+        expected = sum(g["value"] == v for g in entry["fields"])  # ta sama wartość w kilku polach (np. akapit + komórka)
+        if text.count(v) >= expected:
             row["status"] = classify_m1(text, v, f["category"], res)
+        elif v in text:  # mniej wystąpień niż pól — nie wiadomo, które pole dotarło; nie sukces (Codex r2 F1)
+            row["status"] = "EXTRACTION_UNVERIFIED"
         else:  # pole nie dotarło do tekstu — błąd EKSTRAKCJI, nigdy „masked”
             row["status"] = "EXTRACTION_CHANGED" if _norm(v) and _norm(v) in _norm(text) else "EXTRACTION_MISSING"
     present = [f["value"] for f in entry["fields"] if f["value"] in text]

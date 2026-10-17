@@ -80,3 +80,16 @@ def test_zmieniony_zapis_to_extraction_changed(tmp_path, run):
     spaced = PDF_EMAIL.replace("@", " @ ")  # klucz w innym zapisie niż tekst z pliku
     _manifest(tmp_path, [{"file": "b.pdf", "type": "pdf", "fields": [{"category": "EMAIL", "value": spaced}]}])
     assert eq.measure_layout(str(tmp_path), run)["by_type_location"] == {"pdf/tekst": {"EXTRACTION_CHANGED": 1}}
+
+
+# Codex r2 F1: ta sama wartość w akapicie i w nieodczytanej komórce — żadne z pól nie może dostać „masked”.
+def test_powtorzona_wartosc_bez_dowodu_wystapienia(tmp_path, run):
+    import docx
+    d = docx.Document()
+    d.add_paragraph(f"Adres do korespondencji: {EMAIL}")
+    d.add_table(rows=1, cols=2).rows[0].cells[1].text = EMAIL
+    d.save(str(tmp_path / "a.docx"))
+    fields = [{"category": "EMAIL", "value": EMAIL}, {"category": "EMAIL", "value": EMAIL, "in_table": True}]
+    _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": fields}])
+    by = eq.measure_layout(str(tmp_path), run)["by_type_location"]
+    assert by == {"docx/tekst": {"EXTRACTION_UNVERIFIED": 1}, "docx/tabela": {"EXTRACTION_UNVERIFIED": 1}}, by
