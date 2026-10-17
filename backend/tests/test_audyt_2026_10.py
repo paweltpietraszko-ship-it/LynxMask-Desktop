@@ -377,3 +377,96 @@ def test_cors_wpuszcza_ui_tauri(api_client, origin):
     client, _ = api_client
     r = client.get("/health", headers={"Origin": origin})
     assert r.headers.get("access-control-allow-origin") == origin
+
+
+# ── LYNX-DICT-LEAKTEST: wiarygodność runnera audyt/engine_quality.py (bez spaCy) ──────────────────────
+
+def _eq():
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "audyt"))
+    import engine_quality
+    return engine_quality
+
+
+def _res(text, rev=None, blocked=False, error=None):
+    from pipeline import PipelineResult
+    return PipelineResult(text=text, reverse_map=rev or {}, guard_blocked=blocked, error=error)
+
+
+def test_quality_przypadki_i_holdout_deterministyczne(tmp_path):
+    eq = _eq()
+    assert eq.build_cases() == eq.build_cases()
+    src = tmp_path / "h.json"
+    src.write_text('{"nowak": ["nowaka"], "zzyxowski": [], "qwertyk": ["qwertyka"], "abcdzki": []}', encoding="utf-8")
+    a, info = eq.load_holdout(str(src), 7)
+    assert a == eq.load_holdout(str(src), 7)[0] and info["status"] == "OK" and info["rejected_overlap"] == 1
+    assert all("Nowak" not in c[3] for c in a)  # forma ze słownika silnika odrzucona
+    assert eq.load_holdout(str(tmp_path / "brak.json"), 7) == (None, {"status": "NOT_MEASURED", "reason": "brak pliku holdout"})
+
+
+def test_quality_m1_blocked_i_bledy_nie_sa_sukcesem():
+    eq = _eq()
+    t, s = "Nabywca: Jan Kowalski.", "Jan Kowalski"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: OSOBA_001.", {"OSOBA_001": s})) == "masked"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: OSOBA_001.", {"OSOBA_001": s}, blocked=True)) == "blocked"
+    assert eq.classify_m1(t, s, "OSOBA", _res(t, error="boom")) == "error"
+    assert eq.classify_m1(t, s, "OSOBA", _res(t)) == "leak"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: OSOBA_001 Kowalski.", {"OSOBA_001": "Jan"})) == "leak_partial"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: FIRMA_001.", {"FIRMA_001": s})) == "wrong_category"
+    iban = "PL61 1090 1014 0000 0712 1981 2874"
+    assert eq.classify_m1(f"Konto {iban}.", iban, "NUMER", _res("Konto PL6110NUMER_001.", {"NUMER_001": "9010140000071219812874"})) == "partial_mask"
+    # Codex r2 R1: tokeny o różnych kategoriach na jednej osobie i wpis w mapie bez tokenu w wyniku to nie sukces
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: OSOBA_001 FIRMA_001.", {"OSOBA_001": "Jan", "FIRMA_001": "Kowalski"})) == "wrong_category"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: EMAIL_001 OSOBA_001.", {"EMAIL_001": "Jan", "OSOBA_001": "Kowalski"})) == "wrong_category"
+    assert eq.classify_m1(t, s, "OSOBA", _res("Nabywca: .", {"OSOBA_001": s})) == "no_mapping"
+    boom = eq.measure([("X", "M1", "OSOBA", t, s, {})], lambda _: 1 / 0)
+    assert boom[0]["status"] == "error" and boom[0]["m3"]["status"] == "blocked_or_error"
+
+
+def test_quality_m2_fp_a_kontrakt():
+    eq = _eq()
+    kwota = {"KWOTA": ["10 zł"]}
+    assert eq.classify_m2({}, _res("w OSOBA_001", {"OSOBA_001": "piątek"})) == "fp"
+    assert eq.classify_m2(kwota, _res("Do zapłaty KWOTA_001.", {"KWOTA_001": "10 zł"})) == "contract"
+    # Codex r2 R2: dozwolona kategoria na zwykłym słowie (kwota prawdziwa jawna) to FP
+    assert eq.classify_m2(kwota, _res("Do KWOTA_001 10 zł.", {"KWOTA_001": "zapłaty"})) == "fp"
+    # Codex r3 R2: dozwolona kategoria na zwykłym słowie dzielącym litery z oczekiwaną wartością, adres nietknięty
+    adres = {"ADRES": ["ul. Kowalskiego 7"]}
+    assert eq.classify_m2(adres, _res("Biuro przy ul. Kowalskiego 7; ADRES_001 naprawia bramę.", {"ADRES_001": "kowal"})) == "fp"
+    assert eq.classify_m2(adres, _res("Biuro przy ul. Kowalskiego 7 ADRES_001 centrum.", {"ADRES_001": "w"})) == "fp"
+    assert eq.classify_m2(adres, _res("Biuro przy ADRES_001 w centrum.", {"ADRES_001": "ul. Kowalskiego 7"})) == "contract"
+    assert eq.classify_m2({}, _res("Zapłata przelewem.")) == "clean"
+    assert eq.classify_m2({}, _res("x", blocked=True)) == "blocked"
+
+
+def test_quality_m3_spacja_i_brak_mapy():
+    eq = _eq()
+    t = "Nabywca: Jan Kowalski. Termin 14 dni."
+    assert eq.roundtrip(t, _res("Nabywca: OSOBA_001. Termin 14 dni.", {"OSOBA_001": "Jan Kowalski"}), ["Jan Kowalski"])["status"] == "identical"
+    r = eq.roundtrip(t, _res("Nabywca: OSOBA_001.Termin 14 dni.", {"OSOBA_001": "Jan Kowalski"}), ["Jan Kowalski"])
+    assert r["status"] == "diff" and r["diff_outside_spans"] == 1
+    assert eq.roundtrip(t, _res("Nabywca: OSOBA_002. Termin 14 dni.", {"OSOBA_001": "Jan Kowalski"}))["status"] == "missing_map"
+    assert eq.roundtrip(t, _res(t, blocked=True))["status"] == "blocked_or_error"
+
+
+def test_quality_profil_tylko_w_temp_i_sprzatany_przy_bledzie(tmp_path, monkeypatch):
+    import glob
+    eq = _eq()
+    with pytest.raises(SystemExit):
+        eq.main(["--out", os.path.join(eq.ROOT, "quality.json")])  # zapis do repo zabroniony
+    if os.name == "nt":  # Codex r2 R3: ta sama ścieżka inną wielkością liter
+        with pytest.raises(SystemExit):
+            eq._out_path(os.path.join(eq.ROOT, "quality.json").swapcase())
+    seen = []
+    def boom(tmp):
+        seen.append(tmp)
+        raise RuntimeError("awaria")
+    monkeypatch.chdir(os.getcwd())  # main() przechodzi do backend/ — przywróć cwd po teście
+    with (patch.object(eq, "_engine_available", return_value=(True, "")), patch.object(eq, "build_state", boom),
+          patch.object(eq.logging, "disable")):
+        with pytest.raises(RuntimeError):
+            eq.main(["--out", str(tmp_path / "q.json")])
+    assert seen and os.path.commonpath([seen[0], tempfile.gettempdir()]) == tempfile.gettempdir()
+    assert not os.path.exists(seen[0]) and not glob.glob(os.path.join(tempfile.gettempdir(), "lynx_quality_*"))
+    with patch.object(eq, "_engine_available", return_value=(False, "ImportError")), patch.object(eq.logging, "disable"):
+        assert eq.main(["--out", str(tmp_path / "n.json")]) == 2  # brak NER: NOT_RUN, nie atrapa
+    assert '"status": "NOT_RUN"' in (tmp_path / "n.json").read_text(encoding="utf-8")
