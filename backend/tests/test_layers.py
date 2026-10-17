@@ -387,3 +387,39 @@ class TestVerbalAmountLayer:
         if "KWOTA_" in s.text:
             tokens = [w for w in s.text.split() if w.startswith("KWOTA_")]
             assert all(t != "KWOTA_001" for t in tokens)
+
+
+# ---------------------------------------------------------------------------
+# LYNX-EMAIL-LOCALPART-OCR: e-mail z OCR-ową spacją w lokalnej części jako jedna wartość
+# ---------------------------------------------------------------------------
+
+def _apply_contact(text: str):
+    from layers.contact import apply_contact_layer
+    state = PipelineState(text=text, allocator=TokenAllocator())
+    apply_contact_layer(state)
+    return state.text, state.allocator.reverse_map
+
+
+class TestContactEmailLocalpartOcr:
+
+    @pytest.mark.parametrize("text,value", [
+        ("Kontakt: anna. nowak@example.pl. Termin płatności.", "anna. nowak@example.pl"),
+        ("Kontakt: anna.nowak@example.pl.", "anna.nowak@example.pl"),
+        ("Kontakt: 123456789012345@example.pl.", "123456789012345@example.pl"),
+    ])
+    def test_caly_adres_jednym_tokenem(self, text, value):
+        out, rev = _apply_contact(text)
+        assert list(rev.values()) == [value] and out == text.replace(value, next(iter(rev))), (out, rev)
+
+    @pytest.mark.parametrize("text,email", [
+        ("Kontakt. jan@example.pl", "jan@example.pl"), ("Podpisano. Jan@example.pl", "Jan@example.pl"),
+        ("Mail nowak@example.pl. Termin", "nowak@example.pl"), ("Koniec.\njan@example.pl", "jan@example.pl"),
+    ])
+    def test_koniec_zdania_nie_wchodzi_do_adresu(self, text, email):
+        out, rev = _apply_contact(text)
+        assert list(rev.values()) == [email] and out == text.replace(email, next(iter(rev))), (out, rev)
+
+    @pytest.mark.parametrize("text", ["Kontakt: jan @example.pl.", "Kontakt: jan@ example.pl.", "Kontakt: jan@wp. pl."])
+    def test_ocr_przy_at_i_tld_nadal_jeden_email(self, text):
+        out, rev = _apply_contact(text)
+        assert out == "Kontakt: EMAIL_001." and len(rev) == 1 and "jan" not in out, (out, rev)
