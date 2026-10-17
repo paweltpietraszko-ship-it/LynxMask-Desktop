@@ -429,6 +429,11 @@ def test_quality_m2_fp_a_kontrakt():
     assert eq.classify_m2(kwota, _res("Do zapłaty KWOTA_001.", {"KWOTA_001": "10 zł"})) == "contract"
     # Codex r2 R2: dozwolona kategoria na zwykłym słowie (kwota prawdziwa jawna) to FP
     assert eq.classify_m2(kwota, _res("Do KWOTA_001 10 zł.", {"KWOTA_001": "zapłaty"})) == "fp"
+    # Codex r3 R2: dozwolona kategoria na zwykłym słowie dzielącym litery z oczekiwaną wartością, adres nietknięty
+    adres = {"ADRES": ["ul. Kowalskiego 7"]}
+    assert eq.classify_m2(adres, _res("Biuro przy ul. Kowalskiego 7; ADRES_001 naprawia bramę.", {"ADRES_001": "kowal"})) == "fp"
+    assert eq.classify_m2(adres, _res("Biuro przy ul. Kowalskiego 7 ADRES_001 centrum.", {"ADRES_001": "w"})) == "fp"
+    assert eq.classify_m2(adres, _res("Biuro przy ADRES_001 w centrum.", {"ADRES_001": "ul. Kowalskiego 7"})) == "contract"
     assert eq.classify_m2({}, _res("Zapłata przelewem.")) == "clean"
     assert eq.classify_m2({}, _res("x", blocked=True)) == "blocked"
 

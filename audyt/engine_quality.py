@@ -134,14 +134,16 @@ def classify_m1(text, span, cat, result):
 
 
 def classify_m2(allowed, result):
-    """Status M2: error / blocked / fp / contract / clean. Kontrakt = token dozwolonej kategorii NA oczekiwanej wartości
-    (allowed: {kategoria: [wartości]}); ta sama kategoria na innym słowie to FP."""
+    """Status M2: error / blocked / fp / contract / clean. Kontrakt = token dozwolonej kategorii, którego wartość to CAŁA
+    oczekiwana wartość (bez spacji/interpunkcji) i ta wartość zniknęła z wyniku (allowed: {kategoria: [wartości]}).
+    Ta sama kategoria na innym słowie — także na fragmencie oczekiwanej wartości („kowal” w adresie) — to FP."""
     if result.error:
         return "error"
     if result.guard_blocked:
         return "blocked"
     toks = _output_tokens(result)
-    if any(not any(_overlaps(v, ref) for ref in allowed.get(t.split("_")[0], ())) for t, v in toks.items()):
+    if any(not any(_norm(v) == _norm(ref) and ref not in result.text for ref in allowed.get(t.split("_")[0], ()))
+           for t, v in toks.items()):
         return "fp"
     return "contract" if toks else "clean"
 
