@@ -293,26 +293,23 @@ app = FastAPI(
     redoc_url=None,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # localhost-only server — wildcard bezpieczny
-    allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["*"],
-)
+# [LYNX-T02] Origin: UI Tauri dev/wydanie Windows (pomiar po T10-BUILD-TS); Host: tylko lokalny (DNS rebinding).
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:1420", "http://tauri.localhost"], allow_methods=["GET", "POST", "DELETE"], allow_headers=["*"])
+_ALLOWED_HOSTS = frozenset({"127.0.0.1:8765", "localhost:8765"})
+_EXPRESS_PATHS = frozenset({("POST", "/preview"), ("POST", "/preview-express")})  # token Express: wyłącznie maskowanie
 
 
-# [SECURITY-TOKEN] Middleware sprawdzający token API.
-# /health pomijany — Tauri sprawdza go przed odczytem tokenu.
-# OPTIONS pomijany — preflight CORS nie niesie tokenu, musi przejść do CORSMiddleware.
-# Nagłówek: X-Api-Token: <token>
+# [SECURITY-TOKEN] Host + token API (X-Api-Token). /health i /express/token bez tokenu; OPTIONS (preflight CORS) też.
 @app.middleware("http")
 async def _require_api_token(request, call_next):
+    if request.headers.get("host", "") not in _ALLOWED_HOSTS:
+        return JSONResponse({"error": "Invalid host"}, status_code=400)
     if request.url.path in ("/health", "/express/token") or request.method == "OPTIONS":
         return await call_next(request)
     token = request.headers.get("x-api-token", "")
-    ok = _secrets.compare_digest(token, _API_TOKEN) or (
-        bool(_EXPRESS_TOKEN) and _secrets.compare_digest(token, _EXPRESS_TOKEN)
-    )
+    ok = bool(_API_TOKEN) and _secrets.compare_digest(token, _API_TOKEN)  # pusty (przed lifespanem) nigdy nie pasuje
+    if not ok and (request.method, request.url.path) in _EXPRESS_PATHS:
+        ok = bool(_EXPRESS_TOKEN) and _secrets.compare_digest(token, _EXPRESS_TOKEN)
     if not ok:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
     return await call_next(request)
@@ -327,9 +324,7 @@ async def version():
 
 @app.get("/express/token")
 async def express_token():
-    """Zwraca token sesji Express Mode (bez logowania).
-    Endpoint nie wymaga auth — token jest tymczasowy, ważny do restartu backendu.
-    """
+    """Token sesji Express (bez logowania, do restartu backendu) — tylko /preview i /preview-express (LYNX-T02)."""
     return {"token": _EXPRESS_TOKEN}
 
 

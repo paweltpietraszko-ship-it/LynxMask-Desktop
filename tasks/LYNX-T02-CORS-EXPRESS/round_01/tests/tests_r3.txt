@@ -1,0 +1,29 @@
+PRECHECK KOREKTY CC r1 — LYNX-T02-CORS-EXPRESS
+Data: 2026-10-16
+Exact SHA: 3cff4f5f53f4c9901f8708cfe647b4969cc8a816
+Poprzedni precheck: 42c11750d8a41b93a9ea4ac6cdf482ccf1a189e1, tests_r2.txt.
+Wynik: PASS PREIMPLEMENTATION.
+Zakres: wyłącznie B1/B2 z cc_review_r1.md i zmieniony fragment briefu.
+Bez powtarzania poprzedniego przeglądu repo.
+
+B1 ZAMKNIĘTE: Host jest kontrolowany niezależnie od Origin, przed
+publicznym /express/token. Kontrakt określa lokalne hosty i port 8765,
+odmowę 400, brak wyjątku bez Origin oraz testy dodatnie i ujemne.
+Zastrzeżenie o TrustedHost nie znosi jawnego wymagania portu.
+SOURCE/NECESSITY: S1/S5/S6 i cel T02 — ograniczenie dostępu do lokalnego
+backendu w istniejącym middleware, bez nowego ownera/modułu/proxy.
+TestClient nie wymusza dopuszczenia testserver w produkcie.
+
+B2 ZAMKNIĘTE NA ETAPIE BRIEFU: naprawa TS jest osobną zależnością
+T10-BUILD-TS. Implementacja T02 może ruszyć wcześniej, ale końcowy
+PASS/merge wymaga rzeczywistego pomiaru Origin/Host z Windows release.
+Dokumentacja nie zastępuje pomiaru; frontend nie trafia do zakresu T02.
+Stan kompilacji TS i nagłówki wydania nie były sprawdzane w prechecku.
+
+Wcześniej zaakceptowane kryteria Express przez POST /preview i zakres
+tokenu zachowane. Osobny temat blokowania tekstu Express nie został
+dopisany do implementacji kontroli dostępu.
+Warstwy: kontrakt, uwagi CC, wąska zmiana briefu. Bez testów,
+reproduktorów, builda i where.py — BRIEF_ONLY_PRECHECK.
+PASS dotyczy gotowości briefu na exact SHA, nie bezpieczeństwa
+przyszłej implementacji ani gotowości wydania.

@@ -250,16 +250,21 @@ def test_kont0_nie_jest_osoba():
 
 # ── Bezpieczeństwo API ────────────────────────────────────────────────────────
 
+# Dozwolony Host jawnie w kliencie testowym (LYNX-T02) — bez produkcyjnego wyjątku dla "testserver".
+_LOCAL = "http://127.0.0.1:8765"
+_FULL, _EXPR = "a" * 64, "b" * 64
+
+
 @pytest.fixture
 def api_client(monkeypatch):
     from fastapi.testclient import TestClient
     import pseudominizer_api as api
-    monkeypatch.setattr(api, "_API_TOKEN", "a" * 64)
-    monkeypatch.setattr(api, "_EXPRESS_TOKEN", "b" * 64)
-    return TestClient(api.app), api  # bez lifespanu: nie dotyka api_token.txt ani profilu
+    monkeypatch.setattr(api, "_API_TOKEN", _FULL)
+    monkeypatch.setattr(api, "_EXPRESS_TOKEN", _EXPR)
+    return TestClient(api.app, base_url=_LOCAL), api  # bez lifespanu: nie dotyka api_token.txt ani profilu
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-EXPRESS-TOKEN-SCOPE: token z /express/token (bez auth) otwiera wszystkie endpointy")
+# BUG-EXPRESS-TOKEN-SCOPE — naprawione w LYNX-T02 (xfail zdjęty).
 def test_express_token_nie_otwiera_profilu(api_client):
     client, _ = api_client
     tok = client.get("/express/token").json()["token"]
@@ -267,18 +272,60 @@ def test_express_token_nie_otwiera_profilu(api_client):
     assert r.status_code == 401
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-CORS-WILDCARD: allow_origins=['*'] pozwala obcej stronie czytać odpowiedzi backendu")
+# BUG-CORS-WILDCARD — naprawione w LYNX-T02 (xfail zdjęty).
 def test_cors_nie_wpuszcza_obcego_origin(api_client):
     client, _ = api_client
     r = client.get("/express/token", headers={"Origin": "https://evil.example"})
     assert r.headers.get("access-control-allow-origin") not in ("*", "https://evil.example")
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-AUTH-EMPTY-TOKEN: przed lifespanem _API_TOKEN='' i compare_digest('', '') przepuszcza żądanie bez tokenu")
+# BUG-AUTH-EMPTY-TOKEN — naprawione w LYNX-T02 (xfail zdjęty).
 def test_pusty_token_nie_przepuszcza(monkeypatch):
     from fastapi.testclient import TestClient
     import pseudominizer_api as api
     monkeypatch.setattr(api, "_API_TOKEN", "")
     monkeypatch.setattr(api, "_EXPRESS_TOKEN", "")
-    r = TestClient(api.app).get("/version")
+    r = TestClient(api.app, base_url=_LOCAL).get("/version")
     assert r.status_code == 401
+
+
+# LYNX-T02: token Express otwiera wyłącznie maskowanie; pełny token — wszystko.
+@pytest.mark.parametrize("method,path", [
+    ("GET", "/profile/entities"), ("GET", "/profile/export-dict"), ("GET", "/archive"), ("GET", "/version"),
+])
+def test_express_token_bez_dostepu_poza_maskowaniem(api_client, method, path):
+    client, _ = api_client
+    assert client.request(method, path, headers={"X-Api-Token": _EXPR}).status_code == 401
+    assert client.request(method, path, headers={"X-Api-Token": _FULL}).status_code != 401
+
+
+@pytest.mark.parametrize("path", ["/preview", "/preview-express"])
+@pytest.mark.parametrize("tok", [_EXPR, _FULL], ids=["express", "pelny"])
+def test_maskowanie_przechodzi_auth_z_tokenem_express_i_pelnym(api_client, path, tok):
+    client, _ = api_client
+    files = {"file": ("t.txt", b"Jan Kowalski, PESEL 90040512345.", "text/plain")}
+    r = client.post(path, files=files, headers={"X-Api-Token": tok})
+    assert r.status_code not in (400, 401), r.status_code
+
+
+# LYNX-T02: DNS rebinding — obcy Host odrzucany zanim dostanie token, także bez Origin.
+def test_obcy_host_odrzucony_przed_tokenem_express(api_client):
+    client, _ = api_client
+    r = client.get("/express/token", headers={"Host": "evil.example:8765"})
+    assert r.status_code == 400 and _EXPR not in r.text
+    r = client.get("/profile/entities", headers={"Host": "evil.example:8765", "X-Api-Token": _FULL})
+    assert r.status_code == 400
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1:8765", "localhost:8765"])
+def test_lokalny_host_przechodzi(api_client, host):
+    client, _ = api_client
+    r = client.get("/express/token", headers={"Host": host})
+    assert r.status_code == 200 and r.json()["token"] == _EXPR
+
+
+@pytest.mark.parametrize("origin", ["http://localhost:1420", "http://tauri.localhost"])
+def test_cors_wpuszcza_ui_tauri(api_client, origin):
+    client, _ = api_client
+    r = client.get("/health", headers={"Origin": origin})
+    assert r.headers.get("access-control-allow-origin") == origin

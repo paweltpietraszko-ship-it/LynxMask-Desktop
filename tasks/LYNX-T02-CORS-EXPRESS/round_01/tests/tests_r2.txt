@@ -1,0 +1,35 @@
+PRECHECK KOREKTY r2 — LYNX-T02-CORS-EXPRESS
+Data: 2026-10-16
+Exact SHA: 42c11750d8a41b93a9ea4ac6cdf482ccf1a189e1
+Poprzedni precheck: c14c71028b0b3fc3ff8682db2729fa65f86b2865
+Poprzedni raport: round_01/tests/tests_r1.txt
+Wynik: PASS PREIMPLEMENTATION
+
+Zakres: wyłącznie dwa braki kontraktu wskazane w r1.
+Odczyt: aktualny wiersz BOARD na origin/main, brief r2 i zmiana briefu
+względem poprzednio ocenionego SHA. Wykorzystano ustalenia r1 o UI/API;
+bez ponownego przeglądu repo i bez analizy diffu implementacji.
+PRODUCT_TRUTH: arch/spec.md S1, S5, S6; kontrakt Tasku. S2 bez zmian.
+
+1. ZAMKNIĘTE — rzeczywista ścieżka Express.
+Brief dopuszcza dokładnie POST /preview i POST /preview-express.
+Pierwsza ścieżka zachowuje obecny łańcuch App -> MainLayout ->
+Pseudonimizuj, więc ograniczenie tokenu nie wymusza zmiany UI/pipeline.
+Profil, eksport i archiwum pozostają niedostępne dla tokenu Express.
+Test dodatni jawnie obejmuje POST /preview. TASK_SCOPE jest spójny
+z tą korektą; nie potrzeba nowego ownera ani rozszerzenia UI.
+
+2. ZAMKNIĘTE NA ETAPIE BRIEFU — Originy.
+Dozwolone wartości określono dokładnie: dev http://localhost:1420,
+oczekiwane wydanie Windows http://tauri.localhost. Wykluczono wildcard,
+null i dowolne porty; brak Origin nie omija uwierzytelniania.
+Brief wyraźnie odróżnia oczekiwany Origin od pomiaru i wymaga dowodu
+z uruchomionego wydania Windows przed PASS implementacji. Odmienny
+Origin kieruje do Architekta, zamiast automatycznie poszerzać listę.
+Rzeczywisty Origin wydania: NOT_CHECKED w tym prechecku; dowód jest
+warunkiem dostawy, nie brakującym rozstrzygnięciem kontraktu.
+
+Bez uruchamiania testów, aplikacji, reproduktorów, where.py i benchmarku
+zgodnie z BRIEF_ONLY_PRECHECK. Bez nowych wymagań i zmian kodu produktu.
+PASS dotyczy wyłącznie gotowości briefu na wskazanym SHA do implementacji;
+nie potwierdza działania CORS, auth ani UI po przyszłej zmianie.
