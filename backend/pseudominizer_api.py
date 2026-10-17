@@ -754,12 +754,13 @@ async def profile_add_entity(request: Request):
     if len(text) < 3:
         return JSONResponse({"error": "Encja zbyt krótka (min. 3 znaki)"}, status_code=400)
     # [BUG-NEW-4] Nie pozwól na dodanie słowa pospolitego lub skrótu systemowego
-    from ner_blocklist import _NER_BLOCKLIST
+    from ner_blocklist import _NER_BLOCKLIST, _STREET_ONLY_PERSON_FORMS
     try:
         from spacy_ner import _PL_STOPWORDS
     except Exception:
         _PL_STOPWORDS = set()
-    if text.lower() in _NER_BLOCKLIST or text.lower() in _PL_STOPWORDS:
+    street_person = token_type == "OSOBA" and text.lower() in _STREET_ONLY_PERSON_FORMS  # [LYNX-NER-GEO-EXACT] E2
+    if (text.lower() in _NER_BLOCKLIST and not street_person) or text.lower() in _PL_STOPWORDS:
         return JSONResponse(
             {"error": f"Słowo pospolite lub skrót systemowy: {text!r}"},
             status_code=400,
