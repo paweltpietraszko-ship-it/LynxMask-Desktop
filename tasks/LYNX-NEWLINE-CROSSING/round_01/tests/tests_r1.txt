@@ -1,0 +1,30 @@
+LYNX-NEWLINE-CROSSING — r1 — independent brief precheck
+Date: 2026-10-17
+VERDICT: PASS PREIMPLEMENTATION
+Exact brief SHA: d6cebefc7afb622ab25441b42b77db3240b79177
+Recipient: Architect / CC
+Stage: BRIEF_ONLY; no implementation audited.
+
+SCOPE / ORACLE
+Current Task and explicitly dependent DOCX-TABLES BOARD rows, new brief and linked DOCX WIP STOP/DELIVERY reviewed. Frozen spec S1–S5 and existing accepted OCR/F3 limits retained from prior audits; agent/start rules unchanged. DOCX WIP remains outside this Task and is not audited or authorized for merge here.
+One targeted source lookup at exact SHA inspected named email/phone normalizer and contact patterns. No implementation diff, tests, reproducers, sweep, benchmark or gate run. CC's reported 56 pairs/four failures are supporting diagnosis, not an independent current delivery verdict.
+
+PRECHECK RESULT
+1. Product grounding: avoiding a plaintext fragment, token-in-token and destroyed map when two complete independent identifiers are on adjacent lines is consistent with S1/S2, while keeping S3/S4/S5 protections. It is an existing engine input-boundary repair, distinct from exposing previously unread DOCX table content. Splitting the dependency is justified; no production merge is implied.
+2. Testability: named email/email and NIP-or-PESEL/phone cases require complete map values, actual output tokens, intact inter-entity newline and restoration; labels/order siblings and token-boundary controls are specified. Blocked output is explicitly not successful tokenization. Existing single-entity OCR-newline positives are separate required regressions, not an excuse to globally forbid newline.
+3. Existing ownership: the pointed email _EMAIL_SPACE_BEFORE_AT_DOT/_DIGITS patterns and phone normalizer/contact patterns permit whitespace spanning lines in their source. normalize_ocr/apply_contact_layer are appropriate candidate seams for precise repair. This source read supports feasible local work, not proof that every numeric reproducer's first faulty stage has already been established. CC must establish that stage before editing, and stop for contract/scope correction if ownership lies outside the declared files.
+4. No new product decision is needed to start the bounded diagnosis/repair. No new token category, guard rule, pipeline order, blanket OCR policy or document extractor responsibility is introduced.
+
+MINIMAL RESPONSIBILITY / REDUCTION
+- Do not normalize two complete email values into one at an inter-entity boundary. SOURCE: Task defect/rule and S1/S2. NECESSITY: later detection cannot restore a destroyed address boundary. Use existing normalization/contact owner, not a new email parser.
+- Keep numeric/phone hits from crossing complete independent identifiers or consuming token contents. SOURCE: Task rule, complete-value T07 principle and token/map invariants. NECESSITY: prevent raw tails, nested tokens and invalid reverse_map. No duplicate downstream validator or earlier global tokenization required.
+- Preserve previously supported newline inside one recognized email/phone/IBAN. SOURCE: explicit Task OCR-positive regressions and accepted prior behavior. NECESSITY: a boundary repair must not trade existing recall for a globally narrower whitespace grammar.
+Keep the three declared files and existing layers. DOCX WIP remains stopped; finish and independently audit this Task, then update/retest DOCX only after the separately authorized merge.
+
+EVIDENCE HANDOFF NOTE (NOT AN ADDITIONAL PRODUCT REQUIREMENT)
+The linked DOCX DELIVERY states 56 pairs/four failures but does not attach their concrete list, generator or digest in its committed artifacts. The new brief already requires an identical-input before/after comparison. CC must retain/publish the synthetic cases or deterministic generator plus digest with that evidence, rather than claim the old exact set was rerun merely from the count. No new runtime product file is required; normal Task delivery/test artifacts suffice. Historical four-failure total is not independently certified by this precheck. If the historical exact set cannot be recovered, label that comparison NOT_CHECKED/PARTIAL and disclose the replacement fixed set instead of manufacturing equivalence.
+
+CONTRACT INTERPRETATION / LIMITS
+Exact restoration applies to the independent-value boundary and cases unaffected by separately documented earlier canonicalization. The brief explicitly excludes existing F3 formatting differences from this repair; do not silently enlarge scope to all phone/IBAN formatting restoration, and do not use F3 to excuse a destroyed newline or partial map value.
+WHERE_MAP, first-fault-stage traces, authorized matrix, real relevant vertical, targeted tests and the explicitly required one standard suite/gate are delivery obligations; none run at brief precheck. No broad severe-OCR fuzzing required.
+No blocking contract gap identified. PASS PREIMPLEMENTATION means readiness of this bounded contract only; it does not certify a repair, candidate ownership for every case, the reported 56-case results, DOCX WIP or merge. Size gates remain Task-specific; no prior size approval transferred. No product/test code changed, real data read or merge performed.
