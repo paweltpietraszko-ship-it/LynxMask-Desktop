@@ -31,3 +31,8 @@ WHERE_MAP:
 - TARGETS: backend/tests/test_engine_quality_layout.py --symbol test_komorka_tabeli_to_brak_ekstrakcji_nie_maskowanie
 - REASON: odczyt DOCX to jedyne produkcyjne źródło danych przed pipeline; poprzedni pomiar może być regresją RED→GREEN.
 GATE: 0 nowych plików, >150 zmienionych linii lub ratio >5:1 = WYMAGA_DECYZJI; nie kasować istotnych testów dla przejścia gate. Codex: BRIEF_ONLY precheck bez kodowania, ocenić minimalność i wykonalność testów.
+
+## OWNER_ACCEPTED — rozmiar i ograniczenie PL/UA, 2026-10-17
+Po niezależnym audycie dostawy `57e39fbb6e30cccdce87103b9f72f066c4126c2a` Paweł odpowiedział: „Akceptuję oba — PASS z komentarzem”. Akceptacja obejmuje rozmiar 76 dodanych / 13 usuniętych linii (5,8:1) oraz zamknięcie tego Tasku w zakresie odczytu tabel z jawnym ograniczeniem: nowo odczytany tekst ukraiński w formularzu PL/UA ujawnia wcześniejszy problem NER/przywracania (nadmaskowanie i możliwe dopisanie słowa). W kontrolowanym porównaniu odtwarzanie tekstu z próbki spadło z 12/20 do 11/20; wszystkie 7 nowych pól tabelarycznych jest masked, pozostałe klasyfikacje bez zmian, bez wykazanego nowego wycieku w oznaczonych polach. Tekst i mapa pozostają lokalne; audyt niczego nie wysyła do zewnętrznego modelu/API.
+
+To ograniczona akceptacja PASS tego exact SHA z osobnym findingiem LYNX-FOREIGN-LANG-FP, nie uznanie problemu językowego za naprawiony ani ogólna zgoda na utratę wierności. Nagłówki/stopki i pozostałe wyłączenia briefu pozostają poza gwarancją. Akceptacja nie jest poleceniem merge. Raport: `round_01/tests/tests_r2.txt`.
