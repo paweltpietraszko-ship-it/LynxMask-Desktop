@@ -22,8 +22,9 @@ TASK_SCOPE:
 - backend/pipeline_new.py
 - backend/tests/test_audyt_2026_10.py
 - backend/tests/test_pipeline_v2.py
+- backend/layers/contact.py
 
-OUT_OF_SCOPE: globalna przebudowa detektorów/centralnego resolvera, przepisywanie `financial.py`, `credentials.py`, `contact.py`, `validation.py`, `ocr_normalizer.py`, zmiany ich kolejności bez reproduktora, `output_guard.py`, UI, tokeny/S2, T11/F3, EMAIL-LOCALPART-OCR (OCR-spacja w imieniu localpart), nowe zależności, nowe pliki, rzeczywiste dokumenty i profil.
+OUT_OF_SCOPE: globalna przebudowa detektorów/centralnego resolvera, przepisywanie `financial.py`, `credentials.py`, `contact.py` (poza ROZSZERZENIEM CC E1 niżej), `validation.py`, `ocr_normalizer.py`, zmiany ich kolejności bez reproduktora, `output_guard.py`, UI, tokeny/S2, T11/F3, EMAIL-LOCALPART-OCR (OCR-spacja w imieniu localpart), nowe zależności, nowe pliki, rzeczywiste dokumenty i profil.
 
 ## Minimalne testy / kryteria PASS
 1. Istniejący `test_iban_pl_bez_jawnej_resztki` (dwa warianty: PL z odstępami, 26 cyfr NRB bez PL): zdjąć `xfail(strict=True)` dopiero gdy test potwierdza **jeden** token `NUMER_NNN` za CAŁY pierwotnie wykrywalny span, brak `PL61`/jawnych końcówek, pełną wartość spanu w `reverse_map`, `force_block=False`. Nie wystarczy „brak substringu 6110”.
@@ -43,3 +44,9 @@ WHERE_MAP:
 - REASON: pełny numer lub brak dopasowania; fallback po validation/contact/financial/credentials, bez globalnej reorganizacji.
 KOREKTY: r1 Codex K1 wskazał rozcinanie 15-cyfrowego localpart e-maila przez **wczesny** fallback. Nowa decyzja OWNERA przenosi fallback NA KONIEC i wymaga niepartialnego dopasowania w receptach. Weryfikować zmianę architektury względem r1, nie przypisywać Codexowi aprobaty tej nowej wersji bez prechecku.
 GATE: 0 nowych plików, >150 zmienionych linii lub ratio >5:1 = WYMAGA_DECYZJI, nie osłabiać testów ani Guarda. Codex: BRIEF_ONLY precheck bez implementacji; CC po nim ocenia niezależnie.
+
+## ROZSZERZENIE CC (2026-10-17, przed kodem rozszerzenia)
+Ta sama klasa co BUG-IBAN-RECEPTA — warstwa specjalistyczna maskuje FRAGMENT dłuższego numeru (pkt 3 briefu dopuszcza rozszerzenie po realnym reproduktorze). Plik dopisany do TASK_SCOPE.
+- **E1** `backend/layers/contact.py::apply_contact_layer`: wzorce telefonu (9 cyfr w grupach) łapią początek dłuższej liczby. Reproduktor (NER wyłączony, także na `main` przed T07): `run_pipeline_new("Nr 123 456 789 012 345 oraz 123-456-789-012-345.")` → `"Nr NUMER_001 012 345 oraz NUMER_001-012-345."`, mapa `{NUMER_001: "123-456-789"}` — sześć cyfr jawnych w obu zapisach; fallback 15+ nie może już przejąć całości.
+- Poprawka: w `apply_contact_layer` odrzucić trafienie telefonu, którego span bezpośrednio sąsiaduje z kolejną cyfrą (po pojedynczym separatorze spacja/tab/myślnik albo bez) — „pełna wartość albo zostaw”; całość przejmuje końcowy fallback. Bez zmiany wzorców e-mail ani kolejności warstw.
+- Testy: obie postacie 15 cyfr (spacje, myślniki) w full i Express jako jeden `NUMER_NNN`; zwykły telefon „tel. 512 987 654.” nadal maskowany przez warstwę kontaktów.
