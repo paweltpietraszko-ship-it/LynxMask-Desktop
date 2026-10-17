@@ -19,8 +19,9 @@ TASK_SCOPE:
 - backend/layers/financial.py
 - backend/tests/test_layers.py
 - backend/tests/test_pipeline_adversarial.py
+- backend/layers/identity.py
 
-OUT_OF_SCOPE: inne detektory, `pipeline_new.py`, `fallback.py`, `output_guard.py`, `anonymizer_init.py`, `TOKEN_RE`, OCR e-maili, T07, UI, profil, nowe zależności/pliki, port Mobile, kompletny parser norm ISO 13616, dowolne zagraniczne identyfikatory poza IBAN, PUBLIC-DATA-TESTS. Każdy dodatkowy owner tylko z dowodem i decyzją w trybie ROZSZERZENIE CC.
+OUT_OF_SCOPE: inne detektory (poza ROZSZERZENIEM CC E1 — identity), `pipeline_new.py`, `fallback.py`, `output_guard.py`, `anonymizer_init.py`, `TOKEN_RE`, OCR e-maili, T07, UI, profil, nowe zależności/pliki, port Mobile, kompletny parser norm ISO 13616, dowolne zagraniczne identyfikatory poza IBAN, PUBLIC-DATA-TESTS. Każdy dodatkowy owner tylko z dowodem i decyzją w trybie ROZSZERZENIE CC.
 
 ## Najmniejszy test / PASS
 - **O2 przed/po** w full + Express: syntetyczny `Konto: GB82 WEST 1234 5698 7654 32. Dalej.`, także `IBAN: ...`. Przed: z raportu r4 jawny `6882` + fragment w mapie. Po: jeden `NUMER_NNN` obejmuje całe `GB82 WEST 1234 5698 7654 32`; mapa ma cały span; prefiks/BBAN nigdzie jawnie, `force_block=False`, brak pochłonięcia `Konto:` lub `. Dalej.`. Sprawdź `financial` w izolacji i end-to-end po OCR, bo sam unit test `financial.py` był zielony już przed naprawą.
@@ -37,3 +38,8 @@ WHERE_MAP:
 - TARGETS: backend/layers/financial.py --symbol apply_financial_layer
 - REASON: ustalić dokładne miejsce utraty liter przed detekcją; zachować już istniejącego ownera finansowego bez dublowania.
 GATE: 0 nowych plików, ≤600 linii dla nieprzekraczających limitu plików, stare pliki tylko nie pogarszać; >150 linii/ratio >5:1 → decyzja. Codex: BRIEF_ONLY precheck, redukcja zakresu, bez implementacji.
+
+## ROZSZERZENIE CC (2026-10-17, przed kodem rozszerzenia)
+Ta sama klasa (warstwa maskuje fragment pełnego zagranicznego IBAN) — wymagany kontrolny przypadek briefu „GB z compact BBAN”. Plik dopisany do TASK_SCOPE.
+- **E1** `backend/layers/identity.py::apply_identity_layer`: reproduktor (NER wyłączony, także na bazie) `run_pipeline_new("Konto: GB82WEST12345698765432. Dalej.")` → `"Konto: GB82WESTNUMER_001. Dalej."`, mapa `{NUMER_001: "12345698765432"}` — identity (przed financial) zabiera 14 końcowych cyfr, „GB82WEST” jawne; w obu trybach, także bez etykiety. `financial._IBAN_FOREIGN_RE` dopasowuje całość, ale już za późno.
+- Poprawka: w `apply_identity_layer` pominąć trafienie, które przecina pełny zagraniczny IBAN (`financial._IBAN_FOREIGN_RE`, min. 15 znaków) bez objęcia go całego — reguła T07 „cała wartość albo nic” (`fallback.cuts_long_number` użyte jako funkcja pomocnicza, `fallback.py` bez zmian); całość przejmuje istniejący owner `financial`. Bez zmiany wzorców identity i kolejności warstw.
