@@ -94,10 +94,58 @@ def test_filtr_ner_nie_odrzuca_odmienionych_imion(name):
     ("Warszawa", "FIRMA"), ("ZUS", "FIRMA"), ("Sąd Rejonowy w Krakowie", "FIRMA"),
     # r2: FP z benchmarku r1 — wielowyrazowe instytucje bez imienia/nazwiska nadal łapie filtr prefiksów
     ("Samorządowego Kolegium Odwoławczego", "FIRMA"), ("Komornik Sądowy'", "FIRMA"),
+    # LYNX-NER-GEO-EXACT: miasto, miasto-nazwisko, adres i FIRMA z nazwą ulicy nadal odrzucane
+    ("Radom", "OSOBA"), ("Zając", "OSOBA"), ("ul. Kowalskiego 7", "OSOBA"), ("Kowalskiego", "FIRMA"),
 ])
 def test_filtr_ner_nadal_odrzuca_nie_osoby(text, label):
     from ner_layer import _filter_institutions
     assert not _filter_institutions([_NER(text, label, 0.9, 0, len(text))]), text
+
+
+# LYNX-NER-GEO-EXACT: forma nazwiska kolidująca wyłącznie z nazwą ulicy przechodzi filtr exact i strict.
+@pytest.mark.parametrize("name", ["Kowalskiego", "Nowaka", "Adamczyka"])
+def test_filtr_ner_nazwisko_z_nazwy_ulicy(name):
+    import ner_blocklist as nb
+    from ner_layer import _filter_institutions
+    low = name.lower()
+    assert low in nb._PERSON_FORMS and low in nb._GEO_BY_SOURCE["street"], "przykład spoza przecięcia osoby/ulicy"
+    assert low not in nb._GEO_BY_SOURCE["city"] | nb._GEO_BY_SOURCE["med"], "przykład ma inne pochodzenie geo"
+    assert low in nb._STREET_ONLY_PERSON_FORMS, "ręczny wpis blocklisty"
+    assert _filter_institutions([_NER(name, "OSOBA", 0.9, 0, len(name))]), f"odrzucono OSOBA {name[:3]}***"
+
+
+# LYNX-NER-GEO-EXACT E1: warstwa inicjałów (spaCy nic nie wykrył) maskuje nazwisko z nazwy ulicy.
+def test_inicjal_z_nazwiskiem_z_ulicy_bez_spacy():
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = run_pipeline_new("Zgoda K. Nowaka na zabieg.", anon_map={})
+    assert "Nowaka" not in out and list(rev.values()) == ["K. Nowaka"], (out, rev)
+
+
+# LYNX-NER-GEO-EXACT E2: ręczne dodanie do profilu — nazwisko z nazwy ulicy jako OSOBA tak, miasto i inny typ nie.
+@pytest.mark.parametrize("text,token_type,status", [("Kowalskiego", "OSOBA", 200), ("Radom", "OSOBA", 400), ("Kowalskiego", "FIRMA", 400)])
+def test_profil_dodaje_nazwisko_z_ulicy(api_client, monkeypatch, text, token_type, status):
+    client, api = api_client
+    added = []
+    monkeypatch.setattr(api._app_state, "anon_map", type("M", (), {"add_entity": lambda self, t, k: added.append((t, k)) or "OSOBA_001"})())
+    r = client.post("/profile/add-entity", json={"text": text, "token_type": token_type}, headers={"X-Api-Token": _FULL})
+    assert r.status_code == status and bool(added) == (status == 200), (r.status_code, r.text)
+
+
+# LYNX-NER-GEO-EXACT: pion NER → adapter → pipeline z kontrolowaną detekcją spaCy.
+@pytest.mark.parametrize("text,token,value", [
+    ("Wniosek Kowalskiego został przyjęty.", "OSOBA_001", "Kowalskiego"),
+    ("Mieszka przy ul. Kowalskiego 7 w Radomiu.", "ADRES_001", "ul. Kowalskiego 7"),
+])
+def test_nazwisko_z_ulicy_w_pipeline(text, token, value):
+    import spacy_ner
+    from pipeline_new import run_pipeline_new
+    start = text.index("Kowalskiego")
+    hit = [spacy_ner.NERResult("Kowalskiego", "OSOBA", 0.9, start, start + len("Kowalskiego"))]
+    with patch.object(spacy_ner, "detect_entities", return_value=hit):
+        out, rev, _ = run_pipeline_new(text, anon_map={})
+    assert "Kowalskiego" not in out and rev == {token: value}, (out, rev)
 
 
 # LYNX-T01 (tryb degraded): bez Morfeusza nierozstrzygnięta jednowyrazowa OSOBA nie ginie w filtrze prefiksów.

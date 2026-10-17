@@ -166,7 +166,7 @@ def _apply_initials(text: str, allocator: TokenAllocator) -> str:
     Warunek: nazwisko MUSI być w surnames_top1000.json (zerowe FP przy nieznanym nazwisku).
     Uruchamiany na tekście PO głównym NER, żeby nie duplikować już zamaskowanych.
     """
-    from ner_blocklist import _NER_BLOCKLIST
+    from ner_blocklist import _NER_BLOCKLIST, _STREET_ONLY_PERSON_FORMS
 
     def _replace(m: re.Match) -> str:
         if _TOKEN_RE.search(m.group(0)):
@@ -175,7 +175,7 @@ def _apply_initials(text: str, allocator: TokenAllocator) -> str:
         surname_lower = surname.lower()
         if surname_lower not in _SURNAMES_FORMS_FLAT:
             return m.group(0)
-        if surname_lower in _NER_BLOCKLIST:
+        if surname_lower in _NER_BLOCKLIST and surname_lower not in _STREET_ONLY_PERSON_FORMS:  # [LYNX-NER-GEO-EXACT] E1
             return m.group(0)
         token_id = allocator.allocate("OSOBA", m.group(0), m.start(), m.end())
         return token_id if token_id else m.group(0)

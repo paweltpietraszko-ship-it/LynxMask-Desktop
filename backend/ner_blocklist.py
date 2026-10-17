@@ -47,53 +47,29 @@ def _strip_pl(s: str) -> str:
     return _ud.normalize("NFD", s).encode("ascii", "ignore").decode()
 
 
-def _load_geo_words() -> set:
-    """Ładuje miasta, ulice i placówki medyczne jako słowa do blocklista."""
+def _load_geo_file(fname: str, skip_digits: bool = True) -> set:
+    """Słowa (min 4 znaki, lowercase) z listy JSON + warianty bez polskich znaków."""
+    path = _os.path.join(_BACKEND_DIR, fname)
+    if not _os.path.exists(path):
+        return set()
+    with open(path, encoding="utf-8") as f:
+        items = _json.load(f)
     words: set[str] = set()
-
-    # Miasta (min 4 znaki, bez cyfr)
-    cities_path = _os.path.join(_BACKEND_DIR, "cities.json")
-    if _os.path.exists(cities_path):
-        with open(cities_path, encoding="utf-8") as f:
-            cities = _json.load(f)
-        for c in cities:
-            if isinstance(c, str) and len(c) >= 4 and not any(ch.isdigit() for ch in c):
-                low = c.lower()
-                words.add(low)
-                asc = _strip_pl(low)
-                if asc != low:
-                    words.add(asc)
-
-    # Ulice — base forms z kluczy słownika
-    streets_path = _os.path.join(_BACKEND_DIR, "street_names.json")
-    if _os.path.exists(streets_path):
-        with open(streets_path, encoding="utf-8") as f:
-            streets = _json.load(f)
-        for s in streets:
-            if isinstance(s, str) and len(s) >= 4 and not any(ch.isdigit() for ch in s):
-                low = s.lower()
-                words.add(low)
-                asc = _strip_pl(low)
-                if asc != low:
-                    words.add(asc)
-
-    # Placówki medyczne
-    med_path = _os.path.join(_BACKEND_DIR, "medical_facilities.json")
-    if _os.path.exists(med_path):
-        with open(med_path, encoding="utf-8") as f:
-            med = _json.load(f)
-        for m in med:
-            if isinstance(m, str) and len(m) >= 4:
-                low = m.lower()
-                words.add(low)
-                asc = _strip_pl(low)
-                if asc != low:
-                    words.add(asc)
-
+    for item in items:
+        if isinstance(item, str) and len(item) >= 4 and not (skip_digits and any(ch.isdigit() for ch in item)):
+            low = item.lower()
+            words.update((low, _strip_pl(low)))
     return words
 
 
-_GEO_WORDS: set = _load_geo_words()
+def _load_geo_words() -> dict:
+    """Miasta, ulice i placówki medyczne — osobno, bo filtr OSOBA rozróżnia pochodzenie (LYNX-NER-GEO-EXACT)."""
+    return {"city": _load_geo_file("cities.json"), "street": _load_geo_file("street_names.json"),
+            "med": _load_geo_file("medical_facilities.json", skip_digits=False)}
+
+
+_GEO_BY_SOURCE: dict = _load_geo_words()
+_GEO_WORDS: set = set().union(*_GEO_BY_SOURCE.values())
 
 
 def _load_person_forms() -> frozenset:
@@ -482,6 +458,12 @@ _NER_BLOCKLIST: set = {
     "doręczono",
 }
 
+
+# [LYNX-NER-GEO-EXACT] Forma imienia/nazwiska obecna w geo wyłącznie jako nazwa ulicy („ul. Kowalskiego”) —
+# nie miasto, nie placówka, nie ręczny wpis. Tylko dla tych form filtr nie odrzuca encji OSOBA; blocklista bez zmian.
+_STREET_ONLY_PERSON_FORMS: frozenset = frozenset(
+    (_GEO_BY_SOURCE["street"] & _PERSON_FORMS) - _GEO_BY_SOURCE["city"] - _GEO_BY_SOURCE["med"] - _NER_BLOCKLIST
+)
 
 # Połącz z dynamicznie załadowanymi słowami geo i medycznymi
 _NER_BLOCKLIST = _NER_BLOCKLIST | _GEO_WORDS
