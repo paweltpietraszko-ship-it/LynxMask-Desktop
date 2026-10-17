@@ -404,7 +404,7 @@ class TestContactEmailLocalpartOcr:
 
     @pytest.mark.parametrize("text,value", [
         ("Kontakt: anna. nowak@example.pl. Termin płatności.", "anna. nowak@example.pl"),
-        ("Kontakt: anna.nowak@example.pl.", "anna.nowak@example.pl"),
+        ("Kontakt: anna.nowak@example.pl.", "anna.nowak@example.pl"), ("Kontakt: anna.  nowak@example.pl.", "anna.  nowak@example.pl"),
         ("Kontakt: 123456789012345@example.pl.", "123456789012345@example.pl"),
     ])
     def test_caly_adres_jednym_tokenem(self, text, value):

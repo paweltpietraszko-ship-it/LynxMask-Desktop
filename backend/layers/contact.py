@@ -60,7 +60,7 @@ _PHONE_CONTEXT_RE = re.compile(
 _EMAIL_OCR_RE = re.compile(
     # OCR: spacja po kropce w lokalnej części („anna. nowak@”) — początek małymi literami od początku słowa, dalej ciąg
     # adresu aż do @; „Kontakt. jan@”, „Podpisano. Jan@” to koniec zdania (LYNX-EMAIL-LOCALPART-OCR, granica jak T11 F1)
-    r"(?:(?<![\w.])(?-i:[a-z0-9][a-z0-9_%+\-]*)\.[ \t](?=[a-zA-Z0-9._%+\-]{2,}[ \t\n]{0,2}[@©]))?"
+    r"(?:(?<![\w.])(?-i:[a-z0-9][a-z0-9_%+\-]*)\.[ \t]{1,2}(?=[a-zA-Z0-9._%+\-]{2,}[ \t\n]{0,2}[@©]))?"
     r"[a-zA-Z0-9._%+\-]{2,}"       # czesc lokalna
     r"[ \t\n]{0,2}"                 # OCR: spacja/newline przed @
     r"[@©]"                    # @ lub © (OCR mylka)
