@@ -40,7 +40,7 @@ Każdy brief, korekta i przekazanie muszą być zapisane i wypchnięte na GitHub
 2. Architekt zapisuje minimalny brief na branchu Tasku (`tasks/<id>/brief.md`).
 3. Codex: precheck briefu i redukcja zakresu.
 4. CC: niezależna ocena merytoryczna; może odesłać mimo PASS Codexa.
-5. CC implementuje literalny `TASK_SCOPE`.
+5. CC implementuje literalny `TASK_SCOPE`. Wyjątek (2026-10-17): błąd tej samej klasy znaleziony przy Tasku CC naprawia na tej samej gałęzi, dopisując wcześniej do briefu sekcję „ROZSZERZENIE CC” i pliki do `TASK_SCOPE`; Codex audytuje rozszerzenie razem z Taskiem.
 6. Codex audytuje exact SHA.
 7. Merge tylko na polecenie OWNERA.
 
