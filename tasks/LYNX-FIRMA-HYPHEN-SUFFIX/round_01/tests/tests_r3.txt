@@ -1,0 +1,26 @@
+LYNX-FIRMA-HYPHEN-SUFFIX — Owner acceptance / final verdict
+DATE: 2026-10-17
+VERDICT: PASS WITH COMMENT
+EXACT IMPLEMENTATION SHA: 07504c8d9282f1c70347ec3a39f8a389a14bfd5b
+GATE BASE: 5ae6f8dd5b5b9c4eea8851ddf5aca4c1a12d32e8
+Recipient: Architect. Supersedes the verdict of tests_r2.txt; retains its evidence and reproducer unchanged.
+
+OWNER_ACCEPTED — limited restoration exception:
+After explanation that restoration can lose Sp.k. when the same company appears first without the legal form and later with it, Owner instructed PASS with comment, subject to no demonstrated privacy leak. The retained F1 demonstrates loss of source text, not a new leak. Therefore F1 is closed as an explicitly accepted limitation for this delivery. This does not classify the loss as purely visual or certify legal compliance with GDPR/RODO, and does not accept other data loss or undetected privacy leaks.
+
+OWNER_ACCEPTED — size:
+Owner explicitly answered: Akceptuję rozmiar — zamknij PASS z komentarzem.
+Applies to this delivery's 100 added / 1 deleted lines, ratio 100:1. Gate's sole pending decision is closed.
+
+Independent evidence reused from tests_r2.txt on the exact unchanged implementation:
+- Three whole-name synthetic real-NER controls: PASS, complete company map and exact restoration.
+- Real pipeline -> Guard -> map -> restoration reproducer: accepted Sp.k. loss; reversed order restores exactly.
+- Targeted test_layers: 113 passed.
+- Standard suite: 129 passed, 40 skipped, 1 xfailed, 8 subtests passed.
+- Gate: no technical blocker; ratio accepted as above.
+No tests repeated because no implementation changed and both decisions concern the already inspected exact SHA.
+
+Scope and reservations retained:
+PASS closes this bounded repair of partial company spans; it does not certify universal company detection. Three no-useful-candidate cases remain an Architect follow-up under the brief's explicit STOP, not newly accepted leakage or a completed repair. The additional repeat-form-2 inexact restoration observation remains disclosed in r2, without independent cause classification or broader acceptance. Local five-field benchmark, complete real-NER negative matrix and running-backend HTTP paths were not independently rerun; implementer evidence remains supporting only. Express source unchanged. No claim of overall privacy or RODO compliance.
+
+Product code and prior reports unchanged. Final status recorded on GitHub BOARD.md; no merge authorized or performed.
