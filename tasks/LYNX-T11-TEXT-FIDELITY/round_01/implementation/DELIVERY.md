@@ -117,3 +117,44 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r3_repro.py
   - tasks/LYNX-T11-TEXT-FIDELITY/brief.md
 ```
+
+## Runda 4 — po FAIL r4 (`tests_r4.txt`, `190ffc1`)
+IMPLEMENTATION_SHA: `240f6b6aa45ee7e2d49a19e1c9ffa90d732d66ea`.
+- **R1 (trafne — mój błąd z rundy 3):** heurystyka „człon wielka + małe litery = słowo” odrzucała grupy OCR „Ill/Ooo/Tll” → numer niemaskowany. Heurystyka usunięta. Zamiast niej: „48” bez plusa jest prefiksem tylko gdy człony z prawdziwymi cyframi NIE tworzą już 9 cyfr („48 362 12 34” = pełny numer krajowy → „To” po nim zostaje słowem; „48 606 219 TTT” → prefiks, TTT domyka numer).
+- **Zmiana metody (zamiast łatania pojedynczych przypadków):** `implementation/phone_sweep.py` — przegląd 30 000 wariantów (5 prefiksów: „+48 ”, „+48”, „0048 ”, „48 ”, brak × 2 grupy × 1000 trzyznakowych końcówek ze wszystkich znaków OCR-cyfr w dowolnej wielkości liter × 3 konteksty po numerze) porównany z normalizatorem sprzed T11 (`576d133`): **0 regresji maskowania** (każdy numer zamieniany przed T11 jest zamieniany teraz), **0 zmienionych słów** po numerze; dodatkowo 9 słów („To jest”, „Termin”, „zglosil”, „Ola”, „IT”, „OSiR”, „BIZ”, „Zoo”, „SOS”) po pełnym numerze × 5 prefiksów — 0 zmian.
+- Testy: Ill/Ooo/Tll w normalizatorze; pion maskowania × („+48 ”, „+48”) × (TTT, OOO, III, Ill, Ooo, Tll); „+48 512 987 654 To jest” negatyw. Na `8ce05b8`: 9 FAIL, teraz zielone. `test_audyt_2026_10.py` + `test_layers.py`: `157 passed, 12 xfailed`; autotest ocr_normalizer 40/40; pełna suita `1 failed (IBAN-RECEPTA), 126 passed, 40 skipped, 1 xfailed`; pomiar seed 2026 + holdout bez zmian (M3 84/96). `ocr_normalizer.py` 696 linii.
+
+gate.py (stdout dosłownie, finalny SHA):
+```
+STATUS: PASS
+HEAD_SHA: 240f6b6aa45ee7e2d49a19e1c9ffa90d732d66ea
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\trace_layers.py
+  - backend\ner_layer.py
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\implementation\phone_sweep.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T03-TOKEN-ALLOC\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_pipeline_v2.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/implementation/gate.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/implementation/phone_sweep.py
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r1.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r2.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r2_repro.py
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r3.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r3_repro.py
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r4.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r4_repro.py
+  - tasks/LYNX-T11-TEXT-FIDELITY/brief.md
+```
