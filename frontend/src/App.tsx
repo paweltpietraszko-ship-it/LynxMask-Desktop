@@ -172,7 +172,7 @@ export default function App() {
       <div style={{
         height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
         background: T.bg, fontFamily: T.mono, fontSize: 11,
-        color: T.muted, letterSpacing: "0.08em",
+        color: T.textMuted, letterSpacing: "0.08em",
       }}>
         Ładowanie sesji…
       </div>

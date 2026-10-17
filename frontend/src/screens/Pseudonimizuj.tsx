@@ -773,7 +773,7 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
               />
               {/* [UI-PSE-03] Spójny styl przycisku Zapisz */}
               <button
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 disabled={!description.trim() || saving || guardBlocked}
                 style={{
                   padding: "8px 20px",

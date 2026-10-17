@@ -1,0 +1,69 @@
+AUDYT IMPLEMENTACJI — LYNX-T10-BUILD-TS
+Data: 2026-10-17
+Exact SHA: 5b874072cfe818e12f3f81714d9af8944c3b8f55
+BEFORE: 744c1de7dc1168f54adffc44c0216839c70e75c1
+Dostawa: 4f82794; backend pomiaru T02: dc498366368b0b4d4767a61e6c6d56c939630713
+Wynik: PASS w zakresie briefu i warstw dowodowych opisanych poniżej.
+Bez merge; nie jest to gwarancja poprawności innych funkcji aplikacji.
+
+PRODUCT_TRUTH: brief T10 i spec S3/S6. Dostawa mieści się w kompletnym
+kontrakcie: poprawki typów, callback bez eventu, nieaktywny Btn bez
+callbacku, bez zmian palety/protokołu/backendu. Brak nowej decyzji OWNERA.
+Diff exact BEFORE->AFTER: 5 plików, 6 dodanych/10 usuniętych linii.
+Usunięcie nieobsługiwanego style z Btn zachowuje dotychczasowy wygląd.
+Istniejące any w theme nie jest nowym obejściem zastosowanym przez T10.
+
+NIEZALEŻNY BUILD
+Izolowany checkout exact SHA. W frontend:
+  npm.cmd ci --no-audit --no-fund
+  npm.cmd run build
+Oba exit 0; TypeScript bez błędów; Vite 5.4.21: 47 modułów, dist gotowy.
+Nie zastąpiono tsc samym Vite. BEFORE 31 błędów: dowód CC tsc_before.txt,
+nie ponawiano historycznego pomiaru tylko dla liczby diagnostyk.
+Gate CC raportuje HEAD 0c3680489fcb7a61243224c44d3c6646dc5f065a,
+a nie SHA implementacji. Sprawdzono różnicę: wyłącznie 3 artefakty
+przekazania, frontend identyczny; nie ma różnicy badanego kodu.
+Diff --check przechodzi; zakres i mała skala zmiany zgodne z limitem.
+
+NIEZALEŻNY SMOKE RENDERERA / REGRESJA S3
+Reproduktor ui_audit_r2.cjs; uruchamiany Node z Playwright i systemowym
+Chrome. Wymaga npm run dev -- --host 127.0.0.1 --port 1437.
+To rzeczywisty renderer z exact SHA, ale API i most Tauri są fixture
+syntetyczną w przeglądarce; nie jest to test natywnego EXE ani kryptografii.
+- Ekran ładowania widoczny przy opóźnionym tokenie; istniejący textMuted.
+- Niezablokowany wynik + opis: Zapisz aktywny, 1 POST /archive i potwierdzenie.
+- Nowy dokument, blocked=true + opis: Zapisz disabled; próba zdarzenia
+  kliknięcia i Enter w opisie nie zwiększa liczby POST /archive (0 nowych).
+- Przełączenie jasny/ciemny; oba widoki sprawdzone wizualnie.
+- Pokaż encje i Pokaż wyjątki: disabled w stanie ładowania, potem Odśwież.
+- Brak pageerror. Obejrzano 5 zrzutów w ui_r2/: loading, unblocked,
+  blocked, light, security. W zablokowanym stanie widoczny komunikat
+  Guarda i nieaktywny Zapisz; brak zmiany wyglądu Btn wskutek usunięcia style.
+Pierwsze uruchomienia fixture miały złe selektory/ścieżkę ponownego
+wgrywania; poprawiono wyłącznie test. Końcowy przebieg jest zielony.
+
+WINDOWS RELEASE / POMIAR DLA T02 — ODDZIELNA WARSTWA DOWODOWA
+Nie powtarzano kosztownego buildu Tauri ani uruchomienia EXE.
+Oceniono dostarczone DELIVERY, wrapper header_capture.py i zapis pomiaru
+naglowki_release_windows.jsonl z wydania T10 × backend T02 exact SHA.
+To dowód CC i relacjonowanego smoke OWNERA, wspierający własny audyt,
+nie deklaracja własnego odtworzenia wydania Windows przez Codexa.
+Wrapper nie zastępuje middleware: opakowuje app T02, zapisuje tylko
+metodę/ścieżkę/Origin/Host/bool obecności tokenu/status, bez wartości
+PII/tokenów/treści. Kod pomiarowy nie jest częścią produktu.
+Plik zawiera 39 rekordów HTTP i separator ---EXPRESS--- (nie czysty JSONL).
+Każdy rekord: Origin http://tauri.localhost, Host 127.0.0.1:8765.
+Sekcja standard: POST /preview 200, POST /archive 200, GET /archive 200.
+Sekcja Express: GET /express/token 200, POST /preview 200, GET /archive 401.
+Zgodne z kontraktem i wcześniej niezależnie sprawdzonym backendem T02.
+Zestaw dowodów zamyka brak pomiaru T02; nie certyfikuje stanu po merge.
+
+GRANICE
+Brak bezpośredniego audytu pliku binarnego EXE i brak własnego pomiaru
+z WebView2; warstwa wydania została oceniona z dowodów dostawy.
+Native Computer Use potwierdził brak uruchomionego okna aplikacji;
+nie znaleziono przekazanego artefaktu z jednoznaczną ścieżką. Nie
+logowano się do profilu użytkownika. Smoke wykonano w izolacji.
+Znane Express/Zapisz, /version i zamykanie programu pozostają osobnymi
+zgłoszeniami CC; T10 nie tworzy ich ani nie ma kontraktu ich naprawy.
+Nie uruchamiano pełnej suity backendu/benchmarku i nie zmieniano produktu.
