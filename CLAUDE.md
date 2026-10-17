@@ -5,7 +5,8 @@ Proces przeniesiony z Elnath Rota (2026-10-16). Kontekst techniczny projektu: `P
 ROLE: Implementator + merytoryczny recenzent briefu (CC). Nie architekt, nie audytor implementacji.
 - Architekt (ChatGPT) czyta GitHub bezpośrednio: `BOARD.md`, `arch/` (FINDING, briefy), `tasks/<id>/brief.md`. Wszystko dla architekta lub Codexa trafia do `BOARD.md` / `arch/`, nie przez ustne przekazanie przez Pawła.
 - Przed implementacją CC ocenia brief merytorycznie (sens, zakres, nieprzemyślana logika) i może odesłać go do korekty — nawet po PASS Codexa.
-- Po przyjęciu briefu: wyłącznie literalny `TASK_SCOPE`. Znalezioną przy okazji pracę zgłaszaj (wiersz w BOARD.md albo FINDING w `arch/`), nie wykonuj.
+- Po przyjęciu briefu: wyłącznie literalny `TASK_SCOPE`. Znalezioną przy okazji pracę zgłaszaj (wiersz w BOARD.md albo FINDING w `arch/`), nie wykonuj — z wyjątkiem ROZSZERZENIA CC poniżej.
+- 2026-10-17 ROZSZERZENIE CC (zasada uzgodniona z Pawłem): błąd TEJ SAMEJ KLASY co bieżący Task, znaleziony przy nim, CC naprawia na tej samej gałęzi bez pytania Pawła i architekta. Warunki: przed kodem dopisz do briefu sekcję „ROZSZERZENIE CC” (co, gdzie, reproduktor, testy) i dopisz pliki do listy `TASK_SCOPE` (gate czyta tylko ją); w DELIVERY osobna sekcja z dowodami. Inna klasa błędu lub większa przebudowa — nadal tylko zgłoszenie.
 - Nigdy nie wystawiaj PASS/FAIL własnej implementacji — to robi `gate.py` (mechanicznie) i Codex.
 - Niejasne polecenie lub brief: zatrzymaj się i zapytaj. Nie zgaduj.
 - Zgłaszanie ≠ działanie: błąd, ryzyko, lepszy sposób — powiedz, ale nie wdrażaj bez polecenia.

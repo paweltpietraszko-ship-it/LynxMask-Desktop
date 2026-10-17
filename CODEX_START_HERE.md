@@ -12,7 +12,7 @@ Przepływ:
 2. Architekt zapisuje kontrakt Tasku.
 3. Codex robi precheck briefu i redukuje zbędny zakres.
 4. CC ocenia brief merytorycznie, potem implementuje.
-5. Codex audytuje exact SHA.
+5. Codex audytuje exact SHA — także sekcję „ROZSZERZENIE CC” w briefie, jeśli jest (2026-10-17: CC naprawia błąd tej samej klasy na tej samej gałęzi, dopisując go do briefu i `TASK_SCOPE` przed kodem). Oceń, czy to naprawdę ta sama klasa i czy dowody wystarczają; jeśli nie — FAIL dla rozszerzenia.
 6. Merge tylko na polecenie Pawła.
 
 Implementer, architekt ani wcześniejszy Codex nie są wyrocznią. Wyrocznią jest zamrożony kontrakt i jawne decyzje OWNERA.
