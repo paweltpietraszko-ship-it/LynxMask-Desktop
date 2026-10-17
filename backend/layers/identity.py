@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from anonymizer_init import STRUCTURAL_PATTERNS
 from pipeline_core import PipelineState, TokenAllocator
 from layers.fallback import cuts_long_number
+from layers.contact import line_matches
 from layers.financial import _IBAN_FOREIGN_RE
 
 # Klucze do filtrowania STRUCTURAL_PATTERNS — muszą dokładnie pasować do pat.pattern
@@ -76,9 +77,8 @@ def apply_identity_layer(state: PipelineState) -> None:
             canonical = m.group(0).replace(" ", "").replace("\t", "")
             hits.append((m.start(), m.end(), canonical, _OCR_DIGIT_TOKEN[dc]))
 
-    for token_type, pat in _IDENTITY_PATTERNS:
-        for m in pat.finditer(state.text):
-            hits.append((m.start(), m.end(), m.group(0), token_type))
+    for token_type, pat in _IDENTITY_PATTERNS:  # [LYNX-NEWLINE-CROSSING E1] liczby w obrębie linii, nie fragment/token
+        hits += [(start, end, value, token_type) for start, end, value in line_matches(pat, state.text)]
 
     # Wiekszy span wygrywa
     hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
