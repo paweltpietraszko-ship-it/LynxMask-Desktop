@@ -1,0 +1,49 @@
+LYNX-NER-GEO-EXACT — independent delivery audit r3
+VERDICT: PASS
+Implementation SHA: 8d208455667023f9b141d9a79ecf18f109a310ff
+Diff base: 19083548c2771f49307c810c8ceaa92319a34839
+Recipient: Architect. Stage: implementation, including CC extensions E1/E2.
+Report publication parent: 9be31e815dacbc0d83d49145c80c8f8e6b73a578
+(only DELIVERY/gate documentation differs from audited implementation).
+
+ORACLE / SCOPE
+Frozen arch/spec.md S1-S5 and Task brief, including B1 correction and
+ROZSZERZENIE CC committed in 7452a1e before E1/E2 code in faf8525.
+E1 and E2 are the same defect class: street-derived exact blocklist rejects
+a dictionary-confirmed person. They reuse the same restricted set and
+existing owners. No new detection subsystem or product policy is introduced.
+Scope: five declared backend files. No product code changed by auditor.
+
+INDEPENDENT EVIDENCE (all executed at implementation SHA)
+1. Required where.py maps reviewed with changed owner/consumer code.
+2. Retained independent reproducer: tests_r3_repro.py (run from exact SHA).
+   All 561 street-only person forms: rejected before, retained after as
+   capitalized OSOBA; lowercase and FIRMA remain rejected (2244 checks).
+   All 664 person forms also present in cities/medical data remain rejected.
+   GEO_WORDS, NER_BLOCKLIST and prefixes equal the base sets exactly.
+   Six named protected negatives remain rejected. Baseline payment-word FP
+   unchanged, excluded from this repair as specified by corrected B1.
+3. Vertical: three surnames, each through controlled spaCy -> NER -> adapter
+   -> pipeline, and each inside an address: correct person/address token,
+   reverse map and exact restoration, unblocked result (six paths).
+   E1: three initials cases with spaCy disabled fail before and pass after;
+   three city/common-word initials cases remain unchanged.
+4. E2: real HTTP handler with real AnonymizerMap in temporary directory:
+   three person additions succeed; repeated additions return same token;
+   seven city/common-word/other-category negatives rejected (400);
+   Express token cannot add an entity (401). Exactly three map entries.
+   No real profiles/documents accessed; API imported with temporary archive.
+5. Targeted tests: test_audyt_2026_10.py = 53 passed, 15 xfailed;
+   test_pseudominizer.py -k Filter = 4 passed, 38 deselected.
+6. Independent gate.py = PASS at exact implementation SHA. Backend diff:
+   85 additions / 48 deletions, 133 changed lines; declared scope retained.
+   Earlier delivered gate artifact was stale; final documentation commit
+   9be31e8 corrects it and agrees with independent gate output.
+
+LIMITS
+No full regression or benchmark rerun: not required by Task contract.
+CC's full-suite result and 40-form real-spaCy measurement are supporting
+claims, not independent audit results. Own vertical uses controlled spaCy.
+PASS covers this repair and E1/E2 at the exact implementation SHA; it does
+not certify complete NER recall, other known defects or future changes.
+No blocking finding; no new Owner decision required within this contract.
