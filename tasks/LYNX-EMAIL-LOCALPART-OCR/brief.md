@@ -47,3 +47,11 @@ GATE: zero nowych plików; >150 zmienionych linii lub ratio >5:1 → WYMAGA_DECY
 **Przekazanie:** Codex robi precheck WYŁĄCZNIE nowych granic (czy jeden regex/istniejący owner pozwala osiągnąć te warunki bez nowych strat), a po jego ocenie CC wąsko koryguje `fc75f14` i Codex audytuje nowe exact SHA. Jeśli zawężenie do jednego słowa i 1–3 odstępów nie jest realizowalne bez większego kosztu, STOP i krótka decyzja OWNERA; bez nowego subsystemu. Merge nieautoryzowany.
 
 **KOREKTA K1 Codexa r4** (`round_01/tests/tests_r4.txt`, poprzedni brief SHA `ec49f3fb38a33e6d8b27f72f3fa26bb9d029bc7b`): rozdzielono zakaz dołączania słowa przez newline od zachowania istniejących rozpoznań OCR-newline przy `@`. To korekta zakresu, nie PASS dostawy `fc75f14` ani decyzja OWNERA o zaakceptowaniu dokładnego kosztu nadmaskowania i wyłączenia 4+ odstępów. Codex: wąski recheck wyłącznie K1, bez ponownego audytu całego briefu.
+
+## OWNER_ACCEPTED — 2026-10-17
+
+Paweł po wyjaśnieniu skutków i rekomendacji audytora odpowiedział: „Zatwierdzam ten zakres”. Pytanie obejmowało: małe/CAPS/mieszane litery i 1–3 spacje/taby; w niejednoznacznym przypadku ukrycie najwyżej jednego słowa przed e-mailem z Przywróć 1:1; 4+ odstępy i wielokrotne rozbicia jako jawne ograniczenia z możliwym wyciekiem prefiksu.
+
+Zatwierdzenie zamraża powyższe doprecyzowanie granic w wersji briefu `4af481fe955fccde7798a343842659d44b57ecbe`, łącznie z rozdzieleniem K1: nowe dołączanie słowa tylko w tym samym wierszu; dotychczasowa obsługa newline przy `@` pozostaje zachowana z opisanym ograniczeniem F3. Wcześniejsze oznaczenia tego rozdziału jako propozycji oczekującej na akceptację opisują stan historyczny i są zastąpione niniejszą akceptacją. Zakres ASCII, istniejący owner, TASK_SCOPE i pozostałe granice pozostają takie jak opisano powyżej.
+
+Wynik prechecku kontraktu: PASS PREIMPLEMENTATION. CC może wykonać wąską korektę. To nie jest PASS implementacji `fc75f1410c865acaa74e4ca2c9058aa81b16b5ed`: nowa dostawa wymaga niezależnego audytu na exact SHA. Brak zgody na merge.
