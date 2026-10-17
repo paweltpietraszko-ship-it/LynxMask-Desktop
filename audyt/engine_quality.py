@@ -240,6 +240,15 @@ def _out_path(path):
     return full
 
 
+def _own_occurrences(text, value, values):
+    """Wystąpienia wartości, które są samodzielne (nie przyklejone do znaków słowa/adresu) i nie leżą wewnątrz dłuższej
+    wartości z klucza („jan@x.pl” w „anna.jan@x.pl”, „Kowalski” w „Jan Kowalski”) — Codex r2/r3 F1."""
+    claimed = [(m.start(), m.end()) for longer in values if len(longer) > len(value) and value in longer
+               for m in re.finditer(re.escape(longer), text)]
+    return sum(1 for m in re.finditer(rf"(?<![\w.@%+-]){re.escape(value)}(?![\w@%+-]|\.\w)", text)
+               if not any(a <= m.start() and m.end() <= b for a, b in claimed))
+
+
 def _layout_doc(did, entry, directory, run):
     """[LYNX-PUBLIC-DATA-TESTS] Jeden plik z lokalnego manifestu: produkcyjny _extract_text, potem pipeline. Wiersze bez wartości."""
     from document_processor import _extract_text
@@ -257,7 +266,7 @@ def _layout_doc(did, entry, directory, run):
     for row, f in zip(rows, entry["fields"]):
         v = f["value"]
         expected = sum(g["value"] == v for g in entry["fields"])  # ta sama wartość w kilku polach (np. akapit + komórka)
-        if text.count(v) >= expected:
+        if _own_occurrences(text, v, [g["value"] for g in entry["fields"]]) >= expected:
             row["status"] = classify_m1(text, v, f["category"], res)
         elif v in text:  # mniej wystąpień niż pól — nie wiadomo, które pole dotarło; nie sukces (Codex r2 F1)
             row["status"] = "EXTRACTION_UNVERIFIED"

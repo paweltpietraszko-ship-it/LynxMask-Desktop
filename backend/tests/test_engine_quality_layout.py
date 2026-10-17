@@ -93,3 +93,31 @@ def test_powtorzona_wartosc_bez_dowodu_wystapienia(tmp_path, run):
     _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": fields}])
     by = eq.measure_layout(str(tmp_path), run)["by_type_location"]
     assert by == {"docx/tekst": {"EXTRACTION_UNVERIFIED": 1}, "docx/tabela": {"EXTRACTION_UNVERIFIED": 1}}, by
+
+
+# Codex r3 F1 i rodzina: wartość nieodczytanej komórki występuje w tekście tylko jako fragment innej wartości.
+@pytest.mark.parametrize("para,cell,cat", [
+    ("anna.k.zalewska@example.pl", "k.zalewska@example.pl", "EMAIL"),   # sufiks dłuższego e-maila (r3)
+    ("Jan Kowalski", "Kowalski", "OSOBA"),                               # nazwisko wewnątrz pełnego imienia i nazwiska
+    ("526-000-12-467", "526-000-12-46", "NUMER"),                        # prefiks dłuższego numeru
+])
+def test_wartosc_tylko_jako_fragment_innej(tmp_path, run, para, cell, cat):
+    import docx
+    d = docx.Document()
+    d.add_paragraph(f"Dane: {para}")
+    d.add_table(rows=1, cols=2).rows[0].cells[1].text = cell
+    d.save(str(tmp_path / "a.docx"))
+    fields = [{"category": cat, "value": para}, {"category": cat, "value": cell, "in_table": True}]
+    _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": fields}])
+    by = eq.measure_layout(str(tmp_path), run)["by_type_location"]
+    assert "masked" not in by["docx/tabela"], by  # nieodczytana komórka nigdy „masked”
+
+
+def test_obie_wartosci_odczytane_osobno(tmp_path, run):  # kontrola: dwa osobne wystąpienia → oba zmierzone przez pipeline
+    import docx
+    d = docx.Document()
+    d.add_paragraph(f"Dane: {EMAIL}")
+    d.add_paragraph(f"Kopia: {EMAIL}")
+    d.save(str(tmp_path / "a.docx"))
+    _manifest(tmp_path, [{"file": "a.docx", "type": "docx", "fields": [{"category": "EMAIL", "value": EMAIL}] * 2}])
+    assert eq.measure_layout(str(tmp_path), run)["by_type_location"] == {"docx/tekst": {"masked": 2}}
