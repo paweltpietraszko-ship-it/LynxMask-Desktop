@@ -26,6 +26,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from anonymizer_init import STRUCTURAL_PATTERNS
 from pipeline_core import PipelineState, TokenAllocator
+from layers.fallback import cuts_long_number
+from layers.financial import _IBAN_FOREIGN_RE
 
 # Klucze do filtrowania STRUCTURAL_PATTERNS — muszą dokładnie pasować do pat.pattern
 _IDENTITY_SOURCES: frozenset[str] = frozenset({
@@ -80,9 +82,11 @@ def apply_identity_layer(state: PipelineState) -> None:
 
     # Wiekszy span wygrywa
     hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
+    # [LYNX-IBAN-FOREIGN E1] fragment pełnego zagranicznego IBAN („GB82WEST1234…”) zostaje dla financial — całość albo nic
+    iban_runs = [(m.start(), m.end()) for m in _IBAN_FOREIGN_RE.finditer(state.text) if len(re.sub(r"\s", "", m.group(0))) >= 15]
     valid: list[tuple[int, int, str]] = []
     for start, end, value, token_type in hits:
-        if state.allocator.is_occupied(start, end):
+        if cuts_long_number(iban_runs, start, end) or state.allocator.is_occupied(start, end):
             continue
         tid = state.allocator.allocate(token_type, value, start, end)
         if tid is None:

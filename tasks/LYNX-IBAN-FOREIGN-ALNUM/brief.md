@@ -1,0 +1,53 @@
+# LYNX-IBAN-FOREIGN-ALNUM — pełny zagraniczny IBAN, bez jawnego prefiksu
+
+STATUS: BRIEF_ONLY; Codex precheck → CC niezależna ocena → CC implementacja → Codex audyt exact SHA → merge tylko OWNER.
+PRODUCT_TRUTH: `arch/spec.md` S1–S5; `BOARD.md` LYNX-IBAN-FOREIGN-ALNUM / LYNX-IBAN-OCR-PREFIX; `tasks/LYNX-T07-IBAN-RECEPTA/round_01/tests/tests_r4.txt` O2. OWNER_PROPOSAL 2026-10-17: po merge EMAIL-LOCALPART-OCR rozwiązać znany wyciek zagranicznego IBAN, potem PUBLIC-DATA-TESTS. Ocena Architekta: przyjąć kolejność; obecny Task tylko O2, bez merge ani zmiany zamrożonej spec.
+
+## Wada i przyczyna — dowód z T07
+Codex O2 na exact SHA T07 `9f9eefc7e3931aa3c4839238559dbab9e00c8869` i jego bazie: `Konto: GB82 WEST 1234 5698 7654 32` w full i Express → jawny uszkodzony prefiks `6882` i `NUMER_NNN` zawierający tylko część danych (22 znaki); `force_block=False`. To wcześniejsza wada, nie regresja T07. `backend/layers/ocr_normalizer.py::_IBAN_DIGITS_RE/_fix_iban_digits` traktuje po etykiecie bankowej prawidłowe litery obcego IBAN jak pomyłki OCR (np. G→6, B→8, S→5, T→7). `layers/financial.py::_IBAN_FOREIGN_RE` ma już obsługę obcych IBAN z alfanumerycznym BBAN; bez zachowanego prefiksu nie może rozpoznać całości. Przed implementacją CC odtwarza reproduktor na swojej bazie, ustala dokładny pierwszy etap utraty prefiksu i weryfikuje, czy istniejący financial rozpoznaje niezmieniony komplet.
+
+## Żądane zachowanie użytkownika
+Dla kompletnego rozpoznawalnego zagranicznego IBAN (litery w BBAN, rozdzielone grupy lub compact), także po etykiecie `Konto:`/`IBAN:`, zwykłe `Zamaskuj` daje **jeden istniejący `NUMER_NNN` na CAŁY IBAN**, bez jawnego prefiksu, kodu kraju, cyfr kontrolnych lub fragmentu BBAN. `reverse_map` zawiera pełną wartość spanu przekazaną do tokenizacji, z prawidłowymi literami i wewnętrznymi separatorami; brak zagnieżdżonych tokenów; Przywróć odtwarza źródłowy przykład, o ile wcześniejsza niezależna normalizacja nie zmieniała formatowania (wtedy osobno wskazać F3, nie uznawać fragmentarycznej mapy za PASS). Gdy wzorzec nie potwierdza całego IBAN, nie maskować samej jego części; nie rozluźniać fail-closed Guarda, nie traktować `blocked` jako udanej tokenizacji.
+
+## Minimalne rozwiązanie — istniejący owner
+1. **Najpierw `backend/layers/ocr_normalizer.py`**, jego wąska reguła IBAN po etykiecie bankowej: nie zamieniać poprawnych liter kodu kraju ani legalnych liter alfanumerycznego BBAN zagranicznego IBAN na cyfry. Zmiana ma być warunkowa dla kompletnego zagranicznego wzorca, bez globalnego zakazu poprawiania OCR. Zachować dotychczasowe naprawy błędów `PL` i czysto cyfrowych numerów rachunków. Nie przepisywać normalizatora; nie zmieniać kolejności pipeline.
+2. `backend/layers/financial.py` tylko **jeśli test po prawidłowej normalizacji dowiedzie braku pełnego dopasowania**: lokalnie naprawić granicę istniejącego zagranicznego wzorca tak, aby nie ucinał kodu kraju/ogonów; nie dodawać nowego parsera IBAN ani międzynarodowej walidacji bankowej. Reguła T07 „cała wartość albo nic” pozostaje bez wyjątków. Nie zmieniać `fallback.py` (jest ostatni, wykrywa długie ciągi numeryczne, a nie wszystkie alfanumeryczne IBAN).
+3. Granice: brak nadmiernego pochłaniania etykiety `Konto/IBAN`, następnego zdania, końcowej kropki, sąsiednich słów lub linii; nie tokenizować przypadkowych krótkich ciągów w rodzaju `GB82 WEST`. Bez zmian tokenów, S2–S5, Guard i OCR lokalnej części e-maila.
+
+TASK_SCOPE:
+- backend/layers/ocr_normalizer.py
+- backend/layers/financial.py
+- backend/tests/test_layers.py
+- backend/tests/test_pipeline_adversarial.py
+- backend/layers/identity.py
+
+OUT_OF_SCOPE: inne detektory (poza ROZSZERZENIEM CC E1 — identity), `pipeline_new.py`, `fallback.py`, `output_guard.py`, `anonymizer_init.py`, `TOKEN_RE`, OCR e-maili, T07, UI, profil, nowe zależności/pliki, port Mobile, kompletny parser norm ISO 13616, dowolne zagraniczne identyfikatory poza IBAN, PUBLIC-DATA-TESTS. Każdy dodatkowy owner tylko z dowodem i decyzją w trybie ROZSZERZENIE CC.
+
+## Najmniejszy test / PASS
+- **O2 przed/po** w full + Express: syntetyczny `Konto: GB82 WEST 1234 5698 7654 32. Dalej.`, także `IBAN: ...`. Przed: z raportu r4 jawny `6882` + fragment w mapie. Po: jeden `NUMER_NNN` obejmuje całe `GB82 WEST 1234 5698 7654 32`; mapa ma cały span; prefiks/BBAN nigdzie jawnie, `force_block=False`, brak pochłonięcia `Konto:` lub `. Dalej.`. Sprawdź `financial` w izolacji i end-to-end po OCR, bo sam unit test `financial.py` był zielony już przed naprawą.
+- Kontrole tej samej klasy: GB z compact BBAN, obcy IBAN z literami i spacjami bez etykiety, DE (same cyfry w BBAN) z/bez etykiety; regresje PL z OCR (np. zamiana J→0), pełne PL/NRB T07 i zwykły e-mail EMAIL-LOCALPART-OCR. Nie wymagać nowej klasyfikacji numerów. Negatyw `Konto: GB82 WEST` nie może otrzymać tokenu za fikcyjny pełny IBAN; tekst po rachunku nietknięty.
+- Testy warstwy `backend/tests/test_layers.py` (jawne uruchomienie, bo poza `pytest.ini`) + przynajmniej jeden test pionu full/Express w `backend/tests/test_pipeline_adversarial.py` (zbierany standardowo, obecnie <600 linii). Testy sprawdzają **jedną pełną wartość w mapie**, a nie tylko nieobecność prefiksu w `out`. Symulowane jednoprzejściowe Przywróć, test bez blokady i regresje Guarda. Dokumenty wyłącznie syntetyczne.
+- Wyniki: testy celowane, jedna standardowa suita, gate exact SHA; opcjonalnie `audyt/engine_quality.py --seed 2026` porównanie tego samego digest, **nie** traktować braku O2 w M1 jako dowodu naprawy. Bez logowania PII. Jeśli gate (>150 linii albo ratio >5:1) zgłasza decyzję, nie wykonywać samodzielnego poszerzenia.
+
+PASS: pełny O2 i warianty zagraniczne jednym `NUMER_NNN` z kompletną mapą i zachowanym prefiksem kraju; brak regresji polskich i innych istniejących warstw, Guard/force_block nieosłabione, pełny tekst poza tokenem bez zmian. Jeśli samo zabezpieczenie OCR wystarcza, `financial.py` zostawić nietknięty.
+
+WHERE_MAP:
+- MODE: REQUIRED
+- TARGETS: backend/layers/ocr_normalizer.py --symbol _fix_iban_digits
+- TARGETS: backend/layers/ocr_normalizer.py --symbol normalize_ocr
+- TARGETS: backend/layers/financial.py --symbol apply_financial_layer
+- REASON: ustalić dokładne miejsce utraty liter przed detekcją; zachować już istniejącego ownera finansowego bez dublowania.
+GATE: 0 nowych plików, ≤600 linii dla nieprzekraczających limitu plików, stare pliki tylko nie pogarszać; >150 linii/ratio >5:1 → decyzja. Codex: BRIEF_ONLY precheck, redukcja zakresu, bez implementacji.
+
+## ROZSZERZENIE CC (2026-10-17, przed kodem rozszerzenia)
+Ta sama klasa (warstwa maskuje fragment pełnego zagranicznego IBAN) — wymagany kontrolny przypadek briefu „GB z compact BBAN”. Plik dopisany do TASK_SCOPE.
+- **E1** `backend/layers/identity.py::apply_identity_layer`: reproduktor (NER wyłączony, także na bazie) `run_pipeline_new("Konto: GB82WEST12345698765432. Dalej.")` → `"Konto: GB82WESTNUMER_001. Dalej."`, mapa `{NUMER_001: "12345698765432"}` — identity (przed financial) zabiera 14 końcowych cyfr, „GB82WEST” jawne; w obu trybach, także bez etykiety. `financial._IBAN_FOREIGN_RE` dopasowuje całość, ale już za późno.
+- Poprawka: w `apply_identity_layer` pominąć trafienie, które przecina pełny zagraniczny IBAN (`financial._IBAN_FOREIGN_RE`, min. 15 znaków) bez objęcia go całego — reguła T07 „cała wartość albo nic” (`fallback.cuts_long_number` użyte jako funkcja pomocnicza, `fallback.py` bez zmian); całość przejmuje istniejący owner `financial`. Bez zmiany wzorców identity i kolejności warstw.
+- **E2** (wykryte przeglądem `implementation/iban_sweep.py`, przed kodem E2) `backend/layers/financial.py::_IBAN_PL_OCR_RE`: wzorzec `\bPL[\d\s]{20,55}(?=\D|$)` kończy się na białym znaku, więc połyka spację/nową linię ZA numerem: „PL61 1090 … 2874 dziś” → „NUMER_001dziś”, „…2874\nKolejna linia.” → „NUMER_001Kolejna linia.” — Przywróć skleja numer z następnym słowem/wierszem (także przed tym Taskiem). Granica briefu („nie pochłaniać sąsiednich słów lub linii”). Poprawka: dopasowanie musi kończyć się cyfrą; wnętrze (OCR-owe spacje/łamanie) bez zmian. `financial.py` już w TASK_SCOPE.
+
+## OWNER_ACCEPTED — rozmiar dostawy, 2026-10-17
+Paweł przy przekazaniu dostawy do audytu: „Jest dostawa od CC, ilość linii kodu akceptuję”. Akceptacja dotyczy rozmiaru tej dostawy `a7809540efe254b12eac9b657b3d795664689d57`, w tym zgłoszonego przez gate RATIO 66/6 = 11:1. Nie jest akceptacją innych, dopiero wykrytych zachowań produktu ani zgodą na merge.
+## OWNER_ACCEPTED — ograniczenie O1, 2026-10-17
+Po wyjaśnieniu ograniczenia O1 w raporcie r2 i rekomendacji PASS z komentarzem Paweł odpowiedział: „Akceptuję”. Akceptacja dotyczy dostawy `a7809540efe254b12eac9b657b3d795664689d57`: istniejący wzorzec niektórych zagranicznych IBAN może objąć także sąsiadujące w tym samym wierszu słowo pisane wersalikami, np. „DANE” (potwierdzone RO i ES). Wtedy słowo znika z maskowanego tekstu wraz z numerem, lecz pełny span jest w lokalnej mapie, a Przywróć odtwarza wejście 1:1; w odtworzonych przypadkach nie ma wycieku. To jawny wyjątek od granicy sąsiednich słów wyłącznie dla opisanego O1, nie ogólna zgoda na dowolne nadmaskowanie ani utratę tekstu. O1 pozostaje znanym ograniczeniem, bez wymagania rozbudowy parsera w tym Tasku.
+
+Wraz z wcześniejszą akceptacją rozmiaru zamyka to OWNER_EXPLANATION_GATE dla opisanej dostawy. Wynik audytu: PASS z komentarzem, raport `round_01/tests/tests_r3.txt`, dowody techniczne pozostają w r2. Brak zgody na merge.

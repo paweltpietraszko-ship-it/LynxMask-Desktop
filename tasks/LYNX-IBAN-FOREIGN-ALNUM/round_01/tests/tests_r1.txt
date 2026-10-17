@@ -1,0 +1,27 @@
+LYNX-IBAN-FOREIGN-ALNUM — r1 — independent brief precheck
+Date: 2026-10-17
+Verdict: PASS PREIMPLEMENTATION
+Exact brief SHA: 10c215ee73c37ffe13bed596197700f28a285ded
+Stage: BRIEF_ONLY; no implementation delivery audited.
+Recipient: Architect / CC
+
+SCOPE AND ORACLE
+Reviewed the Task brief, frozen arch/spec.md S1–S5 and lock, current Task BOARD row, and explicitly linked T07 r4 O2 evidence. BOARD is a technical handoff, not an additional product oracle. Owner's proposed task ordering is not presented as a frozen product ruling or merge permission.
+One targeted source lookup at the exact brief SHA covered the existing IBAN normalization seam and financial owner. No implementation diff, tests, reproducer, benchmark or gate executed: this is a brief-only precheck.
+
+PRECHECK
+1. Product grounding: repairing loss of a foreign IBAN prefix and partial map is consistent with S1 local pseudonymization/restoration. Keep S2 token format/categories, S3 fail-closed, S4 Guard and S5 local privacy unchanged. T07 r4 O2 supplies the retained prior independent evidence; no fresh defect verdict is issued against this brief.
+2. Testability: exact synthetic GB example, labels Konto/IBAN, compact/grouped variants, full/Express, complete one-token map, restoration and unchanged surrounding text are specified. Negative short GB example, DE/PL/NRB, existing OCR repairs, email and Guard regressions define relevant boundaries. Blocking alone cannot count as a successful repair. An independent formatting change must be reported as F3 rather than used to excuse a partial identifier map.
+3. Existing ownership: _IBAN_DIGITS_RE/_fix_iban_digits owns the label-triggered character conversion; _IBAN_FOREIGN_RE/apply_financial_layer already owns foreign alphanumeric recognition. The brief's causal hypothesis is consistent with the source: normalization currently converts letters in the captured bank value, while financial already accepts alphanumeric foreign spans. CC must still establish the first actual corruption stage and unchanged-span financial result on its delivery base, as the brief requires.
+4. No new product decision is needed to start this bounded repair. No new parser, category, validation subsystem, global OCR policy or intentional overmasking tradeoff is introduced. Scope is the stated complete recognizable foreign IBAN class, not certification of every ISO format or arbitrarily degraded OCR.
+
+MINIMAL RESPONSIBILITY / REDUCTION
+- Preserve legitimate foreign identifier letters at the existing OCR seam. SOURCE: S1 and Task O2 / requested behavior. NECESSITY: financial cannot recover a prefix already destroyed before detection.
+- Existing financial owner remains responsible for a complete token span. SOURCE: Task full-value-or-nothing and T07 rule. NECESSITY: no plaintext prefix/tail and a complete restoration map. Change financial.py only after the specified isolated proof; otherwise leave it untouched.
+- Existing test files verify that seam and real full/Express paths. No duplicate validator or new owner is required. Preserve existing PL/numeric OCR correction and Guard; do not remove protections to reduce line count.
+WHERE_MAP is a delivery requirement; not executed as an implementation audit during this precheck.
+
+HANDOFF / LIMITS
+CC may independently assess and implement within this brief. Retain O2 as the original reproducer, then cover the authorized sibling/boundary paths, complete map and restoration, directly relevant tests and the one standard suite/gate explicitly required by the brief. No broader benchmark is mandated; absence of this case in M1 is not evidence of repair.
+The claimed rejection of severely degraded OCR is not tested here and is not a new prerequisite or guarantee. Do not expand the task to pathological OCR merely for audit completeness.
+No blocking contract gaps identified. This PASS PREIMPLEMENTATION does not confirm a fix, certify implementation behavior, authorize merge, or close the prior O2 finding. Delivery needs independent audit on its exact SHA.

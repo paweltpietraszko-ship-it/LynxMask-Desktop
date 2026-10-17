@@ -1,0 +1,45 @@
+LYNX-IBAN-FOREIGN-ALNUM — r2 — independent delivery audit
+Date: 2026-10-17
+Status: OWNER_DECISION_NEEDED / OWNER_EXPLANATION_GATE; no final PASS/FAIL pending explicit disposition of O1 below.
+Recipient: Owner / Architect
+Exact implementation: a7809540efe254b12eac9b657b3d795664689d57
+Base: 23a103e (Task sync with main). Brief precheck: 10c215ee73c37ffe13bed596197700f28a285ded.
+Extensions declared before code: E1 46e1671, E2 6c41a7d.
+Publication parent aa413dd adds delivery documentation only.
+
+SUMMARY
+Technical evidence confirms original O2 repair and both same-class extensions E1/E2. No raw identifier leak was found in the independent checked cases. Existing adjacent-uppercase-word overmasking O1 remains and is not accepted as a silent change of the brief's boundary. Recommend final PASS WITH COMMENT after explicit Owner acceptance of this limited behavior; no new subsystem or broad redesign requested.
+Owner explicitly accepted this delivery's line count: "Jest dostawa od CC, ilość linii kodu akceptuję". Recorded in brief.md. Gate's sole RATIO decision (66/6 = 11:1) is resolved by that approval, not an unresolved size blocker.
+
+OWNER_CONFIRMED / TECHNICAL_ONLY
+Original repair: valid foreign IBAN letters are preserved before financial detection, so the entire identifier becomes one NUMER token with complete map. Existing token format and storage model unchanged. E1 prevents identity consuming a numeric tail before financial; E2 keeps trailing whitespace outside PL token. They implement the same complete-span requirement, were briefed before code, and do not add a new product owner, reorder layers or weaken Guard.
+Existing F3: PL internal whitespace may remain canonicalized in the map; not claimed as exact source-format restoration.
+
+INDEPENDENT AUDIT LAYERS
+1. Narrow diff read for ocr_normalizer.py, identity.py, financial.py and the two test files; no unrelated code read. Whole production/test delta 66 added/6 removed. No product code changed by auditor.
+2. Retained O2 and authorized siblings, tests_r2_repro.py:
+   39 layer checks + 35 full + 35 Express paths, all assertions passed. GB/NL/FR alphanumeric BBAN and DE numeric BBAN, grouped/compact, Konto/IBAN/no label; isolated financial complete map and OCR preservation. E1 compact identity deferral plus independent identity PESEL control. E2 PL trailing space, LF/CRLF and punctuation retained. Short GB negative; PL OCR repair; accepted CAPS/3-space email behavior. Newline and uppercase tail controls for original GB case. Real pipeline functions and actual Guard invoked, no NER stub. Exact restoration for foreign cases; PL canonical-format caveat explicit. No HTTP/UI claim.
+3. Independent base-source component comparison retained in tests_r2_boundary_repro.py:
+   base normalizer produces corrupted GB prefix; base identity consumes compact GB numeric tail; base financial consumes newline following PL. Delivered counterparts pass the retained corresponding checks. Source compiled directly from git show 23a103e, not implementer result files.
+4. Targeted backend tests:
+   py -3 -m pytest tests/test_layers.py tests/test_pipeline_adversarial.py tests/test_audyt_2026_10.py -q
+   227 passed, 1 skipped, 10 xfailed, 8 subtests passed, 17.26s. No failed tests.
+5. Standard suite once, explicitly required by brief:
+   py -3 -m pytest -q
+   129 passed, 40 skipped, 1 xfailed, 8 subtests passed, 27.95s. Skipped paths NOT_CHECKED; expected failures not new regressions.
+6. Independent gate.py on base 23a103e / exact a780954: WYMAGA_DECYZJI only RATIO 66/6 = 11:1; size explicitly Owner-accepted. All other listed gates green. git diff --check passes. Frozen spec SHA256 matches 30027f2f65c7e75e77142fd44f0cba166adf49e238467e82b8b73cb52eed3856.
+7. where.py required symbols (_fix_iban_digits, normalize_ocr, apply_financial_layer) and added identity owner inspected. Actual same-class chain: normalization -> identity -> financial in both modes. Existing foreign regex is reused; no new parser or duplicated detection owner introduced.
+
+O1 — OWNER_DECISION_NEEDED: ordinary uppercase word adjacent to some IBAN enters token
+Trigger: a complete 24-character foreign IBAN immediately followed on the same line by a space and the ordinary uppercase word DANE. Synthetic RO example uses an alphanumeric BBAN, so this is in the relevant boundary class, not degraded OCR. ES numeric sibling confirms the mechanism.
+Effect/UI text: expected "Konto: NUMER_001 DANE" under the brief; actual "Konto: NUMER_001". The word DANE is inside that token's reverse_map value together with the entire IBAN. Full and Express, force_block=False; Guard does not block. Isolated financial gives the same result.
+Data: the local source text is read; the full IBAN plus DANE is held in the existing local reverse_map. This reproducer sends/exports nothing. If the user copies the masked text, the external recipient will not see the word DANE. There is no demonstrated privacy leak in this case.
+Recovery: Przywróć recovers the full original text exactly in both modes; the source word is not irreversibly lost. Working around this instance by a newline or sentence punctuation keeps the heading outside the token, independently confirmed.
+TRACE: brief "Minimalne rozwiązanie" point 3 prohibits consuming adjacent words; PASS requires unchanged text outside the identifier. OWNERSHIP: existing financial._IBAN_FOREIGN_RE span includes the extra word; no downstream duplicate validation demanded. REPRO: tests_r2_boundary_repro.py asserts actual output/map and exact restore on audited SHA, both modes.
+History/severity: the same foreign regex already consumes DANE on base 23a103e in the isolated owner. This is not evidence that CC introduced the greedy regex. Repairing earlier corruption makes its boundary limitation relevant to the delivered complete foreign-IBAN path. Impact is bounded overmasking/context loss, not an identifier leak; do not conflate it with original O2 privacy severity.
+Recommendation: accept as explicit limitation and close PASS WITH COMMENT for the exact SHA; do not turn this small repair into general international IBAN parsing. If Owner declines, hand this single boundary item to Architect; auditor does not design the solution.
+No final PASS/FAIL before Owner disposition, per AGENTS OWNER_EXPLANATION_GATE. Line-count acceptance does not constitute acceptance of O1.
+
+EXCLUSIONS / NEXT STEP
+No real documents read. Synthetic inputs only. No benchmark repeated: M1 lacks original O2 and cannot demonstrate the repair; CC sweep/benchmark are supporting evidence only. Severely degraded OCR rejection is not tested or certified; O1 is ordinary text, independent of OCR degradation.
+No code fix, full-regression repetition, merge or new architecture proposal performed. Await explicit O1 acceptance or correction; preserve all evidence and do not rerun unchanged tests for a documentation-only disposition.

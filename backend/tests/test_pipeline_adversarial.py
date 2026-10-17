@@ -545,6 +545,36 @@ class TestShortDocument(unittest.TestCase):
             self.fail(f"Pipeline rzucił wyjątek na krótkim dokumencie: {e}")
 
 
+class TestForeignIbanWhole(unittest.TestCase):
+    """LYNX-IBAN-FOREIGN-ALNUM: cały zagraniczny IBAN (litery w BBAN, spacje/compact) jednym NUMER, full i Express."""
+
+    CASES = [("Konto: GB82 WEST 1234 5698 7654 32. Dalej.", "GB82 WEST 1234 5698 7654 32"),
+             ("IBAN: GB82WEST12345698765432. Dalej.", "GB82WEST12345698765432"),
+             ("Przelew NL91 ABNA 0417 1643 00 dziś.", "NL91 ABNA 0417 1643 00"),
+             ("Konto: PL61 1090 1014 0000 0712 1981 2874\nKolejna linia.", "PL61 1090 1014 0000 0712 1981 2874")]
+
+    def test_caly_iban_jednym_tokenem(self):
+        from unittest.mock import patch
+        import layers.ner_adapter as ner_mod
+        from pipeline_new import run_pipeline_new, run_pipeline_express
+        for text, iban in self.CASES:
+            for fn in (run_pipeline_new, run_pipeline_express):
+                with self.subTest(text=text, mode=fn.__name__), patch.object(ner_mod, "process_ner", return_value=({}, {})):
+                    out, rev, blocked = fn(text, anon_map={})
+                    self.assertFalse(blocked)
+                    self.assertEqual(len(rev), 1, rev)
+                    tok, val = next(iter(rev.items()))
+                    self.assertEqual(out, text.replace(iban, tok))  # tekst przed/po numerze bez zmian
+                    self.assertEqual(val.replace(" ", ""), iban.replace(" ", ""))  # cała wartość (PL: spacje normalizowane — F3)
+
+    def test_krotki_fragment_bez_tokenu(self):
+        from unittest.mock import patch
+        import layers.ner_adapter as ner_mod
+        from pipeline_new import run_pipeline_new
+        with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+            self.assertEqual(run_pipeline_new("Konto: GB82 WEST. Dalej.", anon_map={})[:2], ("Konto: GB82 WEST. Dalej.", {}))
+
+
 # ===========================================================================
 # Uruchomienie
 # ===========================================================================
