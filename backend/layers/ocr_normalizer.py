@@ -298,17 +298,22 @@ _PHONE_AFTER_KW_RE = re.compile(
 
 def _phone_number_len(num_raw: str, next_char: str) -> int:
     """[LYNX-T11 F2] Długość numeru w dopasowaniu. Człon bez cyfry („TTT”) należy do numeru, gdy domyka 9 cyfr krajowych
-    lub stoi przed członem z cyfrą; człony po 9 cyfrach i człon urwany w słowie („T” z „Termin”) zostają tekstem."""
-    chunks, count, keep = list(re.finditer(r'[^\s\-().]+', num_raw)), 0, 0
+    (+ prefiks 48/0048, także sklejony) lub stoi przed członem z cyfrą. Słowo („To”), człony po numerze i człon urwany
+    w słowie („T” z „Termin”) zostają tekstem."""
+    chunks = list(re.finditer(r'[^\s\-().]+', num_raw))
+    words = [i for i, c in enumerate(chunks) if len(c.group()) > 1 and c.group()[0].isupper() and c.group()[1:].islower()]
+    if words:
+        chunks, next_char = chunks[:words[0]], ""
+    head = num_raw.lstrip(' \t(')
+    total = sum(len(c.group().lstrip('+')) for c in chunks)
+    target = 9 + next((len(p) for p in ('0048', '48') if head.lstrip('+').startswith(p)
+                       and (head[:1] == '+' or p == '0048' or total >= 11)), 0)
+    count, keep = 0, 0
     for i, c in enumerate(chunks):
-        g = c.group()
-        if i == 0 and len(chunks) > 1 and g.lstrip('+') in ('48', '0048'):
-            keep = c.end()
-        elif count >= 9 or (i == len(chunks) - 1 and next_char.isalpha()):
+        if count >= target or (i == len(chunks) - 1 and next_char.isalpha()):
             break
-        else:
-            count += len(g)
-            keep = c.end() if any(ch.isdigit() for ch in g) or count == 9 else keep
+        count += len(c.group().lstrip('+'))
+        keep = c.end() if any(ch.isdigit() for ch in c.group()) or count == target else keep
     return keep
 
 

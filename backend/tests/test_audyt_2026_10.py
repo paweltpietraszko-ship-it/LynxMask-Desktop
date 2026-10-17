@@ -280,6 +280,10 @@ def test_fix_ocr_email_nie_skleja_zdan(text, fragment):
     # Codex r2 R1: ostatnia grupa złożona wyłącznie ze znaków OCR domyka 9 cyfr — nadal część numeru
     ("Tel: +48 606 219 TTT", "606 219 777"), ("Tel: +48 606 219 OOO", "606 219 000"), ("Tel: +48 606 219 III", "606 219 111"),
     ("tel. 123 45 To jest", "45 To jest"),  # człon bez cyfry niedomykający numeru zostaje słowem
+    # Codex r3 R1: prefiks +48 sklejony z pierwszą grupą; 0048 i 48 bez plusa
+    ("Tel: +48606 219 TTT", "606 219 777"), ("Tel: +48606 219 OOO", "606 219 000"), ("Tel: +48606 219 III", "606 219 111"),
+    ("Tel: 0048 606 219 TTT", "606 219 777"), ("Tel: 48 606 219 TTT", "606 219 777"),
+    ("tel. 48 362 12 34 To jest", "34 To jest"),  # 9 cyfr bez prefiksu + słowo „To” — słowo nietknięte
 ])
 def test_ocr_normalizer_nie_psuje_slow(text, expected):
     from pipeline_core import PipelineState, TokenAllocator
@@ -310,12 +314,13 @@ def test_wiernosc_tekstu_i_maskowanie(text, value):
 
 
 # Codex r2 R1 (pion): telefon z ostatnią grupą wyłącznie ze znaków OCR nadal zamaskowany, końcówka nie jest jawna.
+@pytest.mark.parametrize("prefix", ["+48 ", "+48"])  # Codex r3: także prefiks sklejony z pierwszą grupą
 @pytest.mark.parametrize("tail", ["TTT", "OOO", "III"])
-def test_telefon_ocr_ostatnia_grupa_zamaskowany(tail):
+def test_telefon_ocr_ostatnia_grupa_zamaskowany(tail, prefix):
     import layers.ner_adapter as ner_mod
     from pipeline_new import run_pipeline_new
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
-        out, rev, _ = run_pipeline_new(f"Kontakt: Tel: +48 606 219 {tail}", anon_map={})
+        out, rev, _ = run_pipeline_new(f"Kontakt: Tel: {prefix}606 219 {tail}", anon_map={})
     assert tail not in out and any(v.startswith("48606219") for v in rev.values()), (out, rev)
 
 
