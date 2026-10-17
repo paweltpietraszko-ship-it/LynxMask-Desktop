@@ -78,6 +78,28 @@ except ImportError:
 
 # ── Ekstrakcja tekstu ─────────────────────────────────────────────────────────
 
+def _docx_body_text(doc) -> str:
+    """[LYNX-DOCX-TABLES] Akapity i zwykłe tabele treści DOCX w kolejności dokumentu. Każda komórka (także scalona,
+    zwracana przez python-docx pod wieloma adresami) raz; akapity/komórki/wiersze rozdzielone nową linią, by wartości
+    z sąsiednich komórek się nie skleiły. Poza zakresem: nagłówki/stopki, tabele zagnieżdżone, kształty, przypisy."""
+    from docx.oxml.ns import qn
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+    parts: list[str] = []
+    for el in doc.element.body.iterchildren():
+        if el.tag == qn("w:p"):
+            parts.append(Paragraph(el, doc).text)
+        elif el.tag == qn("w:tbl"):
+            seen: list = []
+            for row in Table(el, doc).rows:
+                for cell in row.cells:
+                    if any(cell._tc is tc for tc in seen):
+                        continue
+                    seen.append(cell._tc)
+                    parts += [p.text for p in cell.paragraphs]
+    return "\n".join(t for t in parts if t.strip())
+
+
 def _extract_text(content: bytes, filename: str) -> tuple[str, str | None, dict | None]:
     """
     Wyciąga tekst z pliku. Zwraca (tekst, błąd, ocr_meta).
@@ -132,8 +154,7 @@ def _extract_text(content: bytes, filename: str) -> tuple[str, str | None, dict 
             return "", "Biblioteka python-docx niedostępna — zainstaluj: pip install python-docx", None
         try:
             doc = Document(io.BytesIO(content))
-            text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-            return text, None, None
+            return _docx_body_text(doc), None, None
         except Exception as e:
             return "", f"Błąd odczytu DOCX: {e}", None
 
