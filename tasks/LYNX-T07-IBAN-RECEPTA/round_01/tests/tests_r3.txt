@@ -1,0 +1,67 @@
+LYNX-T07-IBAN-RECEPTA — independent delivery audit r3
+VERDICT: FAIL — F1/F2. Separate out-of-scope observation O1 below.
+Exact implementation SHA: 2e34d1d3dec6478f5a39747dd1c23d1c2437fdce
+Diff base: 7c6475e579ea9306eab2968520a19abf534b3d1f
+Recipient: Architect. Scope: T07 plus declared CC extensions E1/E2.
+Publication parent aceea3e adds DELIVERY/gate only.
+The privacy-first product direction is not rejected by these findings.
+
+F1 — SAFETY_PRIVACY: full fallback loses existing 8+ protection.
+TRACE: brief full-vs-Express rule and PASS explicitly preserve full-mode
+8+ consecutive digits. Existing S1 privacy purpose; no stronger Guard rule
+is being invented.
+OWNERSHIP: layers/fallback.py::apply_fallback_layer uses two passes, 15+
+then old 8+, without clearing occupied offsets after replacing long runs.
+REPRO on exact SHA, tests_r3_repro.py:
+Two independent values separated by comma/text: a 15-digit value followed
+by an 8-digit value. Base fallback masks both (2 map entries); delivered
+fallback masks only the first (1 map entry), leaving the 8-digit value raw.
+Two separator variants reproduce at layer and full-pipeline level.
+Public pseudonymize_document -> actual temporary Anonymizer/validation ->
+fallback -> real Guard also leaves the shorter value raw and unblocked.
+This is a new regression in preserved behavior, not harmless overmasking
+or a demand that Guard duplicate fallback recognition.
+
+F2 — SAFETY_PRIVACY: permitted internal whitespace disables 15+ protection.
+TRACE: brief requires remaining groups of at least 15 digits with internal
+spaces/tabs/hyphens in both modes. It does not restrict whitespace to a
+single character. Minimal test 3 requires the whole group as one token.
+OWNERSHIP: fallback._LONG_NUMBER_RE permits at most one separator between
+digits; long_number_runs shares the same limitation with E1/E2 consumers.
+REPRO: one synthetic 15-digit identifier in five three-digit groups,
+separated by two spaces, two tabs or mixed space/tab. All six full/Express
+paths return raw groups, no mapping, blocked=False. Public pipeline with
+real validation/Guard confirms the double-space example is unblocked.
+Expected: one NUMER with the complete internal separators retained in map.
+This is unimplemented protection for an ordinary layout variant of the
+accepted number class; no new category or OCR recognition is requested.
+
+O1 — EXISTING FINANCIAL SPLIT, separate finding; not a third FAIL here.
+Synthetic 30-digit run: two digits, then seven space-separated four-digit
+groups. Unchanged financial takes a 26-digit prefix, leaving four digits
+visible, in full and Express. The final fallback cannot reassemble it.
+Financial is outside this Task's code scope; brief explicitly routes such
+confirmed other-owner collisions to a separate finding or explicit CC
+extension. Record for Architect disposition, without silently requiring a
+financial rewrite. The current delivery does not certify all 15+ runs.
+This is distinct from text-fidelity F3, which remains out of scope.
+
+INDEPENDENT POSITIVE EVIDENCE / LIMITS
+- Four exact-span fallback positives: compact, single space, tab, hyphen.
+  Sixteen unit thresholds: 7/8/14/15/16/22/26/30, full versus Express.
+- K1 numeric email + separate number, E1 grouped number and E2 country-prefix
+  run: six verticals pass with exact map and one-pass restoration.
+- E1/E2 are the same partial-number bug class, declared in 8012116 / 94fd23d
+  before their code. Shared helper reuses the existing fallback owner.
+- Targeted required tests + layer regression: 220 passed, 10 xfailed.
+- Required where.py maps reviewed; independent gate.py PASS at exact SHA.
+- Real engine_quality before/after, seed 2026, digest ac6a7ca1e033b862,
+  56 cases: M1 NUMER 12 masked + 4 partial_mask -> 16 masked; other M1 and
+  M2 unchanged; simulated M3 44/56 unchanged. Holdout NOT_MEASURED.
+- CC external holdout, 300-case sweep and full suite support the audit but
+  are not independent reruns. No full suite/OCR benchmark/real data used.
+- No product code edited. Reproducer retains all original failure inputs.
+
+NEXT RECHECK
+Only F1/F2 and their direct neighboring pass/whitespace/threshold cases;
+retain successful IBAN/K1/E1/E2 evidence. O1 needs separate scope disposition.
