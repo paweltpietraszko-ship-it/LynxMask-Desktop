@@ -1,0 +1,33 @@
+LYNX-PUBLIC-DATA-TESTS — r3 — independent narrow correction recheck
+Date: 2026-10-17
+VERDICT: FAIL — residual F1, same measurement false-positive class.
+Exact implementation: 638b31813962d2ba071ac02bc7d21cb98481dd9a
+Incremental diff base: d7a08689af663f422e8ed7e3cb1d5a204e3b46f3
+Whole Task base / contract: b074fa69793ce169a898dfdb2d479c899f211a22
+Recipient: CC / Architect
+Publication parent: 908828f (delivery docs/gate only beyond audited implementation).
+
+CLOSED PART OF F1
+The original r2 duplicate-value reproducer is fixed: same value in paragraph and unread table, fewer extracted occurrences than fields -> both EXTRACTION_UNVERIFIED, not masked. Independent retained reproduction confirms it on exact SHA.
+Unique missing table value still yields EXTRACTION_MISSING and the read paragraph masked. Two actual paragraph occurrences with two expected fields still yield two masked. These are passing controls, not waived failures.
+
+RESIDUAL F1 [P2] — substring occurrence does not prove the field was extracted
+TRACE: same Task goal and minimal measurement points 2–3 as r2: all labelled fields must be checked independently; a field absent from extraction must not be masked, and uncertainty must not become success. Precheck r1 and audit r2 explicitly require avoiding success based on a value occurring elsewhere. No new product contract or unrelated class added.
+OWNERSHIP: engine_quality._layout_doc now uses text.count(v) >= expected, but str.count counts occurrences inside a different field's longer value. It still treats that as proof that the shorter field reached extraction. The runner owns this inference; production extractor/pipeline need no change for this finding.
+REPRO: tests_r3_repro.py, synthetic DOCX and real production chain, no stubs. Paragraph contains a longer email; table cell contains a different shorter email which is a suffix of that longer email. Both exact values are in the independent gold manifest, one field each, table correctly labelled in_table=True. Actual _extract_text omits the table and returns only the paragraph. text.count(shorter)==1 meets expected==1 even though that shorter address was never extracted as a separate field. Actual report: paragraph masked=1 AND table masked=1, status OK, M3 identical.
+This is not an extra unlabelled occurrence or an incomplete key: both embedded fields are listed. Missing cell and read paragraph have distinct, overlapping values. It remains ordinary synthetic document content, not severe OCR degradation or a fabricated conflict of unrelated datasets.
+Impact: false clean extraction/masking measurement; not a demonstrated production PII leak. M3 covers only extracted text and cannot validate the lost table cell.
+Required outcome remains r2's: ambiguous/unproven field occurrences cannot be marked verified masked. Preserve original duplicate reproducer, the distinct-value substring sibling and passing unique/all-present controls. The contract already permits uncertainty/non-success; no new extractor, location platform, category, parser or broad refactor is required by this report. Auditor does not prescribe architecture.
+
+AUDIT LAYERS / EVIDENCE
+- Only current BOARD row, narrow diff, retained r2 oracle/evidence, directly relevant source read. Production change is three added lines in _layout_doc, plus the retained-repro test; previous files/reports untouched.
+- Independent tests_r3_repro.py asserts exact SHA and runs four controlled synthetic cases through actual DOCX -> _extract_text -> production pipeline/NER/Guard -> runner/M3: original repeat fixed; unique missing control; both-present control; residual overlap reproduced. No values, filenames or document sentences emitted by the script's result output.
+- Targeted backend checks:
+  py -3 -m pytest tests/test_engine_quality_layout.py tests/test_audyt_2026_10.py -k "layout or quality" -q
+  9 passed, 136 deselected, 12.56s. Existing tests do not cover the overlap sibling.
+- Independent gate on b074fa6..638b318: WYMAGA_DECYZJI only RATIO 153/1=153:1 and TOTAL_LINES 154 (>150 by four); all other gates green. This Task has no recorded Owner size acceptance. Prior IBAN approval does not transfer. Size decision is separate from residual F1, and is not a reason to compress code or remove meaningful tests. Reassess actual final size on corrected delivery.
+- git diff --check passes. Required owner map and frozen-spec evidence retained from r2; no changed owner or spec warrants repeating it.
+
+PROPORTIONAL LIMITS / HANDOFF
+No full-suite, official-sample or old-CLI benchmark rerun for this micro-fix: r2 independently established standard suite 129 passed/40 skipped/1 xfailed (+8 subtests), same-seed synthetic-holdout equality and two-document numeric sample. Those remain prior-SHA evidence, not represented as fresh checks on 638b318. New code only changes field success classification, covered directly by this narrow recheck.
+One remaining functional finding, not a new list of requirements. CC/Architect should resolve the ambiguous field success claim within the current measurement scope and submit a corrected exact SHA. No product code changed by auditor, no real documents read, no merge performed or authorized.
