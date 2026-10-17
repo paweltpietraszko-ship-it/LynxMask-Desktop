@@ -44,3 +44,38 @@ Wcześniej `9c284c0`: FAIL `SIZE_FILE ocr_normalizer.py 708 (before 703)` → he
 
 ## Zgłoszenia (inna klasa — nie wykonane)
 - **E-mail z OCR w lokalnej części**: „anna. nowak@example.pl” → warstwa kontaktów wykrywa tylko „nowak@example.pl”, „anna.” zostaje jawne (przed i po T11). Sklejanie w `_fix_ocr_email` działa dopiero po warstwie kontaktów, więc nie pomaga. Do osobnego zadania (kolejność/ownership normalizacji e-maila).
+
+## Runda 2 — po FAIL Codexa r2 (`tests_r2.txt`, `2f97f4c`)
+IMPLEMENTATION_SHA: `b3d09f81dda037eb905418fb532a6d3c8f6dcf9b`.
+- **R1 (trafne, regresja prywatności — mój błąd):** reguła „człon musi mieć cyfrę” odcinała ostatnią grupę złożoną wyłącznie ze znaków OCR („+48 606 219 TTT/OOO/III”) → numer nie był maskowany, końcówka jawna. Nowa `_phone_number_len`: liczy cyfry krajowe (prefiks `+48`/`0048` pomijany); człon bez cyfry należy do numeru, gdy domyka 9 cyfr albo stoi przed członem z cyfrą; człony po 9 cyfrach i człon urwany w słowie zostają tekstem. TTT/OOO/III → 777/000/111 i `NUMER` w mapie; „654. Termin”, „654) zglosil”, T2T → 727 bez zmian; „123 45 To jest” — „To” zostaje słowem.
+- **R2 (WYMAGA_DECYZJI w raporcie — rozstrzygnięte w granicach E1, bez zmiany kontraktu):** spacja OCR przy separatorze TLD dopuszczana tylko gdy domena nie ma jeszcze kropki (i TLD małymi literami). „nowak@example.pl. termin/dalej” → e-mail „nowak@example.pl”, słowo zostaje w tekście; „jan@wp. pl”, „jan@wp ,pl” nadal jeden e-mail. Pozostaje nierozstrzygalne z samego tekstu: domena bez kropki + „. słowo” małą literą („jan@wp. dalej”) — traktowane jak OCR TLD.
+- Miejsce na regułę bez powiększania pliku: usunięte martwe `_fix_dowod`, `_NIP_SPLIT_RE`, `_NUMERIC_CHARS` w `ocr_normalizer.py` (0 odwołań w repo, sprawdzone grep) — 694 linie (przed Taskiem 703).
+- Testy: reproduktory Codexa jako stałe przypadki — TTT/OOO/III w normalizatorze i pionie (zamaskowane, końcówka niejawna), „To jest” negatyw, „. termin”/„. dalej” w pionie wierności (słowo nie trafia do mapy). Na `0bd2a57`: 8 FAIL z nich; teraz zielone. `test_audyt_2026_10.py` + `test_layers.py`: `138 passed, 12 xfailed`; autotesty warstw 19/40/16 PASS; pełna suita `1 failed (IBAN-RECEPTA), 126 passed, 40 skipped, 1 xfailed`.
+- Pomiar seed 2026 + holdout, ten sam digest: M1/HOLDOUT/M2 identyczne z bazą (0 zmian statusu), M3 84/96 (bez zmian względem rundy 1).
+
+gate.py (stdout dosłownie, finalny SHA):
+```
+STATUS: PASS
+HEAD_SHA: b3d09f81dda037eb905418fb532a6d3c8f6dcf9b
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\trace_layers.py
+  - backend\ner_layer.py
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T03-TOKEN-ALLOC\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_pipeline_v2.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/implementation/gate.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r1.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r2.txt
+  - tasks/LYNX-T11-TEXT-FIDELITY/round_01/tests/tests_r2_repro.py
+  - tasks/LYNX-T11-TEXT-FIDELITY/brief.md
+```
