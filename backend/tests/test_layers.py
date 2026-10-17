@@ -503,3 +503,65 @@ class TestNewlineCrossing:
     def test_jeden_telefon_przelamany_nowa_linia(self, text):
         for out, rev, blocked in _pipelines(text):
             assert not blocked and out == "NUMER_001" and rev == {"NUMER_001": text}, (out, rev)
+
+
+# LYNX-FIRMA-HYPHEN-SUFFIX: granice FIRMA ucięte przez SpaCy na łączniku i w formie prawnej (ner_layer._firma_entities).
+def _ent(text, frag, label="FIRMA", last=False):
+    from spacy_ner import NERResult
+    start = text.rindex(frag) if last else text.index(frag)
+    return NERResult(text=frag, label=label, confidence=0.9, start=start, end=start + len(frag))
+
+
+class TestFirmaBounds:
+    @pytest.mark.parametrize("text,frag,expected", [
+        ("Wykonawca: Apex-Transport Logistyka Sp. z o.o.\n", "Transport Logistyka Sp. z o.o.", "Apex-Transport Logistyka Sp. z o.o."),
+        ("Umowa z Eko-Tech Consulting S.A. dalej", "Tech Consulting S.", "Eko-Tech Consulting S.A."),
+        ("Umowa z Mega-Pack Polska Sp.k. dalej", "Mega-Pack Polska", "Mega-Pack Polska Sp.k."),          # forma tuż za encją
+        ("Firma Alfa-Med Serwis Sp. j. dalej", "Alfa-Med Serwis", "Alfa-Med Serwis Sp. j."),
+        ("Umowa z Apex Transport S.A. dalej", "Apex Transport S", "Apex Transport S.A."),              # bez łącznika
+        ("Umowa z Trans-Bud-Met Sp. z o.o.", "Met Sp. z o.o.", "Trans-Bud-Met Sp. z o.o."),           # dwa łączniki
+        ("Flaga biało-Czerwona Polska dalej", "Czerwona Polska", "Czerwona Polska"),                   # mała litera przed łącznikiem
+        ("Umowa z Apex Transport Logistyka", "Transport Logistyka", "Transport Logistyka"),            # spacja: bez sięgania w lewo
+    ])
+    def test_granice(self, text, frag, expected):
+        from ner_layer import _firma_entities
+        (out,) = _firma_entities(text, [_ent(text, frag)])
+        assert out.text == expected and text[out.start:out.end] == expected, out
+
+    def test_osoba_i_fragment_formy(self):
+        from ner_layer import _firma_entities
+        t = "Pan Nowak-Kowalski i Mega-Pack Polska Sp. z o.o. oraz forma z o.o. osobno"
+        ents = [_ent(t, "Kowalski", "OSOBA"), _ent(t, "Mega-Pack Polska"), _ent(t, "z o.o."), _ent(t, "z o.o.", last=True)]
+        out = _firma_entities(t, ents)
+        assert [(r.label, t[r.start:r.end]) for r in out] == [("OSOBA", "Kowalski"), ("FIRMA", "Mega-Pack Polska Sp. z o.o."),
+                                                               ("FIRMA", "z o.o.")], out  # fragment poza firmą zostaje
+
+
+@pytest.fixture(scope="module")
+def _full_ner():
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "audyt")))
+    import engine_quality as eq
+    ok, why = eq._engine_available()
+    if not ok:
+        pytest.skip(f"NER/Morfeusz niedostępny: {why}")
+    import tempfile
+    import pipeline
+    st = eq.build_state(tempfile.mkdtemp(prefix="lynx_firma_"))
+    return lambda t: pipeline.pseudonymize_document(t, st)
+
+
+@pytest.mark.parametrize("name", ["Eko-Tech Consulting S.A.", "Mega-Pack Polska Sp.k.", "Mega-Pack Polska Sp. z o.o.",
+                                  "Apex Transport Logistyka S.A.", "Alfa-Med Serwis Sp. j.", "Apex-Transport Logistyka Sp. z o.o."])
+def test_firma_cala_nazwa_z_forma_full_ner(_full_ner, name):
+    import contextlib
+    import io
+    text = f"Umowa z firmą {name} została podpisana."
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = _full_ner(text)
+    firms = {k: v for k, v in res.reverse_map.items() if k.startswith("FIRMA_")}
+    assert not res.guard_blocked and list(firms.values()) == [name.rstrip(".")], res.reverse_map  # jeden FIRMA na całość
+    assert res.text == f"Umowa z firmą {next(iter(firms))}. została podpisana.", res.text
+    restored = res.text
+    for tok, val in res.reverse_map.items():
+        restored = restored.replace(tok, val)
+    assert restored == text  # Przywróć 1:1, forma prawna nie ginie

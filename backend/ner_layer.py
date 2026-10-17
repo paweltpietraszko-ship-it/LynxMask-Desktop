@@ -122,6 +122,7 @@ API publiczne:
 Zależności: re, logging (stdlib) + spacy_ner (zewnętrzny) + ner_blocklist (lokalne).
 """
 
+import dataclasses
 import re
 import logging
 
@@ -207,8 +208,44 @@ _SUFFIX_COMPLETION_RE = re.compile(
     re.IGNORECASE,
 )
 
+# [LYNX-FIRMA-HYPHEN-SUFFIX] SpaCy tnie nazwę firmy na łączniku („Apex-|Transport…”) i wewnątrz formy prawnej („… S.|A.”).
+_HYPHEN_HEAD_RE = re.compile(r"(?:^|(?<=[\s(\"„]))[A-ZĄĆĘŁŃÓŚŹŻ0-9][\w&]*(?:-[\w&]+)*-$")
+_LEGAL_FORM_RE = re.compile(r"\s+(?:S\.\s?A\.|Sp\.\s?z\s?o\.\s?o\.|Sp\.\s?[kjp]\.|S\.\s?K\.\s?A\.|P\.\s?S\.\s?A\.|s\.\s?c\.)",
+                            re.IGNORECASE)
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _firma_bounds(text: str, ner):
+    """FIRMA ucięta przez SpaCy: dołącz przyległy człon przed łącznikiem (bez spacji, wielka litera/cyfra) i formę
+    prawną zaczętą w encji lub tuż za nią (inaczej cleanup adaptera usuwa ją z tekstu poza mapą — Przywróć jej nie
+    odtworzy). Nie sięga po słowa oddzielone spacją — to nie jest detektor firm."""
+    if ner.label != "FIRMA":
+        return ner
+    start, end = ner.start, ner.end
+    head = _HYPHEN_HEAD_RE.search(text[max(0, start - 60):start])
+    if head:
+        start -= len(head.group(0))
+    for m in _LEGAL_FORM_RE.finditer(text, start, min(len(text), end + 12)):
+        if m.start() <= end < m.end():  # forma zaczęta w encji albo przylegająca do niej
+            end = m.end()
+    if (start, end) == (ner.start, ner.end):
+        return ner
+    return dataclasses.replace(ner, start=start, end=end, text=text[start:end])
+
+
+_LEGAL_FRAGMENT_RE = re.compile(r"(?:sp\.?\s*)?(?:z\s*o\.\s*o\.?|[kjp]\.?|a\.?|s\.\s*a\.?|k\.\s*a\.?|s\.\s*c\.?)", re.IGNORECASE)
+
+
+def _firma_entities(text: str, ner_results: list) -> list:
+    """[LYNX-FIRMA-HYPHEN-SUFFIX] Granice FIRMA (_firma_bounds); fragment samej formy prawnej („z o.o.”, „A.”) leżący
+    wewnątrz rozpoznanej firmy nie dostaje osobnego tokenu — rozbiłby jej maskowanie."""
+    out = [_firma_bounds(text, r) for r in ner_results]
+    firms = [(r.start, r.end) for r in out if r.label == "FIRMA"]
+    return [r for r in out if not (_LEGAL_FRAGMENT_RE.fullmatch(r.text.strip())
+                                   and any(a <= r.start and r.end <= b and (a, b) != (r.start, r.end) for a, b in firms))]
+
+
 
 # [LYNX-T01] Potwierdzenie osoby przed filtrami geo/prefiks/przymiotnik (port zasady
 # Mobile NameEngine.isAdjective: słownik imion/nazwisk sprawdzany przed odrzuceniem).
@@ -396,7 +433,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
 # ── Implementacja ─────────────────────────────────────────────────────────────
 
 def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
-    ner_results = spacy_ner_mod.detect_entities(text)
+    ner_results = _firma_entities(text, spacy_ner_mod.detect_entities(text))
     ner_results = _filter_institutions(ner_results)
 
     reverse_map:          dict[str, str] = {}
