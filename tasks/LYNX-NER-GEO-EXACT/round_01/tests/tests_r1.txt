@@ -1,0 +1,39 @@
+WĄSKI PRECHECK — LYNX-NER-GEO-EXACT
+Data: 2026-10-17
+Exact SHA: e0356d17ac19a0d6e67d1a47d31b9b643c55c10a
+Etap: BRIEF_ONLY, bez implementacji.
+Wynik: jedna zamknięta lista braków kontraktu (B1). Bez PASS/FAIL kodu.
+
+B1. Negatyw Zapłata opisano jako zachowanie już istniejące.
+TRACE: brief Najmniejsze testy pkt 2 wymaga od _filter_institutions,
+by Zapłata i inne wymienione negatywy były "nadal odrzucane".
+Jednocześnie cel i minimalny szew ograniczają zmianę do kolizji form
+z _PERSON_FORMS z nazwami ulic, bez ogólnej warstwy kontekstowej.
+Dokumentacja T01 obecna na tym samym SHA (round_01/implementation/
+DELIVERY.md) wskazuje Zapłata jako istniejący BUG-NER-FP przepuszczany
+przed i po T01. Punktowy odczyt filtra/blocklisty nie daje podstaw do
+uznania tego przykładu za istniejące ręczne odrzucenie.
+Wymaganie zielonego takiego negatywu oznacza dodatkową naprawę FP,
+a nie zachowanie dotychczasowej ochrony przed skutkiem nowego bypassu.
+Do korekty: odróżnić udokumentowany bazowy FP od negatywów regresji
+tej konkretnej poprawki; nie wymagać jego naprawy pod etykietą "nadal".
+Ewentualne rozszerzenie o ten FP musi być jawne w kontrakcie, nie
+wynikać z przypadkowej asercji. Nie projektuję sposobu naprawy tego FP.
+
+POZOSTAŁE GRANICE — BEZ UWAG W TYM PRECHECKU
+- Dwa istniejące szwy exact/strict są prawidłowo wskazane.
+- Bypass ograniczony do OSOBA, istniejącego słownika i pochodzenia
+  wyłącznie z ulic; miasto/placówka i ręczne wykluczenie zachowują veto.
+- Wspólny zbiór geo pozostaje dla pozostałych odbiorców; trzy pliki
+  wystarczają, bez nowego NER/danych JSON/ownerów/pipeline.
+- Pozytyw wymaga jawnej kontroli pochodzenia, bez warunkowego pomijania
+  asercji; adres/instytucje/FIRMA oraz S2/S3/S4 pozostają chronione.
+- 1008/10080 opisuje przecięcie list, nie odsetek wycieków dokumentów.
+SOURCE/NECESSITY: S1 — zachować rozpoznaną osobę mimo kolizji ulicznej;
+S2/S3/S4/S5 — nie zmieniać kontraktów tokenów, blokad ani logowania.
+
+Zakres odczytu: wiersz BOARD, brief, jedno celowane wyszukanie ownerów
+na exact SHA i przywołany fragment dowodów T01. Bez implementacji,
+analizy diffu kodu, testów, reproduktorów, where.py, suity i benchmarku.
+Po korekcie sprawdzić wyłącznie B1; nie otwierać ponownie pozostałych
+punktów bez nowej zmiany lub sprzeczności.
