@@ -17,8 +17,9 @@ TASK_SCOPE:
 - backend/layers/ocr_normalizer.py
 - backend/layers/contact.py
 - backend/tests/test_layers.py
+- backend/layers/identity.py
 
-OUT_OF_SCOPE: backend/document_processor.py, backend/tests/test_engine_quality_layout.py, audyt/engine_quality.py, pozostałe warstwy (identity/financial/validation), anonymizer_init.py, pipeline_new.py, Output Guard i TOKEN_RE, UI, eksport DOCX, nowe parsery, KRS/KW, realne dokumenty i dane osobowe. Jeśli precheck dowiedzie, że źródło jednego z reproduktorów jest w innym ownerze, **STOP i punktowy finding/nowy TASK_SCOPE przed implementacją**; nie obchodzić błędu zmianą testu ani szerokim przeorganizowaniem warstw.
+OUT_OF_SCOPE: backend/document_processor.py, backend/tests/test_engine_quality_layout.py, audyt/engine_quality.py, pozostałe warstwy (financial/validation; identity — tylko ROZSZERZENIE CC E1 niżej), anonymizer_init.py, pipeline_new.py, Output Guard i TOKEN_RE, UI, eksport DOCX, nowe parsery, KRS/KW, realne dokumenty i dane osobowe. Jeśli precheck dowiedzie, że źródło jednego z reproduktorów jest w innym ownerze, **STOP i punktowy finding/nowy TASK_SCOPE przed implementacją**; nie obchodzić błędu zmianą testu ani szerokim przeorganizowaniem warstw.
 
 ## Minimalny test falsyfikujący (w istniejącym test_layers.py, uruchamianym jawnie)
 1. Dwa niezależne syntetyczne e-maile z \n między nimi, oba tryby run_pipeline_new (z kontrolowanym NER) i run_pipeline_express: dwa pełne poprawne spany w reverse_map (nie połączone), żadna jawna lokalna część/domena, nienaruszona granica wiersza, brak osieroconych lub zagnieżdżonych tokenów; Przywróć = oryginał.
@@ -37,3 +38,11 @@ WHERE_MAP:
 GATE: zero nowych plików, stare pliki powyżej limitu ≤600 nie mogą rosnąć; >150 zmienionych linii lub ratio >5:1 = WYMAGA_DECYZJI. Codex: BRIEF_ONLY precheck wykonalności i zakresu, bez implementacji.
 
 Po merge (osobna decyzja OWNERA): dopiero CC aktualizuje WIP DOCX-TABLES na nowym main, ponawia czerwone testy integracyjne tabel i oddaje je Codexowi do audytu osobnego exact SHA.
+## ROZSZERZENIE CC (2026-10-17, przed kodem) — wynik ustalenia pierwszego etapu
+Trace warstwa po warstwie (NER wyłączony):
+- „a@example.pl\nb@example.pl” → PIERWSZY: `ocr_normalizer` (`_EMAIL_SPACE_BEFORE_AT_DOT`, `\s+` z `\n`, grupa 1 bez lewej granicy łapie domenę poprzedniego adresu) → „a@example.plb@example.pl”. Pokrewna `_EMAIL_SPACE_BEFORE_AT_DIGITS` ma ten sam `\s+`.
+- „526-000-12-46\n512 987 654” → PIERWSZY: **`identity`** — wzorzec NIP 3-2-2-3 z `anonymizer_init.STRUCTURAL_PATTERNS` (`[-\s]?`, lewa granica tylko `(?<!\d)`) dopasowuje „000-12-46\n512” (start po „526-”, przez `\n`); potem `contact` (wzorzec telefonu z tych samych STRUCTURAL) łapie „001 987 654” startując w cyfrach tokenu NUMER_001 → „NUMER_NUMER_002”.
+- „44051401359\n512 987 654” → PIERWSZY: `contact` — telefon „001\n512 987” startuje w cyfrach tokenu i przechodzi przez `\n`.
+- Nowy, ta sama klasa: „PESEL 44051401359\nTel. …” → `ocr_normalizer._PESEL_SPLIT_RE` (wnętrze numeru `[...\s]` z `\n`) zjada „T” z następnej linii → „7el.”.
+**E1** `backend/layers/identity.py` — dopisany do TASK_SCOPE (pierwszy błędny etap dla reproduktora NIP; brief dopuszcza nowy TASK_SCOPE przed implementacją). Bez zmiany `anonymizer_init` (wzorce bez zmian).
+Poprawka (punktowa, bez globalnej zamiany `\s`): (1) w `identity` i `contact` wzorce **liczbowe** (NUMER; nie e-mail) dopasowywane w obrębie jednej linii i odrzucane, gdy start leży w cyfrach tokenu (`…_\d*`) albo bezpośrednio po „cyfra-” (fragment dłuższego numeru) — jedna funkcja pomocnicza w `contact.py`, użyta w obu warstwach; (2) `ocr_normalizer`: `_EMAIL_SPACE_BEFORE_AT_DOT/_DIGITS` — odstęp bez `\n` i lewa granica grupy 1; `_PESEL_SPLIT_RE` — wnętrze numeru bez `\n` (separator po etykiecie może nadal przechodzić przez `\n`: „PESEL:\n4405…” to jedna encja); `_PHONE_AFTER_KW_RE` — wnętrze numeru bez `\n`. OCR-newline przy `@` w e-mailu (`contact._EMAIL_OCR_RE`) bez zmian.
