@@ -102,10 +102,11 @@ def _fix_ocr_email(text: str) -> str:
     """
     # "(@" → "@"
     text = text.replace("(@", "@")
-    # "a. b@" → "a.b@" (spacja po kropce w local-part, lookbehind na ≥2 znaki)
+    # "a. b@" → "a.b@" — tylko wewnątrz tego samego adresu: po kropce ciąg do "@", przed kropką lokalna
+    # część (małe litery ASCII, od początku słowa). Kropka kończąca zdanie zostaje nietknięta (LYNX-T11 F1, S2).
     text = re.sub(
-        r"(?<=[a-zA-Z0-9]{2})([a-zA-Z0-9])\.\s+([a-zA-Z0-9])",
-        lambda m: f"{m.group(1)}.{m.group(2)}",
+        r"(?<![\w.])([a-z0-9][a-z0-9_%+-]*(?:\.[a-z0-9_%+-]+)*)\.\s+(?=[a-zA-Z0-9._%+-]+@)",
+        lambda m: f"{m.group(1)}.",
         text,
     )
     # "@ wp" → "@wp"

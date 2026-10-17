@@ -62,8 +62,9 @@ _EMAIL_OCR_RE = re.compile(
     r"[@©]"                    # @ lub © (OCR mylka)
     r"[ \t\n]{0,2}"                 # OCR: spacja/newline po @
     r"[a-zA-Z0-9.\-]{2,}"          # domena
-    r"[ \t]{0,1}[.,][ \t]{0,1}"    # TLD separator — kropka lub przecinek
-    r"[a-zA-Z]{2,6}(?!\w)",        # TLD — nie może ciągnąć się dalej (BUG-EMAIL-GREEDY)
+    # TLD po kropce/przecinku; ze spacją OCR tylko małymi literami — „pl. Termin” to koniec zdania (LYNX-T11 E1)
+    r"(?:[.,][a-zA-Z]{2,6}|[ \t]?[.,][ \t]?(?-i:[a-z]{2,6}))"
+    r"(?!\w)",                     # TLD — nie może ciągnąć się dalej (BUG-EMAIL-GREEDY)
     re.IGNORECASE,
 )
 

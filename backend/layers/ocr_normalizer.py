@@ -313,6 +313,19 @@ _PHONE_AFTER_KW_RE = re.compile(
     r'(\+?(?:48[^\S\n]*)?[TIlOSBGZzo\d\s\-(). ]{7,22}[TIlOSBGZzo\d])'
 )
 
+_PHONE_CHUNK_RE = re.compile(r'[^\s\-().]+')
+
+
+def _phone_number_len(num_raw: str, next_char: str) -> int:
+    """[LYNX-T11 F2] Długość części dopasowania, która jest numerem: odcina końcowe człony bez cyfry („T” z „Termin”,
+    „z” z „zglosil”) i człon urwany w środku słowa (następny znak to litera). Niepewna granica → słowo bez zmian."""
+    chunks = list(_PHONE_CHUNK_RE.finditer(num_raw))
+    while chunks and (not any(c.isdigit() for c in chunks[-1].group()) or next_char.isalpha()):
+        next_char = ""
+        chunks.pop()
+    return chunks[-1].end() if chunks else 0
+
+
 # ── Krok 12: OCR_DIGIT_IN_CONTEXT (safety net) ───────────────────────────────
 
 _DIGIT_IN_CONTEXT_RE = re.compile(r'(?<=\d)[lOIo]+(?=[\s\-./]*\d)')
@@ -507,19 +520,11 @@ def normalize_ocr(text: str) -> str:
     # Krok 10: Kod pocztowy spacja → myślnik (kontekst adresowy)
     text = _POSTAL_SPACE_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}-{m.group(3)}", text)
 
-    # Krok 11: Telefon po kw
-    def _fix_phone(m: re.Match) -> str:
-        kw = m.group(1)
-        num = m.group(2)
-        fixed_num = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num)
-        prefix_len = m.start(1) - m.start()
-        prefix = m.group(0)[:prefix_len]
-        return prefix + kw + m.group(0)[len(kw) + prefix_len:len(kw) + prefix_len + (m.start(2) - m.start(1))] + fixed_num
-    # Prostsze podejście:
+    # Krok 11: Telefon po kw — cyfry OCR poprawiane tylko w części numeru (LYNX-T11 F2: bez następnego słowa)
     def _fix_phone_simple(m: re.Match) -> str:
-        full = m.group(0)
-        num_raw = m.group(2)
-        num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num_raw)
+        full, num_raw = m.group(0), m.group(2)
+        keep = _phone_number_len(num_raw, m.string[m.end():m.end() + 1])
+        num_fixed = ''.join(_OCR_TO_DIGIT.get(c, c) for c in num_raw[:keep]) + num_raw[keep:]
         return full[:full.rfind(num_raw)] + num_fixed
     text = _PHONE_AFTER_KW_RE.sub(_fix_phone_simple, text)
 
