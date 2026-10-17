@@ -1,0 +1,39 @@
+LYNX-DICT-LEAKTEST etap 1 — narrow R2 recheck r4
+FORMAL STATUS: WYMAGA_DECYZJI — TOTAL_LINES 377 (threshold 150).
+TECHNICAL RESULT: PASS for residual R2; R1/R3 closures retained from r3.
+Exact implementation SHA: 528856b9b4c07d4fac2d623d0dab23c709c6c4ee
+Diff base: ec0c505205c7bb6511626818ee23cc3c13e4f640
+Recipient: Architect / Owner for the outstanding size decision.
+Publication parent 9d6a241 differs only in delivery documentation/artifacts.
+
+SCOPE AND EVIDENCE
+Only classify_m2 and its directly related tests changed. R1/R3 owners and
+accepted closures are untouched; no broader re-audit or engine fixes.
+TRACE: brief M2, Minimal PASS 3/5, and residual R2 from tests_r3.txt.
+OWNERSHIP: runner classify_m2, with measure/report propagation.
+REPRO: retained input cases in tests_r4_repro.py, executed on exact SHA.
+- Original ordinary-payment-word/KWOTA input => fp.
+- Existing street case with ordinary preposition/ADRES token => fp.
+- Separate ordinary five-letter word sharing a street substring/ADRES => fp.
+  Its simulated round-trip remains identical, but no longer hides the FP.
+- Genuine amount and address replacements remain contract; normalized
+  spacing/punctuation variant of a genuine address also remains contract.
+- Wrong category => fp; no tokens => clean; blocked/error remain explicit.
+All ten checks pass through measure and report.
+Targeted test_audyt_2026_10.py -k quality_m2: 1 passed, 72 deselected.
+
+GATE / REMAINING DECISION
+Independent gate.py at exact SHA: WYMAGA_DECYZJI, solely TOTAL_LINES 377.
+Other mechanical checks pass. No size exception has been assumed.
+Recommendation: accept 377 changed lines for this measurement-only Task:
+changes remain one diagnostic runner plus the existing audit test file;
+no engine/subsystem expansion and no artificial removal of M1-M3 checks.
+Formal overall PASS awaits explicit size acceptance under the brief gate.
+No further technical blocker remains in this closed recheck scope.
+
+LIMITS
+Previous independent real-run baseline and r2/r3 evidence retained.
+No real runner, full regression, benchmark or R1/R3 test rerun: this patch
+only changes the local M2 scoring rule, covered by the retained reproducers
+and its positive/negative boundaries. CC's broader results remain supporting
+evidence. No claim of complete engine quality or authorization to merge.
