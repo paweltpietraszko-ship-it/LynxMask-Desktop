@@ -268,10 +268,10 @@ def _fix_iban_newline(m: re.Match) -> str:
 
 
 def _fix_iban_digits(m: re.Match) -> str:
-    kw = m.group(1)
-    raw = m.group(2)
-    fixed = ''.join(c if c == ' ' else _OCR_TO_DIGIT.get(c, c) for c in raw)
-    return kw + fixed
+    kw, raw = m.group(1), m.group(2)
+    if re.match(r'(?!PL)[A-Z]{2}\d{2}[ \t]?[A-Z0-9]', raw):  # [LYNX-IBAN-FOREIGN] litery obcego IBAN (GB82 WEST…) — prawdziwe
+        return m.group(0)
+    return kw + ''.join(c if c == ' ' else _OCR_TO_DIGIT.get(c, c) for c in raw)
 
 # ── Krok 9: Kod pocztowy ─────────────────────────────────────────────────────
 

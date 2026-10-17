@@ -35,7 +35,7 @@ _FINANCIAL_SOURCES: frozenset[str] = frozenset({
 # [OCR-IBAN-PL] Tolerancyjny wzorzec dla PL IBAN z rozerwanymi grupami OCR.
 # Lapiemy: PL + do 40 znakow (cyfry + spacje), post-match walidacja: dokladnie 26 cyfr.
 # Przyklad OCR lvl3: "PL 98 1 053 1 875 0000 0023 4567 8901" -> 26 cyfr po PL.
-_IBAN_PL_OCR_RE = re.compile(r"\bPL[\d\s]{20,55}(?=\D|$)", re.IGNORECASE)
+_IBAN_PL_OCR_RE = re.compile(r"\bPL[\d\s]{19,54}\d(?=\D|$)", re.IGNORECASE)  # [LYNX-IBAN-FOREIGN E2] koniec na cyfrze
 
 _FINANCIAL_PATTERNS: list[tuple[str, re.Pattern]] = [
     (tok, pat) for tok, pat in STRUCTURAL_PATTERNS

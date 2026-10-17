@@ -432,3 +432,29 @@ class TestContactEmailLocalpartOcr:
     def test_ocr_przy_at_i_tld_nadal_jeden_email(self, text):  # wartość kanoniczna — znane F3
         out, rev = _apply_contact(text)
         assert out == "Mail: EMAIL_001 koniec" and len(rev) == 1, (out, rev)
+
+
+# ---------------------------------------------------------------------------
+# LYNX-IBAN-FOREIGN-ALNUM: litery obcego IBAN nie są „naprawiane” na cyfry; granice PL
+# ---------------------------------------------------------------------------
+
+class TestForeignIbanLayers:
+
+    @pytest.mark.parametrize("text", ["Konto: GB82 WEST 1234 5698 7654 32.", "IBAN: NL91 ABNA 0417 1643 00.", "Nr konta: GB82WEST12345698765432."])
+    def test_normalizer_nie_zmienia_obcego_iban(self, text):
+        assert normalize_ocr(text) == text
+
+    def test_normalizer_nadal_naprawia_ocr_po_etykiecie(self):
+        assert "1090" in normalize_ocr("Konto: 61 1O9O 1014 OOOO O712 1981 2874.")
+
+    @pytest.mark.parametrize("text,iban", [("Ref GB82WEST12345698765432 dziś", "GB82WEST12345698765432"),
+                                           ("Konto PL61 1090 1014 0000 0712 1981 2874 dziś", "PL61 1090 1014 0000 0712 1981 2874")])
+    def test_identity_i_financial_caly_numer(self, text, iban):
+        from layers.identity import apply_identity_layer
+        state = PipelineState(text=text, allocator=TokenAllocator())
+        apply_identity_layer(state)
+        state.allocator.reset_spans()
+        apply_financial_layer(state)
+        rev = state.allocator.reverse_map
+        assert len(rev) == 1 and state.text == text.replace(iban, next(iter(rev))), (state.text, rev)
+
