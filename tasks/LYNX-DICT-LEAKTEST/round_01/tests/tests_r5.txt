@@ -1,0 +1,25 @@
+LYNX-DICT-LEAKTEST etap 1 — final closure r5
+VERDICT: PASS
+Exact audited implementation SHA: 528856b9b4c07d4fac2d623d0dab23c709c6c4ee
+Original diff base: e5e2e7f5e5d835d79d6745f23003cb2f8c262fc1
+Recipient: Architect. Stage: final audit closure after Owner size acceptance.
+
+OWNER_ACCEPTED — 2026-10-17, Paweł, explicit reply: „Akceptuję”.
+Context: Codex reported R1-R3 closed and recommended accepting the only
+remaining gate, TOTAL_LINES 377 versus the brief threshold of 150.
+This reply accepts that concrete size exception for this Task and SHA.
+The raw mechanical gate remains WYMAGA_DECYZJI; this report records its
+explicit resolution, without altering gate output or threshold.
+
+EVIDENCE RETAINED
+Technical evidence, scope and limitations from tests_r2.txt, tests_r3.txt
+and tests_r4.txt remain applicable. R1/R3 closed in r3; residual R2 closed
+in r4 with ten independent boundary checks and one targeted passing test.
+No code/brief difference from the audited SHA exists on the task head;
+subsequent commits contain reports and delivery artifacts only.
+No test rerun needed for this decision-only closure. No product code edits.
+
+PASS concerns measurement-runner delivery at the exact implementation SHA,
+not complete engine leak coverage or successful masking of every case.
+Known measured engine defects remain separate. Merge is not authorized by
+this size acceptance and has not been performed.
