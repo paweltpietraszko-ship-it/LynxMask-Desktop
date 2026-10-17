@@ -387,3 +387,48 @@ class TestVerbalAmountLayer:
         if "KWOTA_" in s.text:
             tokens = [w for w in s.text.split() if w.startswith("KWOTA_")]
             assert all(t != "KWOTA_001" for t in tokens)
+
+
+# ---------------------------------------------------------------------------
+# LYNX-EMAIL-LOCALPART-OCR: e-mail z OCR-ową spacją w lokalnej części jako jedna wartość
+# ---------------------------------------------------------------------------
+
+def _apply_contact(text: str):
+    from layers.contact import apply_contact_layer
+    state = PipelineState(text=text, allocator=TokenAllocator())
+    apply_contact_layer(state)
+    return state.text, state.allocator.reverse_map
+
+
+class TestContactEmailLocalpartOcr:
+    """Kontrakt OWNER_ACCEPTED 2026-10-17 (brief §OWNER_ACCEPTED): cały adres jednym EMAIL, surowy span w mapie."""
+
+    @pytest.mark.parametrize("text,value", [
+        ("Kontakt: anna. nowak@example.pl. Termin płatności.", "anna. nowak@example.pl"),
+        ("Kontakt: ANNA. NOWAK@example.pl.", "ANNA. NOWAK@example.pl"), ("Kontakt: ANNA.  NOWAK@example.pl.", "ANNA.  NOWAK@example.pl"),
+        ("Kontakt: Anna. Nowak@example.pl.", "Anna. Nowak@example.pl"), ("Kontakt: anna.   nowak@example.pl.", "anna.   nowak@example.pl"),
+        ("Kontakt: anna.\tnowak@example.pl.", "anna.\tnowak@example.pl"), ("Kontakt: anna.nowak@example.pl.", "anna.nowak@example.pl"),
+        ("Kontakt: 123456789012345@example.pl.", "123456789012345@example.pl"),
+        # zaakceptowane nadmaskowanie jednego słowa przed kropką (ten sam wiersz), Przywróć 1:1
+        ("Prosimy o kontakt. jan@example.pl", "kontakt. jan@example.pl"), ("Podpisano. Jan@example.pl", "Podpisano. Jan@example.pl"),
+    ])
+    def test_caly_adres_jednym_tokenem(self, text, value):
+        out, rev = _apply_contact(text)
+        assert list(rev.values()) == [value] and out == text.replace(value, next(iter(rev))), (out, rev)
+
+    @pytest.mark.parametrize("text,email", [
+        ("Kontakt.\njan@example.pl", "jan@example.pl"),  # K1: słowo z poprzedniego wiersza nie dołączane
+        ("Mail jan@example.pl. Termin płatności", "jan@example.pl"),  # nic po adresie
+    ])
+    def test_granice_wiersza_i_konca_adresu(self, text, email):
+        out, rev = _apply_contact(text)
+        assert list(rev.values()) == [email] and out == text.replace(email, next(iter(rev))), (out, rev)
+
+    def test_bez_emaila_tekst_nietkniety(self):
+        assert _apply_contact("Kontakt. nie podano adresu.") == ("Kontakt. nie podano adresu.", {})
+
+    @pytest.mark.parametrize("text", ["Mail: jan@\nexample.pl koniec", "Mail: jan\n@example.pl koniec",
+                                      "Mail: jan @example.pl koniec", "Mail: jan@wp. pl koniec"])
+    def test_ocr_przy_at_i_tld_nadal_jeden_email(self, text):  # wartość kanoniczna — znane F3
+        out, rev = _apply_contact(text)
+        assert out == "Mail: EMAIL_001 koniec" and len(rev) == 1, (out, rev)

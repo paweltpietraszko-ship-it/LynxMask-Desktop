@@ -1,0 +1,31 @@
+LYNX-EMAIL-LOCALPART-OCR — przekazanie do doprecyzowania, r3
+Etap: przekazanie po audycie r2; formalny werdykt pozostaje otwarty.
+Exact SHA sprawdzonej dostawy: fc75f1410c865acaa74e4ca2c9058aa81b16b5ed
+Odbiorca: Architekt.
+
+2026-10-17 Paweł wybrał rekomendowany kierunek:
+„Doprecyzować granice z architektem (rekomendowane)”.
+To wybór dalszej pracy nad kontraktem. Nie zamraża konkretnej heurystyki
+rozpoznawania ani nie akceptuje zachowań opisanych w r2 jako ograniczenia.
+
+ZAKRES DOPRECYZOWANIA — ZAMKNIĘTA LISTA
+1. Odróżnienie OCR-spacji w localpart od zwykłego słowa kończącego zdanie:
+   wskazany adres ma być przejęty w całości, natomiast aktualna dostawa
+   przejmuje też „kontakt.” z „Prosimy o kontakt. jan@example.pl”.
+   Określić akceptowany zakres i koszt niejednoznaczności, bez obietnicy
+   bezbłędnego odgadywania intencji dowolnego tekstu.
+2. Jawny zakres wielkości liter i liczby odstępów. Obecna poprawka działa
+   dla małych liter i 1-2 odstępów; CAPS i 3 odstępy zachowują wcześniejszy
+   częściowo jawny prefiks. Nie uznawać tych ograniczeń za naprawione lub
+   zaakceptowane tylko dlatego, że nie są regresją.
+Dopasować do rozstrzygniętych granic mały zestaw pozytywów/negatywów oraz
+pełny span/mapę/Przywróć. Zachować istniejącego ownera contact i minimalny
+zakres; ewentualna konieczność rozszerzenia wymaga jawnego uzasadnienia.
+
+DOWODY BEZ ZMIAN
+Raport r2 i tests_r2_repro.py pozostają źródłem odtworzonych zachowań.
+Główna naprawa i wskazane testy zielone: 202 passed/10 xfailed;
+standardowa suita 127 passed/40 skipped/1 xfailed; gate PASS.
+Nie ponawiano testów ani nie zmieniano kodu. To przekazanie nie wprowadza
+nowego FAIL ani PASS. Następny etap: korekta kontraktu przez Architekta,
+następnie proporcjonalna kontrola zmienionych granic.

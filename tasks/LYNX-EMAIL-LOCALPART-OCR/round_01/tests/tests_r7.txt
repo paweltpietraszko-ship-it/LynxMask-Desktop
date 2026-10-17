@@ -1,0 +1,44 @@
+LYNX-EMAIL-LOCALPART-OCR — r7 — independent narrow delivery recheck
+Date: 2026-10-17
+VERDICT: PASS for implementation 3fc5c7b05a40e1bbfaf3cad04fd91c659b76a181
+Recipient: Architect / Owner
+
+ORACLE / EXACT SCOPE
+Approved contract: b33115119290d439941dc69f531bbf9d298d2f02 (brief 4af481fe + explicit Owner approval "Zatwierdzam ten zakres").
+Incremental diff: fc75f1410c865acaa74e4ca2c9058aa81b16b5ed..3fc5c7b05a40e1bbfaf3cad04fd91c659b76a181.
+Whole Task base: 5dd5c6ece1ebb511695c763524d5193f00a2b944.
+Publication parent f82ef268247542fd707ab797be3ee01e2cdf92b8 changes only DELIVERY.md and implementation/gate.txt relative to audited SHA. Product tests ran on 3fc5c7b, before switching to publication parent.
+Frozen spec SHA256 verified: 30027f2f65c7e75e77142fd44f0cba166adf49e238467e82b8b73cb52eed3856.
+No production code changed by auditor. No new product behavior outside approved boundaries found in this narrow diff.
+
+RESULT
+CC removed the case-sensitive prefix restriction and expanded localpart separator from 1–2 to 1–3 spaces/tabs. Existing contact owner, @ handling, layer order, token contract and Guard remain unchanged. Corrected CAPS and 3-space cases close the previously observed limits within the newly approved scope.
+Accepted one-word ambiguity is preserved: an ordinary word ending with a dot before the email may enter EMAIL; raw reverse_map allows exact restoration. This is OWNER_CONFIRMED, not a newly reopened defect.
+
+INDEPENDENT EVIDENCE
+Retained original localpart reproducer, generalized only approved sibling classes. Repro: tests_r7_repro.py, asserts exact audited SHA.
+- 43 layer checks: lower/upper/mixed case x nine 1–3-space/tab variants; ordinary email; accepted one-word overmasking; LF/CRLF/CR boundary; no trailing sentence absorption; no-email negatives; old @ and TLD handling.
+- 42 full and 42 Express paths: real pipeline functions (no NER stub), followed by real guard_output_with_map with session map values; no force_block, no Guard blocking/redaction, correct output and map. No HTTP endpoint/UI claim.
+- Exact unmask_sim restoration for new isolated localpart cases and accepted overmasking. Old @/TLD normalization intentionally checked as canonical F3, not asserted to restore raw whitespace.
+- Retained T07 numeric-email + separate 15-digit number in both modes: distinct complete map values, no nested token, exact restoration, Guard accepts masked output.
+All independent assertions PASS. Totals: 43 layer + 84 pipeline/Guard paths.
+
+DIRECTLY RELEVANT TESTS / REQUIRED GATES
+On audited SHA, backend:
+py -3 -m pytest tests/test_layers.py tests/test_audyt_2026_10.py -q
+208 passed, 10 xfailed (14.57s), no failures.
+py -3 -m pytest -q
+127 passed, 40 skipped, 1 xfailed (25.46s), no failures.
+Standard suite run once because brief explicitly requires it. Skipped/live-server paths are NOT_CHECKED, not claimed PASS.
+py -3 gate.py tasks/LYNX-EMAIL-LOCALPART-OCR/brief.md 5dd5c6ece1ebb511695c763524d5193f00a2b944 3fc5c7b05a40e1bbfaf3cad04fd91c659b76a181 backend_output.txt
+STATUS: PASS; scope/frozen lock/new files/ruff/size/ratio/total lines checks green.
+Whole Task production/test delta: 60 added, 0 removed, only the three declared files; production contact.py adds four lines. Gate did not require another size decision.
+where.py apply_contact_layer rerun; actual owner and sole regex consumer read at audited SHA. _EMAIL_OCR_RE is a module variable unsupported by symbol lookup, as already recorded in r2; no ownership change warrants repeating that unsupported query.
+git diff --check PASS.
+Warnings concern existing Python string escapes / pynvml deprecation; no new product defect demonstrated.
+
+LIMITATIONS / AUDIT BOUNDARY
+4+ separators and repeated localpart breaks remain explicitly accepted limitations with possible visible prefix; no claim of fixing the entire OCR class. Existing F3 canonicalization remains separate. These are not reopened blockers.
+Owner's latest operational context: severely degraded OCR documents are not intended for masking; this audit prioritizes the accepted normal OCR scope. The OCR rejection mechanism itself was not tested and is not certified by this PASS.
+No real documents read. Inputs are synthetic. No new benchmark run: the existing M1 sample does not cover this email form; retained prior benchmark evidence is supporting only. CC's 1980 sweep is supporting evidence, not the independent verdict.
+No merge authorized or performed. PASS applies to the exact implementation SHA above and the declared scope only.

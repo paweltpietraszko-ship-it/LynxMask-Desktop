@@ -587,3 +587,14 @@ def test_quality_profil_tylko_w_temp_i_sprzatany_przy_bledzie(tmp_path, monkeypa
     with patch.object(eq, "_engine_available", return_value=(False, "ImportError")), patch.object(eq.logging, "disable"):
         assert eq.main(["--out", str(tmp_path / "n.json")]) == 2  # brak NER: NOT_RUN, nie atrapa
     assert '"status": "NOT_RUN"' in (tmp_path / "n.json").read_text(encoding="utf-8")
+
+
+# LYNX-EMAIL-LOCALPART-OCR: „anna. nowak@…” w obu trybach jednym EMAIL, „anna.” niejawne, Przywróć znak w znak.
+@pytest.mark.parametrize("express", [False, True])
+def test_email_localpart_ocr_bez_jawnego_fragmentu(express):
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new, run_pipeline_express
+    text = "Kontakt: anna. nowak@example.pl. Termin płatności."
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = (run_pipeline_express if express else run_pipeline_new)(text, anon_map={})
+    assert out == "Kontakt: EMAIL_001. Termin płatności." and rev == {"EMAIL_001": "anna. nowak@example.pl"}
