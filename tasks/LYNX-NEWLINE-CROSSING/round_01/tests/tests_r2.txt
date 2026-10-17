@@ -1,0 +1,33 @@
+LYNX-NEWLINE-CROSSING — r2 — independent delivery audit
+Date: 2026-10-17
+VERDICT: FAIL — F1 / SAFETY_PRIVACY, new regression of single-phone OCR-newline handling.
+Exact implementation: 2619eabfc7382278b8e9111002ba1923625ba495
+Diff / gate base: cbfa3c1
+Recipient: CC / Architect
+Publication parent: 5827db3 (DELIVERY documentation only beyond implementation).
+
+F1 — one complete phone split by a newline loses masking and leaks in Express
+TRACE: frozen spec S1; brief "Defekt i granica" explicitly requires previously supported OCR-newline within ONE entity to retain protection, including phone/IBAN, and test point 3 requires these positives. No global numeric-newline prohibition was authorized to replace that distinction. A single ordinary OCR line break is not severely degraded OCR.
+OWNERSHIP: new contact.line_matches splits all numeric-pattern matching by newline, applied to every contact phone pattern and identity patterns; normalizer's phone body was also narrowed. This discards the only full phone match in the reproduced inputs. Existing unchanged downstream Guard is not asked to duplicate matching or create token maps; Express handler directly returns run_pipeline_express output and has no Guard pass in this path.
+REPRO on exact base and exact implementation: tests_r2_repro.py, same synthetic three single-phone inputs: bare local phone split after the first group, labelled phone split at that same position, and +48-prefixed split phone. Both pipeline modes on cbfa3c1 yield one complete token/map and exact restoration. On 2619eab both modes yield zero tokens/map and the raw phone groups remain; force_block=False.
+VERTICAL: tests_r2_vertical.py calls the real /preview-express file handler with a TXT UploadFile, real production extraction, isolated real AppState/Anonymizer, pipeline and result serialization; no production function/NER stub. On exact base all three return one token and no raw phone in anonymized_preview. On exact implementation all three return raw phone in anonymized_preview, zero tokens and blocked=False. This confirms a reachable user-facing output regression, not only an intermediate layer issue. Direct handler call includes a Request; no HTTP middleware/auth/UI claim is made.
+Full production wrapper with real AppState/validation/Guard also checked: on new SHA Guard replaces the missed phone with REDACTED text, but map remains empty. Do not call full-mode output a raw leak in these checked cases; it is lost tokenization/restoration. Express output is the confirmed unredacted leak. Guard REDACTED output is not successful pseudonymization under this brief.
+Required outcome: retain the named inter-entity repairs while restoring recognition/map for previously handled single-phone newline inputs. Keep the three retained sibling inputs and original independent-entity cases; no global parser or pipeline reorder requested. This report does not prescribe the algorithm or accept dropping phone OCR support.
+
+NAMED REPAIRS / EXTENSION REVIEW
+Independent exact-base comparison confirms repaired email/email, NIP/phone and PESEL/phone corruption, including reversed NIP/phone and labels. New SHA keeps two map entries/output tokens, inter-entity newline and no nested/orphan token in named cases. Exact restoration confirmed for ordinary unaffected inputs; labelled PESEL/phone still has pre-existing F3 canonicalization and is not falsely claimed raw-exact.
+Single email OCR-newline immediately before/after @ remains one EMAIL with prior canonical map/F3, both modes.
+CC E1 identity scope expansion was declared in 0729124 before code and addresses the same complete-identifier bug class. Source map supports that owner; no separate architectural objection. However, declaring a blanket numeric line policy does not override the explicit single-entity OCR-positive contract.
+
+AUDIT LAYERS / RESULTS
+- Full Task production/test diff read: contact/identity/normalizer + test_layers; no DOCX WIP changed/read as a delivery. No product code changed by auditor.
+- Independent real pipeline matrix: 11 cases x two modes on both exact SHAs. Own scripts emit case IDs and counts/booleans, not document values. Actual Express file-handler/full-wrapper vertical: three phone siblings on both SHAs; isolated temporary state, no real profile/document used.
+- Required where.py normalize_ocr/apply_contact_layer plus new line_matches inspected, including identity caller; actual source read.
+- Targeted tests/test_layers.py + tests/test_audyt_2026_10.py: initial 224 passed, 10 xfailed, one failure of the unchanged global-temp cleanup assertion. Another pre-existing/global lynx_quality_* directory was visible; do not delete unowned temp data or call this a product regression. Rerunning only that test with an isolated TEMP/TMP OUTSIDE repo passed (1 passed, 8.33s). An initial isolation attempt inside the checkout was correctly rejected by the runner's out-of-repo report guard; corrected externally without source changes. Targeted total verified: all 225 test cases pass across run + isolated retry, not claimed as one pristine aggregate invocation.
+- Standard suite once, required by brief: 129 passed, 40 skipped, 1 xfailed, 8 subtests passed (35.36s). Skipped/live paths NOT_CHECKED; green suite does not override F1.
+- Independent gate.py: PASS for cbfa3c1..2619eab. git diff --check PASS. No size decision requested.
+- Published CC line_pairs_sweep executed on both exact checkouts, same 132 ordered pairs x two modes, input digest d6adf771e4c46b2b: base 16 problems -> delivery 0. This checker/source is implementer evidence, executed independently as supporting comparison; it does not include the single-entity phone-newline positive and cannot prove its preservation. Historical exact 56-case set was not attached/recovered: NOT_CHECKED as an identical historical-set rerun, not conflated with the new fixed 132-case set.
+
+SCOPE / HANDOFF
+One blocker F1 only; preserve the successfully repaired inter-entity cases. Fix within declared owner boundaries, or seek a narrow contract amendment before an additional owner. No acceptance of a new privacy loss requested. Do not merge NEWLINE-CROSSING or unblock DOCX-TABLES on this verdict; DOCX remains a separate stopped WIP.
+No real PII or real document content used. Synthetic phone literals live only in retained repro code, prose does not reproduce them. No broad phone/IBAN/email sweeps repeated beyond the delivered paired input set and direct contract positives; no layout/DOCX WIP run, no new product subsystem, no merge authorized/performed.
