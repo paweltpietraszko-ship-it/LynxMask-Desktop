@@ -1,9 +1,6 @@
-STATUS: FAIL
-HEAD_SHA: faf8525bcf3590e59117697249564730f27840c2
+STATUS: PASS
+HEAD_SHA: 8d208455667023f9b141d9a79ecf18f109a310ff
 CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
-REASON:
-  - SIZE_FILE: backend/pseudominizer_api.py has 1124 lines (max 600, before 1123)
-  - SIZE_FUNC: backend/pseudominizer_api.py:profile_add_entity has 54 lines (max 50, before 53)
 IMPORTERS_FOR_REVIEW:
   - audyt\bench_offline.py
   - audyt\docs_variants.py

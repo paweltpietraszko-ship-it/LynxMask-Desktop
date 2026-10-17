@@ -1,7 +1,7 @@
 # LYNX-NER-GEO-EXACT — DELIVERY round_01
 
-BEFORE_SHA: `19083548c2771f49307c810c8ceaa92319a34839` · IMPLEMENTATION_SHA: `c9499dfebff1f1f3c64d50ad9733fc8d2b53ed19` (fix `4b9a935` + helper `c9499df`)
-Zmienione pliki (TASK_SCOPE): `backend/ner_blocklist.py`, `backend/ner_layer.py`, `backend/tests/test_audyt_2026_10.py`.
+BEFORE_SHA: `19083548c2771f49307c810c8ceaa92319a34839` · IMPLEMENTATION_SHA: `8d208455667023f9b141d9a79ecf18f109a310ff` (fix `4b9a935` + helper `c9499df` + rozszerzenie E1/E2 `faf8525`, `8d20845`)
+Zmienione pliki (TASK_SCOPE): `backend/ner_blocklist.py`, `backend/ner_layer.py`, `backend/tests/test_audyt_2026_10.py` + rozszerzenie CC: `backend/layers/ner_adapter.py`, `backend/pseudominizer_api.py`.
 
 ## Ocena briefu
 Zgodny z kodem; przyjęty. `where.py` (REQUIRED) — odbiorcy: `_load_geo_words` tylko `ner_blocklist.py:96`; `_GEO_WORDS` tylko `ner_layer` (`_is_person_word`); `_NER_BLOCKLIST` także `layers/ner_adapter.py:178` i `pseudominizer_api.py:762` — patrz Zgłoszenia. Dane: |ulica ∩ `_PERSON_FORMS`| = 649, z tego wyłącznie ulica (bez miasta/placówki/ręcznego wpisu) = **561** (audytowe 1008 liczyło przecięcie z całym geo, także z miastami). „Piątek”, „Zając” są miastami → nadal odrzucane. Morfeusz nie nadaje się do odsiewu słów pospolitych w tym zbiorze („Nowaka” ma kwalifikator `nazwa_pospolita`, „Kowalskiego” `nazwa_geograficzna`) — zgodnie z briefem decyduje konkretny słownik, nie Morfeusz.
@@ -18,24 +18,40 @@ Zgodny z kodem; przyjęty. `where.py` (REQUIRED) — odbiorcy: `_load_geo_words`
 - Pomiar FN/FP (`implementation/geo_measure.py`): próbka 40 form (co 14. z posortowanego `_STREET_ONLY_PERSON_FORMS`), te same formy w dwóch rozłącznych zdaniach syntetycznych, realny spaCy. Pozytyw „Wniosek {X} został przyjęty przez urząd.”: **FN 40 → 2** (2 pozostałe — spaCy nie rozpoznaje osoby; poza zakresem). Adres „Mieszka przy ul. {X} 7 w Radomiu.”: **FP (OSOBA w adresie) 0 → 0**. Bez deklaracji szczelności.
 - `test_audyt_2026_10.py`: `49 passed, 15 xfailed` (przed: 40 passed). Filtry T01 w `test_pseudominizer.py -k Filter`: 4 passed. Pełna suita (uruchomiona jako tani bezpiecznik, profil tymczasowy): `1 failed, 126 passed, 40 skipped, 1 xfailed` — jedyny FAIL IBAN-RECEPTA, jak na main. Benchmark nie uruchamiany (brief: tylko na wniosek audytu/OWNERA).
 
-## gate.py (stdout dosłownie)
+## gate.py (stdout dosłownie, finalny SHA)
 ```
 STATUS: PASS
-HEAD_SHA: c9499dfebff1f1f3c64d50ad9733fc8d2b53ed19
+HEAD_SHA: 8d208455667023f9b141d9a79ecf18f109a310ff
 CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
 IMPORTERS_FOR_REVIEW:
   - audyt\bench_offline.py
   - audyt\docs_variants.py
-  - backend\pseudominizer_api.py
+  - audyt\trace_layers.py
+  - backend\pipeline_new.py
+  - tasks\LYNX-T12-ARCHIVE-TESTS\round_01\implementation\t12_same_process.py
+  - tasks\LYNX-T12-ARCHIVE-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T10-BUILD-TS\round_01\implementation\header_capture.py
+  - tasks\LYNX-T03-TOKEN-ALLOC\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T02-CORS-EXPRESS\round_01\tests\tests_r4_repro.py
   - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r2_repro.py
   - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
-  - backend\layers\ner_adapter.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\implementation\geo_measure.py
+  - backend\tests\test_archive_adversarial.py
+  - backend\tests\test_pipeline_v2.py
   - backend\tests\test_pseudominizer.py
 EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-NER-GEO-EXACT/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-NER-GEO-EXACT/round_01/implementation/gate.txt
+  - tasks/LYNX-NER-GEO-EXACT/round_01/implementation/geo_measure.py
+  - tasks/LYNX-NER-GEO-EXACT/round_01/implementation/geo_vertical.py
   - tasks/LYNX-NER-GEO-EXACT/round_01/tests/tests_r2.txt
+  - tasks/LYNX-NER-GEO-EXACT/brief.md
 ```
-Pierwszy przebieg (`4b9a935`): FAIL `SIZE_FUNC _filter_institutions 74 (before 72)` → naprawione helperem w `c9499df`.
+Wcześniejsze przebiegi: `4b9a935` FAIL `SIZE_FUNC _filter_institutions 74 (before 72)` → helper w `c9499df` (PASS); `faf8525` FAIL `SIZE_FILE pseudominizer_api.py 1124 (before 1123)` + `SIZE_FUNC profile_add_entity 54 (before 53)` → warunek E2 w jednej linii w `8d20845` (PASS).
 
-## Zgłoszenia (nie wykonane, poza TASK_SCOPE)
-- **Ta sama klasa wycieku w inicjałach:** `layers/ner_adapter.py:178` `_apply_initials` odrzuca „K. Kowalskiego” gdy nazwisko ∈ `_NER_BLOCKLIST` (zawiera ulice) → inicjał + nazwisko-z-ulicy zostaje jawne. Naturalna poprawka: ten sam `_STREET_ONLY_PERSON_FORMS`.
-- **Dodawanie do słownika:** `pseudominizer_api.py:762` odmawia dodania „Kowalskiego” jako słowa pospolitego (bo jest w blockliście przez ulice) — użytkownik nie może ręcznie dopisać takiego nazwiska.
+## Rozszerzenie CC — wykonane (brief, sekcja „ROZSZERZENIE CC”, commit `7452a1e` przed kodem)
+Zasada Pawła 2026-10-17: ta sama klasa błędu naprawiana na tej samej gałęzi z jawnym rozszerzeniem briefu; oba pliki dopisane do TASK_SCOPE.
+- **E1** `layers/ner_adapter.py::_apply_initials`: nazwisko ∈ `_STREET_ONLY_PERSON_FORMS` nie jest pomijane przez blocklistę. Reproduktor przed: z wyłączonym spaCy „Zgoda K. Nowaka na zabieg.” bez zmian (jawne); po: `{OSOBA_001: "K. Nowaka"}`. Z realnym spaCy te zdania były maskowane już wcześniej (przez NER) — E1 domyka warstwę zapasową.
+- **E2** `pseudominizer_api.py::profile_add_entity`: blocklista nie odrzuca formy ∈ `_STREET_ONLY_PERSON_FORMS`, tylko dla `token_type == "OSOBA"`. Stop-words, miasta, placówki, ręczna blocklista i inne typy — bez zmian.
+- Testy: `test_inicjal_z_nazwiskiem_z_ulicy_bez_spacy`; `test_profil_dodaje_nazwisko_z_ulicy` ×3 (Kowalskiego/OSOBA → 200 i zapis; Radom/OSOBA → 400; Kowalskiego/FIRMA → 400; profil podmieniony atrapą, bez lifespanu). Na kodzie sprzed E1/E2: 2 failed (oba pozytywy), negatywy zielone.
+- Po rozszerzeniu: `test_audyt_2026_10.py` `53 passed, 15 xfailed`; pełna suita `1 failed (IBAN-RECEPTA), 126 passed, 40 skipped, 1 xfailed`.
