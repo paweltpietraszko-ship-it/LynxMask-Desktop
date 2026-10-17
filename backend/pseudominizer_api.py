@@ -759,8 +759,7 @@ async def profile_add_entity(request: Request):
         from spacy_ner import _PL_STOPWORDS
     except Exception:
         _PL_STOPWORDS = set()
-    street_person = token_type == "OSOBA" and text.lower() in _STREET_ONLY_PERSON_FORMS  # [LYNX-NER-GEO-EXACT] E2
-    if (text.lower() in _NER_BLOCKLIST and not street_person) or text.lower() in _PL_STOPWORDS:
+    if (text.lower() in _NER_BLOCKLIST and not (token_type == "OSOBA" and text.lower() in _STREET_ONLY_PERSON_FORMS)) or text.lower() in _PL_STOPWORDS:  # [LYNX-NER-GEO-EXACT] E2: nazwisko z nazwy ulicy
         return JSONResponse(
             {"error": f"Słowo pospolite lub skrót systemowy: {text!r}"},
             status_code=400,
