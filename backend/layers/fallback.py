@@ -14,27 +14,23 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pipeline_core import PipelineState, TokenAllocator
 
 _FALLBACK_RE = re.compile(r"(?<!\d)\d{8,}(?!\d)")
+# [LYNX-T07] Resztka ≥15 cyfr łącznie, z pojedynczymi spacjami/tabami/myślnikami między cyframi, jako JEDNA wartość
+# (także z przyklejonym prefiksem kraju „PL61…”). Bez przejścia przez newline, interpunkcję, wyraz ani token.
+_LONG_NUMBER_RE = re.compile(r"(?<!\w)(?:[A-Z]{2}(?=\d{2}))?\d(?:[ \t-]?\d){14,}(?!\w)")
 
 
-def apply_fallback_layer(state: PipelineState) -> None:
-    """Maskuje ciągi 8+ cyfr które przeżyły wszystkie wcześniejsze warstwy."""
-    hits: list[tuple[int, int, str]] = [
-        (m.start(), m.end(), m.group(0))
-        for m in _FALLBACK_RE.finditer(state.text)
-    ]
-
-    hits.sort(key=lambda x: x[0], reverse=True)
-
-    text = state.text
-    for start, end, value in hits:
-        if state.allocator.is_occupied(start, end):
-            continue
-        tid = state.allocator.allocate("NUMER", value, start, end)
-        if tid is None:
-            continue
-        text = text[:start] + tid + text[end:]
-
-    state.text = text
+def apply_fallback_layer(state: PipelineState, full: bool = True) -> None:
+    """Ostatnia warstwa: całe resztki ≥15 cyfr (oba tryby), w pełnym trybie także ciągi 8+ cyfr."""
+    for pattern in (_LONG_NUMBER_RE, _FALLBACK_RE) if full else (_LONG_NUMBER_RE,):
+        hits = sorted(((m.start(), m.end(), m.group(0)) for m in pattern.finditer(state.text)), reverse=True)
+        text = state.text
+        for start, end, value in hits:
+            if state.allocator.is_occupied(start, end):
+                continue
+            tid = state.allocator.allocate("NUMER", value, start, end)
+            if tid is not None:
+                text = text[:start] + tid + text[end:]
+        state.text = text
 
 
 # ─────────────────────────────────────────────────────────────────────────────

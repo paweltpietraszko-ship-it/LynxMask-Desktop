@@ -102,9 +102,9 @@ def run_pipeline_new(
         _apply(state, apply_address_layer)
         _apply(state, apply_ner_layer, anon_map)
         _apply(state, apply_institution_layer)
-        _apply(state, apply_fallback_layer)
         if anonymizer is not None:
             _apply(state, apply_validation_layer, anonymizer)
+        _apply(state, apply_fallback_layer)  # [LYNX-T07] ostatnia warstwa — po wszystkich rozpoznających
 
         force_block = getattr(state, "ner_error", False)
         if force_block:
@@ -147,6 +147,7 @@ def run_pipeline_express(
         _apply(state, apply_verbal_amount_layer)
         _apply(state, apply_address_layer)
         _apply(state, apply_institution_layer)
+        _apply(state, apply_fallback_layer, False)  # [LYNX-T07] tylko resztki ≥15 cyfr, bez 8–14 pełnego trybu
         return state.text, state.allocator.reverse_map, False
 
     except Exception as e:
