@@ -40,5 +40,5 @@ WHERE_MAP:
 - TARGETS: backend/tests/test_engine_quality_layout.py
 - REASON: odróżnić utratę granic na etapie ekstrakcji PDF od braku rozpoznania w silniku.
 
-ZALEŻNOŚĆ: NEWLINE-CROSSING oczekuje audytu; precheck ZUS może odbyć się równolegle, ale implementację/pełny pion należy sprawdzić względem nowego main po jego rozstrzygnięciu. DOCX-TABLES WIP pozostaje STOP. Bez merge.
+ZALEŻNOŚCI / AKTUALNY MAIN (2026-10-17): NEWLINE-CROSSING jest MERGED (impl 61ef3a84d54b17eee6bbe89ffb464453a8c46f89); DOCX-TABLES jest MERGED (impl 57e39fbb6e30cccdce87103b9f72f066c4126c2a). Odpadają wcześniejsze blokady. Codex precheck niniejszego briefu na aktualnym main, potem CC wykonuje odrębny wąski Task. Najpierw przypadek jawnego PESEL w kratkach; NIP w tym samym zakresie tylko jeśli potwierdzono identyczne źródło/granice ekstrakcji, w przeciwnym razie oddzielny finding. Zestaw 70 pól jest dawnym baseline, nie dowodem nowego pomiaru po ostatnich merge'ach. Bez merge bez zgody OWNER.
 GATE: 0 nowych plików, >150 linii lub ratio >5:1 = WYMAGA_DECYZJI. Codex najpierw BRIEF_ONLY i analiza własności źródła, nie implementacja.
