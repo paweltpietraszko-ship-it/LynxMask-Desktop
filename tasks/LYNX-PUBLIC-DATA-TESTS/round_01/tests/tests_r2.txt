@@ -1,0 +1,34 @@
+LYNX-PUBLIC-DATA-TESTS — stage 1 — independent delivery audit r2
+Date: 2026-10-17
+VERDICT: FAIL — one closed functional finding F1 (measurement false positive, not an observed PII leak).
+Exact implementation: d7a08689af663f422e8ed7e3cb1d5a204e3b46f3
+Diff base / brief: b074fa69793ce169a898dfdb2d479c899f211a22
+Recipient: Architect / CC
+Publication parent: 23298aa (delivery documentation and implementation/gate.txt only relative to audited SHA).
+No product code modified by auditor; no merge authorized or performed.
+
+F1 [P2] — an unread table occurrence is reported masked if its value occurs in a paragraph
+TRACE: brief goal requires checking ALL labelled fields reaching masking; minimal measurement points 2–3 prohibit counting a field not extracted as masked and require EXTRACTION_UNVERIFIED when missing/changed cannot be reliably distinguished. PASS explicitly says EXTRACTION_MISSING must never become false PASS. Precheck r1 also recorded that a value found elsewhere cannot prove a particular cell survived.
+OWNERSHIP: new engine_quality._layout_doc, lines 257–263, uses only global string membership (v in text) and repeats classify_m1 for each manifest field. in_table is a report label, not evidence that this occurrence was extracted. It is the layout runner's responsibility to avoid a false extraction/masking claim; no production extractor fix is requested.
+REPRO: tests_r2_repro.py asserts exact audited SHA; generates one synthetic DOCX paragraph and one table cell containing the SAME synthetic email, with two manifest field entries (one in_table=True). Actual production _extract_text returns only the paragraph, with exactly one occurrence; the cell is absent. Actual production pipeline/NER/Guard masks that occurrence. Delivered measure_layout reports docx/tekst masked=1 AND docx/tabela masked=1, status OK, M3 identical. This falsely certifies the unread cell.
+CONTROL: identical document structure with a distinct synthetic cell value yields docx/tabela EXTRACTION_MISSING=1 and paragraph masked=1. Output contains no values or filenames. Thus the error is loss of field-occurrence independence, not missing dependencies or a substitute pipeline.
+Impact: this runner can miss extraction failures in ordinary forms repeating the same email/name/identifier across paragraph and table. It does not demonstrate a new production leak. M3 on extracted text cannot prove recovery of a cell absent before masking.
+Required outcome: repeated/ambiguous values must not produce a verified masked result for an unproven occurrence. Preserve the original reproducer and cover this field-ambiguity class; use the brief's uncertainty/non-success handling or explicitly reject an insufficient key. No new locator platform, extractor change, parser or annotation subsystem is demanded. This report does not prescribe implementation architecture.
+
+INDEPENDENT EVIDENCE / AUDIT LAYERS
+1. Narrow diff inspected: optional runner path + new test file only. Production extractor/pipeline/Guard unchanged. Existing classify_m1/M3 semantics reused; no new product behavior needing Owner approval found. Required where.py main/measure/_extract_text run and actual relevant calls inspected.
+2. tests_r2_repro.py: real DOCX -> production extraction -> production pipeline with actual dependencies -> layout classification/M3; both named reproduction and unique-value control independently confirmed. No NER or extractor stub.
+3. tests_r2_evidence.py: independent execution on the existing local official-template synthetic sample (no content/values printed): 2 documents measured, 7 fields, 0 not-run; DOCX/table 3 EXTRACTION_MISSING, DOCX/text 1 masked, PDF/text 3 masked; both M3 identical. These results agree with CC but do not cover F1. The local samples are CC-prepared; web provenance, full blank-file hashes and eligibility were not independently re-downloaded/re-certified during this narrow code audit.
+4. Old CLI equivalence: base runner source loaded directly from git show b074fa6; both old and delivered main run with identical seed=2026 and identical small independent synthetic holdout. Entire JSON equal after removing date/git_sha; input_digest fc941ec8dc999b86. build_cases equal. No layout used for this comparison. Temporary profiles/reports cleaned. This is not a claim to rerun CC's unspecified larger holdout.
+5. Targeted:
+   py -3 -m pytest tests/test_engine_quality_layout.py tests/test_audyt_2026_10.py -k "layout or quality" -q
+   8 passed, 136 deselected, 15.99s.
+6. Standard suite once, explicitly required by brief:
+   py -3 -m pytest -q
+   129 passed, 40 skipped, 1 xfailed, 8 subtests passed, 26.14s. Skipped/live paths NOT_CHECKED. Existing expected failure is not a new regression. Green implementer/standard tests do not override F1's independent evidence.
+7. Independent gate.py on exact SHA: WYMAGA_DECYZJI only RATIO 137/1=137:1. All other gate checks green; diff --check passes; frozen spec hash equals 30027f2f65c7e75e77142fd44f0cba166adf49e238467e82b8b73cb52eed3856. This Task's size decision remains pending: earlier IBAN line-count approval is not generalized to this task. Do not confuse the ratio decision with F1 or inflate the code to manipulate ratio; reassess on corrected delivery.
+
+SCOPE / HANDOFF
+One functional blocker F1 only. Keep stage 1 scope: official layouts + synthetic values, measurement rather than extractor repair. Existing DOCX table omission remains correctly discovered on the unique-value sample; no repair of that production issue is part of this audit.
+No real document values, original filenames, manifest contents or extracted text printed to tools/reports. Only synthetic reproducer code and numeric sample results retained. No new benchmark beyond explicit old-runner equivalence; no HTTP/UI/AcroForm/OCR-scan certification.
+CC should correct only the unreliable per-field success claim and retain both repro/control, then submit a new exact SHA. A narrow recheck should reuse this evidence; no automatic repeat of all repository tests unless change scope/risk or explicit contract requires it.
