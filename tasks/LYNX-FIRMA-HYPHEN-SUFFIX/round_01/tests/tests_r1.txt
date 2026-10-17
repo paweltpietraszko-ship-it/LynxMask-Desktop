@@ -1,0 +1,11 @@
+LYNX-FIRMA-HYPHEN-SUFFIX — r1 — BRIEF_ONLY
+2026-10-17 | PASS PREIMPLEMENTATION
+Exact brief: c8f3a92340314f3d080ca35c900a3cb60cbab1df
+Recipient: Architect / CC
+Scope: current Task BOARD row, brief, unchanged agent rules and one targeted lookup of named NER/adapter seams. Frozen S1–S5 and accepted prior decisions retained. No tests, reproducer, local sample or implementation diff run/read. Historical 3 leak + 2 partial is not independently re-certified here.
+
+Contract is testable: whole FIRMA including legal form, complete source map and exact restoration on non-normalized inputs; two firms, punctuation, suffix alone, institution/header/adjective negatives and Full with actual NER distinguish correctness from a mock success. Express policy/Guard/token format remain unchanged.
+Existing _process_ner with suffix completion and apply_ner_layer with cleanup are plausible owners; their declarations/source were inspected. No proof yet which stage owns each reported case. CC starts with Krok 0, retaining RED stage trace; no useful SpaCy fragment or different owner -> STOP/contract correction, not a global company regex.
+Minimal responsibilities: preserving a detected complete company span and legal form follows S1 + Task whole-value/map requirement; necessity is to avoid partial leak or irreversible cleanup. Reuse existing NER/adapter, no second detector/filter broadening. Existing test_layers owns direct regressions; no new runtime subsystem required.
+No blocking contract gap found for this staged diagnosis/conditional repair. Implementation may follow only the specified source/ownership proof; optional same-five-field sample check must be labelled NOT_RUN if unavailable. Full suite/WHERE_MAP/gate are delivery obligations, not precheck actions. Prior size approvals do not transfer.
+PASS covers brief readiness only, not identification of the actual cause, code, five-field repair or merge. No product code changed or real data read. Audit intentionally narrow per Owner's limit request.
