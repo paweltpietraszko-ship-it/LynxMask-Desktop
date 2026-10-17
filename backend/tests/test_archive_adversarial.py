@@ -18,22 +18,84 @@ Pokrycie:
 """
 
 import unittest
-import asyncio
 import base64
-import json
+import gc
+import os
 import sys
 import pathlib
+import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-# Testy wymagają httpx i działającego serwera — używamy TestClient FastAPI
+# [LYNX-T12] Import API inicjalizuje archiwum (ARCHIVE_DIR z env, db_store.init) — przy pierwszym
+# imporcie kierujemy je do katalogu tymczasowego, żeby nie dotknąć backend/archive użytkownika.
+_IMPORT_TMP = None
+if "pseudominizer_api" not in sys.modules:
+    _IMPORT_TMP = tempfile.TemporaryDirectory(prefix="lynx_t12_import_")  # sprząta finalizer przy wyjściu
+    _old_env = os.environ.get("ARCHIVE_DIR")
+    os.environ["ARCHIVE_DIR"] = _IMPORT_TMP.name
 try:
     from fastapi.testclient import TestClient
-    from pseudominizer_api import app, MAPS_DIR, DB_PATH, _init_db
+    import db_store
+    import pseudominizer_api as api
     _API_AVAILABLE = True
 except ImportError as e:
     _API_AVAILABLE = False
     _IMPORT_ERROR = str(e)
+finally:
+    if _IMPORT_TMP is not None:
+        if _old_env is None:
+            os.environ.pop("ARCHIVE_DIR", None)
+        else:
+            os.environ["ARCHIVE_DIR"] = _old_env
+
+_TEST_TOKEN = "t12-" + "0" * 60  # syntetyczny, pełna długość jak token z _lifespan()
+_GLOBALS = ("ARCHIVE_DIR", "MAPS_DIR", "DB_PATH", "_API_TOKEN")
+_saved: dict = {}
+_tmp = None
+
+
+def _restore() -> None:
+    global _tmp
+    for name, value in _saved.pop("api", {}).items():
+        setattr(api, name, value)
+    if "db" in _saved:
+        db_store._DB_PATH = _saved.pop("db")  # tylko atrybut — nigdy init() na bazie produkcyjnej
+    if _tmp is not None:
+        gc.collect()  # db_store używa `with sqlite3.connect()` (bez close) — Windows trzyma plik do GC
+        _tmp.cleanup()
+        _tmp = None
+
+
+def setUpModule():
+    """Każde uruchomienie: świeże archiwum tymczasowe (SQLite + .enc) i testowy token, także gdy API było już zaimportowane."""
+    global _tmp
+    if not _API_AVAILABLE:
+        return
+    _saved["api"] = {name: getattr(api, name) for name in _GLOBALS}
+    _saved["db"] = db_store._DB_PATH
+    try:
+        _tmp = tempfile.TemporaryDirectory(prefix="lynx_t12_")
+        root = pathlib.Path(_tmp.name).resolve()
+        api.ARCHIVE_DIR, api.MAPS_DIR, api.DB_PATH = root, root / "mapy", root / "rejestr.db"
+        api.MAPS_DIR.mkdir()
+        db_store.init(api.DB_PATH)
+        api._API_TOKEN = _TEST_TOKEN
+        for path in (api.MAPS_DIR, api.DB_PATH, db_store._DB_PATH):
+            if root not in pathlib.Path(path).resolve().parents:
+                raise RuntimeError(f"[LYNX-T12] archiwum poza katalogiem tymczasowym: {path}")
+    except BaseException:
+        _restore()
+        raise
+
+
+def tearDownModule():
+    _restore()
+
+
+def make_client(host: str = "127.0.0.1:8765", token: str | None = _TEST_TOKEN) -> "TestClient":
+    """Klient z dozwolonym Host i pełnym tokenem; bez `with` — nie uruchamia produkcyjnego lifespan."""
+    return TestClient(app=api.app, base_url=f"http://{host}", headers={"X-Api-Token": token} if token else None)
 
 
 def make_valid_blob() -> str:
@@ -46,8 +108,7 @@ class TestArchiveSave(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        _init_db()
-        cls.client = TestClient(app)
+        cls.client = make_client()
 
     def test_d1_valid_save(self):
         """Poprawny zapis — 200 + ok:True."""
@@ -141,8 +202,7 @@ class TestArchiveRead(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        _init_db()
-        cls.client = TestClient(app)
+        cls.client = make_client()
         # Zapisz jeden dokument do testów odczytu
         cls.client.post("/archive", json={
             "pse": "PSE-2026-9010",
@@ -189,8 +249,7 @@ class TestArchiveDelete(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        _init_db()
-        cls.client = TestClient(app)
+        cls.client = make_client()
         cls.client.post("/archive", json={
             "pse": "PSE-2026-9020",
             "filename": "do_usuniecia.txt",
@@ -225,8 +284,7 @@ class TestArchiveReencrypt(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        _init_db()
-        cls.client = TestClient(app)
+        cls.client = make_client()
         cls.client.post("/archive", json={
             "pse": "PSE-2026-9030",
             "filename": "reencrypt_test.txt",
@@ -256,6 +314,17 @@ class TestArchiveReencrypt(unittest.TestCase):
         """Pusta lista blobów — 400."""
         r = self.client.post("/archive/reencrypt", json={"blobs": []})
         self.assertEqual(r.status_code, 400)
+
+
+@unittest.skipUnless(_API_AVAILABLE, "pseudominizer_api niedostępna")
+class TestArchiveAuthGate(unittest.TestCase):
+    """[LYNX-T12] Brama T02 pozostaje fail-closed: testy walidacji nie mogą przechodzić na 400 Host / 401 tokenu."""
+
+    def test_missing_token_401(self):
+        self.assertEqual(make_client(token=None).get("/archive").status_code, 401)
+
+    def test_foreign_host_400(self):
+        self.assertEqual(make_client(host="evil.example:8765").get("/archive").status_code, 400)
 
 
 if __name__ == "__main__":
