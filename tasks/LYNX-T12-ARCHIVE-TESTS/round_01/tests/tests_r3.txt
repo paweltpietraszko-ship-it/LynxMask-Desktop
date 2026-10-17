@@ -1,0 +1,25 @@
+ZAMKNIĘCIE WĄSKIEGO AUDYTU — LYNX-T12-ARCHIVE-TESTS
+Data: 2026-10-17
+Exact SHA implementacji: c96199b00028f7ce7b06ba1c77d51834a3242fec
+Rozstrzygnięcie Architekta: 69b3bc93511450efded212a0ca4721f13ea86a4a
+Wynik: PASS wyłącznie dla powyższego SHA i zakresu T12.
+
+B1 zamknięte: architect_decision.md dopuszcza wyłącznie bootstrap
+pierwszego importu w TEMP do końca procesu; właściwa fixture jest
+sprzątana po module i po błędzie. Granica zgodna z dowodem r2.
+B2 zamknięte: zaakceptowano jednorazowy RATIO 81/12 = 6,8:1 dla tego
+diffu. Surowy wynik gate pozostaje WYMAGA_DECYZJI; nie zmieniono narzędzia.
+To techniczne rozstrzygnięcia Architekta, nie nowa decyzja produktowa OWNERA.
+
+git diff c96199b 69b3bc9 -- backend frontend jest pusty.
+Zachowano dowody tests_r2.txt / a9d02a7: moduł 19/19, dwa przebiegi
+w obu kolejnościach importu, sentinel/global state/cleanup błędów
+zielone; bootstrap znika po procesie. Pełna suita: 126 passed,
+1 znany FAIL IBAN-RECEPTA, 40 skipped, 1 xfailed; bez nowej regresji.
+Nie powtarzano testów ani suity po samej decyzji.
+
+Osobne ryzyko z decyzji: inne moduły mogą inicjalizować archiwum przy
+imporcie API. Było już zgłoszone w DELIVERY; nie jest nowym blockerem
+T12. PASS jednego modułu nie potwierdza izolacji całej suity i nie
+zamyka tego ryzyka. Wymaga osobnego zakresu, nie rozszerzenia T12.
+Bez zmian kodu produktu i bez merge; merge tylko na polecenie OWNERA.

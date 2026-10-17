@@ -1,0 +1,59 @@
+WĄSKI AUDYT DOSTAWY — LYNX-T12-ARCHIVE-TESTS
+Data: 2026-10-17
+Exact SHA: c96199b00028f7ce7b06ba1c77d51834a3242fec
+BEFORE: 0da298d4802306694065cab464583916fcacd571
+Wynik: WYMAGA_DECYZJI — zamknięta lista dwóch punktów poniżej, nie FAIL.
+Sprawdzone działanie fixture, izolacja i regresja są zielone.
+
+PRODUCT_TRUTH: brief T12, spec S3/S5/S6. Zmieniono wyłącznie
+backend/tests/test_archive_adversarial.py, produkt bez zmian.
+TECHNICAL_ONLY: setup/teardown testów, pełny syntetyczny token i Host,
+izolacja SQLite/.enc. Brak nowego zachowania produktu do akceptacji OWNERA.
+
+NIEZALEŻNE SPRAWDZENIA NA EXACT SHA
+1. Moduł: py -3 -m pytest tests/test_archive_adversarial.py -q
+   -o log_file=NUL -> 19 passed (17 zachowanych + 2 bramy), 2.53 s.
+2. tests_r2_repro.py: pierwszy import API oraz API zaimportowane wcześniej.
+   W każdym trybie 2x19 testów w tym samym procesie -> zielone.
+   MAPS_DIR, DB_PATH i aktywny db_store wskazują katalog tymczasowy;
+   API/archive globals i token odtworzone; katalog właściwej fixture
+   usunięty. Syntetyczny sentinel i pliki archiwum nie zmieniają sygnatur.
+3. Wymuszony wyjątek setupu PO rzeczywistym init tymczasowej bazy oraz
+   wymuszona porażka ciała testu: cleanup i odtworzenie globali zielone.
+4. Kryterium pełnej suity jawnie wymaga brief, więc uruchomiono ją RAZ
+   na końcowym SHA, z tymczasowym profilem/archiwum/rejestrem i log_file=NUL:
+   1 failed, 126 passed, 40 skipped, 1 xfailed (20.86 s).
+   Jedyny FAIL: TestIbanWithSpace.test_iban_reverse_map_entry — znany
+   IBAN-RECEPTA, poza T12; nie jest nową regresją i nie zmieniano testu.
+5. Rodzic podprocesu potwierdził: bootstrap istnieje po module,
+   lecz nie istnieje po zakończeniu procesu. Finalizer działa.
+
+DO ROZSTRZYGNIĘCIA PRZEZ ARCHITEKTA — JEDNA LISTA
+B1. Termin cleanupu bootstrapu pierwszego importu.
+TRACE: brief Zachowanie: "Po zakończeniu nie zostaje plik testowy";
+kryterium 4: "po cleanup brak plików", katalog tylko przez test.
+OWNERSHIP: zmieniony moduł tworzy _IMPORT_TMP i utrzymuje go do końca
+procesu; _restore usuwa wyłącznie _tmp właściwego przebiegu.
+REPRO: tests_r2_repro.py first -> po tearDownModule pozostaje rejestr.db
+w _IMPORT_TMP; przy wcześniejszym imporcie API takiej pozostałości nie ma.
+Po wyjściu podprocesu katalog znika (osobno potwierdzone).
+Nie stwierdzono dotknięcia prawdziwych danych ani pozostałości po procesie.
+Nie wystawiam FAIL: kontrakt wymaga doprecyzowania, czy "po zakończeniu"
+oznacza moduł, czy proces testowy. CC jawnie opisuje tę różnicę w DELIVERY.
+Rekomendacja: zaakceptować procesowy lifetime pomocniczej, początkowej
+bazy importu, by przywracane globale API nie wskazywały usuniętej ścieżki;
+właściwe SQLite/.enc testów nadal muszą znikać po każdym module/błędzie.
+To korekta granicy kontraktu technicznego, nie decyzja o produkcie.
+
+B2. Formalny gate RATIO: 81/12 = 6.8:1 przy progu 5:1.
+Pozostałe kontrole gate CC bez uwag; nie poszerzono TASK_SCOPE.
+Rekomendacja: zaakceptować uzasadnione przekroczenie. Nie usuwać
+wymaganych testów 401/400 ani zabezpieczeń cleanupu dla samej proporcji.
+
+Po rozstrzygnięciu B1/B2 bez zmiany kodu wystarczy wąsko zamknąć raport;
+nie ma potrzeby ponawiania zielonych testów ani pełnej suity.
+Przy zmianie implementacji zweryfikować wyłącznie dotknięty cleanup.
+Bez benchmarku, zmian produktu, danych rzeczywistych i merge.
+Reproduktor: py -3 tasks/LYNX-T12-ARCHIVE-TESTS/round_01/tests/tests_r2_repro.py
+  first | prior (dwa osobne uruchomienia). Używa wyłącznie syntetycznego
+archiwum/sentinela w TEMP, bez odczytu archiwum użytkownika.
