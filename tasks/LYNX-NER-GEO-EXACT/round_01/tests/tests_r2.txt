@@ -1,0 +1,19 @@
+LYNX-NER-GEO-EXACT — narrow brief recheck r2
+Stage: BRIEF_ONLY_PRECHECK; recipient: Architect.
+Audited SHA: 19083548c2771f49307c810c8ceaa92319a34839
+Diff base: e0356d17ac19a0d6e67d1a47d31b9b643c55c10a
+Verdict: PASS PREIMPLEMENTATION (B1 closed).
+
+Scope: only B1 from tests_r1.txt and the corrective brief delta.
+Evidence: tasks/LYNX-NER-GEO-EXACT/brief.md, negative case 2,
+PASS criterion (b), and the B1 correction note at the audited SHA.
+The brief now identifies the payment-word FP as an existing baseline,
+explicitly excludes fixing it from GEO-EXACT, and does not treat its
+continued occurrence as a new regression. Existing protected negatives
+retain their previous expectations. The exact/strict scope and TASK_SCOPE
+are unchanged. The sole contract gap from r1 is therefore resolved.
+
+No implementation audit, tests, reproducer, build, benchmark or where.py
+was run: this delivery changes the brief only. Earlier precheck evidence
+is retained. This verdict authorizes implementation against this brief;
+it does not certify product behavior or any later implementation SHA.
