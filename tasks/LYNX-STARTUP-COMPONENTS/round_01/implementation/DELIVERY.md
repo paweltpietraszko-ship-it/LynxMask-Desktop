@@ -105,3 +105,28 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 389 lines changed (threshold 150)
 ```
 Dodanych linii jest 307 (294 + 13). Wzrost ponad zgodę na 290 wynika z polecenia Pawła; usuniętych linii przybyło 40. RATIO już nie jest zgłaszane.
+
+---
+
+# DELIVERY r3 (CC) — odpowiedź na OWNER_DECISION_NEEDED z audytu r3 (`4829e8c`)
+
+Kod: `72f9a81`. Diff względem r2 (`d827862`): `CrashScreen.tsx` +3/−2.
+
+Paweł (na pytanie, czy ekran ma tylko uczciwie opisać ponowienie, czy przycisk ma restartować silnik): „Mamy i tak idiotyczną sytuację, że nie mogę prosto włączyć aplikacji front/backend jednocześnie i restart całej apki by się przydał. Ale … możemy to odłożyć na później, rób jak uważasz.”
+
+## Zmiana
+- Punkt 1 sekcji „Co zrobić”: „Zamknij aplikację i silnik LynxMask, a potem uruchom je ponownie.” Wcześniej było „Kliknij «Uruchom ponownie»”, czego Codex słusznie nie uznał za skuteczne odzyskanie pracy.
+- Przycisk zmienił nazwę z „Uruchom ponownie” na „Spróbuj ponownie”, a jego działanie się nie zmieniło: `restart_app` restartuje okno. Przydaje się, gdy silnik ruszył później niż aplikacja (`STARTUP-NO-RESPONSE`). Komentarz w pliku opisuje to ograniczenie.
+- Wspólne uruchamianie aplikacji z silnikiem i restart całości: osobny wiersz BOARD `LYNX-APP-LAUNCHER` (poza tym Taskiem, zgodnie z uwagą Codexa „nie rozszerzać o budowę launchera”).
+
+## Testy
+`tsc --noEmit` 0 błędów. Wygląd: NOT_RUN, do oceny okiem Pawła po `npm run tauri build`.
+
+## Gate r3 (dosłownie, bez list)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 72f9a81850234d56bde77f8086de636daff3fb42
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 392 lines changed (threshold 150)
+```
