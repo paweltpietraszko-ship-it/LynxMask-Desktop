@@ -12,7 +12,9 @@ PRODUCT_TRUTH: arch/spec.md S1, S2 (wierność: wynik odpowiada całemu dokument
 - Wydajność silnika bez limitu (pełny tryb, prawdziwy SpaCy, pusty profil, CPU Pawła): 52–63 tys. znaków 1,8–2,6 s; 76–114 tys. 2,7–4,0 s; 186 tys. 11,2 s, 162 unikalne tokeny (limit `MAX_TOKENS_PER_REQUEST` = 500). Limit wydajnościowy 15 tys. nie jest dziś potrzebny.
 - Istniejące twarde limity niżej w łańcuchu: `MAX_FILE_BYTES` 5 MB (plik), `anonymizer_init.INPUT_LIMIT_BYTES` 500 000 B (ValueError w `anonymize`), `MAX_TOKENS_PER_REQUEST` 500 (ValueError); oba ValueError dają dziś w `pipeline.py` blokadę prewencyjną („anonymizer blad … BLOKADA”) — jawną, ale bez czytelnego powodu dla użytkownika. `MAX_BLOB_BYTES` 512 KB dotyczy archiwum.
 
-## Wymagane zachowanie (propozycja CC; kierunek „cały dokument” do potwierdzenia przez Pawła przed implementacją)
+## Wymagane zachowanie
+
+Paweł 2026-10-18: „Limit musi być zdjęty, od ciebie zależy kiedy”. CC: **teraz, w K0, przed zmianą S4** — ciche obcięcie to ukryta utrata treści (gorsza niż jawna blokada), a pomiar K1 wymaga całych dokumentów; wzrost blokad mierzony przed/po jako materiał dla LYNX-SPEC-S4-GUARD-WARN.
 
 1. `/preview` i `/preview-express` przetwarzają **cały** wyekstrahowany tekst. Brak cichego obcięcia w jakimkolwiek miejscu.
 2. Jedna górna granica długości, egzekwowana **jawnie przed pipeline**: tekst powyżej granicy → odpowiedź z czytelnym błędem dla użytkownika (np. „Dokument jest za długi (N znaków, limit M). Podziel go na części.”), `blocked`/kod HTTP spójny z istniejącymi błędami wejścia, bez częściowego wyniku. Wartość M = istniejący `INPUT_LIMIT_BYTES` przeliczony na znaki albo stała w API — do ustalenia w precheck; nie wolno wprowadzić wartości niższej niż najdłuższy dokument zbioru (186 tys.) bez uzasadnienia pomiarem.
@@ -22,7 +24,7 @@ PRODUCT_TRUTH: arch/spec.md S1, S2 (wierność: wynik odpowiada całemu dokument
 
 ## Ryzyko do zmierzenia (nie do naprawy tutaj)
 
-Dłuższy tekst = więcej szans na `MAP_LEAK` Guarda: 6 najdłuższych dokumentów zbioru jest dziś blokowanych w pełnej długości. Dopóki S4 blokuje (LYNX-SPEC-S4-GUARD-WARN otwarte), część dokumentów, które dziś dają obcięty wynik, zacznie dawać blokadę. DELIVERY: liczba blokad przed/po na 54 długich dokumentach, bez wartości. To uczciwszy stan (brak ukrytej utraty treści), ale decyzja o kolejności wobec S4 należy do Pawła.
+Dłuższy tekst = więcej szans na `MAP_LEAK` Guarda: 6 najdłuższych dokumentów zbioru jest dziś blokowanych w pełnej długości. Dopóki S4 blokuje (LYNX-SPEC-S4-GUARD-WARN otwarte), część dokumentów, które dziś dają obcięty wynik, zacznie dawać blokadę. DELIVERY: liczba blokad przed/po na 54 długich dokumentach, bez wartości. To uczciwszy stan (brak ukrytej utraty treści); kolejność ustalona wyżej (najpierw limit, S4 osobno).
 
 TASK_SCOPE:
 - backend/pseudominizer_api.py
