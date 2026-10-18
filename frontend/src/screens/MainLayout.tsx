@@ -93,17 +93,18 @@ function NavBtn({ label, active, onClick, isDark, disabled }: {
 }
 
 function ScreenContent({
-  screen, apiToken, demaskPse, onDemask,
+  screen, apiToken, expressMode, demaskPse, onDemask,
 }: {
   screen:    Screen;
   apiToken:  string;
+  expressMode: boolean;
   demaskPse: string | null;
   onDemask:  (pse: string) => void;
 }) {
   return (
     <>
       <div style={{ display: screen === "pseudonimizuj"   ? "block" : "none", height: "100%" }}>
-        <Pseudonimizuj apiToken={apiToken} />
+        <Pseudonimizuj apiToken={apiToken} expressMode={expressMode} />
       </div>
       <div style={{ display: screen === "biblioteka"      ? "block" : "none", height: "100%" }}>
         <Biblioteka visible={screen === "biblioteka"} apiToken={apiToken} onDemask={onDemask} />
@@ -240,7 +241,7 @@ export default function MainLayout({ activeScreen, onNavigate, idleWarning, apiT
                 fontSize: 11, fontFamily: T.mono, color: T.amber,
                 letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4,
               }}>
-                ⚡ Tryb demonstracyjny
+                ⚡ Tryb Express — bez logowania
               </div>
               <div style={{ fontSize: 11, color: T.amber, lineHeight: 1.4, marginBottom: 6 }}>
                 Biblioteka i odmaskowanie dostępne po zalogowaniu.
@@ -337,6 +338,7 @@ export default function MainLayout({ activeScreen, onNavigate, idleWarning, apiT
         <ScreenContent
           screen={activeScreen}
           apiToken={apiToken}
+          expressMode={!!expressMode}
           demaskPse={demaskPse}
           onDemask={onDemask}
         />

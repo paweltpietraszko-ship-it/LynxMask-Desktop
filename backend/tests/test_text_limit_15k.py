@@ -1,4 +1,4 @@
-# LYNX-TEXT-LIMIT-15K: /preview i /preview-express przetwarzają cały tekst; ponad INPUT_LIMIT_BYTES jawna odmowa 413.
+# LYNX-TEXT-LIMIT-15K: /preview (token pełny i Express) przetwarza cały tekst; ponad INPUT_LIMIT_BYTES jawna odmowa 413.
 # Uruchamiać jawnie: py -3 -m pytest tests/test_text_limit_15k.py -q (plik spoza pytest.ini python_files).
 import contextlib
 import io
@@ -45,7 +45,7 @@ def _body(r):
     return data, out, {t["token"]: t["original"] for t in data.get("tokens", [])}
 
 
-@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview-express", _EXPR)])
+@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview", _EXPR)])
 def test_pii_w_koncowce_dlugiego_dokumentu_maskowane(client, path, token):
     """RED na bazie: tekst ucięty do 15 000 znaków — końcówka nie wraca, original_text niepełny."""
     cl, _ = client
@@ -72,7 +72,7 @@ def test_granica_bajtow_utf8_nie_znaki():
     assert r is not None and r.status_code == 413
 
 
-@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview-express", _EXPR)])
+@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview", _EXPR)])
 def test_ponad_limitem_413_bez_wyniku(client, path, token):
     cl, api = client
     text = "a" * api.INPUT_LIMIT_BYTES + " PESEL 44051401359"
@@ -83,7 +83,7 @@ def test_ponad_limitem_413_bez_wyniku(client, path, token):
     assert "44051401359" not in r.text
 
 
-@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview-express", _EXPR)])
+@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview", _EXPR)])
 def test_regresje_wejscia(client, path, token):
     cl, _ = client
     assert _post(cl, path, "   \n  ", token).status_code == 400                                    # pusty

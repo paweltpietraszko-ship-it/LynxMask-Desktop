@@ -116,9 +116,10 @@ function HighlightedText({ text }: { text: string }) {
 
 interface Props {
   apiToken?: string;
+  expressMode?: boolean;  // [LYNX-EXPRESS-ONE-ENGINE] ten sam silnik; bez akcji wymagających logowania (profil, biblioteka)
 }
 
-export default function Pseudonimizuj({ apiToken = "" }: Props) {
+export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Props) {
   const [uploading,    setUploading]    = useState(false);
   const [result,       setResult]       = useState<PreviewResult | null>(null);
   const [error,        setError]        = useState("");
@@ -681,7 +682,8 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
             </div>
           </div>
 
-          {/* Dodaj pominiętą encję */}
+          {/* Dodaj pominiętą encję + Zapisz do biblioteki — tylko po zalogowaniu (token Express: wyłącznie /preview) */}
+          {!expressMode && (<>
           <div style={{
             background: T.surface, border: `1px solid ${T.border}`,
             borderRadius: 8, padding: "12px 16px", marginBottom: 16,
@@ -792,6 +794,7 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
               </button>
             </div>
           )}
+          </>)}
 
         </div>
       )}
@@ -859,9 +862,11 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
             </ul>
           )}
           <div style={{ color: T.textMuted, fontSize: 12, marginBottom: 10 }}>
-            Zaznacz nierozpoznaną wartość w podglądzie → dodaj do profilu biura → prześlij dokument ponownie.
+            {expressMode
+              ? "Dodanie wartości do profilu biura i „to nie PII” są dostępne po zalogowaniu."
+              : "Zaznacz nierozpoznaną wartość w podglądzie → dodaj do profilu biura → prześlij dokument ponownie."}
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {!expressMode && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
               onClick={async () => {
                 if (!result?.guard_reasons?.length || addingAllowlist) return;
@@ -893,7 +898,7 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
             >
               {addingAllowlist ? "Zapisuję..." : "To nie PII — zapisz mimo to"}
             </button>
-          </div>
+          </div>}
         </div>
       )}
 

@@ -11,10 +11,8 @@ Historia zmian (od najnowszej):
                  Middleware akceptuje _API_TOKEN LUB _EXPRESS_TOKEN — Express Mode
                  ma dostęp do pełnego pipeline (/preview, /profile/add-entity itp.)
   v1.33-TAURI (2026-06-27):
-    [EXPR-API] Endpoint /preview-express — Express Mode bez SpaCy/NER.
-               Wywołuje run_pipeline_express() zamiast run_pipeline_new().
-               Taki sam interfejs jak /preview, bez pola anonymizer_active.
-               force_block przy awarii warstwy → HTTP 500 bez treści (LYNX-FAILCLOSED-S3).
+    [EXPR-API] Endpoint /preview-express (bez SpaCy/NER) — USUNIĘTY w LYNX-EXPRESS-ONE-ENGINE (2026-10-18):
+               Express od v1.34 używa /preview (ten sam silnik); stara ścieżka była martwa, ale otwarta.
   v1.32-TAURI (2026-06-26):
     [CRASH-UX] Zapis startup_error.json przed śmiercią procesu.
                Frontend czyta ten plik przez Tauri read_startup_error() i pokazuje
@@ -296,7 +294,7 @@ app = FastAPI(
 # [LYNX-T02] Origin: UI Tauri dev/wydanie Windows (pomiar po T10-BUILD-TS); Host: tylko lokalny (DNS rebinding).
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:1420", "http://tauri.localhost"], allow_methods=["GET", "POST", "DELETE"], allow_headers=["*"])
 _ALLOWED_HOSTS = frozenset({"127.0.0.1:8765", "localhost:8765"})
-_EXPRESS_PATHS = frozenset({("POST", "/preview"), ("POST", "/preview-express")})  # token Express: wyłącznie maskowanie
+_EXPRESS_PATHS = frozenset({("POST", "/preview")})  # token Express: wyłącznie maskowanie (ten sam silnik co pełny)
 
 
 # [SECURITY-TOKEN] Host + token API (X-Api-Token). /health i /express/token bez tokenu; OPTIONS (preflight CORS) też.
@@ -336,7 +334,7 @@ async def version():
 
 @app.get("/express/token")
 async def express_token():
-    """Token sesji Express (bez logowania, do restartu backendu) — tylko /preview i /preview-express (LYNX-T02)."""
+    """Token sesji Express (bez logowania, do restartu backendu) — tylko POST /preview (LYNX-T02, LYNX-EXPRESS-ONE-ENGINE)."""
     return {"token": _EXPRESS_TOKEN}
 
 
@@ -894,90 +892,6 @@ async def guard_allowlist_remove(phrase: str):
     entries.remove(phrase)
     _save_guard_allowlist(entries)
     return {"ok": True}
-
-
-@app.post("/preview-express")
-async def preview_express(request: Request, file: UploadFile = File(...)):
-    """Express Mode — pipeline bez SpaCy/NER (~5-10x szybszy).
-
-    Maskuje: PESEL, NIP, REGON, dowód, paszport, IBAN, konta, email, telefon,
-    sygnatury, kwoty, daty, numery zawodowe, instytucje, adresy.
-    NIE maskuje: imion/nazwisk i nazw firm bez kontekstu słownikowego (brak NER).
-    """
-    from pipeline_new import run_pipeline_express
-
-    content = await file.read()
-
-    if len(content) > MAX_FILE_BYTES:
-        return JSONResponse(
-            {"error": "Plik za duży (max 5 MB)", "blocked": False},
-            status_code=400,
-        )
-
-    pse_code = _next_pse()
-    logger.info(f"[EXPRESS] {pse_code} — plik: {len(file.filename or '')} znaków")
-
-    text, extract_err, ocr_meta = _extract_text(content, file.filename or "")
-    if extract_err:
-        logger.warning(f"[EXPRESS] {pse_code} — błąd ekstrakcji: {extract_err}")
-        return JSONResponse(
-            {"error": extract_err, "blocked": False, "ocr": ocr_meta},
-            status_code=400,
-        )
-
-    text = text.strip()
-    if (rejected := _text_rejection(text, "[EXPRESS]", pse_code)) is not None:
-        return rejected
-
-    if _TOKEN_RE.search(text) or _TOKEN_RE.search(normalize_ocr(text)):  # [LYNX-FAILCLOSED-S3] F5: także po OCR
-        logger.warning("[EXPRESS] %s — odmowa: token injection", pse_code)
-        return JSONResponse(
-            {
-                "error":   "Tekst wejściowy zawiera tokeny maskujące. Wyczyść tekst przed pseudonimizacją.",
-                "blocked": False,
-            },
-            status_code=422,
-        )
-
-    anon_text, reverse_map, force_block = run_pipeline_express(
-        text,
-        _app_state.anon_map or {},
-        _app_state.anonymizer,
-    )
-    if force_block:  # [LYNX-FAILCLOSED-S3] F1: awaria warstwy Express — 500 bez treści (S3)
-        return JSONResponse(S3_FAILURE, status_code=500)
-
-    tokens = []
-    for token, original in reverse_map.items():
-        prefix = token.split("_")[0] if "_" in token else "INNE"
-        tokens.append({
-            "token":    token,
-            "original": original,
-            "type":     prefix,
-            "label":    _TYPE_LABELS.get(prefix, "Inne"),
-        })
-    tokens.sort(key=lambda t: (_TYPE_ORDER.get(t["type"], 9), t["token"]))
-
-    anon_text_with_pse = (
-        f"[Dokument pseudonimizowany (Express). Kod sesji: {pse_code}.\n"
-        f"W odpowiedzi przepisz ten kod jako pierwsze slowo.]\n\n"
-        f"{anon_text}"
-    )
-
-    return {
-        "blocked":            False,
-        "error":              None,
-        "guard_reasons":      [],
-        "tokens":             tokens,
-        "total":              len(tokens),
-        "has_sensitive":      len(tokens) > 0,
-        "anonymized_preview": anon_text_with_pse,
-        "original_text":      text,
-        "ocr":                ocr_meta,
-        "system_prompt":      SYSTEM_PROMPT_SECURITY if _GUARD_AVAILABLE else None,
-        "pse_code":           pse_code,
-        "express_mode":       True,
-    }
 
 
 @app.get("/profile/export-dict")

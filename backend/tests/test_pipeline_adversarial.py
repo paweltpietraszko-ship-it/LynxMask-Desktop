@@ -556,9 +556,9 @@ class TestForeignIbanWhole(unittest.TestCase):
     def test_caly_iban_jednym_tokenem(self):
         from unittest.mock import patch
         import layers.ner_adapter as ner_mod
-        from pipeline_new import run_pipeline_new, run_pipeline_express
+        from pipeline_new import run_pipeline_new  # Express = ten sam silnik (LYNX-EXPRESS-ONE-ENGINE)
         for text, iban in self.CASES:
-            for fn in (run_pipeline_new, run_pipeline_express):
+            for fn in (run_pipeline_new,):
                 with self.subTest(text=text, mode=fn.__name__), patch.object(ner_mod, "process_ner", return_value=({}, {})):
                     out, rev, blocked = fn(text, anon_map={})
                     self.assertFalse(blocked)

@@ -6,9 +6,8 @@ Tryby:
   prod       — stan jak w API dziś: spaCy + anonymizer, profil bez seeda (seed pada, BUG-ONBOARD-BATCH)
   seed       — hipotetycznie naprawiony seed (12 288 form imion/nazwisk w trie)
   known      — symulacja mask(text, known_people): do pustego profilu dodane tylko osoby z pytania
-  express    — run_pipeline_express (bez NER) dla porównania
 
-Użycie: python audyt/rota_leak_test.py [--modes prod,seed,known,express] [--out plik.json]"""
+Użycie: python audyt/rota_leak_test.py [--modes prod,seed,known] [--out plik.json]"""
 import sys
 import os
 import re
@@ -97,7 +96,6 @@ def leaked(masked, forms):
 
 def run_mode(mode, sents):
     from pipeline import pseudonymize_document
-    from pipeline_new import run_pipeline_express
     t0 = time.perf_counter(); st = make_state(mode); t_init = time.perf_counter() - t0
     rows, times = [], []
     for s in sents:
@@ -110,17 +108,14 @@ def run_mode(mode, sents):
             if len(s["lemmas"]) == 2:
                 st.anon_map.add_entity(" ".join(s["lemmas"]), "OSOBA")
         t1 = time.perf_counter()
-        if mode == "express":
-            txt, rev, _ = run_pipeline_express(s["text"], {}, st.anonymizer)
-            blocked = False
-        else:
-            r = pseudonymize_document(s["text"], st); txt, rev, blocked = r.text, r.reverse_map, r.guard_blocked
+        # tryb „express” (run_pipeline_express bez NER) usunięty w LYNX-EXPRESS-ONE-ENGINE — Express = ten sam silnik
+        r = pseudonymize_document(s["text"], st); txt, rev, blocked = r.text, r.reverse_map, r.guard_blocked
         times.append(time.perf_counter() - t1)
         rows.append({**s, "masked": txt, "map": rev, "blocked": blocked, "leaked": leaked(txt, s["forms"])})
     return rows, t_init, times
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(); ap.add_argument("--modes", default="prod,seed,known,express"); ap.add_argument("--out")
+    ap = argparse.ArgumentParser(); ap.add_argument("--modes", default="prod,seed,known"); ap.add_argument("--out")
     a = ap.parse_args()
     t0 = time.perf_counter()
     import pipeline  # noqa: F401  (pomiar zimnego startu: import całego pipeline)

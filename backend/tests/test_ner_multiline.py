@@ -130,13 +130,7 @@ def test_instytucja_przelamana_nie_jest_firma():
     assert not blocked and _restore(out, rev) == text
 
 
-def test_express_bez_ner_bez_regresji():
-    """Express nie uruchamia NER — tylko brak błędu i zachowana struktura wierszy."""
-    from pipeline_new import run_pipeline_express
-    text = "Członkowie:\nBeata Zielińska\nDariusz Wróblewski\ntel. 512 987 654"
-    out, rev, blocked = run_pipeline_express(text, anon_map={})
-    assert not blocked and out.count("\n") == text.count("\n") and "512 987 654" not in out, (out, rev)
-    assert _restore(out, rev) == text
+# test_express_bez_ner_bez_regresji usunięty: ścieżka Express bez NER usunięta (LYNX-EXPRESS-ONE-ENGINE).
 
 
 # 2. Prawdziwy SpaCy + pełny pipeline (Guard): syntetyki, dla których model faktycznie zwraca span z \n.

@@ -467,10 +467,9 @@ class TestForeignIbanLayers:
 def _pipelines(text: str):
     from unittest.mock import patch
     import layers.ner_adapter as ner_mod
-    from pipeline_new import run_pipeline_new, run_pipeline_express
-    for fn in (run_pipeline_new, run_pipeline_express):
-        with patch.object(ner_mod, "process_ner", return_value=({}, {})):
-            yield fn(text, anon_map={})
+    from pipeline_new import run_pipeline_new  # Express = ten sam silnik (LYNX-EXPRESS-ONE-ENGINE)
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        yield run_pipeline_new(text, anon_map={})
 
 
 class TestNewlineCrossing:
