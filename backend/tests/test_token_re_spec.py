@@ -28,7 +28,12 @@ CASES = [
 
 
 def _copies():
-    import anonymizer_init, pipeline, ner_layer, output_guard, verbal_amounts, pseudominizer_api
+    import anonymizer_init
+    import ner_layer
+    import output_guard
+    import pipeline
+    import pseudominizer_api
+    import verbal_amounts
     from layers import ner_adapter
     return {
         "anonymizer_init.TOKEN_RE": anonymizer_init.TOKEN_RE,
