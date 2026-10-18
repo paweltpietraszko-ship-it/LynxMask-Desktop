@@ -1,0 +1,77 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 9edf0a6ecdd514bda3bcf7f26753e5135a017732
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 362 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\engine_quality.py
+  - audyt\repro_guard.py
+  - audyt\repro_pipeline.py
+  - audyt\rota_leak_test.py
+  - backend\anonymizer_init.py
+  - backend\crypto_selftest.py
+  - backend\dict_auto_builder.py
+  - backend\document_processor.py
+  - backend\pipeline_new.py
+  - backend\startup_check.py
+  - tasks\LYNX-ZUS-BOXED-IDS\round_01\tests\tests_r2_layout.py
+  - tasks\LYNX-ZUS-BOXED-IDS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-TEXT-LIMIT-15K\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T12-ARCHIVE-TESTS\round_01\implementation\t12_same_process.py
+  - tasks\LYNX-T12-ARCHIVE-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T10-BUILD-TS\round_01\implementation\header_capture.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T03-TOKEN-ALLOC\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T02-CORS-EXPRESS\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_evidence.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\tests\tests_r2_vertical.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\tests\tests_r3_vertical.py
+  - tasks\LYNX-NER-MULTILINE\round_01\implementation\edge_sweep.py
+  - tasks\LYNX-NER-MULTILINE\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-NER-MULTILINE\round_01\tests\tests_r5_repro.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\implementation\geo_vertical.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-MAP-FIDELITY\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-MAP-FIDELITY\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-IBAN-FOREIGN-ALNUM\round_01\tests\tests_r2_boundary_repro.py
+  - tasks\LYNX-IBAN-FOREIGN-ALNUM\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-FIRMA-LEGAL-FORM-RESTORE\round_01\implementation\form_sweep.py
+  - tasks\LYNX-FIRMA-LEGAL-FORM-RESTORE\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\implementation\firma_sweep.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-FAILCLOSED-S3\round_01\tests\tests_r2_endpoint_repro.py
+  - tasks\LYNX-FAILCLOSED-S3\round_01\tests\tests_r3_server_repro.py
+  - tasks\LYNX-FAILCLOSED-S3\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-EMAIL-LOCALPART-OCR\round_01\tests\tests_r7_repro.py
+  - tasks\LYNX-DOCX-TABLES\round_01\tests\tests_r2_repro.py
+  - backend\layers\ner_adapter.py
+  - backend\layers\trie_layer.py
+  - backend\layers\validation.py
+  - backend\layers\verbal_amount_layer.py
+  - backend\tests\test_anonymizer_adversarial.py
+  - backend\tests\test_archive_adversarial.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_engine_quality_layout.py
+  - backend\tests\test_express_one_engine.py
+  - backend\tests\test_failclosed.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_map_fidelity.py
+  - backend\tests\test_ner_multiline.py
+  - backend\tests\test_output_guard_adversarial.py
+  - backend\tests\test_pipeline_adversarial.py
+  - backend\tests\test_pipeline_v2.py
+  - backend\tests\test_pseudominizer.py
+  - backend\tests\test_startup_check.py
+  - backend\tests\test_text_limit_15k.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-SEC-DISK-PII/brief.md

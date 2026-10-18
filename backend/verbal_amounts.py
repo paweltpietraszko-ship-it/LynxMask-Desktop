@@ -132,7 +132,7 @@ def mask_verbal_amounts(
     try:
         return _mask_verbal_amounts(text, reverse_map, kwota_counter)
     except Exception as e:
-        logger.error("[VERBAL-AMT] Nieoczekiwany błąd: %s", e)
+        logger.error("[VERBAL-AMT] Nieoczekiwany błąd: %s", type(e).__name__)
         return text, reverse_map
 
 
@@ -249,6 +249,6 @@ def _mask_verbal_amounts(
             reverse_map[token] = verbal
 
         text = text[:start] + token + text[end:]
-        logger.debug("[VERBAL-AMT] '%s' -> %s", verbal, token)
+        logger.debug("[VERBAL-AMT] [len=%d] -> %s", len(verbal), token)
 
     return text, reverse_map

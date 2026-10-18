@@ -1,0 +1,48 @@
+LYNX-SEC-DISK-PII — wąski re-check A1, 2026-10-18
+AUDITED_SHA: c130c6600d000f0b6dfbc65fcab1e5a05b48e7ce
+CODE_SHA: 75b83a35d1b1dc4aaec2eb8bc3a84630992ec766
+DIFF_BASE: caba9521ddb6d5dc6c6204df85d72d709be0cc7f (audyt a3d460c).
+VERDICT: PASS re-checku A1. Poprzedni jedyny blocker zamknięty na tym SHA.
+RECIPIENT: CC / Paweł. Bez zmian produktu przez audytora i bez merge.
+
+ZAKRES / ORACLE
+Brief F2 pkt 3 i obietnica UI zgodności wyniku resetu z faktycznym usunięciem.
+Wyłącznie diff r1→r2: zbieranie nieusuniętych plików logu/allowlisty,
+HTTP 500 z bezpiecznym komunikatem o częściowym resecie, brak ok:true.
+Reszta resetu i zwykły sukces zachowane. Nie powtarzano całego audytu.
+
+NIEZALEŻNE DOWODY EXACT SHA
+1. Oryginalny repro_locked_log_r2.py, bez zmian:
+   http=500, ok=null, log_still_exists=true, synthetic_marker_retained=true.
+   Plik pozostaje zgodnie z blokadą Windows; nie ma już fałszywego sukcesu.
+2. repro_r3.py: prawdziwe otwarte uchwyty, bez patchowania unlink/wyjątku,
+   wyłącznie syntetyczne pliki i odizolowane katalogi:
+   - otwarty log → 500/częściowy reset; po zamknięciu → 200, pliki usunięte;
+   - otwarta allowlista → 500/częściowy reset; po zamknięciu → 200, pliki usunięte;
+   - oba pliki otwarte → 500 z obydwoma nazwami kategorii; po zamknięciu
+     → 200, pliki usunięte.
+   We wszystkich przypadkach brak ok:true przy błędzie, brak wartości
+   syntetycznego znacznika w komunikacie. Log/allowlista nazywane kategorią,
+   nie ścieżką ani zawartością użytkownika. Wszystkie asercje przeszły.
+3. pytest tests/test_disk_pii.py -q: 6 passed, exit 0.
+   Obejmuje także zwykły reset, migrację cache, nowe/stare dopasowania profilu,
+   logi DEBUG i prawdziwy PNG OCR oraz brak przekierowania launchera.
+
+PRZENIESIONE DOWODY I GRANICE
+- F1/F3 potwierdzone w audycie r2: ta poprawka nie zmienia ich ownerów.
+  Wcześniej 360 testów celowanych i 167 regresji na caba952; nie przedstawiamy
+  tych liczb jako nowych uruchomień na c130c66.
+- Pełna suita na r2: wspierający dowód CC w DELIVERY (167 passed);
+  audytor nie powtarzał jej po mikrofixie ścieżki błędu, zgodnie z handoffem r2.
+- Bez nowego benchmarku 178 dokumentów, skanu zależności i badań instalatora.
+- Frontend bez zmian; istniejący handler resetu pokazuje data.error przy
+  nieudanym żądaniu. Wygląd GUI NOT_CHECKED, bez udawania testu ekranowego.
+- Suma TOTAL 379 pochodzi z całego Tasku; nowy diff to API +7/-1 i test +12.
+  Nie otwieramy ponownie zaakceptowanego rozmiaru, R1 PDF ani R2 zależności.
+
+HANDOFF
+Dostawa LYNX-SEC-DISK-PII nie ma już blockera A1 wykazanego w audycie r2.
+PASS dotyczy wskazanego SHA i sprawdzonego zakresu; nie jest orzeczeniem
+bezpieczeństwa całej aplikacji/RODO ani wynikiem końcowego etapu wydania.
+Raport i nowy reproduktor na gałęzi Tasku, aktualizacja BOARD na main.
+Merge tylko na polecenie Pawła.

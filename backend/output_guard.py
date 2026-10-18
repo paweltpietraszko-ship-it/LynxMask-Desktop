@@ -505,7 +505,7 @@ def is_malicious_prompt(
     combined = (question or "") + "\n" + (attached_text or "")
     found = _INJECTION_RE.findall(combined.lower())
     if found:
-        logger.warning(f"prompt_firewall: wykryto injection: {found}")
+        logger.warning("prompt_firewall: wykryto injection (%d wzorców)", len(found))
     return len(found) > 0, found
 
 

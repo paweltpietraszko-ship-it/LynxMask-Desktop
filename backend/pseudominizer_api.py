@@ -179,6 +179,7 @@ _crypto_ok = False
 # spawn zamiast fork, co powoduje dwukrotny import modułu (proces główny +
 # worker). Lifespan gwarantuje jednokrotne wykonanie w procesie workera.
 _STARTUP_ERROR_PATH = Path(__file__).parent / "startup_error.json"
+_LAUNCHER_LOG = Path(__file__).parent / "pseudominizer.log"  # [LYNX-SEC-DISK-PII] log starego uruchom.vbs (<= v1.3); kasowany przy resecie
 
 
 def _write_startup_error(code: str, message: str) -> None:
@@ -382,7 +383,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
     if extract_err:
         # [FIX-LOG-400] Loguj przyczynę błędu ekstrakcji — bez tego 400
         # nie zostawia żadnego śladu poza kodem HTTP w access logu.
-        logger.warning(f"[PREVIEW] {pse_code} — błąd ekstrakcji: {extract_err}")
+        logger.warning("[PREVIEW] %s — błąd ekstrakcji", pse_code)  # [LYNX-SEC-DISK-PII] treść błędu bywa z pliku
         return JSONResponse(
             {"error": extract_err, "blocked": False, "ocr": ocr_meta},
             status_code=400,
@@ -741,8 +742,8 @@ async def export_pdf(request: Request):
             },
         )
     except Exception as e:
-        logger.error("[EXPORT-PDF] Błąd: %s", e)
-        return JSONResponse({"error": f"Błąd generowania PDF: {e}"}, status_code=500)
+        logger.error("[EXPORT-PDF] Błąd: %s", type(e).__name__)
+        return JSONResponse({"error": "Błąd generowania PDF"}, status_code=500)
 
 
 # ── Profil biura ──────────────────────────────────────────────────────────────
@@ -799,7 +800,7 @@ async def profile_add_entity(request: Request):
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception as e:
-        logger.error(f"[PROFILE] Błąd add_entity: {e}")
+        logger.error("[PROFILE] Błąd add_entity: %s", type(e).__name__)
         return JSONResponse({"error": "Błąd zapisu profilu"}, status_code=500)
 
 
@@ -877,7 +878,7 @@ async def guard_allowlist_add(request: Request):
     if phrase not in entries:
         entries.append(phrase)
         _save_guard_allowlist(entries)
-    logger.info(f"[GUARD-ALLOWLIST] Dodano: {phrase!r}")
+    logger.info("[GUARD-ALLOWLIST] Dodano wyjątek [len=%d]", len(phrase))  # [LYNX-SEC-DISK-PII] bez wartości
     return {"ok": True, "total": len(entries)}
 
 
@@ -991,23 +992,8 @@ async def profile_reset(request: Request):
     import glob as _glob
     from anonymizer import build_anonymizer as _build_anonymizer
 
-    # 1. Policz i usuń sesje PSE z DB + pliki .enc
-    docs = db_store.list_documents()
-    deleted_sessions = 0
-    for doc in docs:
-        pse = doc["pse"]
-        enc_path = MAPS_DIR / f"{pse}.enc"
-        try:
-            enc_path.unlink(missing_ok=True)
-        except Exception as e:
-            logger.warning(f"[RESET] Nie można usunąć {enc_path}: {e}")
-        try:
-            db_store.delete(pse)
-            deleted_sessions += 1
-        except Exception as e:
-            logger.warning(f"[RESET] Nie można usunąć DB {pse}: {e}")
-
-    # 2. Usuń pozostałe pliki PSE-*.enc (na wypadek braku rekordu DB)
+    # 1–2. Sesje: liczba z rejestru; wszystkie pliki PSE-*.enc (rekordy usuwa niżej db_store.reset_all — LYNX-SEC-DISK-PII)
+    deleted_sessions = len(db_store.list_documents())
     for enc_file in _glob.glob(str(MAPS_DIR / "PSE-*.enc")):
         try:
             Path(enc_file).unlink(missing_ok=True)
@@ -1024,16 +1010,29 @@ async def profile_reset(request: Request):
     except Exception as e:
         logger.warning(f"[RESET] Nie można usunąć pliku mapy: {e}")
 
-    # 4. Reinicjalizuj anon_map jako pusty obiekt
+    # [LYNX-SEC-DISK-PII] F2: wyjątki „to nie PII”, dziennik zdarzeń (+VACUUM) i log launchera — reset obiecuje „wszystkie dane”
+    _left = []  # Codex r2 A1: nieusunięty plik = reset częściowy, nie pełny sukces
+    for _f, _label in ((_guard_allowlist_path(), "wyjątki „to nie PII”"), (_LAUNCHER_LOG, "plik logu silnika")):
+        try:
+            _f.unlink(missing_ok=True)
+        except OSError as e:  # np. log otwarty przez stare okno silnika (launcher <= v1.3)
+            logger.warning("[RESET] Nie można usunąć %s: %s", _f.name, type(e).__name__)
+            _left.append(_label)
+    db_store.reset_all()
+
+    # 4. Reinicjalizuj profil — także Anonymizer (stary trzymał mapę sprzed resetu w warstwie profilu)
     try:
-        _, _, _app_state.anon_map, _app_state.morf_env = \
+        _app_state.anonymizer, _, _app_state.anon_map, _app_state.morf_env = \
             _build_anonymizer(ANON_PROFILE_DIR, HARDWARE_PROFILE)
         logger.info(f"[RESET] Profil zreinicjalizowany po resecie")
     except Exception as e:
-        logger.error(f"[RESET] Błąd reinicjalizacji profilu: {e}")
-        return JSONResponse({"error": f"Reset częściowy — błąd reinicjalizacji: {e}"}, status_code=500)
+        logger.error("[RESET] Błąd reinicjalizacji profilu: %s", type(e).__name__)
+        return JSONResponse({"error": "Reset częściowy — błąd reinicjalizacji profilu"}, status_code=500)
 
     db_store.record_audit("PROFIL", "reset")
+    if _left:
+        return JSONResponse({"error": f"Reset częściowy — nie usunięto: {', '.join(_left)} (plik używany przez inny program, "
+                             "np. stare okno silnika). Zamknij je i powtórz reset."}, status_code=500)
     logger.info(f"[RESET] Usunięto {deleted_sessions} sesji. Profil wyczyszczony.")
     return {"ok": True, "deleted_sessions": deleted_sessions}
 

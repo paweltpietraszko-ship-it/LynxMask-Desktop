@@ -223,7 +223,6 @@ Zmiany v2 (zachowane):
 import re
 import json
 import copy
-import pickle
 import shutil
 import hashlib
 import platform
@@ -607,6 +606,11 @@ class AnonymizerMap:
         self._save_lock = __import__("threading").Lock()  # chroni przed race condition
         self._trie_cache = None   # [FIX-B12-CACHE] trie w pamięci — niezależne od dysku
         self._load()
+        # [LYNX-SEC-DISK-PII] F1: automat tylko w pamięci; stary jawny trie.pkl (formy encji) usuwany — migracja.
+        for _old in (self.trie_path, self.trie_path.with_suffix(".tmp")):
+            if _old.exists():
+                _old.unlink()
+                logger.info("Usunięto jawny cache automatu profilu (%s)", _old.name)
 
     def _load(self):
         if _CRYPTO_AVAILABLE:
@@ -619,7 +623,7 @@ class AnonymizerMap:
                     logger.info(f"Mapa zaszyfrowana: {len(self.data['entities'])} encji")
                     return
                 except Exception as e:
-                    logger.error(f"Błąd mapa.enc: {e} — próba fallback")
+                    logger.error("Błąd mapa.enc: %s — próba fallback", type(e).__name__)
         if self.map_path.exists():
             self.data = json.loads(self.map_path.read_text(encoding="utf-8"))
             self.data.setdefault("trie_version", "")
@@ -829,8 +833,8 @@ class AnonymizerMap:
 
     def _rebuild_trie(self):
         """
-        Buduje trie i zapisuje mapę z update_trie_version=True — jeden zapis. [V4-1]
-        Eliminuje podwójny zapis i cykliczny hash z v3.
+        Buduje trie w pamięci z odszyfrowanej mapy. [LYNX-SEC-DISK-PII] F1: bez zapisu na dysk
+        (trie.pkl trzymał formy encji jawnie obok szyfrowanej mapa.enc — S5).
         """
         try:
             import ahocorasick
@@ -860,23 +864,7 @@ class AnonymizerMap:
                         A.add_word(key, (token_id, form))
             A.make_automaton()
 
-            # [FIX-B12-CACHE] Zachowaj w pamięci ZANIM spróbujemy zapisać na dysk.
-            # Jeśli zapis się nie powiedzie (Permission Denied w testach, read-only FS),
-            # load_trie() wróci ten obiekt z pamięci — stary trie.pkl nie nadpisze fixa.
-            self._trie_cache = A
-
-            try:
-                tmp = self.trie_path.with_suffix(".tmp")
-                with open(tmp, "wb") as f:
-                    pickle.dump(A, f)
-                shutil.move(str(tmp), str(self.trie_path))
-                # Jeden zapis: version + trie_version razem [V4-1]
-                self._save(update_trie_version=True)
-            except Exception as e:
-                logger.warning(
-                    f"Nie można zapisać trie.pkl: {e} — trie aktywne tylko w pamięci."
-                )
-
+            self._trie_cache = A  # [FIX-B12-CACHE] jedyne miejsce automatu (pamięć)
             logger.info(
                 f"Trie przebudowane: {len(self.data['entities'])} encji"
             )
@@ -885,9 +873,8 @@ class AnonymizerMap:
 
     def load_trie(self):
         """
-        Ładuje trie. Jeśli trie_version ≠ version → rebuild. [V3-9]
-        Dzięki [V4-1] obie wartości są zawsze spójne po normalnym zapisie —
-        rebuild potrzebny tylko przy przerwaniu procesu między zapisami.
+        Zwraca automat z pamięci; przy pustym cache buduje go z encji. [LYNX-SEC-DISK-PII] F1: bez pliku,
+        więc bez porównania version/trie_version (pole trie_version zostaje w mapie jako nieaktywne).
 
         [FIX-B12-CACHE v4.9] Cache w pamięci ma priorytet nad plikiem na dysku.
         [FIX-B12-INIT  v4.10] Jeśli cache jest pusty (nowa sesja, add_entity nie
@@ -897,12 +884,6 @@ class AnonymizerMap:
         (np. "Jan" z "Jan Kowalski"). Rebuild jest tani (~100ms) i gwarantuje
         że FIX-B12-TRIE zawsze obowiązuje, niezależnie od historii danych.
         """
-        if self.trie_version != self.version and self.version:
-            logger.warning(
-                "Trie nieaktualne (trie_version ≠ version) — rebuilduję."
-            )
-            self._rebuild_trie()
-
         # Cache w pamięci — zawsze aktualny, ustawiany przez _rebuild_trie.
         if self._trie_cache is not None:
             return self._trie_cache
@@ -953,7 +934,7 @@ class Anonymizer:
                 try:
                     self.anon_map.add_entities_batch(to_add)
                 except Exception as e:
-                    logger.error(f"anonymize_with_ner: onboarding błąd: {e}")
+                    logger.error("anonymize_with_ner: onboarding błąd: %s", type(e).__name__)
         return self.anonymize(text)
 
     def anonymize(self, text: str, known_tokens: frozenset = frozenset(), existing_reverse_map: dict | None = None, skip_guard: bool = False) -> tuple[str, dict[str, str]]:
@@ -1049,7 +1030,7 @@ class Anonymizer:
                         reverse_map[token] = raw.strip()
                         replacements.append((m.start(), m.end(), token))
                         logger.debug(
-                            "[STDNUM-L4] '%s' (%s) -> %s", raw.strip(), label, token
+                            "[STDNUM-L4] [len=%d] (%s) -> %s", len(raw.strip()), label, token
                         )
                         # Dodaj do occupied żeby kolejne walidatory nie duplikowały
                         occupied.append((m.start(), m.end()))

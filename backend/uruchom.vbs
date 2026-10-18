@@ -1,7 +1,9 @@
-' uruchom.vbs v1.3 — Pseudominizer
+' uruchom.vbs v1.4 — Pseudominizer
 ' v1.1 — widoczne okno CMD, logowanie do pseudominizer.log
 ' v1.2 — czyszczenie __pycache__ przed startem
 ' v1.3 — jawna ścieżka do Python 3.14 (pomija WindowsApps stub w PATH)
+' v1.4 — [LYNX-SEC-DISK-PII] F3: log tylko w oknie konsoli (S5: logi bez zapisu na dysk);
+'        stary pseudominizer.log usuwany przy starcie
 
 Option Explicit
 
@@ -14,6 +16,11 @@ Set objFSO   = CreateObject("Scripting.FileSystemObject")
 strDir   = objFSO.GetParentFolderName(WScript.ScriptFullName)
 strLog   = strDir & "\pseudominizer.log"
 strCache = strDir & "\__pycache__"
+
+' Usun stary plik logu z wersji <= v1.3 (S5: logi nie trafiaja na dysk)
+If objFSO.FileExists(strLog) Then
+    objFSO.DeleteFile strLog, True
+End If
 
 ' Wyczysc __pycache__ przed startem — zapobiega ladowaniu starego kodu
 If objFSO.FolderExists(strCache) Then
@@ -40,12 +47,11 @@ If Not objFSO.FileExists(strDir & "\pseudominizer_api.py") Then
     WScript.Quit 1
 End If
 
-' Uruchom backend — widoczne okno CMD z logiem
-strCmd = "cmd /c cd /d """ & strDir & """ && " & strPython & _
+' Uruchom backend — widoczne okno CMD (/k: zostaje po awarii); log tylko w oknie, bez pliku (v1.4)
+strCmd = "cmd /k cd /d """ & strDir & """ && " & strPython & _
          " -m uvicorn pseudominizer_api:app" & _
          " --host 127.0.0.1 --port 8765" & _
-         " --log-level info" & _
-         " >> """ & strLog & """ 2>&1"
+         " --log-level info"
 
 objShell.Run strCmd, 1, False
 

@@ -297,7 +297,7 @@ def _apply_regex_layer(
         token = f"{prefix}_{counter:03d}"
         reverse_map[token] = matched
         text = text[:m.start()] + token + text[m.end():]
-        logger.debug("[PIPELINE] %s: '%s' -> %s", prefix, matched, token)
+        logger.debug("[PIPELINE] %s: [len=%d] -> %s", prefix, len(matched), token)
     return text, reverse_map
 
 
@@ -393,7 +393,7 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
             try:
                 ner_entity_list = state.spacy_ner_mod.detect_entities(text)
             except Exception as _det_err:
-                logger.warning("[PIPELINE] detect_entities bĹ‚Ä…d: %s â€” check_and_block bez Ĺ›cieĹĽki SpaCy", _det_err)
+                logger.warning("[PIPELINE] detect_entities bĹ‚Ä…d: %s â€” check_and_block bez Ĺ›cieĹĽki SpaCy", type(_det_err).__name__)
             ner_reverse, ner_variants = ner_layer.process_ner(text, state.spacy_ner_mod)
             reverse_map.update(ner_reverse)
             logger.debug("[PIPELINE] NER: %d encji", len(ner_reverse))
@@ -410,9 +410,9 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
                 )
             except Exception as _cab_err:
                 # fail-soft: bĹ‚Ä…d check_and_block nie zatrzymuje pipeline
-                logger.warning("[PIPELINE] check_and_block bĹ‚Ä…d: %s â€” kontynuujÄ™", _cab_err)
+                logger.warning("[PIPELINE] check_and_block bĹ‚Ä…d: %s â€” kontynuujÄ™", type(_cab_err).__name__)
         except Exception as e:
-            logger.warning("[PIPELINE] NER bĹ‚Ä…d: %s â€” kontynuujÄ™ bez NER", e)
+            logger.warning("[PIPELINE] NER bĹ‚Ä…d: %s â€” kontynuujÄ™ bez NER", type(e).__name__)
 
     # â”€â”€ Normalizacja IBAN ze spacjÄ… â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     text = re.sub(
@@ -458,7 +458,7 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
         addr_token = f"ADRES_{addr_counter:03d}"
         reverse_map[addr_token] = addr_text
         text = text[:m.start()] + addr_token + text[m.end():]
-        logger.debug("[PIPELINE] ADDR: '%s' -> %s", addr_text, addr_token)
+        logger.debug("[PIPELINE] ADDR: [len=%d] -> %s", len(addr_text), addr_token)
 
     # â”€â”€ Warstwa 4: kwoty sĹ‚owne â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     kwota_counter = [0]
@@ -489,7 +489,7 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
         except Exception as e:
             # [MED-1] Blad anonymizera -> guard dostalby niepelna mape -> force_block.
             _anonymizer_failed = True
-            logger.error("[PIPELINE] anonymizer blad: %s -- BLOKADA guard prewencyjna", e)
+            logger.error("[PIPELINE] anonymizer blad: %s -- BLOKADA guard prewencyjna", type(e).__name__)
     else:
         logger.warning("[PIPELINE] anonymizer niedostÄ™pny â€” pomijam warstwy regex")
 
@@ -512,7 +512,7 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
         # [FIX-NER-ADDR-PREFIX] PomiĹ„ warianty bÄ™dÄ…ce adresem â€” NER bĹ‚Ä™dnie
         # klasyfikuje "os. BolesĹ‚awa Chrobrego" jako osobÄ™. Regex na poziomie moduĹ‚u.
         if _ADDR_PREFIX_RE.match(variant_text):
-            logger.debug("[PIPELINE] FIX-NER-ADDR-PREFIX: pominiÄ™to '%s'", variant_text[:40])
+            logger.debug("[PIPELINE] FIX-NER-ADDR-PREFIX: pominiÄ™to [len=%d]", len(variant_text))
             continue
 
         # [FIX-NER-JUNK-FIRMA] PomiĹ„ FIRMA zĹ‚oĹĽone wyĹ‚Ä…cznie z sufiksu prawnego
@@ -520,13 +520,13 @@ def _run_pipeline(text: str, state: AppState) -> PipelineResult:
         if token.startswith("FIRMA_"):
             clean = re.sub(r'[\s"\n\r]', "", variant_text)
             if len(clean) < 4 or _BARE_SUFFIX_RE.match(variant_text):
-                logger.debug("[PIPELINE] FIX-NER-JUNK-FIRMA: pominiÄ™to '%s'", variant_text[:40])
+                logger.debug("[PIPELINE] FIX-NER-JUNK-FIRMA: pominiÄ™to [len=%d]", len(variant_text))
                 continue
 
         # [FIX-NER-TOKEN-IN-TOKEN] Wariant zawiera juĹĽ token (np. ADRES_002
         # wciÄ…gniÄ™ty do nazwy FIRMA po warstwie 3) â€” pomiĹ„.
         if _TOKEN_RE.search(variant_text):
-            logger.debug("[PIPELINE] FIX-NER-TOKEN-IN-TOKEN: pominiÄ™to '%s'", variant_text[:40])
+            logger.debug("[PIPELINE] FIX-NER-TOKEN-IN-TOKEN: pominiÄ™to [len=%d]", len(variant_text))
             continue
 
         # [FIX-NER-TRAILING-PUNCT] Wariant z przecinkiem/kropkÄ… na koĹ„cu
