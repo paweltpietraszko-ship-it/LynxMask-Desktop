@@ -1,0 +1,5 @@
+LYNX-FAILCLOSED-S3 — jawne OWNER_ACCEPTED, 2026-10-18
+Paweł odpowiedział dosłownie „Tak” na pytanie Codexa:
+„Czy zatwierdzasz opisany przepływ i rozmiar jako OWNER_ACCEPTED?”
+Pytanie dotyczyło dostawy 8194c0d3b84f47535089ed07c98ed15a61a33a1a i wyjaśnienia z tests_r2.txt: wartości ukryte w wyniku, pokazane lokalnie w ostrzeżeniu; przycisk dodaje wszystkie wskazane wartości do białej listy i uruchamia istniejący zapis mimo Guarda; rzeczywisty rozmiar 313 zmienionych linii, w tym 145 testów.
+To jawna zgoda na opisane odstępstwo guard_values i ten rozmiar/wskazany wzrost API oraz funkcji, po wyjaśnieniu. Nie jest to akceptacja technicznych defektów, ujawnień w logach ani zgoda na merge. OWNER_EXPLANATION_GATE dla tego przepływu zamknięty. Dalszy werdykt dotyczy technicznej zgodności z zaakceptowanym kontraktem.
