@@ -62,7 +62,7 @@ Kod: `b0b5ff9` (na `93d15a4`). Diff względem dostawy r1 (`8194c0d`): `pseudomin
 - RED→GREEN: na API z r1 (`8194c0d`) **2 failed**, na `b0b5ff9` cały plik **21 passed**.
 - Reproduktor Codexa `tests_r3_server_repro.py` uruchomiony na kopii bez asercji SHA. Pada na swoim oczekiwaniu błędu, bo dostaje `(500, '{"error":"Nie udało się bezpiecznie zamaskować dokumentu…","blocked'…)` zamiast `Internal Server Error`.
 - Regresje: `test_output_guard_adversarial` + `test_layers` + `test_ner_multiline` + `test_text_limit_15k` + `test_map_fidelity` + `test_failclosed` dały **233 passed**. `test_audyt_2026_10.py`: 131 passed, 7 xfailed, 3 „failed” = te same XPASS(strict) co w r1 (marker poza TASK_SCOPE).
-- `tests/` (standardowa suita): 137 passed, 2 skipped, 1 xfailed, **30 failed**. Wszystkie 30 to testy live-HTTP na porcie 8765. Na tym porcie działa backend Pawła z main, a w worktree jest stary `api_token.txt`, więc każde wywołanie dostaje 401, co potwierdza curl. Te testy nie sprawdzały gałęzi i nie mogły tego zrobić, a backendu Pawła nie restartowano. Uruchomienie ich na backendzie z gałęzi: **NOT_RUN** w r2 (w r1 było 167 passed). Do odtworzenia: `cd backend && py -3 pseudominizer_api.py` z gałęzi, potem `py -3 -m pytest tests/ -q`.
+- `tests/` (standardowa suita) z działającym backendem z gałęzi (`b0b5ff9`, port 8765, profil Pawła): **167 passed, 2 skipped, 1 xfailed** — jak w r1. (Pierwszy przebieg trafił w backend z main ze starym tokenem → 30× 401; powtórzony na właściwym backendzie.)
 - `ruff`: 0 uwag w obu plikach (baza API również 0).
 - Pomiar 178 dokumentów: niepowtarzany. Zmiana działa wyłącznie przy wyjątku, który w r1 nie wystąpił na żadnym z 178 dokumentów (wszystkie odpowiedzi 200).
 
