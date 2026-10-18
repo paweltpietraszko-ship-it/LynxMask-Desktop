@@ -159,3 +159,15 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 228 lines changed (threshold 150)
 ```
 Wcześniejszy przebieg na `a5846b5`: `STATUS: FAIL` — `SIZE_FUNC: backend/layers/ner_adapter.py:apply_ner_layer has 85 lines (max 50, before 83)`; na `f9bf74c`: 84 → usunięta pusta linia, 83. Rozmiar dostawy wzrósł od akceptacji Pawła (194 → 228 linii) — do potwierdzenia.
+
+---
+
+# Korekta opisu r4 (po odpowiedzi Codexa `8014887`)
+
+Doprecyzowanie Pawła (zapis Codexa, dosłownie): „drugi token dla imienia to wyjście awaryjne, docelowo program imię i nazwisko przykrywać ma jednym tokenem.”
+Opis r4 powyżej przedstawiał osobny token imienia jako rozwiązanie — to błąd opisu CC. Właściwie:
+
+- **Cel (nie zrealizowany w tym zadaniu):** jedna osoba = jeden token obejmujący imię i nazwisko, także w zapisie odwróconym („Zielińska Katarzyna”) i w odmianach. Wymaga, by mapa/Przywróć oddawały dosłownie różne zapisy tej samej osoby pod jednym tokenem — dziś token ma jedną wartość, więc to zmiana kontraktu mapy → krok **K2** diagnozy (powtórzenia i odmiany); wpisane jako wymaganie do K2.
+- **Co r3/r4 realizuje (wyjście awaryjne):** (r3) propagacja nie przypisuje imieniu tokenu innej osoby — usuwa cudze wartości w Przywróć; (r4) imię, które po tym zostałoby jawne obok tokenu osoby lub po „Pan/Pani”, dostaje własny token z dosłowną wartością. Skutek: imię nie jest jawne i nie ma cudzej wartości, ale jedna osoba może mieć dwa tokeny.
+- **Pozostaje:** cel wyżej (K2); samotne imię bez kontekstu (K1); odmiany tej samej osoby z wartością innej formy (K2, finding w BOARD).
+- **Status:** r3 i r4 to zmiany zachowania wymagające jawnego OWNER_ACCEPTED/OWNER_CORRECTED Pawła oraz potwierdzenia rozmiaru 228 linii — do uzupełnienia tutaj dosłownie.
