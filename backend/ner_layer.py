@@ -137,7 +137,7 @@ from ner_blocklist import (
 
 logger = logging.getLogger("pseudominizer.ner_layer")
 
-_TOKEN_RE      = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
+_TOKEN_RE      = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")  # S2 (LYNX-TOKEN-RE-SPEC)
 _ORDER_CODE_RE = re.compile(r"^[A-Z]{2,6}_\d{4,}$")
 
 # [BUG-NER-FP-GRANICE] Czyste akronimy bez cyfr/sufiksu prawnego — skróty systemowe
