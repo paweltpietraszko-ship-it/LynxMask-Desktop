@@ -190,6 +190,20 @@ def _apply_initials(text: str, allocator: TokenAllocator) -> str:
     return _INITIALS_RE.sub(_replace, text)
 
 
+_NAME = r"[A-ZŁŚŹĆŃĄĘÓŻ][a-ząćęłńóśźż]+"
+_NAME_AFTER_RE = re.compile(rf"\b(Pan|Pani|OSOBA_\d{{3}})([ \t]+)({_NAME})\b")
+_NAME_BEFORE_RE = re.compile(rf"\b({_NAME})([ \t]+)(OSOBA_\d{{3}})\b")
+
+
+def _apply_first_names(text: str, allocator: TokenAllocator) -> str:
+    """[LYNX-NER-MULTILINE] Imię (names_inflected) obok tokenu osoby albo po „Pan/Pani” → własny token z dosłowną
+    wartością. Propagacja nie rozsyła imion (cudza osoba w Przywróć), a gołe imię przy nazwisku zostawałoby jawne."""
+    def name(m: re.Match, i: int) -> str:
+        return allocator.assign("OSOBA", m.group(i)) if m.group(i).lower() in _FIRST_NAMES else m.group(i)
+    text = _NAME_AFTER_RE.sub(lambda m: m.group(1) + m.group(2) + name(m, 3), text)
+    return _NAME_BEFORE_RE.sub(lambda m: name(m, 1) + m.group(2) + m.group(3), text)
+
+
 def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
     """Ekstrahuje wyniki NER z bieżącego state.text i zapisuje w state.ner_results.
 
@@ -309,6 +323,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = state.text.replace(_var_text, _tok_id)
         state.text = state.text.replace(_target, _tok_id)
+
+    state.text = _apply_first_names(state.text, state.allocator)
 
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje w tekście: mapa jej nie ma,
     # więc usunięcie gubiło ją przy Przywróć. Sama forma nie identyfikuje firmy.

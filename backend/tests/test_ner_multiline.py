@@ -94,6 +94,20 @@ def test_propagacja_nie_rozsyla_imienia():
     assert not blocked and _restore(out, rev) == text
 
 
+@pytest.mark.parametrize("text,frags,name", [
+    ("Zielińska Katarzyna złożyła wniosek. Katarzyna Zielińska podpisała.", [("OSOBA", "Katarzyna Zielińska")], "Katarzyna"),
+    ("Wniosek złożyła Pani Wiktoria, Róża rośnie w ogrodzie.", [], "Wiktoria"),          # Pan/Pani; „Róża” bez kontekstu
+])
+def test_imie_przy_osobie_dostaje_wlasny_token(text, frags, name):
+    """Propozycja Pawła: imię obok tokenu osoby lub po Pan/Pani → własny token z dosłowną wartością (nie cudzy, nie jawne).
+    Pełne Przywróć nie jest tu sprawdzane: propagowane nazwisko ma wartość pełnej formy — znany finding K2."""
+    import spacy_ner
+    from pipeline_new import run_pipeline_new
+    with patch.object(spacy_ner, "detect_entities", _fake_ner(*frags)), contextlib.redirect_stdout(io.StringIO()):
+        out, rev, blocked = run_pipeline_new(text, anon_map={})
+    assert not blocked and name not in out and name in rev.values() and "Róża" not in rev.values(), (out, rev)
+
+
 def test_dwie_osoby_w_liniach_to_dwa_tokeny():
     import spacy_ner
     from pipeline_new import run_pipeline_new
