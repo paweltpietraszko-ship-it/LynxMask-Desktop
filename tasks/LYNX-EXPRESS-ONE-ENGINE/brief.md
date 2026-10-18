@@ -49,9 +49,15 @@ TASK_SCOPE:
 - backend/tests/test_map_fidelity.py
 - backend/tests/test_audyt_2026_10.py
 - audyt/rota_leak_test.py
+- backend/tests/test_ner_multiline.py
+- backend/tests/test_pipeline_adversarial.py
+- backend/tests/test_text_limit_15k.py
 
 DELETED: `frontend/src/screens/ExpressModeScreen.tsx` (zadeklarowany w TASK_SCOPE).
 OUT_OF_SCOPE: silnik i warstwy (poza usunięciem `run_pipeline_express`), Guard, `/express/token` (bez zmian), Tauri, Biblioteka/Odmaskuj, LYNX-APP-LAUNCHER.
 
 ## Rozmiar (szacunek CC; Paweł 2026-10-18 przed kodem: „Akceptuję rozmiar”)
 Usunięcia ok. 800 linii (ekran 621, endpoint ok. 65, funkcja ok. 40, parametryzacje testów i docstringi). Dodane ok. 110 (nowy test ok. 60, UI ok. 25, przeniesienia testów). Plik API (legacy) zmniejsza się o ok. 70 linii. Gate zgłosi TOTAL > 150 z powodu usunięć.
+
+## ROZSZERZENIE CC (przy implementacji, ta sama klasa)
+Brief wymieniał 4 pliki testów używające usuwanej ścieżki. `git grep` przy implementacji znalazł jeszcze trzy: `test_ner_multiline.py` (test „Express bez NER”, usunięty), `test_pipeline_adversarial.py` (pętla po obu pipeline'ach, zostaje pełny) i `test_text_limit_15k.py` (`/preview-express` zastąpiony przez `/preview` z tokenem Express). Dopisane do TASK_SCOPE. Bez zmiany kontraktu.

@@ -2,7 +2,8 @@
 // ============================================================
 // ZMIANY W TEJ WERSJI (v1.5):
 //   [EXPR-UI] Przycisk Express Mode na stronie logowania — pomija logowanie.
-//             onExpressMode() prop → App.tsx przełącza na ExpressModeScreen.
+//             onExpressMode() prop → App.tsx: MainLayout z tokenem Express (ten sam silnik, /preview;
+//             LYNX-EXPRESS-ONE-ENGINE usunął stary ExpressModeScreen bez NER).
 // ZMIANY W v1.4:
 //   [UI-FONT-01] Czcionki podniesione globalnie
 //     Logo: 18px → 20px

@@ -187,8 +187,7 @@ def test_credentials_recepta_cala_wartosc(text, masked):
     assert bool(rev) == masked and (not masked or s.text == next(iter(rev))), (s.text, rev)  # całość jednym tokenem
 
 
-# LYNX-T07: końcowy fallback ≥15 cyfr (oba tryby) — jedna wartość, tekst wokół bez zmian; K1 Codexa (e-mail z cyframi).
-@pytest.mark.parametrize("express", [False, True])
+# LYNX-T07: końcowy fallback ≥15 cyfr — jedna wartość, tekst wokół bez zmian; K1 Codexa (e-mail z cyframi).
 @pytest.mark.parametrize("text,spans", [
     ("Ciąg 1234567890123456789012 bez etykiety.", ["1234567890123456789012"]),
     ("Nr 123456789012345.", ["123456789012345"]),
@@ -202,11 +201,11 @@ def test_credentials_recepta_cala_wartosc(text, masked):
     ("Wiersz 123456789012345\nDalej.", ["123456789012345"]),
     ("Kontakt: 123456789012345@example.pl. Numer: 123456789012345.", ["123456789012345@example.pl", "123456789012345"]),
 ])
-def test_fallback_dlugie_numery_w_calosci(text, spans, express):
+def test_fallback_dlugie_numery_w_calosci(text, spans):
     import layers.ner_adapter as ner_mod
-    from pipeline_new import run_pipeline_new, run_pipeline_express
+    from pipeline_new import run_pipeline_new
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
-        out, rev, blocked = (run_pipeline_express if express else run_pipeline_new)(text, anon_map={})
+        out, rev, blocked = run_pipeline_new(text, anon_map={})
     expected = text
     for span in spans:
         tok = next(t for t, v in rev.items() if v == span)
@@ -215,37 +214,28 @@ def test_fallback_dlugie_numery_w_calosci(text, spans, express):
     assert not any(t in v for v in rev.values() for t in rev), rev  # brak zagnieżdżonych tokenów w mapie
 
 
-# LYNX-T07: pełny tryb zachowuje fallback 8–14 cyfr; Express go nie dostaje (tylko ≥15).
+# LYNX-T07: fallback 8–14 cyfr (Express to ten sam silnik — LYNX-EXPRESS-ONE-ENGINE usunął wariant „tylko ≥15”).
 def test_fallback_8_14_tylko_pelny_tryb():
     import layers.ner_adapter as ner_mod
-    from pipeline_new import run_pipeline_new, run_pipeline_express
+    from pipeline_new import run_pipeline_new
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
         full = run_pipeline_new("Ref 12345678.", anon_map={})
-        expr = run_pipeline_express("Ref 12345678.", anon_map={})
-    assert full[0] == "Ref NUMER_001." and expr[0] == "Ref 12345678.", (full, expr)
+    assert full[0] == "Ref NUMER_001.", full
 
 
 # Codex r3 F1: krótki numer 8+ po długim 15+ nadal maskowany w pełnym trybie (jedno przejście fallbacku).
 @pytest.mark.parametrize("long", ["123456789012345", "123 456 789 012 345"])
 def test_fallback_krotki_po_dlugim(long):
     import layers.ner_adapter as ner_mod
-    from pipeline_new import run_pipeline_new, run_pipeline_express
+    from pipeline_new import run_pipeline_new
     text = f"Nr {long}, ref 12345678."
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
         full = run_pipeline_new(text, anon_map={})
-        expr = run_pipeline_express(text, anon_map={})
     assert full[0] == "Nr NUMER_001, ref NUMER_002." and sorted(full[1].values()) == sorted([long, "12345678"]), full
-    assert expr[0] == "Nr NUMER_001, ref 12345678." and expr[1] == {"NUMER_001": long}, expr
 
 
-# BUG-EXPRESS-FAIL-OPEN — naprawione w LYNX-FAILCLOSED-S3 (xfail zdjęty).
-def test_express_fail_closed():
-    import pipeline_new
-    def boom(state):
-        raise RuntimeError("awaria warstwy")
-    with patch.object(pipeline_new, "apply_identity_layer", boom):
-        out, rev, force_block = pipeline_new.run_pipeline_express("PESEL 44051401458", {})
-    assert force_block is True
+# BUG-EXPRESS-FAIL-OPEN — naprawione w LYNX-FAILCLOSED-S3; ścieżka run_pipeline_express usunięta w LYNX-EXPRESS-ONE-ENGINE
+# (awaria w trybie Express = /preview z tokenem Express: test_failclosed.py::test_awaria_warstwy_blokuje_bez_tresci).
 
 
 # BUG-GUARD-MAPLEAK-UNREDACTED — naprawione w LYNX-FAILCLOSED-S3 (xfail zdjęty).
@@ -464,7 +454,7 @@ def test_express_token_bez_dostepu_poza_maskowaniem(api_client, method, path):
     assert client.request(method, path, headers={"X-Api-Token": _FULL}).status_code != 401
 
 
-@pytest.mark.parametrize("path", ["/preview", "/preview-express"])
+@pytest.mark.parametrize("path", ["/preview"])  # /preview-express usunięty (LYNX-EXPRESS-ONE-ENGINE)
 @pytest.mark.parametrize("tok", [_EXPR, _FULL], ids=["express", "pelny"])
 def test_maskowanie_przechodzi_auth_z_tokenem_express_i_pelnym(api_client, path, tok):
     client, _ = api_client
@@ -589,12 +579,11 @@ def test_quality_profil_tylko_w_temp_i_sprzatany_przy_bledzie(tmp_path, monkeypa
     assert '"status": "NOT_RUN"' in (tmp_path / "n.json").read_text(encoding="utf-8")
 
 
-# LYNX-EMAIL-LOCALPART-OCR: „anna. nowak@…” w obu trybach jednym EMAIL, „anna.” niejawne, Przywróć znak w znak.
-@pytest.mark.parametrize("express", [False, True])
-def test_email_localpart_ocr_bez_jawnego_fragmentu(express):
+# LYNX-EMAIL-LOCALPART-OCR: „anna. nowak@…” jednym EMAIL, „anna.” niejawne, Przywróć znak w znak.
+def test_email_localpart_ocr_bez_jawnego_fragmentu():
     import layers.ner_adapter as ner_mod
-    from pipeline_new import run_pipeline_new, run_pipeline_express
+    from pipeline_new import run_pipeline_new
     text = "Kontakt: anna. nowak@example.pl. Termin płatności."
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
-        out, rev, _ = (run_pipeline_express if express else run_pipeline_new)(text, anon_map={})
+        out, rev, _ = run_pipeline_new(text, anon_map={})
     assert out == "Kontakt: EMAIL_001. Termin płatności." and rev == {"EMAIL_001": "anna. nowak@example.pl"}

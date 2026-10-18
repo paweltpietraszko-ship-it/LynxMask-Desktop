@@ -36,8 +36,7 @@ def client():
     api._API_TOKEN, api._EXPRESS_TOKEN, api._app_state = old
 
 
-def _post(cl, path, text):
-    token = _FULL if path == "/preview" else _EXPR
+def _post(cl, path, text, token=_FULL):  # Express = /preview z tokenem Express (LYNX-EXPRESS-ONE-ENGINE)
     return cl.post(path, files={"file": ("d.txt", text.encode("utf-8"), "text/plain")}, headers={"X-Api-Token": token})
 
 
@@ -54,14 +53,14 @@ def _boom(*a, **k):
     raise RuntimeError(f"awaria z danymi {PESEL}")
 
 
-@pytest.mark.parametrize("path,target", [
-    ("/preview-express", "pipeline_new.apply_identity_layer"),     # F1: wyjątek warstwy Express
-    ("/preview", "pipeline_new.apply_identity_layer"),             # warstwa Full
-    ("/preview", "pipeline._run_pipeline"),                        # F1b: wyjątek całego pipeline Full
+@pytest.mark.parametrize("token,target", [
+    (_EXPR, "pipeline_new.apply_identity_layer"),     # F1: wyjątek warstwy w trybie Express
+    (_FULL, "pipeline_new.apply_identity_layer"),     # warstwa Full
+    (_FULL, "pipeline._run_pipeline"),                # F1b: wyjątek całego pipeline Full
 ])
-def test_awaria_warstwy_blokuje_bez_tresci(client, path, target):
+def test_awaria_warstwy_blokuje_bez_tresci(client, token, target):
     with patch(target, _boom):
-        r = _post(client, path, DOC)
+        r = _post(client, "/preview", DOC, token)
     assert r.status_code == 500 and r.json()["blocked"] is True, r.text[:200]
     _no_raw(r, PESEL, "Zenobiusz", "Audytowy")
 
@@ -140,17 +139,17 @@ def test_awaria_guarda_to_odmowa_s3_nie_ostrzezenie(client, exc):
 
 
 # ── C: token powstały w normalizacji OCR (F5) ──────────────────────────────────
-@pytest.mark.parametrize("path", ["/preview", "/preview-express"])
+@pytest.mark.parametrize("token", [_FULL, _EXPR], ids=["pelny", "express"])
 @pytest.mark.parametrize("fake_token", ["OSOBA_0O1", "FIRMA_1l2"])
-def test_token_po_ocr_odrzucony(client, path, fake_token):
-    r = _post(client, path, f"Pełnomocnik: {fake_token}, pozwany Jan Kowalski.")
+def test_token_po_ocr_odrzucony(client, token, fake_token):
+    r = _post(client, "/preview", f"Pełnomocnik: {fake_token}, pozwany Jan Kowalski.", token)
     assert r.status_code == 422, r.text[:200]
     _no_raw(r, "Kowalski")
 
 
-@pytest.mark.parametrize("path", ["/preview", "/preview-express"])
-def test_zwykla_korekta_ocr_bez_falszywego_alarmu(client, path):
-    r = _post(client, path, "Numer konta: PL61 1090 1014 0000 0712 l981 2874, PESEL: 4405140l359.")
+@pytest.mark.parametrize("token", [_FULL, _EXPR], ids=["pelny", "express"])
+def test_zwykla_korekta_ocr_bez_falszywego_alarmu(client, token):
+    r = _post(client, "/preview", "Numer konta: PL61 1090 1014 0000 0712 l981 2874, PESEL: 4405140l359.", token)
     assert r.status_code == 200, r.text[:200]
 
 
@@ -192,7 +191,7 @@ def real_server():
         lg.removeHandler(handler)
 
 
-@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview-express", _EXPR)])
+@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview", _EXPR)])
 def test_wyjatek_endpointu_json_s3_bez_tresci_w_logu(real_server, path, token):
     import threading
     import requests

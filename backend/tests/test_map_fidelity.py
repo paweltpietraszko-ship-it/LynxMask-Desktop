@@ -49,16 +49,14 @@ def test_alokator_rozdziela_rozne_wartosci_laczy_te_same(typ, a, b, same):
     assert (ta == tb) is same, (ta, tb, al.reverse_map)
 
 
-@pytest.mark.parametrize("pipeline", ["full", "express"])
-def test_kwoty_ponad_precyzje_decimal(pipeline):
+def test_kwoty_ponad_precyzje_decimal():
     """Codex r2 F1: Decimal.normalize() z kontekstem 28 cyfr scalał różne kwoty o 29 cyfrach — klucz musi być dokładny."""
     from pipeline_core import TokenAllocator
-    from pipeline_new import run_pipeline_express
     a, b = "1" * 29 + " zł", "1" * 28 + "2 zł"
     al = TokenAllocator()
     assert al.assign("KWOTA", a) != al.assign("KWOTA", b)
     text = f"Roszczenie {a}, a druga pozycja {b}."
-    out, rev, _ = _full(text) if pipeline == "full" else run_pipeline_express(text, anon_map={})
+    out, rev, _ = _full(text)  # Express = ten sam silnik (LYNX-EXPRESS-ONE-ENGINE)
     assert _restore(out, rev) == text, (out, rev)
 
 
@@ -71,11 +69,9 @@ def test_register_kolizja_wedlug_wartosci():
         al.register("KWOTA_001", "37.00 zł", 20, 28)                  # inna wartość: kolizja (S3)
 
 
-@pytest.mark.parametrize("pipeline", ["full", "express"])
-def test_rozne_kwoty_i_daty_w_dokumencie(pipeline):
-    from pipeline_new import run_pipeline_express
+def test_rozne_kwoty_i_daty_w_dokumencie():
     text = "Opłata 15.00 zł, kara 1 500 zł. Termin 2.11.2023 oraz 21.1.2023."
-    out, rev, _ = _full(text) if pipeline == "full" else run_pipeline_express(text, anon_map={})
+    out, rev, _ = _full(text)  # Express = ten sam silnik (LYNX-EXPRESS-ONE-ENGINE)
     toks = TOKEN.findall(out)
     assert len(toks) == 4 and len(set(toks)) == 4, (out, rev)
     assert _restore(out, rev) == text
@@ -117,8 +113,11 @@ def test_czlon_listy_z_przecinkiem_nie_propaguje_listy():
 ])
 def test_identity_nie_wycina_numeru_ze_srodka_kodu(text, masked):
     """ROZSZERZENIE CC: identity nie tworzy tokenu wewnątrz dłuższego kodu; numer po etykiecie nadal maskowany."""
-    from pipeline_new import run_pipeline_express
-    out, rev, _ = run_pipeline_express(text, anon_map={})
+    from unittest.mock import patch
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new  # bez NER dla determinizmu (dawniej run_pipeline_express)
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = run_pipeline_new(text, anon_map={})
     assert not GLUED.search(out), out
     if masked:   # Przywróć bez sprawdzania: OCR dopisuje „: ” po etykiecie (znany TEXT-FIDELITY-F3, poza zakresem)
         assert masked not in out and masked in rev.values(), (out, rev)
@@ -126,9 +125,12 @@ def test_identity_nie_wycina_numeru_ze_srodka_kodu(text, masked):
 
 def test_adres_nie_w_srodku_wyrazu():
     """„Szpital Wojewódzki 5” to nie „al. Wojewódzki 5” (_ADDR_RE bez lewej granicy dawało „SzpitADRES_001”)."""
-    from pipeline_new import run_pipeline_express
+    from unittest.mock import patch
+    import layers.ner_adapter as ner_mod
+    from pipeline_new import run_pipeline_new  # bez NER dla determinizmu (dawniej run_pipeline_express)
     text = "Leczenie w szpitalu: Szpital Wojewódzki 5 w mieście. Dojazd: al. Jerozolimskie 96, 00-807 Warszawa."
-    out, rev, _ = run_pipeline_express(text, anon_map={})
+    with patch.object(ner_mod, "process_ner", return_value=({}, {})):
+        out, rev, _ = run_pipeline_new(text, anon_map={})
     assert not GLUED.search(out) and "Szpital Wojewódzki" in out and "Jerozolimskie" not in out, (out, rev)
 
 

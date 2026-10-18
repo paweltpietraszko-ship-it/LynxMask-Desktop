@@ -2,13 +2,8 @@
 pipeline_new.py  v1.0
 Nowy pipeline oparty na TokenAllocator — bez rozproszonych liczników.
 Zmiany v1.0:
-  - [EXPR] run_pipeline_express() — tryb bez SpaCy/NER.
-    Tylko warstwy regex: ocr_normalizer, trie, identity, credentials,
-    financial, legal, numeric, contact, amount, verbal_amount, institution, address.
-    Brak: NER (osoby/firmy bez kontekstu słownikowego), fallback, validation.
-    force_block=False zawsze (brak NER → brak możliwości NER crash).
-    Szybszy ~5–10x, bez ładowania modelu spaCy.
-    Zastosowanie: Express Mode, pre-screening, benchmark masowy.
+  - [EXPR] run_pipeline_express() (bez SpaCy/NER) — USUNIĘTA w LYNX-EXPRESS-ONE-ENGINE (2026-10-18).
+    Express Mode używa run_pipeline_new przez /preview (ten sam silnik); stara funkcja była martwa.
   - Poprawka: wewnętrzny test_pipeline_new() rozpakowywał 2 wartości zamiast 3.
 Zmiany v0.6:
   - [WYS-1] run_pipeline_new() zwraca (text, reverse_map, force_block).
@@ -113,45 +108,6 @@ def run_pipeline_new(
 
     except Exception as e:
         _logger.error("[PIPELINE] Nieoczekiwany crash — force_block=True: %s", type(e).__name__)  # [S5] bez treści
-        return text, {}, True
-
-
-def run_pipeline_express(
-    text: str,
-    anon_map: dict,
-    anonymizer: "Anonymizer | None" = None,
-) -> tuple[str, dict, bool]:
-    """Express Mode — pipeline bez SpaCy/NER.
-
-    Tylko warstwy regex — szybszy ~5–10x, nie wymaga załadowanego modelu spaCy.
-    Maskuje: PESEL, NIP, REGON, dowód, paszport, IBAN, konta, email, telefon,
-    sygnatury, kwoty, daty, numery zawodowe (credentials), instytucje, adresy.
-    NIE maskuje: imion/nazwisk i nazw firm bez kontekstu słownikowego (brak NER).
-    force_block=True przy wyjątku dowolnej warstwy (S3) — caller musi zablokować odpowiedź.
-    """
-    import logging as _logging
-    _logger = _logging.getLogger("lynxmask.pipeline_express")
-
-    try:
-        state = PipelineState(text=text, allocator=TokenAllocator())
-        _apply(state, apply_ocr_normalizer)
-        if anonymizer is not None:
-            _apply(state, apply_trie_layer, anonymizer)
-        _apply(state, apply_identity_layer)
-        _apply(state, apply_credentials_layer)
-        _apply(state, apply_financial_layer)
-        _apply(state, apply_legal_layer)
-        _apply(state, apply_numeric_layer)
-        _apply(state, apply_contact_layer)
-        _apply(state, apply_amount_layer)
-        _apply(state, apply_verbal_amount_layer)
-        _apply(state, apply_address_layer)
-        _apply(state, apply_institution_layer)
-        _apply(state, apply_fallback_layer, False)  # [LYNX-T07] tylko resztki ≥15 cyfr, bez 8–14 pełnego trybu
-        return state.text, state.allocator.reverse_map, False
-
-    except Exception as e:  # [LYNX-FAILCLOSED-S3] F1: awaria = blokada, nie oryginał jako wynik
-        _logger.error("[EXPRESS] Nieoczekiwany crash — force_block=True: %s", type(e).__name__)
         return text, {}, True
 
 
