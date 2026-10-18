@@ -59,6 +59,9 @@ TASK_SCOPE:
 - backend/uruchom.vbs
 - frontend/src/screens/SecurityScreen.tsx
 - backend/tests/test_disk_pii.py
+- backend/anonymizer_crypto.py
+- backend/output_guard.py
+- backend/verbal_amounts.py
 
 OUT_OF_SCOPE:
 - R1 — tytuł i nazwa eksportu PDF (decyzja Pawła, osobno);
@@ -86,3 +89,11 @@ OUT_OF_SCOPE:
    - pliki profilu Pawła: `trie.pkl` usunięty przy starcie (migracja — **zmiana na jego profilu, zgłoszona z góry**), `mapa.enc` bez zmian.
 
 GATE: 1 nowy plik testu. Pliki legacy (`anonymizer.py` 1577, `pseudominizer_api.py` 1060) — bez wzrostu albo minimalny i uzasadniony. Szacunek CC: produkcja ok. +60/−50, testy ok. +150. TOTAL > 150 → WYMAGA_DECYZJI. **Paweł 2026-10-18 przed kodem: obieg skrócony — „Tak”, rozmiar — „Tak”.**
+
+## ROZSZERZENIE CC (przy implementacji, ta sama klasa F3)
+Przegląd wszystkich wywołań logowania w `backend/`, także wieloliniowych, znalazł wartości poza modułami z briefu:
+- `anonymizer_crypto.py`: ścieżka keystore z nazwą konta;
+- `output_guard.py`: fraza wykrytej injekcji z pytania użytkownika;
+- `verbal_amounts.py`: kwota słowna i treść wyjątku;
+- w `anonymizer.py` debug `[STDNUM-L4]` z wartością numeru.
+Pliki dopisane do TASK_SCOPE. Bez zmiany kontraktu.

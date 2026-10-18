@@ -212,6 +212,19 @@ def list_audit(limit: int = 200) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def reset_all() -> None:
+    """[LYNX-SEC-DISK-PII] F2: reset profilu — wszystkie dokumenty, dziennik zdarzeń i stara tabela
+    z nazwami plików (migracja pre-v1.22); VACUUM, żeby usunięte wiersze nie zostały w wolnych stronach pliku."""
+    _assert_init()
+    with _db_lock:
+        with sqlite3.connect(_DB_PATH) as conn:
+            conn.execute("DELETE FROM documents")
+            conn.execute("DELETE FROM audit_log")
+            conn.execute("DROP TABLE IF EXISTS documents_backup_filename")
+            conn.commit()
+            conn.execute("VACUUM")
+
+
 # ── Pomocnicze ────────────────────────────────────────────────────────────────
 
 def _assert_init() -> None:

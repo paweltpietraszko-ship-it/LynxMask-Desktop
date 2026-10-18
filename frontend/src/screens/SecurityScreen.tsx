@@ -683,7 +683,8 @@ function ResetSection({ apiToken }: { apiToken: string }) {
             Czy na pewno chcesz usunąć wszystkie dane profilu?
           </div>
           <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14, lineHeight: 1.5 }}>
-            Zostanie usunięty słownik biura, całe archiwum dokumentów i logi.
+            Zostanie usunięty słownik biura, wyjątki „to nie PII”, całe archiwum dokumentów,
+            dziennik zdarzeń i plik logu silnika.
             Operacja jest nieodwracalna.
           </div>
           <div style={{ display: "flex", gap: 10 }}>

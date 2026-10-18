@@ -154,7 +154,7 @@ def _save_keystore(profile_dir: Path, enc_key: bytes, mac_key: bytes) -> None:
         os.chmod(tmp, 0o600)
 
     tmp.replace(ks_path)
-    logger.info(f"anonymizer_crypto: keystore zapisany: {ks_path}")
+    logger.info("anonymizer_crypto: keystore zapisany")
 
 
 def _load_keystore(profile_dir: Path) -> tuple[bytes, bytes]:

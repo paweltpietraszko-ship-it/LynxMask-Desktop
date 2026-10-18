@@ -105,10 +105,9 @@ def generate_pdf(text: str, filename: str = "dokument") -> bytes:
     doc.close()
 
     logger.info(
-        "[EXPORT-PDF] Wygenerowano PDF: %d stron, %d bajtów, title=%r",
+        "[EXPORT-PDF] Wygenerowano PDF: %d stron, %d bajtów",  # [LYNX-SEC-DISK-PII] bez tytułu (nazwa pliku)
         (len(lines) // int(lines_per_page) + 1),
         len(pdf_bytes),
-        safe_title,
     )
     return pdf_bytes
 

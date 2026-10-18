@@ -341,7 +341,7 @@ def detect_entities(text: str) -> list[NERResult]:
             start=ent.start_char,
             end=ent.end_char,
         ))
-        logger.debug(f"spacy_ner: [{mapped}] '{entity_text}' conf={conf:.1f}")
+        logger.debug("spacy_ner: [%s] [len=%d] conf=%.1f", mapped, len(entity_text), conf)
 
     results = _merge_adjacent_entities(results, text)  # [NER-1]
     return results

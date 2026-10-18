@@ -335,21 +335,21 @@ def _filter_institutions(ner_results: list) -> list:
         name_lower  = entity_text.lower()
 
         if _TOKEN_RE.search(entity_text):
-            logger.debug("[FILTER] pominięto token: '%s'", entity_text)
+            logger.debug("[FILTER] pominięto token [len=%d]", len(entity_text))
             continue
         if _ORDER_CODE_RE.match(entity_text.strip()):
-            logger.debug("[FILTER] pominięto kod zamówienia: '%s'", entity_text)
+            logger.debug("[FILTER] pominięto kod zamówienia [len=%d]", len(entity_text))
             continue
         if name_lower in _NER_BLOCKLIST and not _street_person(ner.label, entity_text):
-            logger.debug("[FILTER] pominięto (exact): '%s'", entity_text)
+            logger.debug("[FILTER] pominięto (exact) [len=%d]", len(entity_text))
             continue
         # [FIX-NER-ADDR-PREFIX] Pomiń encje będące adresami (ul., os., gen. itp.)
         if _ADDR_PREFIX_RE.match(entity_text):
-            logger.debug("[FILTER] pominięto adres jako encję: '%s'", entity_text[:40])
+            logger.debug("[FILTER] pominięto adres jako encję [len=%d]", len(entity_text))
             continue
         # [FIX-NER-COURTS] Pomiń sądy i trybunały — instytucje publiczne, nie firmy
         if _COURT_PREFIX_RE.match(entity_text):
-            logger.debug("[FILTER] pominięto sąd/trybunał: '%s'", entity_text[:60])
+            logger.debug("[FILTER] pominięto sąd/trybunał [len=%d]", len(entity_text))
             continue
         # [LYNX-T01] Jednowyrazowa OSOBA potwierdzona słownikiem/Morfeuszem — bez filtrów prefiks/przymiotnik
         if ner.label == "OSOBA" and " " not in entity_text and (_street_person(ner.label, entity_text) or _is_person_word(entity_text)):
@@ -359,31 +359,31 @@ def _filter_institutions(ner_results: list) -> list:
             continue
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
         if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
-            logger.debug("[FILTER] pominięto dział wewnętrzny: '%s'", entity_text[:40])
+            logger.debug("[FILTER] pominięto dział wewnętrzny [len=%d]", len(entity_text))
             continue
         # [BUG-FIRMA-ZUS-MIX] Pomiń encję FIRMA zawierającą fragment instytucji publicznej
         if ner.label == "FIRMA" and _INSTITUTION_IN_FIRMA_RE.search(entity_text):
-            logger.debug("[FILTER] pominięto FIRMA z instytucją: '%s'", entity_text[:60])
+            logger.debug("[FILTER] pominięto FIRMA z instytucją [len=%d]", len(entity_text))
             continue
         # [BUG-NER-FP] Jednowyrazowa OSOBA z końcówką przymiotnikową (wielowyrazowe = fleksja osoby).
         if (ner.label == "OSOBA"
                 and " " not in entity_text.strip()
                 and _ADJECTIVE_ENDINGS_RE.search(entity_text)):
-            logger.debug("[FILTER] pominięto przymiotnik jako OSOBA: '%s'", entity_text[:40])
+            logger.debug("[FILTER] pominięto przymiotnik jako OSOBA [len=%d]", len(entity_text))
             continue
 
         # [BUG-NER-FP-GRANICE] Jednosłowna FIRMA-przymiotnik → pomiń (wielosłowna jest legalna).
         if (ner.label == "FIRMA" and " " not in entity_text.strip()
                 and _ADJECTIVE_ENDINGS_RE.search(entity_text)
                 and not _LEGAL_SUFFIX_RE.search(entity_text)):
-            logger.debug("[FILTER] pominięto jednosłowny przymiotnik jako FIRMA: '%s'", entity_text[:40])
+            logger.debug("[FILTER] pominięto jednosłowny przymiotnik jako FIRMA [len=%d]", len(entity_text))
             continue
 
         # [BUG-NER-FP-GRANICE] Czyste akronimy bez sufiksu prawnego → pomiń.
         # "ERP", "CRM", "IT" to skróty systemowe — nie firmy.
         if (ner.label in ("FIRMA", "ORGANIZACJA") and _PURE_ACRONYM_RE.match(entity_text.strip())
                 and not _LEGAL_SUFFIX_RE.search(entity_text)):
-            logger.debug("[FILTER] pominięto czysty akronim jako FIRMA/ORG: '%s'", entity_text)
+            logger.debug("[FILTER] pominięto czysty akronim jako FIRMA/ORG [len=%d]", len(entity_text))
             continue
 
         # [BUG-NER-FP-GRANICE] Nagłówki ALL-CAPS (≤2 słowa, brak sufiksu) → pomiń.
@@ -394,7 +394,7 @@ def _filter_institutions(ner_results: list) -> list:
                 and entity_text == entity_text.upper()
                 and not _LEGAL_SUFFIX_RE.search(entity_text)
                 and not any(c.isdigit() for c in entity_text)):
-            logger.debug("[FILTER] pominięto nagłówek ALL-CAPS jako FIRMA/ORG: '%s'", entity_text[:40])
+            logger.debug("[FILTER] pominięto nagłówek ALL-CAPS jako FIRMA/ORG [len=%d]", len(entity_text))
             continue
 
         out.append(ner)
@@ -529,7 +529,7 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
                 normalized = re.sub(r"\s+", " ", entity_text).strip()
                 if normalized:
                     all_variants[normalized] = token
-            logger.debug("[NER] wariant '%s' -> %s", entity_text, token)
+            logger.debug("[NER] wariant [len=%d] -> %s", len(entity_text), token)
             continue
 
         # [BUG-1] Wieloczłonowa odmiana fleksyjna OSOBA — "Jana Kowalskiego"
@@ -550,7 +550,7 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
             if pstem is not None and pstem in person_stem_to_token:
                 existing_token = person_stem_to_token[pstem]
                 all_variants[entity_text] = existing_token
-                logger.debug("[NER] odmiana wieloczłonowa '%s' -> %s", entity_text, existing_token)
+                logger.debug("[NER] odmiana wieloczłonowa [len=%d] -> %s", len(entity_text), existing_token)
                 continue
 
         # [BUG-5] Jednoczłonowa encja OSOBA może być odmianą nazwiska
@@ -568,7 +568,7 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
             )
             if matched_token:
                 all_variants[entity_text] = matched_token
-                logger.debug("[NER] odmiana '%s' -> %s", entity_text, matched_token)
+                logger.debug("[NER] odmiana [len=%d] -> %s", len(entity_text), matched_token)
                 continue
 
         counters[typ] += 1
@@ -589,6 +589,6 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
             if normalized:
                 all_variants[normalized] = token
 
-        logger.debug("[NER] nowa encja '%s' -> %s", entity_text, token)
+        logger.debug("[NER] nowa encja [len=%d] -> %s", len(entity_text), token)
 
     return reverse_map, all_variants

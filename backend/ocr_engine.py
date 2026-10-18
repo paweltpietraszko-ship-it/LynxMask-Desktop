@@ -465,12 +465,12 @@ def extract_text_from_image(image_bytes: bytes, filename: str) -> OCRResult:
     try:
         result = _run_tesseract(image_bytes, filename)
         logger.info(
-            f"[OCR] {filename}: {result.word_count} słów, "
+            f"[OCR] obraz: {result.word_count} słów, "  # [LYNX-SEC-DISK-PII] bez nazwy pliku
             f"conf={result.confidence:.1f}%, jakość={result.quality}"
         )
         return result
     except Exception as e:
-        logger.error(f"[OCR] błąd dla {filename}: {e}")
+        logger.error("[OCR] błąd rozpoznawania obrazu: %s", type(e).__name__)  # [LYNX-SEC-DISK-PII] bez nazwy pliku
         return OCRResult(
             text="", confidence=0.0, quality="low",
             warning_msg=f"Błąd OCR: {e}",
