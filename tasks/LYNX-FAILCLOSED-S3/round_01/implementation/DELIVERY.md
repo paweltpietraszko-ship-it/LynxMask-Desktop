@@ -52,7 +52,7 @@ Wzrost API +6 (import `normalize_ocr`, dwa warunki S3 po 2 linie, pole `guard_va
 
 # DELIVERY r2 (CC) — poprawka FAIL r3 Codexa (`93d15a4`)
 
-Kod: `b0b5ff9` (na `93d15a4`). Diff względem dostawy r1 (`8194c0d`): `pseudominizer_api.py` +12, `tests/test_failclosed.py` +53; nic więcej w produkcie.
+Kod: `b0b5ff9` (na `93d15a4`). Diff względem dostawy r1 (`8194c0d`): `pseudominizer_api.py` +12, `tests/test_failclosed.py` +55; nic więcej w produkcie.
 
 ## Zmiana
 `pseudominizer_api.py`: nowy zewnętrzny middleware `_s3_error_boundary` wokół `call_next`. Nieobsłużony wyjątek z dowolnego endpointu (np. `_extract_text` przed pipeline) → `JSONResponse(S3_FAILURE, 500)` dla `/preview` i `/preview-express`, a dla innych ścieżek `{"error": "Wewnętrzny błąd serwera."}` 500. Log: `logger.error(...)` z samą ścieżką i `type(e).__name__`, bez `str(e)` i bez tracebacku (S5). Wyjątek nie wraca do Starlette/uvicorn, więc `uvicorn.error` nie dostaje tracebacku. `@app.exception_handler(Exception)` odrzucony, bo Starlette po obsłudze i tak re-raisuje wyjątek do serwera, który loguje treść. Wyjątki spoza `Exception` (np. `KeyboardInterrupt`) przechodzą bez zmian.
@@ -78,4 +78,4 @@ REASON:
 WYMAGA_DECYZJI:
   - TOTAL_LINES: 380 lines changed (threshold 150)
 ```
-Nowy wzrost względem zaakceptowanego r1 to API +12 (łącznie +18 względem bazy) i test +53. Powód: wymaganie FAIL r3 (granica błędu endpointu), nie nowy zakres. Funkcje `preview` i `preview_express` są bez zmian względem r1. Zgłaszam Pawłowi i nie zakładam zgody.
+Nowy wzrost względem zaakceptowanego r1 to API +12 (łącznie +18 względem bazy) i test +55. Powód: wymaganie FAIL r3 (granica błędu endpointu), nie nowy zakres. Funkcje `preview` i `preview_express` są bez zmian względem r1. Zgłaszam Pawłowi i nie zakładam zgody.
