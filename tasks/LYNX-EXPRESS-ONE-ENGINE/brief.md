@@ -53,5 +53,5 @@ TASK_SCOPE:
 DELETED: `frontend/src/screens/ExpressModeScreen.tsx` (zadeklarowany w TASK_SCOPE).
 OUT_OF_SCOPE: silnik i warstwy (poza usunięciem `run_pipeline_express`), Guard, `/express/token` (bez zmian), Tauri, Biblioteka/Odmaskuj, LYNX-APP-LAUNCHER.
 
-## Rozmiar (szacunek CC, do potwierdzenia przez Pawła przed kodem)
+## Rozmiar (szacunek CC; Paweł 2026-10-18 przed kodem: „Akceptuję rozmiar”)
 Usunięcia ok. 800 linii (ekran 621, endpoint ok. 65, funkcja ok. 40, parametryzacje testów i docstringi). Dodane ok. 110 (nowy test ok. 60, UI ok. 25, przeniesienia testów). Plik API (legacy) zmniejsza się o ok. 70 linii. Gate zgłosi TOTAL > 150 z powodu usunięć.
