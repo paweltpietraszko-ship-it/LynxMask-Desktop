@@ -1,0 +1,23 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 4dd79a416f6c4fc1447da743a05766b99378397f
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 294/42 = 7.0:1 (threshold 5:1)
+  - TOTAL_LINES: 336 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-TEXT-LIMIT-15K\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T12-ARCHIVE-TESTS\round_01\implementation\t12_same_process.py
+  - tasks\LYNX-T12-ARCHIVE-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T10-BUILD-TS\round_01\implementation\header_capture.py
+  - tasks\LYNX-T02-CORS-EXPRESS\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\tests\tests_r2_vertical.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\tests\tests_r3_vertical.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-FAILCLOSED-S3\round_01\tests\tests_r2_endpoint_repro.py
+  - tasks\LYNX-FAILCLOSED-S3\round_01\tests\tests_r3_server_repro.py
+  - tasks\LYNX-FAILCLOSED-S3\round_01\tests\tests_r4_repro.py
+  - backend\tests\test_archive_adversarial.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_failclosed.py
+  - backend\tests\test_text_limit_15k.py
+EXCLUDED_ARTIFACTS: NONE
