@@ -1,0 +1,17 @@
+LYNX-NER-MULTILINE — wąski audyt dostawy r2, 2026-10-18
+WYNIK: FAIL — F1 / SAFETY_PRIVACY, regresja potwierdzonego kandydata FIRMA.
+EXACT SHA: 6cf403eab798d5391c5dc76cd01188cde1066a29
+BAZA: c62f819; brief f0f3f22 + mechaniczna korekta TASK_SCOPE 88c003d.
+Odbiorca: CC / Architekt. Bez merge, bez zmian kodu produktu.
+
+F1 — newline na granicy poprawnej firmy usuwa wcześniejsze maskowanie.
+TRACE: brief „Problem i jedyny preferowany szew”: dotychczasowe encje jednowierszowe bez zmian; „Test falsyfikujący” pkt 1 obejmuje trailing newline, pkt 3 brak regresji zwykłego FIRMA, pkt 5 brak nowych wycieków. S1: zastępowanie danych tokenami. Nie żądam wykrywania nowej firmy: wejściem jest już potwierdzony kandydat NER, którego część znacząca mieści się w jednym wierszu.
+OWNERSHIP: nowy ner_layer._split_lines odrzuca cały FIRMA zawierający jakikolwiek LF, jeśli w surowym spanie nie ma formy prawnej. Dotyczy to także samego początkowego/końcowego whitespace. Bazowy owner usuwał skrajne whitespace i rejestrował dosłowną nazwę; nowy helper kasuje kandydata przed tym etapem. Adapter i Guard nie mają już wartości w mapie, którą mogłyby podmienić/sprawdzić.
+REPRO: syntetyczne „Wykonawca: Testopolia Systemy” + LF + „; koniec.”, NERResult FIRMA obejmujący „Testopolia Systemy” i końcowy LF z dokładnymi offsetami. Prawdziwe ner_layer -> adapter -> pipeline -> Guard, pusty profil, kontrolowany wynik detektora. Baza: nazwa ukryta, mapa 1, Guard bez blokady. Dostawa: jawna nazwa, mapa 0, Guard bez blokady i brak błędu. To porównanie dokładnej bazowej wersji jedynego zmienionego modułu produkcyjnego z dostawą, przy identycznej reszcie łańcucha.
+Generalizacja tej samej granicy: trailing LF, trailing CRLF, leading LF i jednowyrazowa firma z trailing LF — 4/4 regresje. Kontrole: firma bez newline oraz z formą prawną i trailing LF — obie maskowane przed/po. Retained reproducer: tests_r2_repro.py.
+Granica dowodu: wynik detektora jest kontrolowany, jak w obowiązkowej macierzy briefu. Nie jest to dowód rzeczywistego dokumentu z taką granicą SpaCy. Punktowe sprawdzenie 7 syntetyków z prawdziwym SpaCy dało inne spany wielowierszowe, ale nie ten wariant brzegowy. Regresję przypisuję kontraktowi i odpowiedzialności za poprawny span NER, nie gwarancji wygenerowania konkretnego spanu przez model.
+
+Wykonane: wiersz BOARD, DELIVERY i 24-liniowy diff produktu; niezależny reproduktor i powyższe dwie kontrole; pion przez rzeczywisty Guard; nowy test dostawy — 14 passed (8.64 s). Zielony test implementera nie obejmuje tej granicy FIRMA i nie zamyka F1.
+NOT_RUN/PARTIAL po F1: szersza macierz, pozostałe celowane testy, pełna suita/gate oraz ponowny pomiar Mobile/A1/A2/17 dokumentów i UI. Nie przypisuję im FAIL ani niezależnego PASS na podstawie wyników CC. Brak powtórzenia kosztownych pomiarów jest świadomym zatrzymaniem po wystarczającym dowodzie regresji.
+Osobno GATE dostawy: 154 dodane / 1 usunięta, 155 zmian (131 nowy test), WYMAGA_DECYZJI według załączonego gate_r1; zgoda na rozmiar nie zamknęłaby F1. Nie proszę o akceptowanie wadliwej dostawy — po poprawce rozmiar/gate trzeba odnieść do nowego SHA.
+Następny krok: CC usuwa regresję przy zachowaniu granic briefu, dodaje pokrycie tej klasy i dostarcza nowy exact SHA. Re-check zaczyna od zachowanego reproduktora i wąskiego diffu. Bez projektowania nowego detektora i bez rozszerzenia do ogólnego rozpoznawania firm bez formy prawnej.
