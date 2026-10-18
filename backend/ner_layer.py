@@ -439,17 +439,14 @@ def _person_stem(text: str) -> tuple | None:
 # ── API publiczne ─────────────────────────────────────────────────────────────
 
 def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
-    """Wykrywa encje OSOBA i FIRMA przez SpaCy. NIE modyfikuje tekstu.
-    Przy błędzie zwraca ({}, {}) — pipeline degraduje do warstw regex.
-    NERBlockError NIE jest łapana — propaguje się do pipeline.py. [BUG-B]
-    """
+    """Wykrywa encje OSOBA i FIRMA przez SpaCy. NIE modyfikuje tekstu. [LYNX-FAILCLOSED-S3] Błąd nie jest „zerem
+    encji”: propaguje się (adapter → state.ner_error → force_block, S3), bez treści wyjątku (S5)."""
     try:
         return _process_ner(text, spacy_ner_mod)
     except spacy_ner_mod.NERBlockError:  # [BUG-B] re-raise — NERBlockError dostępna przez moduł-argument
         raise
     except Exception as e:
-        logger.error("[NER] Nieoczekiwany błąd: %s", e)
-        return {}, {}
+        raise RuntimeError(f"NER: {type(e).__name__}") from None
 
 
 # ── Implementacja ─────────────────────────────────────────────────────────────

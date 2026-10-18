@@ -246,6 +246,7 @@ class PipelineResult:
     guard_blocked: bool = False
     guard_reasons: list = field(default_factory=list)
     error:         str | None = None
+    guard_values:  list = field(default_factory=list)  # [LYNX-FAILCLOSED-S3] wartości naruszeń tylko dla UI
 
 
 # â”€â”€ API publiczne â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -258,9 +259,17 @@ def pseudonymize_document(text: str, state: AppState) -> PipelineResult:
     """
     try:
         return _run_pipeline(text, state)
-    except Exception as e:
-        logger.error("[PIPELINE] Nieoczekiwany bĹ‚Ä…d: %s", e)
-        return PipelineResult(text=text, error=f"BĹ‚Ä…d pseudonimizacji: {e}")
+    except Exception as e:  # [LYNX-FAILCLOSED-S3] F1b: awaria = wynik bez treści i mapy, bez treści wyjątku (S3/S5)
+        logger.error("[PIPELINE] Nieoczekiwany błąd: %s", type(e).__name__)
+        return _s3_failure("[PIPELINE_ERROR] awaria silnika")
+
+
+# [LYNX-FAILCLOSED-S3] Jedna odpowiedź na awarię silnika/Guarda (S3) — API zwraca ją jako HTTP 500, bez danych.
+S3_FAILURE = {"error": "Nie udało się bezpiecznie zamaskować dokumentu. Spróbuj ponownie lub zgłoś błąd.", "blocked": True}
+
+
+def _s3_failure(reason: str) -> PipelineResult:
+    return PipelineResult(text="", guard_blocked=True, guard_reasons=[reason], error=S3_FAILURE["error"])
 
 
 # â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -307,10 +316,11 @@ def _apply_guard(
 ) -> PipelineResult:
     # Wspolna sciezka output_guard dla obu pipelinow.
     # force_block=True: blokada prewencyjna gdy wczesniejszy etap zglosil blad (MED-1).
-    guard_blocked = force_block
-    guard_reasons: list = ["[FORCE_BLOCK] Blad wczesniejszego etapu"] if force_block else []
+    if force_block:  # [LYNX-FAILCLOSED-S3] awaria wcześniejszego etapu (NER, warstwa) — bez treści i mapy w wyniku
+        return _s3_failure("[FORCE_BLOCK] awaria wcześniejszego etapu")
+    guard_blocked, guard_reasons, guard_values = False, [], []
 
-    if _GUARD_AVAILABLE and not force_block:
+    if _GUARD_AVAILABLE:
         try:
             try:
                 import pathlib as _alp, os as _alo, json as _alj
@@ -332,7 +342,7 @@ def _apply_guard(
                 allowlist=_allowlist,
             )
             guard_blocked = guard_result.blocked
-            guard_reasons = guard_result.reasons
+            guard_reasons, guard_values = guard_result.reasons, guard_result.values
             if guard_blocked:
                 logger.error("[PIPELINE] Guard zablokował eksport: %s", guard_reasons)
                 # [IBAN-OCR] Przy blokadzie HIGH tekst też zamieniamy na redacted_text
@@ -344,10 +354,9 @@ def _apply_guard(
                 logger.warning("[PIPELINE] Guard zamazał fragmenty: %s", guard_reasons)
                 text = guard_result.redacted_text
         except Exception as e:
-            # [MED-1] Wyjatek guarda -> blokada prewencyjna zamiast przepuszczenia.
-            guard_blocked = True
-            guard_reasons = [f"[GUARD_EXCEPTION] {e}"]
-            logger.error("[PIPELINE] output_guard wyjatek -- BLOKADA prewencyjna: %s", e)
+            # [MED-1] Wyjatek guarda -> blokada prewencyjna zamiast przepuszczenia. [LYNX-FAILCLOSED-S3] bez treści (S3/S5)
+            logger.error("[PIPELINE] output_guard wyjatek -- BLOKADA prewencyjna: %s", type(e).__name__)
+            return _s3_failure("[GUARD_EXCEPTION] awaria Guarda")
 
     return PipelineResult(
         text=text,
@@ -355,6 +364,7 @@ def _apply_guard(
         guard_blocked=guard_blocked,
         guard_reasons=guard_reasons,
         error=None,
+        guard_values=guard_values,
     )
 
 

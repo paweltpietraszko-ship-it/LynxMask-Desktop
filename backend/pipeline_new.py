@@ -112,7 +112,7 @@ def run_pipeline_new(
         return state.text, state.allocator.reverse_map, force_block
 
     except Exception as e:
-        _logger.error(f"[PIPELINE] Nieoczekiwany crash — force_block=True: {e}")
+        _logger.error("[PIPELINE] Nieoczekiwany crash — force_block=True: %s", type(e).__name__)  # [S5] bez treści
         return text, {}, True
 
 
@@ -127,7 +127,7 @@ def run_pipeline_express(
     Maskuje: PESEL, NIP, REGON, dowód, paszport, IBAN, konta, email, telefon,
     sygnatury, kwoty, daty, numery zawodowe (credentials), instytucje, adresy.
     NIE maskuje: imion/nazwisk i nazw firm bez kontekstu słownikowego (brak NER).
-    force_block zawsze False — brak NER = brak możliwości NER crash.
+    force_block=True przy wyjątku dowolnej warstwy (S3) — caller musi zablokować odpowiedź.
     """
     import logging as _logging
     _logger = _logging.getLogger("lynxmask.pipeline_express")
@@ -150,9 +150,9 @@ def run_pipeline_express(
         _apply(state, apply_fallback_layer, False)  # [LYNX-T07] tylko resztki ≥15 cyfr, bez 8–14 pełnego trybu
         return state.text, state.allocator.reverse_map, False
 
-    except Exception as e:
-        _logger.error(f"[EXPRESS] Nieoczekiwany crash: {e}")
-        return text, {}, False
+    except Exception as e:  # [LYNX-FAILCLOSED-S3] F1: awaria = blokada, nie oryginał jako wynik
+        _logger.error("[EXPRESS] Nieoczekiwany crash — force_block=True: %s", type(e).__name__)
+        return text, {}, True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

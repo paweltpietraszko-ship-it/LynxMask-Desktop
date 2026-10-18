@@ -214,6 +214,8 @@ class GuardResult:
     detection_count: int             = 0
     high_hit:        bool            = False   # True jeśli wykryto HIGH
     mode:            GuardMode       = GuardMode.REDACT
+    values:          list[str]       = field(default_factory=list)  # [LYNX-FAILCLOSED-S3] wartości naruszeń tylko do UI
+    # (ostrzeżenie + „nie PII” → allowlista, decyzja Pawła 18.10); nigdy w powodach ani logach (S5)
 
     BLOCKED_MSG = "[ODPOWIEDŹ ZABLOKOWANA — WYKRYTO POTENCJALNY WYCIEK DANYCH]"
     REDACT_NOTE = "\n\n⚠ Część danych została zamazana przez system bezpieczeństwa."
@@ -261,9 +263,7 @@ def guard_output(
             continue
 
         count = len(matches)
-        first_val = matches[0].group(0)
-        display = f" «{first_val[:50]}»" if first_val else ""
-        reason = f"HIGH {label}{display}: {count} wystąpień"
+        reason = f"HIGH {label}: {count} wystąpień"  # [LYNX-FAILCLOSED-S3] bez wartości w powodzie/logu (S5)
         reasons.append(reason)
         detection_count += 2 * count  # waga HIGH = 2
         high_hit = True
@@ -289,9 +289,7 @@ def guard_output(
                 continue
 
         count = len(matches)
-        first_val = matches[0].group(0)
-        display = f" «{first_val[:50]}»" if first_val else ""
-        reason = f"MEDIUM {label}{display}: {count} wystąpień (waga {weight})"
+        reason = f"MEDIUM {label}: {count} wystąpień (waga {weight})"
         reasons.append(reason)
         detection_count += weight * count
         logger.warning(f"output_guard [{mode.value}]: {reason}")
@@ -358,15 +356,17 @@ def guard_output_with_map(
     result = guard_output(text, mode)
     if anon_map is None and not known_plain:
         return result
-    violations: list[str] = []
+    # [LYNX-FAILCLOSED-S3] Naruszenie = (rodzaj, wartość). Wartość tylko do dokładnej allowlisty i zamazania podglądu,
+    # nigdy do powodu/logu (S5); None = wartość nieznana → bez allowlisty, cała treść podglądu ukryta.
+    violations: list[tuple[str, str | None]] = []
     if anon_map is not None:
         try:
             from anonymizer import check_blacklist_context
-            violations = check_blacklist_context(text, anon_map, known_plain=known_plain)
+            violations = [_violation(v) for v in check_blacklist_context(text, anon_map, known_plain=known_plain)]
         except Exception as e:
             # [WYS-3] Błąd guard = blokada, nie ostrzeżenie. Fail-closed.
-            logger.error(f"guard_with_map: check_blacklist_context crash — blokowanie: {e}")
-            violations = [f"GUARD_ERROR: {e}"]
+            logger.error("guard_with_map: check_blacklist_context crash — blokowanie: %s", type(e).__name__)
+            violations = [("GUARD_ERROR", None)]
 
         # [FIX-RVM-1] Fallback: bezpośredni skan encji z anon_map.
         # Poprzednia wersja (v3.2) używała anon_map.reverse_map.values() —
@@ -381,45 +381,52 @@ def guard_output_with_map(
                     plain_str = str(plain) if plain else ""
                     if plain_str.strip() and len(plain_str.strip()) >= 4 \
                             and plain_str.lower() in text_lower:
-                        violations.append(
-                            f"[MAP_LEAK] Plain text '{plain_str}' — "
-                            f"encja z mapy sesji obecna w odpowiedzi modelu"
-                        )
+                        violations.append(("MAP_LEAK", plain_str))
             except Exception as e:
                 # [CRIT-3] Wyjątek w fallbacku → blokada zamiast przepuszczenia.
                 # Cicha utrata guarda (AttributeError / runtime) = luka bezpieczeństwa.
-                logger.error(f"guard_with_map: entity_names fallback błąd — BLOKADA: {e}")
-                violations.append(
-                    f"[GUARD_ERROR] Fallback guarda rzucił wyjątek: {e} — blokada prewencyjna"
-                )
+                logger.error("guard_with_map: entity_names fallback błąd — BLOKADA: %s", type(e).__name__)
+                violations.append(("GUARD_ERROR", None))
     # Ścieżka 3 bezpośrednio gdy anon_map=None (brak zależności od anonymizer)
     if anon_map is None and known_plain:
         text_lower = text.lower()
         for name in known_plain:
             if name and len(name.strip()) >= 4 and name.lower() in text_lower:
-                violations.append(
-                    f"[GLOBALNY_PLAIN] Plain text '{name}' — "
-                    f"encja z reverse_map sesji obecna w odpowiedzi modelu"
-                )
-    # [ALLOWLIST] Filtruj naruszenia — usuń te, które użytkownik oznaczył jako "nie PII"
+                violations.append(("GLOBALNY_PLAIN", name))
+    # [ALLOWLIST] [LYNX-FAILCLOSED-S3] F4: tylko równość z całą wartością encji (bez wielkości liter); GUARD_ERROR
+    # i naruszenia o nieznanej wartości nigdy nie są wyciszane.
     if allowlist and violations:
-        allow_lower = {a.lower() for a in allowlist}
-        violations = [
-            v for v in violations
-            if not any(a in v.lower() for a in allow_lower)
-        ]
+        allow = {a.strip().casefold() for a in allowlist if a and a.strip()}
+        violations = [(k, v) for k, v in violations if k == "GUARD_ERROR" or v is None or v.strip().casefold() not in allow]
 
     if not violations:
         return result
-    for v in violations:
-        logger.error(f"output_guard [MAP]: {v}")
+    reasons = list(dict.fromkeys(f"MAP_LEAK: [{k}] encja z mapy obecna w tekście" for k, _ in violations))
+    for r in reasons:
+        logger.error("output_guard [MAP]: %s", r)
+    # F3: podgląd bez surowych wartości — zamazania HIGH z guard_output + wartości naruszeń; wartość nieznana → bez treści
+    redacted = result.redacted_text
+    if any(v is None for _, v in violations):
+        redacted = ""
+    for v in sorted({v for _, v in violations if v}, key=len, reverse=True):
+        redacted = re.sub(re.escape(v), "[REDACTED]", redacted, flags=re.IGNORECASE)
     return GuardResult(
         blocked=True, redacted=False,
-        reasons=result.reasons + [f"MAP_LEAK: {v}" for v in violations],
-        safe_text=text, redacted_text=text,
+        reasons=result.reasons + reasons,
+        safe_text=redacted, redacted_text=redacted,
         detection_count=result.detection_count + len(violations),
-        high_hit=True, mode=mode,
+        high_hit=True, mode=mode, values=list(dict.fromkeys(v for _, v in violations if v)),
     )
+
+
+_VIOLATION_RE = re.compile(r"\[([A-Z_]+)\] Plain text '(.+?)'(?= \(| —)")
+
+
+def _violation(message: str) -> tuple[str, str | None]:
+    """Komunikat anonymizer.check_blacklist_context (format generowany przez nasz kod) → (rodzaj, wartość).
+    Format nierozpoznany → wartość None (bez zgadywania: blokada bez allowlisty, podgląd ukryty)."""
+    m = _VIOLATION_RE.match(message)
+    return (m.group(1), m.group(2)) if m else ("MAP_LEAK", None)
 
 
 # ============================================================

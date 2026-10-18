@@ -14,7 +14,7 @@ Historia zmian (od najnowszej):
     [EXPR-API] Endpoint /preview-express — Express Mode bez SpaCy/NER.
                Wywołuje run_pipeline_express() zamiast run_pipeline_new().
                Taki sam interfejs jak /preview, bez pola anonymizer_active.
-               force_block zawsze False — brak NER = brak możliwości NER crash.
+               force_block przy awarii warstwy → HTTP 500 bez treści (LYNX-FAILCLOSED-S3).
   v1.32-TAURI (2026-06-26):
     [CRASH-UX] Zapis startup_error.json przed śmiercią procesu.
                Frontend czyta ten plik przez Tauri read_startup_error() i pokazuje
@@ -117,6 +117,7 @@ from fastapi.responses import JSONResponse, FileResponse
 import db_store
 from audit_log import record_preview
 from anonymizer_init import INPUT_LIMIT_BYTES  # [LYNX-TEXT-LIMIT-15K] jedyna granica tekstu: bajty UTF-8, bez cichego cięcia
+from layers.ocr_normalizer import normalize_ocr  # [LYNX-FAILCLOSED-S3] F5: token powstały w normalizacji OCR
 
 logging.basicConfig(
     level=logging.INFO,
@@ -167,7 +168,7 @@ from document_processor import _next_pse, _extract_text
 
 # ── Inicjalizacja modułów ─────────────────────────────────────────────────────
 
-from pipeline import AppState, pseudonymize_document
+from pipeline import AppState, pseudonymize_document, S3_FAILURE
 
 _app_state = AppState()
 _GUARD_AVAILABLE = False
@@ -385,7 +386,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
     # [AUD-01] Token injection attack — odrzuć tekst zawierający tokeny maskujące.
     # Użytkownik mógłby wstrzyknąć FIRMA_001 i po depseudonimizacji podmienić go
     # na prawdziwą encję z mapy bieżącej sesji. Walidacja przed pipeline.
-    if _TOKEN_RE.search(text):
+    if _TOKEN_RE.search(text) or _TOKEN_RE.search(normalize_ocr(text)):  # [LYNX-FAILCLOSED-S3] F5: także po OCR
         logger.warning("[PREVIEW] %s — odmowa: token injection w treści dokumentu", pse_code)
         return JSONResponse(
             {
@@ -415,6 +416,8 @@ async def preview(request: Request, file: UploadFile = File(...)):
         )
 
     result        = pseudonymize_document(text, _app_state)
+    if result.error:  # [LYNX-FAILCLOSED-S3] awaria silnika/Guarda: 500 bez treści, mapy i tokenów (S3)
+        return JSONResponse(S3_FAILURE, status_code=500)
     anon_text     = result.text
     reverse_map   = result.reverse_map
     pseudo_err    = result.error
@@ -454,6 +457,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
         "blocked":            guard_blocked,
         "error":              pseudo_err,
         "guard_reasons":      guard_reasons,
+        "guard_values":       result.guard_values,  # [LYNX-FAILCLOSED-S3] ostrzeżenie → allowlista (UI)
         "tokens":             tokens,
         "total":              len(tokens),
         "has_sensitive":      len(tokens) > 0,
@@ -914,7 +918,7 @@ async def preview_express(request: Request, file: UploadFile = File(...)):
     if (rejected := _text_rejection(text, "[EXPRESS]", pse_code)) is not None:
         return rejected
 
-    if _TOKEN_RE.search(text):
+    if _TOKEN_RE.search(text) or _TOKEN_RE.search(normalize_ocr(text)):  # [LYNX-FAILCLOSED-S3] F5: także po OCR
         logger.warning("[EXPRESS] %s — odmowa: token injection", pse_code)
         return JSONResponse(
             {
@@ -924,11 +928,13 @@ async def preview_express(request: Request, file: UploadFile = File(...)):
             status_code=422,
         )
 
-    anon_text, reverse_map, _ = run_pipeline_express(
+    anon_text, reverse_map, force_block = run_pipeline_express(
         text,
         _app_state.anon_map or {},
         _app_state.anonymizer,
     )
+    if force_block:  # [LYNX-FAILCLOSED-S3] F1: awaria warstwy Express — 500 bez treści (S3)
+        return JSONResponse(S3_FAILURE, status_code=500)
 
     tokens = []
     for token, original in reverse_map.items():
