@@ -33,7 +33,7 @@ D. **Pomiar:** 178 dok. przez `/preview`: token pełny vs token Express daje 0 r
 3. Obieg: skrócony (CC → Codex), jak przy STARTUP-COMPONENTS, czy przez architekta?
 
 ## Szacunek rozmiaru
-Głównie usuwanie: `ExpressModeScreen.tsx` −700+, API około −50, `pipeline_new` około −40, testy ±60. UI Express (C) około +30. Netto wyraźnie ujemne, ale gate zgłosi TOTAL > 150 z powodu usunięć — do potwierdzenia przez Pawła przed kodem.
+Głównie usuwanie: `ExpressModeScreen.tsx` −621, API około −50, `pipeline_new` około −40, testy ±60. UI Express (C) około +30. Netto wyraźnie ujemne, ale gate zgłosi TOTAL > 150 z powodu usunięć — do potwierdzenia przez Pawła przed kodem.
 
 ## Testy odbioru
 `/preview-express` → 404. Token Express na `/preview` = wynik pełny (178 dok., 0 różnic). Token Express na zapis i profil → 401, a w UI brak martwych przycisków. Wynik pełny bez zmian względem main. Ocena okiem Pawła: Express na ekranie wygląda jak Pseudonimizuj, bez przycisków wymagających logowania.
