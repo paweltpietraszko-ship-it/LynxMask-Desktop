@@ -107,7 +107,7 @@ def _match_city(text: str, pos: int) -> tuple[int, str] | None:
 # Faza 1: pełne adresy z prefiksem ul./al./etc.
 # Zatrzymuje się na kodzie pocztowym — miasto dopisuje _match_city (SIMC lookup).
 _ADDR_RE = re.compile(
-    r"(?:ul|al|pl|os|aleja|ulica|plac|osiedle|skwer|rondo|bulwar)"
+    r"(?<!\w)(?:ul|al|pl|os|aleja|ulica|plac|osiedle|skwer|rondo|bulwar)"  # [LYNX-MAP-FIDELITY] nie „Szpit|al X 5”
     r"\.?[ \t]+[A-ZŁŚŹĆŃ]"
     r"[\wóżźćńłśąę\- ]{1,40}"
     r"[ \t]+\d+(?:[a-zA-Z])?(?:/\d+(?:[a-zA-Z])?)?"

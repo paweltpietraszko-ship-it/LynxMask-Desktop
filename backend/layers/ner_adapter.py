@@ -90,6 +90,18 @@ _BARE_SUFFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
+
+def _whole(value: str) -> re.Pattern:
+    """[LYNX-MAP-FIDELITY] Wartość tylko jako cały wyraz: nie „OSOBA_001owska”, nie „FIRMA_013u” z „Sądu”, nie w środku
+    istniejącego tokenu. Łącznik = granica (nadmaskowanie „OSOBA_001-Kowalski” zamiast jawnego „Pyziak-Szafnicka”).
+    Obecność i podmiana tym samym wzorcem."""
+    return re.compile(rf"(?<!\w){re.escape(value)}(?!\w)")
+
+
+def _sub_whole(text: str, value: str, token_id: str) -> str:
+    return _whole(value).sub(lambda m: token_id, text)
+
+
 # ── Polskie diakrytyki do strip (NFD) ────────────────────────────────────────
 def _strip_diacritics(s: str) -> str:
     return "".join(
@@ -236,7 +248,7 @@ def _remap_ner_ids(state: PipelineState, ner_reverse: dict) -> tuple[dict, dict]
     ("@firma.pl" jako OSOBA po rozbiciu przez OCR) — pomijane."""
     local = {tid: val for tid, val in ner_reverse.items() if not val.startswith("@")}
     remap = {tid: state.allocator.assign(tid.rsplit("_", 1)[0], val)
-             for tid, val in local.items() if val in state.text}
+             for tid, val in local.items() if _whole(val).search(state.text)}
     return local, remap
 
 
@@ -275,12 +287,12 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
 
     for token_id, value in sorted(
         ner_reverse.items(),
-        key=lambda x: state.text.find(x[1]),
+        key=lambda x: (len(x[1]), state.text.find(x[1])),  # [LYNX-MAP-FIDELITY] najdłuższe najpierw: „Izby” nie w „Krajowej Izby…”
         reverse=True,
     ):
         if value.startswith("@"):
             continue
-        state.text = state.text.replace(value, token_id)
+        state.text = _sub_whole(state.text, value, token_id)
 
     # ── Warstwa 3c: Propagacja wykrytych nazwisk ─────────────────────────────
     for token_id, value in ner_reverse.items():
@@ -300,7 +312,7 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
     _variants = getattr(state, "ner_variants", None) or {}
     for _var_text, _tok_id in sorted(
         _variants.items(),
-        key=lambda x: state.text.find(x[0]),
+        key=lambda x: (len(x[0]), state.text.find(x[0])),
         reverse=True,
     ):
         _local = _tok_id  # [LYNX-T03] lokalny numer NER → numer alokatora (niżej, gdy odmiana jest w tekście)
@@ -314,14 +326,14 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             continue
         _stripped = re.sub(r"[,\.;:!?\s]+$", "", _var_text).rstrip()
         _target = _stripped if _stripped else _var_text
-        if not _target or _target not in state.text:
+        if not _target or not _whole(_target).search(state.text):
             continue
         if _local not in remap:
             remap[_local] = state.allocator.assign(_local.rsplit("_", 1)[0], local[_local])
         _tok_id = remap[_local]
         if _stripped and _stripped != _var_text:
-            state.text = state.text.replace(_var_text, _tok_id)
-        state.text = state.text.replace(_target, _tok_id)
+            state.text = _sub_whole(state.text, _var_text, _tok_id)
+        state.text = _sub_whole(state.text, _target, _tok_id)
     state.text = _apply_first_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] po wariantach
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 

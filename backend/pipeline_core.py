@@ -25,6 +25,33 @@ def _canonical(value: str) -> str:
     return _strip_diacritics(stripped)
 
 
+# [LYNX-MAP-FIDELITY] Klucz deduplikacji po WARTOŚCI: ten sam zapis inaczej („3 700 zł”/„3700 zł”, „10-07-2024”/„10.07.2024”)
+# → jeden token; różne wartości, które po skasowaniu separatorów wyglądają tak samo („15.00 zł”/„1 500 zł”,
+# „2.11.2023”/„21.1.2023”) → różne tokeny. Zapis niejednoznaczny nie jest scalany z inną liczbą.
+_DATE_IN_VALUE_RE = re.compile(r"(?<!\d)(\d{1,2})[.,/\-](\d{1,2})[.,/\-]((?:19|20)\d{2})(?!\d)")
+_AMOUNT_VALUE_RE = re.compile(r"([\d\s.,]*\d)\s*([^\d\s.,][^\d]*)")
+
+
+def _amount_key(value: str) -> str:
+    m = _AMOUNT_VALUE_RE.fullmatch(value.strip())
+    num = re.sub(r"\s", "", m.group(1)) if m else ""
+    dec = re.fullmatch(r"(\d+(?:[.,]\d{3})*)[.,](\d{1,2})", num)
+    whole = re.fullmatch(r"\d+(?:[.,]\d{3})*", num)
+    if not (dec or whole):
+        return "kwota~" + value.strip().lower()                       # niejednoznaczny: tylko identyczny zapis
+    ip, fp = (dec.group(1), dec.group(2)) if dec else (num, "")
+    whole_digits = re.sub(r"[.,]", "", ip).lstrip("0") or "0"         # dokładnie, bez arytmetyki (Codex F1: Decimal 28 cyfr)
+    return f"kwota:{whole_digits}.{fp.rstrip('0')}:{_canonical(m.group(2))}"
+
+
+def _value_key(value: str, token_type: str) -> str:
+    if token_type == "KWOTA":
+        return _amount_key(value)
+    if token_type == "NUMER":   # daty mają typ NUMER: dzień:miesiąc:rok przed skasowaniem separatorów
+        value = _DATE_IN_VALUE_RE.sub(lambda d: f"#{int(d.group(1))}:{int(d.group(2))}:{d.group(3)}#", value)
+    return _canonical(value)
+
+
 class TokenAllocator:
     """
     Jeden obiekt alokacji tokenów na cały pipeline.
@@ -59,7 +86,7 @@ class TokenAllocator:
     def assign(self, token_type: str, value: str) -> str:
         """[LYNX-T03] Token dla wartości bez sprawdzania spanu (NER sam zamienia tekst).
         Dedup po canonical value; nowy numer zawsze powyżej rezerwacji (profil, wcześniejsze warstwy)."""
-        key = (_canonical(value), token_type)
+        key = (_value_key(value, token_type), token_type)
         if key in self._canonical_to_token:
             return self._canonical_to_token[key]
         self._counters[token_type] = self._counters.get(token_type, 0) + 1
@@ -83,7 +110,8 @@ class TokenAllocator:
         """
         # [LYNX-T03] Jeden token = jedna wartość. Konflikt → wyjątek → pipeline blokuje wynik (S3, WYS-2).
         existing = self._reverse.get(token_id)
-        if existing is not None and _canonical(existing) != _canonical(value):
+        ttype = token_id.rsplit("_", 1)[0]
+        if existing is not None and _value_key(existing, ttype) != _value_key(value, ttype):
             raise ValueError(f"[TOKEN-COLLISION] {token_id} wskazuje już inną wartość")
         parts = token_id.rsplit("_", 1)
         if len(parts) == 2:
@@ -95,7 +123,7 @@ class TokenAllocator:
             except ValueError:
                 token_type = parts[0]
 
-            canon = _canonical(value)
+            canon = _value_key(value, token_type)
             key = (canon, token_type)
             self._canonical_to_token.setdefault(key, token_id)
 

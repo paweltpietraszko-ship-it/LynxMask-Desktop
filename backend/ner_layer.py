@@ -467,10 +467,7 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
     ner_sorted = sorted(ner_results, key=lambda r: -(r.end - r.start))
 
     for ner in ner_sorted:
-        entity_text  = ner.text.strip()
-        # [BUG-7] Normalizacja whitespace — tabulator i wielokrotne spacje
-        # w tekście TSV/CSV tworzą tokeny z \t wewnątrz wartości.
-        entity_text  = re.sub(r"\s+", " ", entity_text).strip()
+        entity_text  = ner.text.strip()  # [LYNX-MAP-FIDELITY] dosłownie: „Jan  Kowalski”/tab zwinięte = wartość spoza tekstu
         if not entity_text:
             continue
         # [BUG-G] Pipeline normalizuje „ na " przed NER. SpaCy może zwrócić
@@ -490,7 +487,7 @@ def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
         # [BUG-H] SpaCy może zwrócić encję z interpunkcją na końcu
         # ("Stanisław Wiśniewski,") — przecinek zmienia stem i tworzy
         # duplikat tokenu dla tej samej osoby. Strip interpunkcji końcowej.
-        entity_text  = entity_text.rstrip(",.;:!?()")
+        entity_text  = entity_text.rstrip(",.;:!?()„“ ")  # [LYNX-MAP-FIDELITY] + otwierający cudzysłów na końcu
         if not entity_text:
             continue
         # [BUG-FIRMA-TRUNC] Rozszerz encję o obcięty sufiks prawny
