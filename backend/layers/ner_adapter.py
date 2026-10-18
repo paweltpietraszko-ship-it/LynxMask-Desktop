@@ -52,6 +52,17 @@ def _load_surnames_forms() -> dict[str, list[str]]:
 
 _SURNAMES_FORMS: dict[str, list[str]] = _load_surnames_forms()
 
+
+def _load_first_names() -> frozenset[str]:
+    """[LYNX-NER-MULTILINE] Imiona z odmianami — propagacja dotyczy nazwisk: „Piotr” jednej osoby to nie „Piotr” drugiej."""
+    try:
+        with open(os.path.join(_DATA_DIR, "names_inflected.json"), encoding="utf-8") as f:
+            return frozenset(form for base, forms in json.load(f).items() for form in [base, *forms])
+    except Exception:
+        return frozenset()
+
+_FIRST_NAMES: frozenset[str] = _load_first_names()
+
 # Płaski zbiór wszystkich form fleksyjnych → szybkie sprawdzenie
 _SURNAMES_FORMS_FLAT: frozenset[str] = frozenset(
     form
@@ -123,7 +134,7 @@ def _propagate_osoba(text: str, token_id: str, full_name: str) -> str:
         return text
 
     for name_part in words:
-        if len(name_part) <= 3 or not name_part[0].isupper():
+        if len(name_part) <= 3 or not name_part[0].isupper() or name_part.lower() in _FIRST_NAMES:
             continue
 
         # 1. Regex-based propagacja (odmiany przez przypadki)
@@ -177,6 +188,20 @@ def _apply_initials(text: str, allocator: TokenAllocator) -> str:
         return token_id if token_id else m.group(0)
 
     return _INITIALS_RE.sub(_replace, text)
+
+
+_NAME = r"[A-ZŁŚŹĆŃĄĘÓŻ][a-ząćęłńóśźż]+"
+_NAME_AFTER_RE = re.compile(rf"\b(Pan|Pani|OSOBA_\d{{3}})([ \t]+)({_NAME})\b")
+_NAME_BEFORE_RE = re.compile(rf"\b({_NAME})([ \t]+)(OSOBA_\d{{3}})\b")
+
+
+def _apply_first_names(text: str, allocator: TokenAllocator) -> str:
+    """[LYNX-NER-MULTILINE] Imię (names_inflected) obok tokenu osoby albo po „Pan/Pani” → własny token z dosłowną
+    wartością. Propagacja nie rozsyła imion (cudza osoba w Przywróć), a gołe imię przy nazwisku zostawałoby jawne."""
+    def name(m: re.Match, i: int) -> str:
+        return allocator.assign("OSOBA", m.group(i)) if m.group(i).lower() in _FIRST_NAMES else m.group(i)
+    text = _NAME_AFTER_RE.sub(lambda m: m.group(1) + m.group(2) + name(m, 3), text)
+    return _NAME_BEFORE_RE.sub(lambda m: name(m, 1) + m.group(2) + m.group(3), text)
 
 
 def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
@@ -267,7 +292,6 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
 
     # ── Inicjały: "K. Kowalski" → OSOBA (port: INITIALS_REGEX) ──────────────
     state.text = _apply_initials(state.text, state.allocator)
-
     # ── Warianty SpaCy (port: FIX-NER-GLOBAL) ────────────────────────────────
     # ner_variants zawiera WSZYSTKIE formy wykryte przez SpaCy (odmiany fleksyjne,
     # wersje bez cudzysłowów, warianty FIRMA). Stary pipeline.py stosował je przez
@@ -298,9 +322,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = state.text.replace(_var_text, _tok_id)
         state.text = state.text.replace(_target, _tok_id)
-
-    # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje w tekście: mapa jej nie ma,
-    # więc usunięcie gubiło ją przy Przywróć. Sama forma nie identyfikuje firmy.
+    state.text = _apply_first_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] po wariantach
+    # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 
 # ─────────────────────────────────────────────────────────────────────────────

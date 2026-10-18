@@ -36,6 +36,8 @@ zapomina resztę) + pomiar zapominania; (3) twardy podział dokumentów na treni
 uczono; (4) dane jawne rejestrowe dopuszczalne wg tej samej oceny co PUBLIC-DATA-TESTS, prywatne (`dataset_real/`) — nie;
 (5) nowy model to plik ~500 MB z wersją i powtarzalnym treningiem — osobny Task po wynikach pomiaru na danych prawdziwych.
 
+**Uzupełnienie 2026-10-18 (pytanie Pawła o większy model):** opcje lokalne wg rozmiaru — SpaCy (dziś), HerBERT base 125 MB (pobrany, kilka s/dok.), HerBERT large ~400 MB (2–3× wolniejszy), mały lokalny model językowy 1–3 GB (np. polski Bielik — licencja do sprawdzenia; minuty na dokument na CPU biurowym, ryzyko przekręcenia nazwy → każde wskazanie weryfikować dosłownie z tekstem). Propozycja CC: dwa poziomy — domyślnie SpaCy+HerBERT+słownik+reguły; opcjonalne „dokładne sprawdzenie” małym modelem tylko na fragmentach ostrzeżonych przez Guard lub na żądanie. Decyzja po pomiarze K1 (HerBERT) na tych samych 17 dokumentach, czasy mierzone z ograniczeniem do maszyny biurowej (np. 4 rdzenie, bez GPU; komputer Pawła i7-14650HX/32 GB jest 2–4× szybszy od typowego biurowego).
+
 ## 2026-10-16 Redakcja wizualna obrazu (blur twarzy, prostokąty na pikselach)
 
 Istnieje tylko w Mobile. W `PROJEKT_KONTEKST.md` oznaczone jako „wymaga osobnej sesji". Nie ruszane do czasu ustabilizowania silnika tekstowego.

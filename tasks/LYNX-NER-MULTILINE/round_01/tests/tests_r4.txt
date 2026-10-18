@@ -1,0 +1,13 @@
+LYNX-NER-MULTILINE — re-check r4, 2026-10-18
+STATUS: OWNER_DECISION_NEEDED / PARTIAL; bez PASS/FAIL całej dostawy.
+Exact SHA: a32824d1f1424fcdaad80c79fe0a0bcbf0c987cf (kod e31e0ed).
+Diff od audytowanej dostawy 6cf403e; oracle: brief, ROZSZERZENIE CC, AGENTS OWNER_EXPLANATION_GATE.
+F1: zachowany tests_r2_repro.py wykonany w pamięci z HEAD=r4 i oczekiwaniem naprawy, bez nadpisania oryginału. 4 granice + 2 kontrole: 6/6 maskuje, mapa po 1 wpisie, bez błędu/blokady; kontrolowany NERResult → rzeczywisty pipeline/Guard. F1 nie odtwarza się. To nie dowód emisji tych granic przez rzeczywisty SpaCy.
+TECHNICAL_ONLY: span z newline wyłącznie na brzegu zachowuje dotychczasową ścieżkę; podział po kwalifikacji firmy; kosmetyczne skrócenie apply_ner_layer bez nowej odpowiedzialności.
+OWNER_DECISION_NEEDED: r3 pomija propagowanie członów będących imionami (także odmianami), by token innej osoby nie zastępował imienia. Rozpoznane nazwiska nadal podlegają istniejącej propagacji. Samo imię może pozostać jawne.
+OWNER_DECISION_NEEDED: r4 dodaje maskowanie imienia ze słownika, pisanego wielką literą, bezpośrednio przed/po tokenie OSOBA w tej samej linii albo po Pan/Pani. Imię otrzymuje własny token z dosłowną wartością; identyczne imię współdzieli token. Wynik może zawierać dwa tokeny dla jednej osoby. Samotne imię bez kontekstu pozostaje bez zmian. Propozycja Pawła i ocena CC nie są jawnym OWNER_ACCEPTED wg AGENTS.
+Dane: lokalny names_inflected.json oraz tekst dokumentu i mapa tokenów; nowy helper nie zapisuje plików ani nie wysyła danych. Wynik i mapa idą istniejącą ścieżką aplikacji. Brak nowego UI/ścieżki odzyskiwania; Przywróć dla nowego tokenu używa dosłownego imienia (nie gwarantuje to wierności całego dokumentu, istniejące K2 pozostaje). Brak/nieczytelny słownik: loader zwraca pusty zbiór, ochrona oparta na nim nie działa; brak osobnego komunikatu użytkownikowi. Express omija tę warstwę.
+SAFETY_PRIVACY: nie potwierdzono nowego wycieku w wykonanym re-check F1; pozostała dostawa nie otrzymuje automatycznej akceptacji ochrony. UNAUTHORIZED: brak odrębnego orzeczenia; nowe zachowanie wymaga rozstrzygnięcia, nie jest uznane za zaakceptowane.
+Rozmiar: akceptacja 194 linii zapisana w DELIVERY r3; r4 podaje 228 i ratio 37:1. Wymaga potwierdzenia zakresu zgody, nie jest samoistnym defektem funkcjonalnym.
+NOT_RUN: dalsza macierz, testy implementera, realny model, /preview, dokumenty lokalne, pełne suite/gate/where — zatrzymanie po wymaganym wyjaśnieniu właścicielowi; dowody CC są pomocnicze. Nie powtarzano 17 dokumentów.
+Następny krok: OWNER_ACCEPTED / OWNER_CORRECTED dla opisanej propagacji i osobnych tokenów imion oraz potwierdzenie rozmiaru r4; następnie wąskie dokończenie audytu tego SHA lub nowej dostawy. Bez zmian produktu i bez merge.

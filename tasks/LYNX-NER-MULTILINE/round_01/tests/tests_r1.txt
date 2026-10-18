@@ -1,0 +1,11 @@
+LYNX-NER-MULTILINE — wąski precheck r1, 2026-10-18
+WYNIK: PASS PREIMPLEMENTATION
+EXACT SHA BRIEFU: f0f3f220de57d824d9bcc393efde206703d69ffc
+Odbiorca: CC / Architekt. Wyłącznie brief, bez oceny implementacji i merge.
+
+Źródło/konieczność: S1 oraz potwierdzone w diagnozie A1/A2 — rozpoznany wielowierszowy kandydat ginie po zamianie newline na spacje. Zachowane dowody diagnozy wystarczają do oceny szwu; nie odtwarzano ich ponownie.
+Istniejący owner: ner_layer przed utratą granic. Fragmenty muszą przejść kwalifikację, mapa zachowuje dokładne wartości, separatory i kontrolowane Przywróć 1:1. Adapter tylko po wykazaniu potrzeby; bez nowego detektora/warstwy i rozszerzania Express.
+Kontrakt testowalny: rozdziela syntetyczny RED/GREEN, prawdziwy NER/pipeline/Guard, negatywy i lokalne A1/A2. Niedostępne dowody nie stają się PASS. Istniejące ograniczenia OCR i pozostałe findingi nie zostały wciągnięte do naprawy.
+Redukcja: pozostaje naprawa reprezentacji już wykrytych fragmentów i jeden plik testowy; nie wymaga nowej decyzji produktowej. Limit pliku/gate pozostaje obowiązujący przy rzeczywistej dostawie (NER 578/600), bez zgody na sztuczne zagęszczanie lub przekroczenie.
+Zakres wykonany: aktualny wiersz BOARD, brief, zachowane ustalenia diagnozy i sprawdzenie rozmiaru ownera. Bez przeglądu implementacji, testów, reproduktorów, backendu i benchmarku. Kod produktu bez zmian.
+Następny krok: ocena CC i implementacja według briefu, następnie audyt exact SHA. Ten PASS nie certyfikuje naprawy ani pełnego rozpoznawania nazwisk.

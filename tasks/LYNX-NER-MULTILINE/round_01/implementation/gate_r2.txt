@@ -1,0 +1,47 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: f37bdb7b1d106b045f20520ded1d1806fe5ea540
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 168/1 = 168.0:1 (threshold 5:1)
+  - TOTAL_LINES: 169 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\trace_layers.py
+  - backend\pipeline_new.py
+  - tasks\LYNX-ZUS-BOXED-IDS\round_01\implementation\comb_sweep.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T11-TEXT-FIDELITY\round_01\tests\tests_r5_repro.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\implementation\number_sweep.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T07-IBAN-RECEPTA\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-T03-TOKEN-ALLOC\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\implementation\line_pairs_sweep.py
+  - tasks\LYNX-NEWLINE-CROSSING\round_01\implementation\split_sweep.py
+  - tasks\LYNX-NER-MULTILINE\round_01\implementation\edge_sweep.py
+  - tasks\LYNX-NER-MULTILINE\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-IBAN-FOREIGN-ALNUM\round_01\implementation\iban_sweep.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\implementation\firma_sweep.py
+  - tasks\LYNX-EMAIL-LOCALPART-OCR\round_01\implementation\email_sweep.py
+  - tasks\LYNX-EMAIL-LOCALPART-OCR\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-DOCX-TABLES\round_01\implementation\table_sweep.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_pipeline_adversarial.py
+  - backend\tests\test_pipeline_v2.py
+  - backend\tests\test_pseudominizer.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-NER-MULTILINE/brief.md
+  - tasks/LYNX-NER-MULTILINE/cc_proposal.md
+  - tasks/LYNX-NER-MULTILINE/repo_before.hash
+  - tasks/LYNX-NER-MULTILINE/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-NER-MULTILINE/round_01/implementation/edge_sweep.py
+  - tasks/LYNX-NER-MULTILINE/round_01/implementation/gate_r1.txt
+  - tasks/LYNX-NER-MULTILINE/round_01/tests/tests_r1.txt
+  - tasks/LYNX-NER-MULTILINE/round_01/tests/tests_r2.txt
+  - tasks/LYNX-NER-MULTILINE/round_01/tests/tests_r2_repro.py
