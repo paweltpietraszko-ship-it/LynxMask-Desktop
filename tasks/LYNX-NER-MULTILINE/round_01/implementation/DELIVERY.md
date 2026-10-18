@@ -61,3 +61,46 @@ Pośrednie wersje (do wiadomości audytu): bez kwalifikacji linii jednowyrazowyc
 ## Do odbioru
 
 Ocena okiem Pawła w działającym programie: KIO 578/11 (`Pobrane`) i C047 (`backend/dataset_real_public/C_codex/docs/C047.pdf`) — skład orzekający i lista senatorów zakryte, brak nowej blokady. Backend z tej gałęzi uruchomiony lokalnie przez CC.
+
+---
+
+# DELIVERY r2 (po FAIL r2 Codexa, F1)
+
+Kod: `f37bdb7`. Reproduktor Codexa: `tasks/LYNX-NER-MULTILINE/round_01/tests/tests_r2_repro.py` (`991d6fd`).
+
+## F1 — przyczyna i poprawka
+
+F1 potwierdzony: span FIRMA bez formy prawnej z `\n` **tylko na brzegu** (`"Testopolia Systemy\n"`, `"\r\n"`, `"\nTestopolia Systemy"`, `"Testopolia\n"`) szedł do podziału, a warunek „FIRMA dzielona tylko z formą prawną” go porzucał — baza maskowała go dzięki `strip()`. Moje testy r1 tej granicy nie objęły (brak przeglądu rodziny przed oddaniem — błąd procesu CC).
+Poprawka: `_split_lines` dzieli wyłącznie span z końcem wiersza **wewnątrz** (`"\n" not in span.strip()` → dotychczasowa ścieżka). Przy okazji przeglądu: forma prawna w następnej linii („Testopolia Systemy\nSp. z o.o.”) wracała przez `_firma_bounds` (doklejał `\n` + formę) — podział przeniesiony za `_firma_entities` (`_split_lines(text, _firma_entities(...))`).
+
+## Przegląd rodziny (`round_01/implementation/edge_sweep.py`, baza `c62f819` vs bieżące drzewo, ścieżka jak reproduktor Codexa: kontrolowany NERResult → `pipeline.pseudonymize_document` z Guardem)
+
+Macierz: etykieta (OSOBA/FIRMA) × treść (1 słowo, 2 słowa, dwie osoby, FIRMA bez formy, z „Sp. z o.o.”, ze „Spółka Akcyjna”) × położenie końca wiersza (brak, przód LF, tył LF, tył CRLF, oba brzegi, wnętrze LF, wnętrze CRLF, wnętrze ze spacjami, wnętrze + tył). **55 przypadków, 0 regresji** (jawne słowo, blokada/błąd, Przywróć); poprawa w 20 (osoby z wnętrzem, FIRMA z formą prawną). Bez zmian (świadomie): FIRMA bez formy z `\n` wewnątrz — dalej jawna jak na bazie (firma vs instytucja → K1, C1).
+
+## Testy (r2)
+
+| Zestaw | baza `c62f819` | gałąź `f37bdb7` |
+|---|---|---|
+| `tests/test_ner_multiline.py` (+5 wariantów F1) | 11 failed, 8 passed | 19 passed |
+| `test_ner_multiline.py` + `test_layers.py` | — | 140 passed |
+| `tests/` (z działającym backendem) | — | 167 passed, 2 skipped, 1 xfailed |
+| `tests/test_audyt_2026_10.py` | 131 passed, 10 xfailed | 131 passed, 10 xfailed |
+
+## Prawdziwe dokumenty przez działający backend (`/preview`, jak aplikacja; profil biura Pawła, 26 encji)
+
+Uwaga Pawła: testy jednostkowe nie są dowodem — liczy się przepuszczenie dokumentu przez backend. Te same 17 dokumentów diagnozy przez `/preview`: backend bazowy (worktree `origin/main`, ten sam profil przez `ANONYMIZER_PROFILE_DIR`, osobny katalog archiwum) vs backend z gałęzi `f37bdb7`.
+- jawne osoby przed → po: KIO 578/11 1 → 0; KIO_uzp_16714 2 → 0; C047 10 → 0; C024 wspólnicy 3 → 0;
+- blokady Guarda 5 → 5 (te same dokumenty); równość Przywróć z wejściem i liczba `\n` w wyniku — bez zmian w każdym z 17;
+- nowe wartości mapy: osoby jak wyżej + firmy z formą prawną przełamane wierszem; znikły śmieciowe `Sp. z o.o`, `z o.o. Sp. k`, `Komisji Rewizyjnej Rady P`.
+
+## Gate r2 (dosłownie)
+
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: f37bdb7b1d106b045f20520ded1d1806fe5ea540
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 168/1 = 168.0:1 (threshold 5:1)
+  - TOTAL_LINES: 169 lines changed (threshold 150)
+```
+Kod produktu 24 linie (`ner_layer.py` 600/600), test 145 linii. Akceptacja rozmiaru — decyzja Pawła.
