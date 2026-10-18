@@ -25,6 +25,7 @@ TASK_SCOPE:
 - backend/ner_layer.py
 - backend/layers/address.py
 - backend/tests/test_map_fidelity.py
+- backend/layers/identity.py
 
 OUT_OF_SCOPE: backend/pipeline_new.py, backend/output_guard.py, API/UI, warstwy OCR/normalizacja (osobny SHADOW-NORMALIZE), profil/trie poza istniejącą semantyką alokatora, zmiana TokenAllocator API publicznego bez prechecku, K2 osobne literalne warianty tej samej wartości, fail-closed S3 (odrębny brief), nowy parser dat/kwot dla całej aplikacji, nowe modele i prawdziwe PII. Jeśli utrzymanie bezpiecznego rozróżnienia D1 wymaga osobnego rodzaju/źródła w kolejnym ownerze, Codex: STOP i minimalny aneks TASK_SCOPE przed implementacją, bez obejścia testu.
 
@@ -44,3 +45,7 @@ WHERE_MAP:
 - TARGETS: backend/layers/address.py --symbol _ADDR_RE
 - REASON: dwie rodziny błędów — kolizja wartości w alokatorze oraz błędny span/literalne podmiany.
 GATE: maksymalnie jeden nowy plik testowy; >150 zmienionych linii lub ratio >5:1 = WYMAGA_DECYZJI; pliki historycznie ponad limitem nie mogą rosnąć. Codex najpierw BRIEF_ONLY precheck: ocenić semantyczne daty w NUMER, ryzyko wyjątków/niejednoznaczności, spójny register/assign oraz realność D3 w 601-liniowym ner_layer.py.
+
+## ROZSZERZENIE CC (2026-10-18, przed kodem identity) — numer tożsamości wycięty ze środka dłuższego kodu
+Pomiar 178 dokumentów przez `/preview` po D2 (ner_adapter, address): sklejone tokeny 33 → 6; wszystkie 6 pochodzą z `layers/identity.apply_identity_layer` — wzorzec numeru (STRUCTURAL_PATTERNS, lewa granica tylko `(?<!\d)`) dopasowuje wnętrze dłuższego kodu: „ocds-148610-4123c129-…” → „ocds-NUMER_001c129-…” (C001, C009, C010, C013, C014), „S_239-394253” → „S_NUMER_018” (KIO_122113). Ta sama klasa co D2 (token wewnątrz wyrazu, nie pasuje do TOKEN_RE, Przywróć/Guard go nie widzą).
+Poprawka (wąska, bez zmiany wzorców `anonymizer_init`): w `apply_identity_layer` pominąć dopasowanie, gdy znak tuż PO nim jest literą/cyfrą albo znak tuż PRZED nim to „_”. Litera PRZED numerem nadal dozwolona (OCR sklejający etykietę: „PESEL44051401359” musi być maskowany). Reproduktory w `test_map_fidelity.py`: „ocds-148610-4123c129” bez tokenu wewnątrz, „PESEL44051401359” i „PESEL: 44051401359.” nadal NUMER. `backend/layers/identity.py` dopisany do TASK_SCOPE.
