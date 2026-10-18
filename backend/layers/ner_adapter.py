@@ -323,11 +323,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = state.text.replace(_var_text, _tok_id)
         state.text = state.text.replace(_target, _tok_id)
-
-    state.text = _apply_first_names(state.text, state.allocator)
-
-    # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje w tekście: mapa jej nie ma,
-    # więc usunięcie gubiło ją przy Przywróć. Sama forma nie identyfikuje firmy.
+    state.text = _apply_first_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] po wariantach
+    # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 
 # ─────────────────────────────────────────────────────────────────────────────
