@@ -134,3 +134,28 @@ WYMAGA_DECYZJI:
   - RATIO: 192/2 = 96.0:1 (threshold 5:1)
   - TOTAL_LINES: 194 lines changed (threshold 150)
 ```
+
+---
+
+# DELIVERY r4 (propozycja Pawła po r3)
+
+Paweł 2026-10-18: „Wolałbym sytuację, gdyby zamiast gołego imienia, imię dostało inny token. Czyli zamiast OSOBA_008 Katarzyna było OSOBA_008 OSOBA_027”. Ocena CC: zgoda — imię nie jawne, wartość dosłowna (Przywróć 1:1), bez cudzej osoby; koszt: AI widzi dwa tokeny przy jednej osobie (nadmaskowanie, zgodne z polityką Pawła).
+Kod: `a5846b5` (funkcja) + `f9bf74c`/`e31e0ed` (bez zmiany działania: `apply_ner_layer` z powrotem 83 linie — gate SIZE_FUNC „nie pogarszaj”).
+
+`ner_adapter._apply_first_names` (po wariantach): imię z `names_inflected.json`, wielką literą, bezpośrednio obok tokenu `OSOBA_NNN` w tej samej linii albo po „Pan/Pani” → `allocator.assign("OSOBA", imię)` — własny token, dosłowna wartość (ta sama wartość = ten sam token). Bez kontekstu (samo imię w linii, „Róża”) — bez zmian (K1).
+
+Wynik:
+- plik Mobile: jawne linie 26 → **25** / 102, pełne imię+nazwisko 1 → **0** / 49; „Zielińska Katarzyna” → „OSOBA_008 OSOBA_050” (OSOBA_050 = „Katarzyna”), „Pani Katarzyna” → „Pani OSOBA_050”;
+- `/preview` z profilem Pawła, 17 dokumentów (baza vs `a5846b5`): A1/A2 + C024 + C047 jawne osoby 18 → 0; blokady 5 → 5; Przywróć: interpelacja_1739 ≠ → =, pozostałe bez zmian; liczba `\n` bez zmian; nowe tokeny-imiona m.in. „Marcin” (wspólnik MAXTO — wcześniej część sklejonego tokenu);
+- testy: `test_ner_multiline.py` + `test_layers.py` 143 passed; `tests/` z backendem 167 passed, 2 skipped, 1 xfailed; `test_audyt_2026_10.py` 131 passed, 10 xfailed; `edge_sweep.py` 55, 0 regresji.
+
+## Gate r4 (dosłownie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: e31e0ed5433e139f5623cc58a109ae14ab7925c1
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 222/6 = 37.0:1 (threshold 5:1)
+  - TOTAL_LINES: 228 lines changed (threshold 150)
+```
+Wcześniejszy przebieg na `a5846b5`: `STATUS: FAIL` — `SIZE_FUNC: backend/layers/ner_adapter.py:apply_ner_layer has 85 lines (max 50, before 83)`; na `f9bf74c`: 84 → usunięta pusta linia, 83. Rozmiar dostawy wzrósł od akceptacji Pawła (194 → 228 linii) — do potwierdzenia.
