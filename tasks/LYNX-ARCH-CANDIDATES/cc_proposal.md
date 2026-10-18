@@ -155,12 +155,9 @@ F2 i F3 zależą od wyniku F1. Architekt może podzielić F2 na osoby i firmy.
 3. Rozstrzygnięcie, czy Q1 (§8) wymaga formalnej zmiany kontraktu przed F2.
 
 ## 8. Pytania otwarte
-**Q1 (do Pawła i architekta; dotyczy kontraktu mapy).** Cel Pawła brzmi: „jeden token na osobę” i „Przywróć oddaje dosłownie każdy zapis”. Na dokumencie źródłowym oba warunki da się spełnić, jeśli mapa pamięta zapis każdego wystąpienia. W odpowiedzi AI nie da się tego zrobić: AI pisze `OSOBA_001` we własnym zdaniu, a program nie wie, którą odmianę tam wstawić. Opcje:
-- (a) jeden token na osobę; Przywróć w odpowiedzi AI wstawia jedną formę (pełną, w mianowniku); dokument źródłowy wraca dosłownie dzięki zapisowi wystąpień w lokalnej mapie;
-- (b) token na każdą formę (dzisiejsza praktyka): AI widzi kilka „osób”, ale Przywróć jest zawsze dosłowny;
-- (c) jeden token na osobę z formą przypadka w tokenie: zmienia format S2 i Mobile, czyli tylko decyzja Pawła.
-
-CC rekomenduje (a). Mapa to dane lokalne (S5), a format tokenu się nie zmienia, ale potrzebny jest nowy element mapy (lista wystąpień).
+**Q1 — jeden token na osobę a Przywróć (odpowiedź Pawła 2026-10-18).** Napisy „Kowalski”, „Kowalskiego” i „Jan Kowalski” dla jednej osoby dostają JEDEN token (`OSOBA_001`). Gdyby AI widziało kilka „osób”, pogubiłoby się i sens pseudonimizacji by się zatracił (Paweł). Przywróć w odpowiedzi AI wstawia jedną, pełną formę (np. imię i nazwisko w mianowniku), bo program nie wie, w jakim przypadku AI użyło tokenu. Odmiana może być niegramatyczna („w imieniu Jan Kowalski”), ale osoba zawsze się zgadza. Dokument źródłowy wraca dosłownie dzięki liście wystąpień w lokalnej mapie. Format tokenu bez zmian (S2, Mobile nie odczuje). Paweł o tym kompromisie: „Tak, pasuje”.
+Dla architekta: lista wystąpień to nowy element mapy (dane lokalne, S5 bez zmian). Trzeba ustalić jego miejsce w formacie mapy i w szyfrowanym archiwum oraz zgodność ze starymi mapami.
+Później, osobno: odmiana formy w odpowiedzi AI według słowa przed tokenem. **Morfeusz już jest w programie** (`anonymizer.py`, tryb `native`, w `/health`), ale Paweł pamięta, że kiedyś miał problemy z działaniem. Dlatego przed oparciem na nim czegokolwiek trzeba sprawdzić przy starcie, że naprawdę działa (zob. BOARD `LYNX-STARTUP-COMPONENTS`).
 
 **Q2.** Express (bez NER) w nowym modelu to ten sam arbiter bez silników NER. Do potwierdzenia w briefie F1.
 
