@@ -1,7 +1,7 @@
-# LYNX-TEXT-LIMIT-15K — cały dokument zamiast cichego obcięcia do 15 000 znaków
+# PROPOZYCJA CC DO BRIEFU — LYNX-TEXT-LIMIT-15K — cały dokument zamiast cichego obcięcia do 15 000 znaków
 
-STATUS: BRIEF_ONLY → Codex precheck → CC implementacja → Codex audyt exact SHA → merge wyłącznie na polecenie OWNERA.
-AUTOR BRIEFU: CC (Paweł 2026-10-18: „możemy pisać briefy”). Krok **K0** z `arch/DIAGNOZA_2026-10-18.md` r2 (`4f6c380`, Codex AKCEPTUJĘ `9c4db4e`), klasa A7 (utrata treści).
+STATUS: PROPOZYCJA CC → Architekt pisze `brief.md` (zadanie) → Codex audytuje brief → CC ocenia i implementuje → Codex audyt exact SHA → merge wyłącznie na polecenie OWNERA.
+AUTOR PROPOZYCJI: CC (Paweł 2026-10-18: „możemy pisać briefy”). Krok **K0** z `arch/DIAGNOZA_2026-10-18.md` r2 (`4f6c380`, Codex AKCEPTUJĘ `9c4db4e`), klasa A7 (utrata treści).
 PRODUCT_TRUTH: arch/spec.md S1, S2 (wierność: wynik odpowiada całemu dokumentowi), S3 (fail-closed: błąd jawny, nie cichy), S4 (Guard bez zmian), S5.
 Źródło: BOARD `LYNX-TEXT-LIMIT-15K` (finding z przeglądu metody Codexa M3).
 
