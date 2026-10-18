@@ -104,3 +104,33 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 169 lines changed (threshold 150)
 ```
 Kod produktu 24 linie (`ner_layer.py` 600/600), test 145 linii. Akceptacja rozmiaru — decyzja Pawła.
+
+---
+
+# DELIVERY r3 (ROZSZERZENIE CC po odbiorze okiem Pawła)
+
+**OWNER_ACCEPTED 2026-10-18 (Paweł, dosłownie): „akceptuję przekroczenie linii”** — dotyczy limitów rozmiaru tej dostawy (gate WYMAGA_DECYZJI: TOTAL_LINES/RATIO). Nie jest zgodą na merge ani osłabienie ochrony.
+
+Kod: `383a09e`. Sekcja ROZSZERZENIE CC w briefie (`cc0b6ee`, przed kodem).
+
+## Co wykrył Paweł (C047 w działającym programie, r2)
+Ostatnia linia „Henryk Piotr Siedlaczek” → „Henryk OSOBA_026 Siedlaczek”, OSOBA_026 = „Piotr Masłowski”. Przyczyna: `ner_adapter._propagate_osoba` (istniejąca Warstwa 3c) propaguje token na każdy człon nazwy, także imię, wzorcem `Imię[a-z…]{0,6}` → „Piotr” innej osoby dostaje cudzy token (Przywróć wstawiłby inną osobę); podmiana odcina też wariant tej linii (OSOBA_021), więc „Henryk”/„Siedlaczek” zostawały jawne. Przed dostawą mechanizm był ten sam, lecz senatorowie nie byli wykrywani.
+
+## Poprawka
+`_propagate_osoba` pomija człony będące imieniem (`names_inflected.json`, 199 imion z odmianami) — propaguje nazwiska. +12 linii w `ner_adapter.py`.
+
+## Wynik
+- `/preview` z profilem Pawła, 17 dokumentów, baza vs `383a09e`: C047 jawne 12 → 0 (z Henrykiem i Siedlaczkiem), ostatnia linia = OSOBA_021; KIO 578/11 1→0, KIO_uzp_16714 2→0, C024 3→0; blokady 5 → 5; **interpelacja_1739: Przywróć ≠ → = wejście** (stara propagacja imion psuła go na bazie); pozostałe 16: Przywróć i `\n` bez zmian.
+- Plik Mobile: jawne linie 23 → 26 / 102, pełne imię+nazwisko 0 → 1 / 49. Porównanie linia po linii (stara propagacja vs nowa): stara zakrywała m.in. „Wójcik” tokenem „Wojciech Lewandowski”, „Maciej” tokenem „Bartłomiej Maciej Kowalski”, „Grażyna” tokenem „Grażyna Zuzanna” (cudze wartości). Teraz jawne zostają: samo imię w linii („Grażyna”, „Wiktoria”), imię w odwróconym zapisie obok zakrytego nazwiska tej samej osoby („OSOBA_008 Katarzyna”), „Pani Katarzyna”. **Kompromis świadomy: jawne samo imię zamiast cudzej osoby w Przywróć.** Propagacja imienia tylko przy własnym nazwisku wymaga decyzji o wartości mapy (K2) — zgłoszone.
+- Testy: `test_ner_multiline.py` 20 passed (baza 12 failed / 8 passed; test propagacji failuje także na starym adapterze); + `test_layers.py` 141 passed; `tests/` z backendem 167 passed, 2 skipped, 1 xfailed; `test_audyt_2026_10.py` 131 passed, 10 xfailed; `edge_sweep.py` 55 przypadków, 0 regresji.
+- Znane, poza zakresem (K2): wariant tej samej osoby w innej formie („Henryk Piotr Siedlaczek” → OSOBA_021 o wartości „Henryka Piotra Siedlaczka”) — Przywróć wstawia formę z mapy, nie dosłowną; tak samo propagowane odmiany nazwiska („Masłowskiego” → token wartości „Piotr Masłowski”).
+
+## Gate r3 (dosłownie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 383a09e7cc69a7d9cbef93edd35e4556d28f481a
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 192/2 = 96.0:1 (threshold 5:1)
+  - TOTAL_LINES: 194 lines changed (threshold 150)
+```
