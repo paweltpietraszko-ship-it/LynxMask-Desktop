@@ -8,7 +8,6 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass, field
-from decimal import Decimal
 
 
 def _strip_diacritics(s: str) -> str:
@@ -40,9 +39,9 @@ def _amount_key(value: str) -> str:
     whole = re.fullmatch(r"\d+(?:[.,]\d{3})*", num)
     if not (dec or whole):
         return "kwota~" + value.strip().lower()                       # niejednoznaczny: tylko identyczny zapis
-    ip, fp = (dec.group(1), dec.group(2)) if dec else (num, "0")
-    amount = Decimal(re.sub(r"[.,]", "", ip) + "." + fp).normalize()
-    return f"kwota:{amount}:{_canonical(m.group(2))}"
+    ip, fp = (dec.group(1), dec.group(2)) if dec else (num, "")
+    whole_digits = re.sub(r"[.,]", "", ip).lstrip("0") or "0"         # dokładnie, bez arytmetyki (Codex F1: Decimal 28 cyfr)
+    return f"kwota:{whole_digits}.{fp.rstrip('0')}:{_canonical(m.group(2))}"
 
 
 def _value_key(value: str, token_type: str) -> str:

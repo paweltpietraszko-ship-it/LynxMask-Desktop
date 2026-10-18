@@ -49,6 +49,19 @@ def test_alokator_rozdziela_rozne_wartosci_laczy_te_same(typ, a, b, same):
     assert (ta == tb) is same, (ta, tb, al.reverse_map)
 
 
+@pytest.mark.parametrize("pipeline", ["full", "express"])
+def test_kwoty_ponad_precyzje_decimal(pipeline):
+    """Codex r2 F1: Decimal.normalize() z kontekstem 28 cyfr scalał różne kwoty o 29 cyfrach — klucz musi być dokładny."""
+    from pipeline_core import TokenAllocator
+    from pipeline_new import run_pipeline_express
+    a, b = "1" * 29 + " zł", "1" * 28 + "2 zł"
+    al = TokenAllocator()
+    assert al.assign("KWOTA", a) != al.assign("KWOTA", b)
+    text = f"Roszczenie {a}, a druga pozycja {b}."
+    out, rev, _ = _full(text) if pipeline == "full" else run_pipeline_express(text, anon_map={})
+    assert _restore(out, rev) == text, (out, rev)
+
+
 def test_register_kolizja_wedlug_wartosci():
     from pipeline_core import TokenAllocator
     al = TokenAllocator()
