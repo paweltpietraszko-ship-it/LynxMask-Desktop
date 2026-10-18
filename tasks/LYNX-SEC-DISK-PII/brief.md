@@ -85,4 +85,4 @@ OUT_OF_SCOPE:
    - 178 dok. przez `/preview` z profilem Pawła: wynik identyczny z main (0 różnic);
    - pliki profilu Pawła: `trie.pkl` usunięty przy starcie (migracja — **zmiana na jego profilu, zgłoszona z góry**), `mapa.enc` bez zmian.
 
-GATE: 1 nowy plik testu. Pliki legacy (`anonymizer.py` 1577, `pseudominizer_api.py` 1060) — bez wzrostu albo minimalny i uzasadniony. Szacunek CC: produkcja ok. +60/−50, testy ok. +150. TOTAL > 150 → WYMAGA_DECYZJI. **Zgoda Pawła na rozmiar przed kodem.**
+GATE: 1 nowy plik testu. Pliki legacy (`anonymizer.py` 1577, `pseudominizer_api.py` 1060) — bez wzrostu albo minimalny i uzasadniony. Szacunek CC: produkcja ok. +60/−50, testy ok. +150. TOTAL > 150 → WYMAGA_DECYZJI. **Paweł 2026-10-18 przed kodem: obieg skrócony — „Tak”, rozmiar — „Tak”.**
