@@ -303,9 +303,8 @@ def detect_entities(text: str) -> list[NERResult]:
         doc = nlp(text)
     except RuntimeError:
         raise  # błąd instalacji — propaguj
-    except Exception as e:
-        logger.error(f"spacy_ner: błąd SpaCy: {e}")
-        return []
+    except Exception as e:  # [LYNX-FAILCLOSED-S3] awaria modelu ≠ „zero encji” (S3); bez treści wyjątku (S5)
+        raise RuntimeError(f"spacy_ner: błąd SpaCy ({type(e).__name__})") from None
 
     results: list[NERResult] = []
     seen: set[tuple[str, str]] = set()

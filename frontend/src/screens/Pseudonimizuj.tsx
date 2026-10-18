@@ -52,6 +52,7 @@ interface PreviewResult {
   total:              number;
   blocked:            boolean;
   guard_reasons:      string[];
+  guard_values?:      string[];   // [LYNX-FAILCLOSED-S3] wartości naruszeń (powody są bez wartości)
   error:              string | null;
   anonymizer_active:  boolean;
   original_text:      string;
@@ -552,8 +553,9 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
               >
                 {copiedPse ? "✓ PSE skopiowane" : "↗ Kopiuj PSE"}
               </button>
-              {/* [UI-PSE-06] Kopiuj tekst */}
+              {/* [UI-PSE-06] Kopiuj tekst — [LYNX-FAILCLOSED-S3] niedostępne przy blokadzie Guarda */}
               <button
+                disabled={guardBlocked}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(result.anonymized_preview);
@@ -566,8 +568,8 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
                   background: copiedText ? T.blueBg : T.surface,
                   border: `1px solid ${copiedText ? T.borderActive : T.border}`,
                   borderRadius: 4,
-                  color: copiedText ? T.blueLight : T.textMuted,
-                  cursor: "pointer", fontFamily: T.mono,
+                  color: copiedText ? T.blueLight : T.textMuted, opacity: guardBlocked ? 0.4 : 1,
+                  cursor: guardBlocked ? "not-allowed" : "pointer", fontFamily: T.mono,
                   transition: "all 0.15s",
                 }}
               >
@@ -852,12 +854,8 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
           </div>
           {result.guard_reasons && result.guard_reasons.length > 0 && (
             <ul style={{ margin: "4px 0 8px 16px", padding: 0 }}>
-              {result.guard_reasons.map((r, i) => (
-                <li key={i} style={{ marginBottom: 2 }}>
-                  {r.replace("MAP_LEAK: [KONTEKST] Plain text ", "Wyciek: ")
-                    .replace(/ w oknie.*$/, "")}
-                </li>
-              ))}
+              {result.guard_reasons.map((r, i) => <li key={i} style={{ marginBottom: 2 }}>{r}</li>)}
+              {(result.guard_values ?? []).map((v, i) => <li key={`v${i}`} style={{ marginBottom: 2 }}>Wyciek: „{v}”</li>)}
             </ul>
           )}
           <div style={{ color: T.textMuted, fontSize: 12, marginBottom: 10 }}>
@@ -869,12 +867,7 @@ export default function Pseudonimizuj({ apiToken = "" }: Props) {
                 if (!result?.guard_reasons?.length || addingAllowlist) return;
                 setAddingAllowlist(true);
                 try {
-                  const phrases = result.guard_reasons
-                    .map(r => {
-                      const m = r.match(/'([^']+)'/);
-                      return m ? m[1] : null;
-                    })
-                    .filter(Boolean) as string[];
+                  const phrases = result.guard_values ?? [];  // [LYNX-FAILCLOSED-S3] dokładne wartości z Guarda
                   for (const phrase of phrases) {
                     await fetch(`${API}/profile/guard-allowlist`, {
                       method: "POST",
