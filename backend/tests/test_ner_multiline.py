@@ -82,6 +82,18 @@ def test_firma_koniec_wiersza_na_brzegu_lub_z_forma(span):
     _check(text, out, rev, ["Testopolia"])
 
 
+def test_propagacja_nie_rozsyla_imienia():
+    """ROZSZERZENIE CC (C047, Paweł): token „Piotr Masłowski” nie trafia na „Piotr” innej osoby ani na „Piotrowski"."""
+    import spacy_ner
+    from pipeline_new import run_pipeline_new
+    text = "Pismo podpisał Piotr Masłowski.\nKopia: Piotr Wrona oraz Jan Piotrowski."
+    with patch.object(spacy_ner, "detect_entities", _fake_ner(("OSOBA", "Piotr Masłowski"))), \
+            contextlib.redirect_stdout(io.StringIO()):
+        out, rev, blocked = run_pipeline_new(text, anon_map={})
+    assert "Piotr Wrona" in out and "Piotrowski" in out and "Masłowski" not in out, (out, rev)
+    assert not blocked and _restore(out, rev) == text
+
+
 def test_dwie_osoby_w_liniach_to_dwa_tokeny():
     import spacy_ner
     from pipeline_new import run_pipeline_new

@@ -52,6 +52,17 @@ def _load_surnames_forms() -> dict[str, list[str]]:
 
 _SURNAMES_FORMS: dict[str, list[str]] = _load_surnames_forms()
 
+
+def _load_first_names() -> frozenset[str]:
+    """[LYNX-NER-MULTILINE] Imiona z odmianami — propagacja dotyczy nazwisk: „Piotr” jednej osoby to nie „Piotr” drugiej."""
+    try:
+        with open(os.path.join(_DATA_DIR, "names_inflected.json"), encoding="utf-8") as f:
+            return frozenset(form for base, forms in json.load(f).items() for form in [base, *forms])
+    except Exception:
+        return frozenset()
+
+_FIRST_NAMES: frozenset[str] = _load_first_names()
+
 # Płaski zbiór wszystkich form fleksyjnych → szybkie sprawdzenie
 _SURNAMES_FORMS_FLAT: frozenset[str] = frozenset(
     form
@@ -123,7 +134,7 @@ def _propagate_osoba(text: str, token_id: str, full_name: str) -> str:
         return text
 
     for name_part in words:
-        if len(name_part) <= 3 or not name_part[0].isupper():
+        if len(name_part) <= 3 or not name_part[0].isupper() or name_part.lower() in _FIRST_NAMES:
             continue
 
         # 1. Regex-based propagacja (odmiany przez przypadki)
