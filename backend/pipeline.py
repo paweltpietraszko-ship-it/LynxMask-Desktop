@@ -341,6 +341,8 @@ def _apply_guard(
                 ],
                 allowlist=_allowlist,
             )
+            if guard_result.error:  # [LYNX-FAILCLOSED-S3] F2: awaria wewnątrz Guarda → odmowa bez wyniku i mapy
+                return _s3_failure("[GUARD_ERROR] awaria Guarda")
             guard_blocked = guard_result.blocked
             guard_reasons, guard_values = guard_result.reasons, guard_result.values
             if guard_blocked:

@@ -216,6 +216,7 @@ class GuardResult:
     mode:            GuardMode       = GuardMode.REDACT
     values:          list[str]       = field(default_factory=list)  # [LYNX-FAILCLOSED-S3] wartości naruszeń tylko do UI
     # (ostrzeżenie + „nie PII” → allowlista, decyzja Pawła 18.10); nigdy w powodach ani logach (S5)
+    error:           bool            = False   # [LYNX-FAILCLOSED-S3] F2: awaria Guarda (GUARD_ERROR) — odmowa S3, nie S4
 
     BLOCKED_MSG = "[ODPOWIEDŹ ZABLOKOWANA — WYKRYTO POTENCJALNY WYCIEK DANYCH]"
     REDACT_NOTE = "\n\n⚠ Część danych została zamazana przez system bezpieczeństwa."
@@ -416,6 +417,7 @@ def guard_output_with_map(
         safe_text=redacted, redacted_text=redacted,
         detection_count=result.detection_count + len(violations),
         high_hit=True, mode=mode, values=list(dict.fromkeys(v for _, v in violations if v)),
+        error=any(k == "GUARD_ERROR" for k, _ in violations),
     )
 
 

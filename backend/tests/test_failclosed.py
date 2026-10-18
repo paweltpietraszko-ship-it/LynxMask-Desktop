@@ -127,7 +127,16 @@ def test_guard_error_nigdy_wyciszony():
     with patch("anonymizer.check_blacklist_context", return_value=[]):
         r = guard_output_with_map("Dowolny tekst bez danych.", BrokenMap(), mode=GuardMode.REDACT,
                                   allowlist=["guard", "error", "fallback", "blokada", "wyjątek"])
-    assert r.blocked and any("GUARD_ERROR" in x for x in r.reasons), r.reasons
+    assert r.blocked and r.error and any("GUARD_ERROR" in x for x in r.reasons), r.reasons
+
+
+@pytest.mark.parametrize("exc", [ValueError(f"guard {PESEL}"), MemoryError()])
+def test_awaria_guarda_to_odmowa_s3_nie_ostrzezenie(client, exc):
+    """Codex r4 F2: wyjątek wewnątrz Guarda → 500 S3 bez original_text/tokens/podglądu, nie 200 z blokadą S4."""
+    with patch("anonymizer.check_blacklist_context", side_effect=exc):
+        r = _post(client, "/preview", DOC)
+    assert r.status_code == 500 and r.json()["blocked"] is True, r.text[:200]
+    _no_raw(r, PESEL, "Zenobiusz", "Audytowy")
 
 
 # ── C: token powstały w normalizacji OCR (F5) ──────────────────────────────────
