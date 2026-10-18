@@ -79,3 +79,36 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 380 lines changed (threshold 150)
 ```
 Nowy wzrost względem zaakceptowanego r1 to API +12 (łącznie +18 względem bazy) i test +55. Powód: wymaganie FAIL r3 (granica błędu endpointu), nie nowy zakres. Funkcje `preview` i `preview_express` są bez zmian względem r1. Zgłoszone Pawłowi; odpowiedź dosłownie: „Akceptuję ale bardzo niechętnie.” (z uwagą, że rozmiar plików wynika z doświadczenia z plikami-olbrzymami). Wniosek CC na przyszłość: nowa logika w osobnym module, w dużym pliku tylko import.
+
+---
+
+# DELIVERY r3 (CC) — poprawka FAIL r4 Codexa (F2: awaria Guarda)
+
+Kod: `8ee8d8e` (na raporcie `3011346`). Diff względem r2 (`9bf6131`): `output_guard.py` +2, `pipeline.py` +2, `tests/test_failclosed.py` +10/−1. API bez zmian.
+
+## Zmiana
+- `output_guard.GuardResult`: nowe pole `error: bool`. `guard_output_with_map` ustawia `error=True`, gdy wśród naruszeń jest `GUARD_ERROR`, czyli przy wyjątku `check_blacklist_context` albo fallbacku `get_entity_names`. Istniejący sygnał zostaje przeniesiony, nowej logiki wykrywania nie ma.
+- `pipeline._apply_guard`: `guard_result.error` → `_s3_failure("[GUARD_ERROR] awaria Guarda")`, więc API zwraca 500 `S3_FAILURE` bez `original_text`, `tokens` i podglądu. Zwykłe wykrycie (MAP_LEAK/HIGH, S4) działa bez zmian: blokada 200 i `guard_values` zgodnie z akceptacją.
+- Przegląd rodziny (wszystkie miejsca, w których awaria Guarda mogłaby skończyć się jak S4): oba `except` w `guard_output_with_map` są objęte flagą. Wyjątek w `guard_output` (bez mapy) i w samym wywołaniu wpada do istniejącego `except` w `_apply_guard` (S3 od r1). Błąd odczytu allowlisty daje pustą allowlistę, czyli ostrzejsze sprawdzanie, nie przepuszczenie. Guard jest wywoływany wyłącznie z `_apply_guard`.
+
+## Testy
+- Nowy `test_awaria_guarda_to_odmowa_s3_nie_ostrzezenie[ValueError, MemoryError]` (TestClient `/preview`, `anonymizer.check_blacklist_context` rzuca wyjątek): 500, `blocked`, w całym JSON brak PESEL i nazwiska, brak `original_text`, `tokens` i podglądu. `test_guard_error_nigdy_wyciszony` sprawdza dodatkowo `r.error` w ścieżce fallbacku `get_entity_names`. `test_map_leak_w_sciezce_pipeline_bez_surowej_wartosci` nadal pilnuje, że zwykły MAP_LEAK nie jest awarią (`not res.error`).
+- RED→GREEN: kod r2 + nowe testy dają **3 failed / 20 passed**, `8ee8d8e` daje **23 passed**.
+- Reproduktor Codexa `tests_r4_repro.py`, część F2 (kopia bez asercji SHA, wynik drukowany): ValueError i MemoryError dają `500 {'error': 'Nie udało się bezpiecznie zamaskować dokumentu…', 'blocked': True}`, PESEL w odpowiedzi: False. Część F1 bez zmian: oba endpointy „F1 closed”.
+- Backend z gałęzi (`8ee8d8e`) zrestartowany na porcie 8765 z profilem Pawła. `tests/`: **167 passed, 2 skipped, 1 xfailed**. Regresje (guard_adversarial, layers, ner_multiline, text_limit_15k, map_fidelity, failclosed): **235 passed**. `test_audyt_2026_10.py`: 131 passed, 7 xfailed, 3 XPASS(strict) jak wcześniej. `ruff`: 0 uwag (baza też 0).
+- **Pomiar 178 dok. przez działający `/preview` (profil Pawła), r3 vs r1:** kody 200×178, blokady 59 → 59, GUARD_ERROR 0, różnice w wyniku, tokenach i blokadach: **0**.
+
+## Gate (dosłownie)
+```
+STATUS: FAIL
+HEAD_SHA: 8ee8d8ef0d87a1e5eefe30efdbbea0f42b2e0601
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+REASON:
+  - SIZE_FILE: backend/pseudominizer_api.py has 1147 lines (max 600, before 1129)
+  - SIZE_FUNC: backend/pseudominizer_api.py:preview has 115 lines (max 50, before 112)
+  - SIZE_FUNC: backend/pseudominizer_api.py:preview_express has 81 lines (max 50, before 79)
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 393 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+```
+Powody SIZE są takie same jak w r2 (API 1147, zaakceptowane: „Akceptuję ale bardzo niechętnie.”). `pipeline.py` 552 i `output_guard.py` 551 linii mieszczą się w limicie. TOTAL 393 (+13 względem r2).
