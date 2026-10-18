@@ -68,3 +68,5 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 238 lines changed (threshold 150)
 ```
 Kod produktu +55/−17 (166 linii to test). Rozmiar — decyzja Pawła.
+
+**OWNER_ACCEPTED 2026-10-18 (Paweł, dosłownie):** „Potwierdzam rozmiar” — dotyczy gate WYMAGA_DECYZJI tej dostawy (TOTAL_LINES 238, RATIO 13:1; 166 linii to test).
