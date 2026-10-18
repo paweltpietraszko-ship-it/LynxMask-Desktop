@@ -1,5 +1,0 @@
-#!/bin/sh
-# Blokada plików-olbrzymów — logika w tools/size_guard.py. Aktywacja (raz na klon): git config core.hooksPath .githooks
-root=$(git rev-parse --show-toplevel)
-if command -v py >/dev/null 2>&1; then exec py -3 "$root/tools/size_guard.py" --staged; fi
-exec python3 "$root/tools/size_guard.py" --staged
