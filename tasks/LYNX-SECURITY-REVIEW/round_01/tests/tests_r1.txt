@@ -1,0 +1,190 @@
+LYNX-SECURITY-REVIEW — bazowy przegląd bezpieczeństwa, 2026-10-18
+AUDITED_SHA: 978522ae6d28d85874f654b9598a386510c935b9
+BASELINE: main po merge STARTUP-COMPONENTS i EXPRESS-ONE-ENGINE.
+STAGE: przegląd źródeł + rzeczywisty backend/ekstrakcja/OCR na Windows,
+       izolowane profile i archiwum syntetyczne; bez audytu instalatora.
+VERDICT: FAIL dla kontroli F1–F3 poniżej. Nie jest to orzeczenie prawne RODO.
+Pozostałe kontrole mają własny wynik; zakres natywnego wydania PARTIAL.
+RECIPIENT: Paweł / CC. Bez napraw produktu, bez merge.
+
+ZAKRES / WYROCZNIA / PODEJŚCIE
+scope_r1.md: jednorazowo skonsultowany przez CC model zagrożeń i skończona
+lista kontroli. PRODUCT_TRUTH: frozen arch/spec.md S1, S3, S5, S6;
+istniejące kontrakty. Przegląd nie tworzy nowych wymagań produktowych.
+Bez podagentów, pełnego pentestu, forensyki i nowego benchmarku jakości NER.
+Dowody: run_review_r1.py, evidence_r1/dynamic.json, npm_audit.json,
+osv_matches.json, selected_advisories.json, release_checklist_r1.md.
+
+POTWIERDZONE USTERKI
+
+F1 — P1 / SAFETY_PRIVACY / FAIL: jawny cache odtwarza dane szyfrowanego profilu.
+TRACE: S5: „Mapa zapisywana na dysk wyłącznie zaszyfrowana” oraz reguła
+PRIVACY projektu. Nie wymagamy ochrony przed malware tego samego konta:
+tu wystarcza odczyt kopii zwykłego pliku, bez klucza/DPAPI/deszyfrowania.
+OWNERSHIP: anonymizer.AnonymizerMap.add_entity → _rebuild_trie → pickle.dump;
+trie.pkl przechowuje token i oryginalne formy, nie tylko anonimowy indeks.
+REPRO exact SHA: /profile/add-entity dodaje syntetyczną osobę;
+mapa.enc nie zawiera znacznika, trie.pkl zawiera go dosłownie w bajtach.
+Wynik dynamic.profile_plaintext: encrypted_map_has_marker=false,
+trie_has_marker=true. Zdarzenie normalne, nie wymuszona awaria.
+SKUTEK: kopia katalogu profilu, backup lub synchronizacja może ujawnić
+słownik osób mimo zaszyfrowania mapa.enc. To potwierdzony zapis PII
+w pliku pomocniczym, nie dowód dokonanej transmisji do chmury.
+
+F2 — P1 / SAFETY_PRIVACY / FAIL: reset nie usuwa wszystkich danych profilu.
+TRACE: istniejący /profile/reset opisuje „Usuwa WSZYSTKIE dane użytkownika”;
+SecurityScreen ResetSection obiecuje usunięcie słownika/archiwum/sesji.
+OWNERSHIP: pseudominizer_api.profile_reset — usuwa mapa.enc/mapa.json,
+nie usuwa trie.pkl ani odrębnego guard_allowlist.json.
+REPRO exact SHA: dodanie encji, dodanie syntetycznego wyjątku do allowlisty,
+POST /profile/reset {confirm:true} → 200. Po resecie znacznik pozostaje
+w trie.pkl i guard_allowlist.json; dynamic.reset potwierdza oba.
+Ważne: allowlista zawiera wartości świadomie oznaczone „to nie PII”. Sam
+jawny format allowlisty nie jest tutaj osobnym defektem szyfrowania.
+Defektem jest pozostawienie danych po obiecanym resecie. Nie wymagamy
+nadpisywania SSD ani kasowania świadomych eksportów w Dokumentach.
+
+F3 — P1 / SAFETY_PRIVACY / FAIL: jawne wartości/nazwy plików w logach.
+TRACE: S5 zakazuje PII w logach na dysku, a launcher zapisuje konsolę do pliku.
+OWNERSHIP: ocr_engine.extract_text_from_image loguje filename;
+export_pdf.generate_pdf loguje tytuł pochodzący z filename;
+guard_allowlist_add loguje całą phrase. backend/uruchom.vbs przekierowuje
+stdout/stderr do backend/pseudominizer.log (append, bez widocznej retencji).
+REPRO exact SHA: rzeczywisty syntetyczny PNG przez /preview → 200,
+nazwa ze znacznikiem obecna w logu. /export-pdf z zamaskowanym tekstem
+i nazwą zawierającą znacznik → 200, nazwa w logu. Dodanie wyjątku do
+allowlisty również loguje literalną wartość. dynamic.json: odpowiednie true.
+Ścieżka zwykłego OCR jest używana przez obecny frontend: handleFile wysyła
+oryginalny File w FormData. Nie zakładamy, że nazwa każdego pliku to PII;
+scenariuszem jest zwykły dokument nazwany danymi osoby/sprawy.
+Nie uruchamiano launchera nad profilem użytkownika. Przekierowanie wynika
+wprost z kodu; treść logu odtworzono w izolowanej pamięci testu.
+
+WYMAGA_ROZSTRZYGNIĘCIA / RYZYKA — BEZ AUTOMATYCZNEGO FAIL
+
+R1 / SAFETY_PRIVACY: eksport PDF zachowuje source filename w metadata.title
+i nazwie pobrania; author i creator są puste. Tekst PDF może być zamaskowany,
+a tytuł ujawniać nazwę osoby. REPRO /export-pdf potwierdza title_has_marker=true.
+Oczekiwanie anonimizacji także nazwy/tytułu nie jest jednoznaczne w zamrożonym
+kontrakcie (moduł obiecuje m.in. usunięcie Author Windows). WYMAGA_DECYZJI,
+nie rozszerzamy samodzielnie zasad nazewnictwa eksportów. Endpoint istnieje;
+nie twierdzimy, że obecny ekran Tauri wywołuje go w tym przepływie.
+
+R2 / zależności: scanner advisory jest sygnałem do triage, nie REPRO exploita.
+- npm audit pełnego lockfile: 7 pozycji (5 high, 2 moderate, 0 critical).
+  npm audit --omit=dev: 0. Dotyczy narzędzi budowy/dev, nie siedmiu
+  wykazanych podatności zainstalowanej aplikacji. Bez automatycznych aktualizacji.
+- OSV querybatch: 73 pakiety Python (wybrane korzenie runtime + zależności
+  wymagane bez extras) oraz 489 pakietów registry z Cargo.lock; 562/562
+  zapytania poprawne. Trafienia: 11 pakietów Python i 11 Rust.
+  To liczby pakietów z advisory, nie liczba unikalnych CVE ani exploitów.
+- Przykłady Python do oceny: python-multipart 0.0.26, starlette 1.0.0,
+  cryptography 46.0.7, Pillow 12.2.0. Wersje odczytano z testowanego
+  zewnętrznego Pythona, nie z niezidentyfikowanego instalatora.
+- cargo tree --locked --offline --target x86_64-pc-windows-msvc
+  --edges normal,build: potwierdzono w celu Windows anyhow, quick-xml, rustls
+  i stare biblioteki unic. glib, quinn-proto i proc-macro-error nie są
+  w tym drzewie celu. Unmaintained (np. unic/proc-macro-error) odróżniono
+  od błędu bezpieczeństwa. Nie wykonywano exploitów parsera/TLS.
+- Szczegóły wybranych advisory i odnośniki w selected_advisories.json.
+  pip-audit/cargo audit nie były zainstalowane; użyto jawnego zapytania OSV,
+  bez udawania, że uruchomiono te CLI. Npm działał jako własne narzędzie.
+
+KONTROLE Z WYNIKIEM DODATNIM
+- Szyfrowanie profilu AES-GCM: poprawny roundtrip; zły klucz, zmiana bajtu
+  i skrócony plik odrzucone. Źródło: secrets.token_bytes, DPAPI na Windows.
+- Rust: AES-256-GCM, PBKDF2-HMAC-SHA256 500000, salt 16B, nonce 12B,
+  OsRng; przegląd kodu, bez statystycznego badania entropii. Dynamiczny
+  test zbudowanych komend Tauri/rotacji hasła/odzyskiwania: NOT_CHECKED.
+- /preview na syntetycznej osobie z profilu i PESEL: 200, znacznik znika
+  z masked preview. Uszkodzony DOCX: 400, bez znacznika w logu tej próby.
+- HTTP: brak tokenu do profilu 401; Express do profilu 401; obcy Host 400;
+  usunięty endpoint Express 404. Obcy CORS preflight 400, brak uprawnienia
+  odczytu /express/token dla obcego Origin; proste CSRF /profile/reset 401.
+  Jest to test polityki HTTP, nie pełna symulacja ataku w przeglądarce.
+- Archiwum: prawdziwie zaszyfrowany blob nie zawiera znacznika; zapis/odczyt
+  bajtów i logiczne usunięcie pliku/rekordu poprawne. Bez forensyki SQLite/SSD.
+- Aktualne potwierdzenie S3/startup na badanym SHA: 40 passed, exit 0.
+  Nie powtarzano całej matrycy nowych awarii ani całego benchmarku jakości.
+- Poprzedni audyt Express przy 1d41a58: 356 celowanych, 167 regresji,
+  niezależne 4 scenariusze HTTP i 18 odmów uprawnień. To dowód historyczny
+  odpowiadający scalonej poprawce; nie wpisujemy go jako nowego uruchomienia.
+
+INWENTARZ DANYCH I GRANICE OCHRONY
+- backend/api_token.txt: pełne uprawnienia API dla procesu mogącego odczytać
+  plik; brak osobnej izolacji od procesów tego samego konta Windows.
+  Nie uznajemy tej granicy DPAPI/tokenów automatycznie za błąd produktu.
+- Profil: ANONYMIZER_PROFILE_DIR albo backend/anon_profiles/pseudominizer;
+  mapa.enc, DPAPI keystore, trie.pkl. Tryb sprzętu: HARDWARE_PROFILE.
+- Allowlista: osobne PROFILE_DIR albo ~/.pseudominizer/profile;
+  guard_allowlist.json. To inny katalog niż profil główny.
+- Archiwum: ARCHIVE_DIR albo ./archive (względem cwd), SQLite rejestr.db
+  i mapy .enc; metadane PSE/liczniki/czas i audyt zdarzeń jawne, opis/blob
+  szyfrowane przez klienta. PSE_REGISTRY to osobny licznik JSON przy backendzie.
+- Launcher: backend/pseudominizer.log, może utrwalać F3. Konsola sama
+  nie gwarantuje braku logów na dysku, jeśli uruchamiający ją przekieruje.
+- Tauri: salt.bin/key_verify.bin w app_data_dir; świadomie zapisane
+  odmaskowane odpowiedzi w Dokumenty/Pseudominizer/PSE-*/odpowiedz_*.txt.
+  Są jawne z funkcji eksportu; nie traktujemy tego automatycznie jako defektu.
+- Synchronizacja: brak mechanizmu wyłączającego synchronizację tych katalogów
+  przez system. Jeśli program/Dokumenty leżą w synchronizowanej lokalizacji,
+  pliki mogą opuścić komputer. Konfiguracji chmury użytkownika nie badano;
+  to warunkowe ryzyko instalacji, nie potwierdzony upload/nowy wymóg produktu.
+- Reproduktor od importu obserwował połączenia gniazd Pythona: tylko loopback.
+  Nie dowodzi to braku ruchu całej natywnej aplikacji, procesów podrzędnych
+  ani pobierania modelu przy pierwszym starcie. Audytoryjne zapytania npm/OSV
+  były osobnymi procesami, poza obserwacją produktu.
+- Dostęp innych kont Windows, gotowy instalator, rzeczywiste UI, pełny ruch
+  procesów natywnych i reset kluczy w Tauri: NOT_CHECKED. Odczyt konfiguracji
+  IPC/CSP/capabilities i React nie zastępuje testu zbudowanej aplikacji.
+
+RYZYKO RESZTKOWE MASKOWANIA
+Z istniejącego DELIVERY Express: pomiar CC 178 dokumentów, 811 OSOBA,
+59 blokad, 0 różnic Full/Express. Te liczby nie są recall ani dowodem
+braku wycieku; nie powtarzano pomiaru. W aktualnym BOARD nadal otwarte
+LYNX-FIRMA-BARE-REPEAT oraz LYNX-IBAN-OCR-PREFIX (SAFETY_PRIVACY).
+Wskazana przez CC „§7 diagnozy” nie jest zidentyfikowaną ścieżką na tym SHA;
+nie dorabiamy na tej podstawie aktualnego procentu skuteczności.
+Guard to ostatnia warstwa, nie gwarancja wykrycia każdego identyfikatora.
+Raport nie zamyka tych odrębnych znalezisk ani nie potwierdza anonimowości.
+
+RZETELNOŚĆ INFORMACJI DLA UŻYTKOWNIKA
+SecurityScreen podaje salt 32B, kod 16B — TECHNICAL_ONLY, nie potrzeba
+wydłużania soli do 32B tylko po to, by zgadzała się etykieta.
+Opis logów w UI nie uwzględnia F3 i przekierowania launchera. Deklarację
+„żadne dane wychodzące” ogranicza miejsce instalacji/synchronizacja i zakres
+naszej obserwacji; nie mamy dowodu aktualnej transmisji dokumentów.
+Dokumentacja dla klienta o ścieżkach, usuwaniu i ograniczeniach oraz odnośnik
+do tego raportu w programie to osobny etap, bez dodawania GUI w tym audycie.
+
+INCYDENT ŚRODOWISKA AUDYTU — JAWNIE
+Pierwsza próba ustawiła ANONYMIZER_PROFILE_DIR, ale przeoczyła osobny
+PROFILE_DIR. Dopisała jeden syntetyczny wpis do domyślnej allowlisty.
+Usunięto wyłącznie ten dokładny wpis, zachowując inne wpisy; następnie
+ustawiono oba katalogi na tymczasowe i powtórzono finalny reproduktor.
+Do repo nie trafiły wartości użytkownika. Nie twierdzimy, że pierwsza próba
+była całkowicie odizolowana; załączony dynamic.json dotyczy poprawionej próby.
+Pierwszy OCR ze stubem nie jest podstawą F3: końcowa próba użyła prawdziwego
+PNG, Pillow i Tesseract przez /preview (200), nazwa znalazła się w logu.
+
+ZGODY I PUBLIKACJA
+Pierwsze zapytanie zbiorcze OSV odrzuciła automatyczna kontrola uprawnień
+ze względu na przekazanie inwentarza bibliotek zewnętrznemu odbiorcy.
+Po jawnej zgodzie Pawła wysłano wyłącznie nazwy/wersje; bez dokumentów,
+kodu, haseł i kluczy. Nie obchodzono blokady innym odbiorcą.
+Publikacja raportu/BOARD zgodnie ze stałą zgodą; bez zmian kodu produktu.
+
+PODSTAWA PRAWNA — GRANICA RAPORTU
+RODO art.25/32 uzasadniają podejście adekwatne do ryzyka i testowanie
+skuteczności. Raport jest dowodem wykonanych czynności, nie certyfikatem
+zgodności administratora ani opinią o jego podstawach przetwarzania/DPIA.
+Źródła: https://eur-lex.europa.eu/eli/reg/2016/679/oj?locale=pl
+API advisory: https://google.github.io/osv.dev/api/
+Wyrocznią FAIL pozostają wskazane kontrakty produktu i niezależne reprodukcje.
+
+NASTĘPNY KROK
+Naprawy F1/F2/F3 oddzielnie lub jako wyraźnie ograniczone odpowiedzialności;
+audytor nie implementuje ich w tym Tasku. R1 wymaga wyjaśnienia oczekiwań
+eksportu, R2 triage aktualizacji/osiągalności przed deklaracją wyniku wydania.
+Po naprawie powtórzyć zachowane reproduktory i uzupełnić brakujące kontrole
+docelowego wydania. Nie ma podstaw do ogólnego zielonego znaczka „RODO PASS”.
