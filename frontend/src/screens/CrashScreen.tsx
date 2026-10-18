@@ -1,6 +1,8 @@
-// Pseudominizer — CrashScreen.tsx  v1.0
-// [CRASH-UX] Ekran wyświetlany gdy smoke test zablokuje start backendu.
-// Daje użytkownikowi trzy wyjścia: restart, zgłoszenie błędu przez e-mail, reinstalacja.
+// Pseudominizer — CrashScreen.tsx  v1.1
+// [CRASH-UX] Ekran wyświetlany gdy próby startowe zablokują start backendu.
+// [LYNX-STARTUP-COMPONENTS] Co zrobić dalej: uruchom ponownie albo skontaktuj się z działem obsługi
+// (kontakt dojdzie, gdy będzie — tu, w sekcji „Co zrobić”). Komunikat pokazuje, który element zawiódł.
+// Przycisk restartuje tylko okno (restart_app), nie silnik — Tauri nie uruchamia backendu; stąd punkt 1 tekstu.
 
 import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
@@ -15,13 +17,6 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
   const dateStr = timestamp
     ? new Date(timestamp).toLocaleString("pl-PL")
     : new Date().toLocaleString("pl-PL");
-
-  const mailSubject = encodeURIComponent(`[LynxMask] Błąd startu: ${code}`);
-  const mailBody = encodeURIComponent(
-    `Kod błędu: ${code}\nCzas: ${dateStr}\nSzczegóły: ${message}\n\n` +
-    `Proszę o pomoc w rozwiązaniu problemu.`
-  );
-  const mailtoHref = `mailto:support@lynxmask.app?subject=${mailSubject}&body=${mailBody}`;
 
   return (
     <div style={{
@@ -60,8 +55,8 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
         fontFamily: T.sans, fontSize: 12, color: T.textSecondary,
         textAlign: "center", maxWidth: 380, lineHeight: 1.6, marginBottom: 24,
       }}>
-        Test bezpieczeństwa wykrył problem z silnikiem pseudonimizacji.
-        Aplikacja nie może działać — dane osobowe nie byłyby odpowiednio chronione.
+        Program nie uruchomił się, bo nie wszystkie zabezpieczenia działają poprawnie.
+        Aby nie narazić danych, praca jest zablokowana.
       </div>
 
       {/* Kod błędu */}
@@ -76,9 +71,10 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
         marginBottom: 32,
         textAlign: "center",
         maxWidth: 420,
-        wordBreak: "break-all",
+        wordBreak: "break-word",
       }}>
         KOD BŁĘDU: {code}
+        {message && <div style={{ fontFamily: T.sans, letterSpacing: 0, marginTop: 6 }}>{message}</div>}
       </div>
 
       {/* Przyciski akcji */}
@@ -100,33 +96,12 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
             fontWeight: 600,
           }}
         >
-          Uruchom ponownie
+          Spróbuj ponownie
         </button>
-
-        {/* Mailto */}
-        <a
-          href={mailtoHref}
-          style={{
-            display: "block",
-            padding: "11px 0",
-            fontFamily: T.mono, fontSize: 11,
-            letterSpacing: "0.10em",
-            textTransform: "uppercase",
-            background: "transparent",
-            border: `1px solid ${T.border}`,
-            color: T.textSecondary,
-            cursor: "pointer",
-            borderRadius: 4,
-            textAlign: "center",
-            textDecoration: "none",
-          }}
-        >
-          Wyślij raport e-mail
-        </a>
 
       </div>
 
-      {/* Reinstalacja */}
+      {/* Co zrobić dalej */}
       <div style={{
         marginTop: 32,
         padding: "14px 20px",
@@ -139,12 +114,11 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
         lineHeight: 1.7,
       }}>
         <div style={{ fontWeight: 600, color: T.textSecondary, marginBottom: 6 }}>
-          Jeśli problem się powtarza:
+          Co zrobić:
         </div>
-        1. Zamknij aplikację<br />
-        2. Pobierz nową wersję instalatora<br />
-        3. Zainstaluj ponownie w to samo miejsce<br />
-        4. Uruchom aplikację
+        1. Zamknij aplikację i silnik LynxMask, a potem uruchom je ponownie.<br />
+        2. Jeśli problem się powtarza, skontaktuj się z działem obsługi
+        i podaj kod błędu oraz komunikat powyżej.
       </div>
 
       {/* Znacznik czasu */}
