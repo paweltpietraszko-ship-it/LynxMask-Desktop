@@ -33,3 +33,9 @@ WHERE_MAP:
 - TARGETS: backend/layers/ner_adapter.py --symbol _remap_ner_ids
 - REASON: porównać surowy span, wartość po normalizacji i literalną podmianę.
 GATE: 1 nowy plik testowy, ner_layer.py jest blisko 600 linii; bez przekraczania limitów bez zgody, >150 linii zmienionych lub ratio >5:1 => WYMAGA_DECYZJI. Codex: tylko BRIEF_ONLY precheck, bez implementacji.
+
+## ROZSZERZENIE CC (2026-10-18, przed kodem r3) — propagacja imienia daje cudzą wartość
+Wykrył Paweł okiem w działającym programie (C047, r2 `b7b6eb1`): ostatnia linia „Henryk Piotr Siedlaczek” → „Henryk OSOBA_026 Siedlaczek”, gdzie OSOBA_026 = „Piotr Masłowski”.
+Mechanizm (istniejący, `layers/ner_adapter._propagate_osoba`, Warstwa 3c): token osoby propagowany na KAŻDY człon jej nazwy, także imię, wzorcem `Imię[a-ząćęłńóśźż]{0,6}` — „Piotr” innej osoby (a także „Piotra”, „Piotrowski”) dostaje token Masłowskiego; Przywróć wstawiłby cudzą osobę. Dodatkowo podmiana zabiera tekst wariantowi tej samej linii (OSOBA_021, odmiana „Henryka Piotra Siedlaczka”), więc „Henryk” i „Siedlaczek” zostają jawne. Przed tą dostawą mechanizm był ten sam, ale lista senatorów nie była wykrywana, więc nie wystąpił w C047.
+Ta sama klasa co zadanie (rozpoznana encja zastąpiona błędną wartością — wymóg pkt 2 briefu), plik w TASK_SCOPE.
+Poprawka: `_propagate_osoba` nie propaguje członów będących imieniem (`names_inflected.json`, 199 imion z odmianami, ten sam zasób co seed) — propaguje nazwiska, jak w opisie warstwy („propagacja nazwisk”). Reproduktor: dwie osoby z tym samym imieniem w jednym dokumencie (syntetyk) + C047 przez `/preview`. Testy w `backend/tests/test_ner_multiline.py`.
