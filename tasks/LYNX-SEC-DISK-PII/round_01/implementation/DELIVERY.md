@@ -87,3 +87,37 @@ WYMAGA_DECYZJI:
 - `pseudominizer.log` z historycznych uruchomień: launcher v1.4 usuwa go przy starcie, a reset też go usuwa. Jeśli działa stary launcher (v1.3) z otwartym plikiem, reset zapisze ostrzeżenie i plik zostanie do następnego startu nowym launcherem.
 - `run_review_r1.py` Codexa nie był zmieniany (dowód historyczny RED). Jego końcowy `read_bytes()` usuniętej allowlisty po poprawce może rzucić `FileNotFoundError`, co jest zgodne z prechecku.
 - Poza zakresem bez zmian: R1 (wymóg zapisany w `LYNX-LAYOUT-COPY`), R2 zależności, szyfrowanie allowlisty, `api_token.txt`, OneDrive.
+
+---
+
+# DELIVERY r2 (CC) — poprawka A1 z audytu r2 (`a3d460c`)
+
+Kod: `75b83a3`. Diff względem r1 (`9edf0a6`): `pseudominizer_api.py` +7/−1, `tests/test_disk_pii.py` +12.
+
+## Zmiana
+`profile_reset`: jeśli usunięcie wyjątków „to nie PII” albo pliku logu silnika kończy się `OSError` (na Windows np. plik otwarty przez stare okno silnika z launchera ≤ v1.3), reset wykonuje resztę kroków (archiwum, dziennik, profil, odtworzenie `anonymizer`), ale **nie zgłasza pełnego sukcesu**. Odpowiedź to HTTP 500 z komunikatem „Reset częściowy — nie usunięto: plik logu silnika (plik używany przez inny program, np. stare okno silnika). Zamknij je i powtórz reset.” bez `ok:true`. UI (`SecurityScreen`) już pokazuje `data.error` przy `!res.ok`. Pliku nie usuwam siłą i nie zatrzymuję cudzego procesu, zgodnie z audytem.
+
+## Testy
+- Nowy `test_f2_zablokowany_log_to_reset_czesciowy_nie_sukces`:
+  - stary log otwarty w trybie append (zwykły uchwyt, bez patchowania `unlink`) → reset zwraca 500, bez `ok`, z komunikatem „plik logu silnika”;
+  - po zamknięciu uchwytu ponowny reset → 200, `ok:true`, pliku nie ma.
+- **RED** na kodzie r1: `assert (200 == 500)`. **GREEN:** `test_disk_pii` 6 passed.
+- Reproduktor Codexa `repro_locked_log_r2.py` (bez zmian) zwraca `{"http": 500, "ok": null, "log_still_exists": true, ...}`. Plik zostaje, bo jest otwarty, ale reset nie zgłasza już sukcesu.
+- Backend gałęzi zrestartowany (profil Pawła):
+
+  | Zestaw | Wynik |
+  |---|---|
+  | `tests/` | **167 passed, 2 skipped, 1 xfailed** |
+  | `test_disk_pii` + `test_failclosed` + `test_startup_check` + `test_archive_adversarial` | **65 passed** |
+
+  Pomiaru 178 dokumentów nie powtarzano, zgodnie z audytem: zmiana dotyczy wyłącznie ścieżki błędu resetu.
+
+## Gate r2 (dosłownie, bez list)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 75b83a35d1b1dc4aaec2eb8bc3a84630992ec766
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 379 lines changed (threshold 150)
+```
+API 1059 linii, nadal poniżej stanu sprzed Tasku (1060).
