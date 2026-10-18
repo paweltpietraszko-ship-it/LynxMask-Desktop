@@ -116,6 +116,7 @@ from fastapi.responses import JSONResponse, FileResponse
 
 import db_store
 from audit_log import record_preview
+from anonymizer_init import INPUT_LIMIT_BYTES  # [LYNX-TEXT-LIMIT-15K] jedyna granica tekstu: bajty UTF-8, bez cichego cięcia
 
 logging.basicConfig(
     level=logging.INFO,
@@ -126,7 +127,6 @@ logger = logging.getLogger("pseudominizer")
 # ── Stałe ────────────────────────────────────────────────────────────────────
 
 MAX_FILE_BYTES   = 5 * 1024 * 1024   # 5 MB
-MAX_TEXT_CHARS   = 15_000
 MAX_BLOB_BYTES   = 512 * 1024         # 512 KB
 
 # [SECURITY-TOKEN] Token API generowany raz przy starcie — losowy, 32 bajty hex.
@@ -339,6 +339,18 @@ async def health():
     }
 
 
+def _text_rejection(text: str, tag: str, pse_code: str):
+    """Pusty tekst → 400; ponad INPUT_LIMIT_BYTES (bajty UTF-8) → 413 bez wyniku. [LYNX-TEXT-LIMIT-15K] zamiast cięcia do 15 tys."""
+    if not text:
+        return JSONResponse({"error": "Plik jest pusty lub nie zawiera tekstu", "blocked": False}, status_code=400)
+    size = len(text.encode("utf-8"))
+    if size > INPUT_LIMIT_BYTES:
+        logger.warning("%s %s — odmowa: tekst %d B > limit %d B", tag, pse_code, size, INPUT_LIMIT_BYTES)
+        return JSONResponse({"error": f"Dokument jest za długi ({size // 1000} KB tekstu, limit {INPUT_LIMIT_BYTES // 1000} KB). "
+                                      "Podziel go na części.", "blocked": True}, status_code=413)
+    return None
+
+
 @app.post("/preview")
 async def preview(request: Request, file: UploadFile = File(...)):
     """
@@ -366,12 +378,9 @@ async def preview(request: Request, file: UploadFile = File(...)):
             status_code=400,
         )
 
-    text = text.strip()[:MAX_TEXT_CHARS]
-    if not text:
-        return JSONResponse(
-            {"error": "Plik jest pusty lub nie zawiera tekstu", "blocked": False},
-            status_code=400,
-        )
+    text = text.strip()
+    if (rejected := _text_rejection(text, "[PREVIEW]", pse_code)) is not None:
+        return rejected
 
     # [AUD-01] Token injection attack — odrzuć tekst zawierający tokeny maskujące.
     # Użytkownik mógłby wstrzyknąć FIRMA_001 i po depseudonimizacji podmienić go
@@ -901,12 +910,9 @@ async def preview_express(request: Request, file: UploadFile = File(...)):
             status_code=400,
         )
 
-    text = text.strip()[:MAX_TEXT_CHARS]
-    if not text:
-        return JSONResponse(
-            {"error": "Plik jest pusty lub nie zawiera tekstu", "blocked": False},
-            status_code=400,
-        )
+    text = text.strip()
+    if (rejected := _text_rejection(text, "[EXPRESS]", pse_code)) is not None:
+        return rejected
 
     if _TOKEN_RE.search(text):
         logger.warning("[EXPRESS] %s — odmowa: token injection", pse_code)
