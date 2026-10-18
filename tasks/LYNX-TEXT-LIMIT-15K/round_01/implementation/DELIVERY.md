@@ -2,14 +2,14 @@
 
 Gałąź `task/LYNX-TEXT-LIMIT-15K` (brief architekta `af8c451` + nagłówek TASK_SCOPE `4240176`; PASS PREIMPLEMENTATION `e69111e`), zsynchronizowana z main `bf57999` (merge `eac220a`, zawiera NER-MULTILINE). Kod: `22460b7`.
 
-## Zmiana (`backend/pseudominizer_api.py`, +19/−13)
+## Zmiana (`backend/pseudominizer_api.py`, +19/−13 wg git diff)
 - usunięte `MAX_TEXT_CHARS = 15_000` i oba `[:MAX_TEXT_CHARS]` (`/preview`, `/preview-express`); `text.strip()` bez zmian;
 - `from anonymizer_init import INPUT_LIMIT_BYTES` w bloku importów (jedno źródło prawdy, 500 000 B; import bez cyklu — sprawdzony uruchomieniem);
 - `_text_rejection(text, tag, pse_code)` zastępuje zduplikowany blok „pusty tekst → 400” w obu endpointach i dodaje: `len(text.encode("utf-8")) > INPUT_LIMIT_BYTES` → HTTP 413, `{"error": "Dokument jest za długi (N KB tekstu, limit 500 KB). Podziel go na części.", "blocked": true}` — bez wyniku, mapy, tokenów i `original_text`; log tylko kategoria i rozmiary w bajtach (bez treści). Wołane po ekstrakcji i strip, przed token-injection i pipeline. Granica równa limitowi przechodzi.
 - bez zmian: `MAX_FILE_BYTES` 5 MB, `MAX_TOKENS_PER_REQUEST` 500, `MAX_BLOB_BYTES` 512 KB (archiwum ma własny jawny błąd „Blob za duży (max 512 KB)”), pipeline, Guard, NER, Express bez NER.
 - UI: `Pseudonimizuj.tsx` i `ExpressModeScreen.tsx` dla `!res.ok` wyświetlają `errData.error` — komunikat 413 dociera do użytkownika bez zmian frontendu.
 
-## Testy (`backend/tests/test_text_limit_15k.py`, nowy, 104 linie, uruchamiany jawnie; TestClient bez lifespanu, stan silnika z `audyt/engine_quality.build_state`)
+## Testy (`backend/tests/test_text_limit_15k.py`, nowy, 93 linie, uruchamiany jawnie; TestClient bez lifespanu, stan silnika z `audyt/engine_quality.build_state`)
 | Test | baza (API sprzed zmiany) | gałąź |
 |---|---|---|
 | PESEL + e-mail tylko w końcówce tekstu 17–18 tys. znaków, `/preview` i `/preview-express`: pełne `original_text`, brak PII w wyniku, Przywróć (symulacja) = wejście | FAIL ×2 | PASS ×2 |
