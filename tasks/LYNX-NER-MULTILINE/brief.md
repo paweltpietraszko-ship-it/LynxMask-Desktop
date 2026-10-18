@@ -13,7 +13,7 @@ Skutek: dwie osoby w osobnych wierszach nie są jednym tokenem; osoba + stanowis
 
 **EXPRESS NIE URUCHAMIA NER.** Bez wymogu maskowania nazwisk/firm przez Express; test Express sprawdza wyłącznie brak regresji istniejących reguł/telefonów/numerów i działania API. Nie dodawać NER do Express. Nie naprawiać tu nowych modeli HerBERT, fałszywych FIRMA z „z o.o.”, osób sklejonych w jednym wierszu (K3), scalania jednej osoby ponad newline (K5), FIRMA-BARE-REPEAT, globalnego OCR lub S4.
 
-## TASK_SCOPE:
+TASK_SCOPE:
 - backend/ner_layer.py
 - backend/layers/ner_adapter.py
 - backend/tests/test_ner_multiline.py
