@@ -70,3 +70,38 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 336 lines changed (threshold 150)
 ```
 Dodanych linii jest 294, zgodnie ze zgodą Pawła („Akceptuję 290”); TOTAL 336 obejmuje 42 usunięte. Plik API zmniejszył się o 1 linię.
+
+---
+
+# DELIVERY r2 (CC) — ekran awarii: co zrobić dalej (polecenie Pawła, przed audytem r1)
+
+Kod: `d827862`. Diff względem r1 (`4dd79a4`): `CrashScreen.tsx` +13/−40 i sekcja „ROZSZERZENIE” w briefie (`CrashScreen.tsx` dopisany do TASK_SCOPE). Backend bez zmian względem r1.
+
+Paweł: „musimy na ekranie zepsutego programu napisać, co użytkownik ma robić dalej. Ja proponuję, by spróbował ponownie lub skontaktował się z działem obsługi; jak będzie, to dodamy kontakt.”
+
+## Zmiana
+- Opis: „Program nie uruchomił się, bo nie wszystkie zabezpieczenia działają poprawnie. Aby nie narazić danych, praca jest zablokowana.” Poprzedni tekst („Test bezpieczeństwa wykrył problem z silnikiem…”) był nieprawdziwy przy `STARTUP-NO-RESPONSE`.
+- Pod kodem błędu wyświetlany jest `message`, np. „Nie przeszły próby startowe: Output Guard.”. Wcześniej `message` trafiał tylko do treści maila.
+- Sekcja „Co zrobić”:
+  1. Kliknij „Uruchom ponownie”.
+  2. Jeśli problem się powtarza, skontaktuj się z działem obsługi i podaj kod błędu oraz komunikat powyżej.
+- Usunięte:
+  - przycisk „Wyślij raport e-mail” na `support@lynxmask.app`, adres niepotwierdzony („kontakt dojdzie, gdy będzie”);
+  - instrukcja „Pobierz nową wersję instalatora…”, bez wskazanego źródła.
+  Kontakt dojdzie w jednym miejscu, w sekcji „Co zrobić”.
+
+## Testy
+`tsc --noEmit` 0 błędów. Wygląd: NOT_RUN — do oceny okiem Pawła po `npm run tauri build`, dla obu kodów: STARTUP-COMPONENTS i STARTUP-NO-RESPONSE.
+
+## Uwaga CC do odbioru
+„Uruchom ponownie” (`restart_app`) restartuje okno aplikacji, nie backend. Tauri nie uruchamia backendu (diagnoza §1, M2). Gdy backend zakończył start awarią, sam restart okna znów pokaże ten sam ekran, bo `startup_error.json` zostaje do następnego startu backendu. Skuteczne ponowienie wymaga ponownego uruchomienia całego programu, z backendem. Do decyzji Pawła, czy tekst ma brzmieć „zamknij program i uruchom go ponownie”. Nie zmieniono na własną rękę.
+
+## Gate r2 (dosłownie, bez list)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: d827862e9ba10be454e1c9290cc06f6f2b5cfe7c
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 389 lines changed (threshold 150)
+```
+Dodanych linii jest 307 (294 + 13). Wzrost ponad zgodę na 290 wynika z polecenia Pawła; usuniętych linii przybyło 40. RATIO już nie jest zgłaszane.
