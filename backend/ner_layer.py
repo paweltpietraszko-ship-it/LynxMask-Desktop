@@ -235,6 +235,7 @@ def _firma_bounds(text: str, ner):
 
 
 _LEGAL_FRAGMENT_RE = re.compile(r"(?:sp\.?\s*)?(?:z\s*o\.\s*o\.?|[kjp]\.?|a\.?|s\.\s*a\.?|k\.\s*a\.?|s\.\s*c\.?)", re.IGNORECASE)
+_FORM_WORDS = frozenset("sp spółka z o s a k j c akcyjna jawna komandytowa partnerska cywilna ograniczoną odpowiedzialnością".split())
 
 
 def _firma_entities(text: str, ner_results: list) -> list:
@@ -245,6 +246,27 @@ def _firma_entities(text: str, ner_results: list) -> list:
     return [r for r in out if not (_LEGAL_FRAGMENT_RE.fullmatch(r.text.strip())
                                    and any(a <= r.start and r.end <= b and (a, b) != (r.start, r.end) for a, b in firms))]
 
+
+def _split_lines(text: str, ner_results: list) -> list:
+    """[LYNX-NER-MULTILINE] Span przez koniec wiersza → kandydat z każdej niepustej linii (dokładny fragment wejścia, dalej zwykłe filtry);
+    inaczej wartość z \\n→spacja jest spoza tekstu i encja przepada. Całość najpierw przez filtr instytucji, FIRMA tylko z formą prawną
+    (bez niej to zwykle instytucja); linia jednowyrazowa tylko jako imię/nazwisko; część FIRMA od wielkiej litery, nie sama forma."""
+    out = []
+    for r in ner_results:
+        span = text[r.start:r.end]
+        if "\n" not in span.strip():  # koniec wiersza tylko na brzegu: dotychczasowa ścieżka (strip) — Codex F1
+            out.append(r)
+            continue
+        if not _filter_institutions([dataclasses.replace(r, text=" ".join(span.split()))]) or (r.label == "FIRMA" and not re.search(r"(?i)\bsp(?:\.|ółka)|\bs\.\s?[ac]\.", span)):
+            continue
+        for m in re.finditer(r"[^\n]+", span):
+            core = m.group(0).strip(" \t\r,;")
+            if r.label == "FIRMA" and (not core[:1].isupper() or set(re.findall(r"\w+", core.lower())) <= _FORM_WORDS):
+                continue
+            if len(core.split()) > 1 or (core and r.label == "OSOBA" and _is_person_word(core, strict=False)):
+                a = r.start + m.start() + m.group(0).index(core)
+                out.append(dataclasses.replace(r, start=a, end=a + len(core), text=core))
+    return out
 
 
 # [LYNX-T01] Potwierdzenie osoby przed filtrami geo/prefiks/przymiotnik (port zasady
@@ -433,7 +455,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
 # ── Implementacja ─────────────────────────────────────────────────────────────
 
 def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
-    ner_results = _firma_entities(text, spacy_ner_mod.detect_entities(text))
+    ner_results = _split_lines(text, _firma_entities(text, spacy_ner_mod.detect_entities(text)))
     ner_results = _filter_institutions(ner_results)
 
     reverse_map:          dict[str, str] = {}

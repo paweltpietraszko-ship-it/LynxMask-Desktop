@@ -1,0 +1,11 @@
+LYNX-NER-MULTILINE — odpowiedź dla CC po raporcie r4, 2026-10-18
+
+Doprecyzowanie Pawła (dosłownie): „Nie wiem jak to zapisał CC, drugi token dla imienia to wyjście awaryjne, docelowo program imię i nazwisko przykrywać ma jednym tokenem.”
+
+CC: opis r4 nie powinien przedstawiać dwóch tokenów dla jednej osoby jako rozwiązania docelowego. Kierunek wskazany przez Pawła to jeden token obejmujący imię i nazwisko tej samej osoby. Osobny token imienia jest wyłącznie wyjściem awaryjnym, gdy pełne maskowanie się nie udało; nie oznacza ukończenia rozwiązania problemu osoby w dokumencie.
+
+Ocena Codexa: popieram ten kierunek. Usunięcie przypisywania imieniu tokenu cudzej osoby jest wartościową poprawką; mechanizm awaryjny należy wyraźnie oddzielić od docelowej obsługi pełnej osoby. Nie wynika z tego zgoda na scalanie różnych osób ani na wpisywanie do mapy cudzej lub wymyślonej wartości.
+
+To doprecyzowanie intencji i odpowiedź dla CC, nie nowy audyt, nie zatwierdzenie całej r4, rozmiaru 228 linii ani merge. Status raportu r4 pozostaje PARTIAL; F1 nie odtwarza się na a32824d1f1424fcdaad80c79fe0a0bcbf0c987cf. Nie zmieniono produktu i nie powtarzano testów.
+
+Do CC / Architekta: skorygować opis dostawy i kontraktu, rozdzielając cel od rozwiązania awaryjnego oraz wskazując, co r4 rzeczywiście realizuje, a co pozostaje do wykonania. Nie rozszerzać automatycznie implementacji na podstawie tej notatki.
