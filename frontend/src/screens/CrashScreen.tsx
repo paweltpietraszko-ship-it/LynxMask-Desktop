@@ -2,6 +2,7 @@
 // [CRASH-UX] Ekran wyświetlany gdy próby startowe zablokują start backendu.
 // [LYNX-STARTUP-COMPONENTS] Co zrobić dalej: uruchom ponownie albo skontaktuj się z działem obsługi
 // (kontakt dojdzie, gdy będzie — tu, w sekcji „Co zrobić”). Komunikat pokazuje, który element zawiódł.
+// Przycisk restartuje tylko okno (restart_app), nie silnik — Tauri nie uruchamia backendu; stąd punkt 1 tekstu.
 
 import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
@@ -95,7 +96,7 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
             fontWeight: 600,
           }}
         >
-          Uruchom ponownie
+          Spróbuj ponownie
         </button>
 
       </div>
@@ -115,7 +116,7 @@ export default function CrashScreen({ code, message, timestamp }: Props) {
         <div style={{ fontWeight: 600, color: T.textSecondary, marginBottom: 6 }}>
           Co zrobić:
         </div>
-        1. Kliknij „Uruchom ponownie”.<br />
+        1. Zamknij aplikację i silnik LynxMask, a potem uruchom je ponownie.<br />
         2. Jeśli problem się powtarza, skontaktuj się z działem obsługi
         i podaj kod błędu oraz komunikat powyżej.
       </div>
