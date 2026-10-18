@@ -17,7 +17,7 @@ Dla wszystkich dopuszczalnych dokumentów oba endpointy mają przetwarzać cały
 - /archive ma własny jawny błąd dla zaszyfrowanego blobu >512KB; sprawdzić, że nie jest to cichy sukces, ale NIE zmieniać rozmiaru blobu/archiwum w tym Tasku.
 - **EXPRESS NIE MA NER.** Oba tryby mają zachować pełną długość i zamaskować PESEL/e-mail w końcówce, lecz nie wymagać maskowania nieznanych imion/nazwisk w Express; to był błąd w propozycji CC. Nie dodawać NER do Express.
 
-## TASK_SCOPE:
+TASK_SCOPE:
 - backend/pseudominizer_api.py
 - backend/tests/test_text_limit_15k.py
 
