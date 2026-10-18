@@ -1,0 +1,42 @@
+LYNX-STARTUP-COMPONENTS — wąski re-check ekranu r3, 2026-10-18
+AUDITED_SHA: 218de9935c0f8c52dff8c8628f324eabdc2ed495
+CODE_SHA: 72f9a81850234d56bde77f8086de636daff3fb42
+DIFF_BASE: af8833b18bdce9e968530d807ff2b88c2807cbc6 (audyt tests_r3.txt).
+VERDICT: PASS — wyłącznie re-check poprawki instrukcji ekranu awarii.
+RECIPIENT: Paweł / CC.
+
+KOREKTA ZAKRESU OD PAWŁA
+„CC, poprawił ekran, odpalenie całej apki z jednego przycisku to nowe zadanie.”
+Wątpliwość o ponowne uruchomienie w poprzednim raporcie nie wymaga dalszej
+decyzji ani budowy launchera w tym Tasku. LYNX-APP-LAUNCHER pozostaje osobno.
+Poprzedni raport zachowany bez zmian; ustępuje tej korekcie zakresu.
+
+DOWODY NA EXACT SHA
+- Diff produkcyjny r2→r3: wyłącznie CrashScreen.tsx, +3/-2.
+- Instrukcja nakazuje zamknąć aplikację ORAZ silnik i uruchomić je ponownie.
+  Nie twierdzi już, że kliknięcie przycisku ponawia start backendu.
+- Etykieta przycisku „Spróbuj ponownie”; istniejące wywołanie restart_app
+  bez zmiany. Komentarz wyjaśnia ograniczenie do restartu okna.
+- Nie dodano wysyłki danych, kontaktu e-mail, nowego zapisu ani nowego API.
+- tsc --noEmit na exact SHA: exit 0.
+- git diff --quiet af8833b 218de99 -- backend frontend/src/App.tsx
+  frontend/src-tauri: exit 0. Poprzednie dowody backendu nie zostały
+  unieważnione zmianą: 40 passed i niezależne 6/6 blokad _lifespan.
+  Tych testów nie powtarzano dla zmiany trzech linii ekranu.
+- Nowy plik raportu: tests_r4.txt nie istniał na dostawie. Brak zmian produktu.
+
+GRANICE WERDYKTU
+- Zamknięta wyłącznie kwestia instrukcji odzyskania pracy zgłoszona w r3.
+- Wygląd i scenariusze w zbudowanej aplikacji: NOT_CHECKED przez audytora,
+  nadal do odbioru Pawła zgodnie z kontraktem i DELIVERY.
+- Pełna suita na działającym backendzie i pomiar startu: pozostają dowodami
+  CC z DELIVERY, bez nowego niezależnego uruchomienia w tym re-checku.
+- PASS re-checku nie oznacza pełnego pokrycia GUI ani ogólnego audytu
+  bezpieczeństwa/zgodności z RODO. Bez merge dostawy.
+
+PRZEKAZANIE
+Raport do publikacji na gałęzi Tasku. BOARD na main niezmieniony:
+w poprzednim etapie automatyczna kontrola odrzuciła synchronizację main
+jako merge bez jawnego polecenia Pawła. Nie obchodzono tej blokady.
+Docelowy wpis: CODEX_REPORTED; re-check ekranu r3 PASS, exact SHA 218de99,
+raport tests_r4.txt; launcher poza Taskiem, odbiór GUI Pawła nadal otwarty.
