@@ -171,3 +171,5 @@ Opis r4 powyżej przedstawiał osobny token imienia jako rozwiązanie — to bł
 - **Co r3/r4 realizuje (wyjście awaryjne):** (r3) propagacja nie przypisuje imieniu tokenu innej osoby — usuwa cudze wartości w Przywróć; (r4) imię, które po tym zostałoby jawne obok tokenu osoby lub po „Pan/Pani”, dostaje własny token z dosłowną wartością. Skutek: imię nie jest jawne i nie ma cudzej wartości, ale jedna osoba może mieć dwa tokeny.
 - **Pozostaje:** cel wyżej (K2); samotne imię bez kontekstu (K1); odmiany tej samej osoby z wartością innej formy (K2, finding w BOARD).
 - **Status:** r3 i r4 to zmiany zachowania wymagające jawnego OWNER_ACCEPTED/OWNER_CORRECTED Pawła oraz potwierdzenia rozmiaru 228 linii — do uzupełnienia tutaj dosłownie.
+
+**OWNER_ACCEPTED 2026-10-18 (Paweł, dosłownie):** „Akceptuję jako wyjście awaryjne: propagacja nie rozsyła imion (r3) oraz imię obok zakrytej osoby lub po Pan/Pani dostaje własny token (r4); akceptuję rozmiar 228 linii. Docelowo jeden token na osobę — w K2.”
