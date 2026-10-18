@@ -78,4 +78,4 @@ REASON:
 WYMAGA_DECYZJI:
   - TOTAL_LINES: 380 lines changed (threshold 150)
 ```
-Nowy wzrost względem zaakceptowanego r1 to API +12 (łącznie +18 względem bazy) i test +55. Powód: wymaganie FAIL r3 (granica błędu endpointu), nie nowy zakres. Funkcje `preview` i `preview_express` są bez zmian względem r1. Zgłaszam Pawłowi i nie zakładam zgody.
+Nowy wzrost względem zaakceptowanego r1 to API +12 (łącznie +18 względem bazy) i test +55. Powód: wymaganie FAIL r3 (granica błędu endpointu), nie nowy zakres. Funkcje `preview` i `preview_express` są bez zmian względem r1. Zgłoszone Pawłowi; odpowiedź dosłownie: „Akceptuję ale bardzo niechętnie.” (z uwagą, że rozmiar plików wynika z doświadczenia z plikami-olbrzymami). Wniosek CC na przyszłość: nowa logika w osobnym module, w dużym pliku tylko import.
