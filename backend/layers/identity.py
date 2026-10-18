@@ -78,7 +78,8 @@ def apply_identity_layer(state: PipelineState) -> None:
             hits.append((m.start(), m.end(), canonical, _OCR_DIGIT_TOKEN[dc]))
 
     for token_type, pat in _IDENTITY_PATTERNS:  # [LYNX-NEWLINE-CROSSING E1] liczby w obrębie linii, nie fragment/token
-        hits += [(start, end, value, token_type) for start, end, value in line_matches(pat, state.text)]
+        hits += [(start, end, value, token_type) for start, end, value in line_matches(pat, state.text)  # [LYNX-MAP-FIDELITY]
+                 if not state.text[end:end + 1].isalnum() and state.text[start - 1:start] != "_"]  # nie wnętrze „…4123c129”
 
     # Wiekszy span wygrywa
     hits.sort(key=lambda x: (-(x[1] - x[0]), -x[0]))
