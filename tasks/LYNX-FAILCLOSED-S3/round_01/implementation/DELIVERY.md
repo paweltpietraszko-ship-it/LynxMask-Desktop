@@ -47,3 +47,35 @@ Wzrost API +6 (import `normalize_ocr`, dwa warunki S3 po 2 linie, pole `guard_va
 - Przycisk „to nie PII” po dodaniu wartości zapisuje wynik z pominięciem Guarda (`handleSave(true)`) — zachowanie istniejące, bez zmian.
 - Wartości-śmieci z NER (np. „M., ”) jako OSOBA — K1/C2.
 - Markery xfail trzech reproduktorów audytu do zdjęcia (XPASS) — poza TASK_SCOPE.
+
+---
+
+# DELIVERY r2 (CC) — poprawka FAIL r3 Codexa (`93d15a4`)
+
+Kod: `b0b5ff9` (na `93d15a4`). Diff względem dostawy r1 (`8194c0d`): `pseudominizer_api.py` +12, `tests/test_failclosed.py` +53; nic więcej w produkcie.
+
+## Zmiana
+`pseudominizer_api.py`: nowy zewnętrzny middleware `_s3_error_boundary` wokół `call_next`. Nieobsłużony wyjątek z dowolnego endpointu (np. `_extract_text` przed pipeline) → `JSONResponse(S3_FAILURE, 500)` dla `/preview` i `/preview-express`, a dla innych ścieżek `{"error": "Wewnętrzny błąd serwera."}` 500. Log: `logger.error(...)` z samą ścieżką i `type(e).__name__`, bez `str(e)` i bez tracebacku (S5). Wyjątek nie wraca do Starlette/uvicorn, więc `uvicorn.error` nie dostaje tracebacku. `@app.exception_handler(Exception)` odrzucony, bo Starlette po obsłudze i tak re-raisuje wyjątek do serwera, który loguje treść. Wyjątki spoza `Exception` (np. `KeyboardInterrupt`) przechodzą bez zmian.
+
+## Testy
+- `test_wyjatek_endpointu_json_s3_bez_tresci_w_logu[/preview, /preview-express]`: prawdziwy `uvicorn.Server` na porcie tymczasowym (jak reproduktor Codexa), `_extract_text` rzuca `ValueError` ze znacznikiem syntetycznym z PESEL. Handler logów jest na `root`, `uvicorn`, `uvicorn.error` i `pseudominizer`. Asercje: HTTP 500 i `json == S3_FAILURE`; w logu jest nazwa typu `ValueError`; w logu nie ma znacznika ani PESEL.
+- RED→GREEN: na API z r1 (`8194c0d`) **2 failed**, na `b0b5ff9` cały plik **21 passed**.
+- Reproduktor Codexa `tests_r3_server_repro.py` uruchomiony na kopii bez asercji SHA. Pada na swoim oczekiwaniu błędu, bo dostaje `(500, '{"error":"Nie udało się bezpiecznie zamaskować dokumentu…","blocked'…)` zamiast `Internal Server Error`.
+- Regresje: `test_output_guard_adversarial` + `test_layers` + `test_ner_multiline` + `test_text_limit_15k` + `test_map_fidelity` + `test_failclosed` dały **233 passed**. `test_audyt_2026_10.py`: 131 passed, 7 xfailed, 3 „failed” = te same XPASS(strict) co w r1 (marker poza TASK_SCOPE).
+- `tests/` (standardowa suita): 137 passed, 2 skipped, 1 xfailed, **30 failed**. Wszystkie 30 to testy live-HTTP na porcie 8765. Na tym porcie działa backend Pawła z main, a w worktree jest stary `api_token.txt`, więc każde wywołanie dostaje 401, co potwierdza curl. Te testy nie sprawdzały gałęzi i nie mogły tego zrobić, a backendu Pawła nie restartowano. Uruchomienie ich na backendzie z gałęzi: **NOT_RUN** w r2 (w r1 było 167 passed). Do odtworzenia: `cd backend && py -3 pseudominizer_api.py` z gałęzi, potem `py -3 -m pytest tests/ -q`.
+- `ruff`: 0 uwag w obu plikach (baza API również 0).
+- Pomiar 178 dokumentów: niepowtarzany. Zmiana działa wyłącznie przy wyjątku, który w r1 nie wystąpił na żadnym z 178 dokumentów (wszystkie odpowiedzi 200).
+
+## Gate (dosłownie)
+```
+STATUS: FAIL
+HEAD_SHA: b0b5ff9a2eabe754d21b6a41424769f3d1fac0c6
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+REASON:
+  - SIZE_FILE: backend/pseudominizer_api.py has 1147 lines (max 600, before 1129)
+  - SIZE_FUNC: backend/pseudominizer_api.py:preview has 115 lines (max 50, before 112)
+  - SIZE_FUNC: backend/pseudominizer_api.py:preview_express has 81 lines (max 50, before 79)
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 380 lines changed (threshold 150)
+```
+Nowy wzrost względem zaakceptowanego r1 to API +12 (łącznie +18 względem bazy) i test +53. Powód: wymaganie FAIL r3 (granica błędu endpointu), nie nowy zakres. Funkcje `preview` i `preview_express` są bez zmian względem r1. Zgłaszam Pawłowi i nie zakładam zgody.
