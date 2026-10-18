@@ -316,6 +316,18 @@ async def _require_api_token(request, call_next):
     return await call_next(request)
 
 
+# [LYNX-FAILCLOSED-S3] Granica błędu endpointu (zewnętrzna): nieobsłużony wyjątek → JSON bez treści, log tylko typ (S5).
+# exception_handler(Exception) nie wystarcza — Starlette i tak przekazuje wyjątek serwerowi, który loguje traceback.
+@app.middleware("http")
+async def _s3_error_boundary(request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        logger.error("Nieobsłużony błąd endpointu %s: %s", request.url.path, type(e).__name__)
+        masking = (request.method, request.url.path) in _EXPRESS_PATHS
+        return JSONResponse(S3_FAILURE if masking else {"error": "Wewnętrzny błąd serwera."}, status_code=500)
+
+
 # ── Endpointy ─────────────────────────────────────────────────────────────────
 
 @app.get("/version")

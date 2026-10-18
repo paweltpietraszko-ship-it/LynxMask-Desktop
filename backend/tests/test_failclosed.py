@@ -143,3 +143,58 @@ def test_token_po_ocr_odrzucony(client, path, fake_token):
 def test_zwykla_korekta_ocr_bez_falszywego_alarmu(client, path):
     r = _post(client, path, "Numer konta: PL61 1090 1014 0000 0712 l981 2874, PESEL: 4405140l359.")
     assert r.status_code == 200, r.text[:200]
+
+
+# ── D: nieobsłużony wyjątek endpointu (np. extractor) na prawdziwym serwerze ASGI (Codex r3) ──
+MARKER = f"SYNTETYCZNY_ZNACZNIK_{PESEL}"
+
+
+@pytest.fixture
+def real_server():
+    import socket
+    import threading
+    import uvicorn
+    import pseudominizer_api as api
+    logs = io.StringIO()
+    handler = logging.StreamHandler(logs)
+    loggers = [logging.getLogger(n) for n in ("", "uvicorn", "uvicorn.error", "pseudominizer")]
+    for lg in loggers:
+        lg.addHandler(handler)
+    old_level = logging.getLogger().level
+    logging.getLogger().setLevel(logging.DEBUG)
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    server = uvicorn.Server(uvicorn.Config(api.app, lifespan="off", log_config=None, access_log=False))
+    thread = threading.Thread(target=lambda: server.run(sockets=[sock]), daemon=True)
+    with patch.object(api, "_API_TOKEN", _FULL), patch.object(api, "_EXPRESS_TOKEN", _EXPR), \
+            patch.object(api, "_extract_text", side_effect=ValueError(MARKER)):
+        thread.start()
+        for _ in range(200):
+            if server.started:
+                break
+            threading.Event().wait(.05)
+        assert server.started
+        yield sock.getsockname()[1], logs
+    server.should_exit = True
+    thread.join(timeout=5)
+    sock.close()
+    logging.getLogger().setLevel(old_level)
+    for lg in loggers:
+        lg.removeHandler(handler)
+
+
+@pytest.mark.parametrize("path,token", [("/preview", _FULL), ("/preview-express", _EXPR)])
+def test_wyjatek_endpointu_json_s3_bez_tresci_w_logu(real_server, path, token):
+    import threading
+    import requests
+    port, logs = real_server
+    r = requests.post(f"http://127.0.0.1:{port}{path}", headers={"X-Api-Token": token, "Host": "127.0.0.1:8765"},
+                      files={"file": ("d.txt", b"neutralny tekst", "text/plain")}, timeout=10)
+    for _ in range(50):
+        if "ValueError" in logs.getvalue():
+            break
+        threading.Event().wait(.02)
+    from pipeline import S3_FAILURE
+    assert r.status_code == 500 and r.json() == S3_FAILURE, (r.status_code, r.text[:200])
+    assert "ValueError" in logs.getvalue(), "granica błędu nie zalogowała typu"
+    assert MARKER not in logs.getvalue() and PESEL not in logs.getvalue(), logs.getvalue()[-500:]
