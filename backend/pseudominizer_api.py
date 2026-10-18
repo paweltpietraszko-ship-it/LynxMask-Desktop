@@ -202,17 +202,15 @@ async def _lifespan(app):
     global _GUARD_AVAILABLE, SYSTEM_PROMPT_SECURITY, _crypto_ok, _API_TOKEN, _EXPRESS_TOKEN
 
     # [CRASH-UX] Kasujemy stary plik błędu na początku każdego startu.
-    try:
-        _STARTUP_ERROR_PATH.unlink(missing_ok=True)
-    except Exception:
-        pass
+    # [LYNX-STARTUP-COMPONENTS] Także stary token: plik tokenu = gotowość, zapisywany dopiero po próbach.
+    for _old in (_STARTUP_ERROR_PATH, _API_TOKEN_PATH):
+        try:
+            _old.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     _API_TOKEN     = _secrets.token_hex(32)
     _EXPRESS_TOKEN = _secrets.token_hex(32)
-    try:
-        _API_TOKEN_PATH.write_text(_API_TOKEN, encoding="utf-8")
-    except Exception as _e:
-        logger.warning(f"[SECURITY] Nie można zapisać api_token.txt: {_e}")
 
     try:
         import spacy_ner as _spacy_ner_mod
@@ -251,19 +249,20 @@ async def _lifespan(app):
     except Exception as e:
         logger.warning(f"[STARTUP] crypto_selftest niedostępny: {e}")
 
+    # [LYNX-STARTUP-COMPONENTS] Próby funkcjonalne wszystkich elementów; którakolwiek nie przejdzie → brak startu.
+    from startup_check import run as _startup_check
+    _failed = _startup_check(_app_state, _GUARD_AVAILABLE, _crypto_ok)
+    if _failed:
+        _msg = "Nie przeszły próby startowe: " + ", ".join(_failed) + "."
+        _write_startup_error("STARTUP-COMPONENTS", _msg)
+        raise RuntimeError(f"[STARTUP] {_msg}")
     try:
-        from smoke_test import assert_smoke_test as _assert_smoke
-        _assert_smoke()
-    except RuntimeError as _re:
-        _code = "SMOKE-" + (str(_re)[:30].replace(" ", "-").upper()
-                            if str(_re) else "PIPELINE-ERROR")
-        _write_startup_error(_code, str(_re))
-        raise
+        _API_TOKEN_PATH.write_text(_API_TOKEN, encoding="utf-8")
     except Exception as _e:
-        _write_startup_error("SMOKE-UNEXPECTED", str(_e))
-        raise RuntimeError(f"[SMOKE] Nieoczekiwany błąd smoke testu: {_e}")
+        logger.warning(f"[SECURITY] Nie można zapisać api_token.txt: {_e}")
 
     yield  # aplikacja działa
+    _API_TOKEN_PATH.unlink(missing_ok=True)  # zatrzymany backend nie zostawia „gotowości”
 
 # ── Stałe dla tabeli tokenów ──────────────────────────────────────────────────
 

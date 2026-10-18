@@ -60,34 +60,36 @@ export default function App() {
       return;
     }
     // [BUG-10] tokenReady=false blokuje MainLayout aż token się załaduje.
+    // [LYNX-STARTUP-COMPONENTS] Co 1 s do 60 s: gotowe = token + /health 200 (backend zapisuje token dopiero
+    // po próbach startowych); awaria = startup_error.json → CrashScreen; inaczej silnik jeszcze startuje.
     setTokenReady(false);
-    invoke<string>("read_api_token")
-      .then(token => {
-        setApiToken(token);
-        setTokenReady(true);
-      })
-      .catch(async () => {
-        // Backend może jeszcze startować — poczekaj 4s i spróbuj ponownie.
-        await new Promise(r => setTimeout(r, 4000));
+    let cancelled = false;
+    (async () => {
+      for (let i = 0; i < 60 && !cancelled; i++) {
         try {
           const token = await invoke<string>("read_api_token");
-          setApiToken(token);
-          setTokenReady(true);
-        } catch {
-          // Drugi błąd — sprawdź czy backend zgłosił crash przy starcie.
-          try {
-            const errorJson = await invoke<string>("read_startup_error");
-            const info = JSON.parse(errorJson) as {code: string; message: string; timestamp?: string};
-            setCrashInfo(info);
-          } catch {
-            setCrashInfo({
-              code: "STARTUP-NO-RESPONSE",
-              message: "Silnik nie odpowiada. Spróbuj uruchomić aplikację ponownie.",
-            });
+          const res = await fetch("http://127.0.0.1:8765/health", { signal: AbortSignal.timeout(2000) });
+          if (res.ok) {
+            if (!cancelled) { setApiToken(token); setTokenReady(true); }
+            return;
           }
-          setTokenReady(true);
-        }
-      });
+        } catch { /* brak tokenu albo port jeszcze zamknięty */ }
+        try {
+          const info = JSON.parse(await invoke<string>("read_startup_error")) as {code: string; message: string; timestamp?: string};
+          if (!cancelled) { setCrashInfo(info); setTokenReady(true); }
+          return;
+        } catch { /* brak pliku awarii — silnik jeszcze startuje */ }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      if (!cancelled) {
+        setCrashInfo({
+          code: "STARTUP-NO-RESPONSE",
+          message: "Silnik nie odpowiada. Spróbuj uruchomić aplikację ponownie.",
+        });
+        setTokenReady(true);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [unlocked]);
 
   // ── Idle timer ────────────────────────────────────────────────────────────
@@ -174,7 +176,7 @@ export default function App() {
         background: T.bg, fontFamily: T.mono, fontSize: 11,
         color: T.textMuted, letterSpacing: "0.08em",
       }}>
-        Ładowanie sesji…
+        Uruchamianie silnika…
       </div>
     );
   }
