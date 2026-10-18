@@ -115,6 +115,18 @@ def test_f2_reset_usuwa_wszystko_i_dziala_od_razu(iso):
     assert "Nowak" not in _profile_masks(api, "Świadek Anna Nowak zeznała.")
 
 
+def test_f2_zablokowany_log_to_reset_czesciowy_nie_sukces(iso):
+    """Codex r2 A1: stary log otwarty przez inny proces (Windows) → reset nie zgłasza pełnego sukcesu; po zamknięciu — tak."""
+    cl, api, root = iso
+    api._LAUNCHER_LOG.write_text(f"log {MARK}", encoding="utf-8")
+    with api._LAUNCHER_LOG.open("a", encoding="utf-8"):
+        r = cl.post("/profile/reset", json={"confirm": True}, headers=_h())
+        if api._LAUNCHER_LOG.exists():                                        # Windows: plik otwarty = nieusuwalny
+            assert r.status_code == 500 and not r.json().get("ok") and "plik logu silnika" in r.json()["error"], r.text
+    r = cl.post("/profile/reset", json={"confirm": True}, headers=_h())
+    assert r.status_code == 200 and r.json()["ok"] is True and not api._LAUNCHER_LOG.exists(), r.text
+
+
 # ── F3 ─────────────────────────────────────────────────────────────────────────
 @pytest.fixture
 def debug_logs():

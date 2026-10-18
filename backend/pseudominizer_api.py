@@ -1011,11 +1011,13 @@ async def profile_reset(request: Request):
         logger.warning(f"[RESET] Nie można usunąć pliku mapy: {e}")
 
     # [LYNX-SEC-DISK-PII] F2: wyjątki „to nie PII”, dziennik zdarzeń (+VACUUM) i log launchera — reset obiecuje „wszystkie dane”
-    for _f in (_guard_allowlist_path(), _LAUNCHER_LOG):
+    _left = []  # Codex r2 A1: nieusunięty plik = reset częściowy, nie pełny sukces
+    for _f, _label in ((_guard_allowlist_path(), "wyjątki „to nie PII”"), (_LAUNCHER_LOG, "plik logu silnika")):
         try:
             _f.unlink(missing_ok=True)
-        except OSError as e:  # np. log otwarty przez stary launcher
+        except OSError as e:  # np. log otwarty przez stare okno silnika (launcher <= v1.3)
             logger.warning("[RESET] Nie można usunąć %s: %s", _f.name, type(e).__name__)
+            _left.append(_label)
     db_store.reset_all()
 
     # 4. Reinicjalizuj profil — także Anonymizer (stary trzymał mapę sprzed resetu w warstwie profilu)
@@ -1028,6 +1030,9 @@ async def profile_reset(request: Request):
         return JSONResponse({"error": "Reset częściowy — błąd reinicjalizacji profilu"}, status_code=500)
 
     db_store.record_audit("PROFIL", "reset")
+    if _left:
+        return JSONResponse({"error": f"Reset częściowy — nie usunięto: {', '.join(_left)} (plik używany przez inny program, "
+                             "np. stare okno silnika). Zamknij je i powtórz reset."}, status_code=500)
     logger.info(f"[RESET] Usunięto {deleted_sessions} sesji. Profil wyczyszczony.")
     return {"ok": True, "deleted_sessions": deleted_sessions}
 
