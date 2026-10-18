@@ -47,3 +47,5 @@ WYMAGA_DECYZJI:
   - RATIO: 112/13 = 8.6:1 (threshold 5:1)
 ```
 Wzrost +6 linii pliku legacy: nowa odpowiedź 413 i funkcja wspólna dla dwóch endpointów (zduplikowany blok pustego tekstu zastąpiony wywołaniem). Bez sztucznego zagęszczania; zgodnie z briefem wymaga odnotowanej decyzji Pawła. `ruff`: 6 błędów przed i po (bez nowych).
+
+**OWNER_ACCEPTED 2026-10-18 (Paweł, dosłownie):** „Akceptuję przekroczenie limitu ale limit nie jest z palca wyssany, za duże pliki wszystkim utrudniają życie a pseudominizer był już po refaktorze a i tak urósł.” — dotyczy gate SIZE_FILE (+6 linii `pseudominizer_api.py`, 1123 → 1129) i RATIO tej dostawy; uwaga o rozmiarze → osobne zgłoszenie w BOARD (LYNX-API-SIZE).
