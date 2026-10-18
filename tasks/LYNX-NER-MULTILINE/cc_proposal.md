@@ -1,7 +1,7 @@
-# LYNX-NER-MULTILINE — encja NER przełamana wierszem nie może przepaść przy podmianie
+# PROPOZYCJA CC DO BRIEFU — LYNX-NER-MULTILINE — encja NER przełamana wierszem nie może przepaść przy podmianie
 
-STATUS: BRIEF_ONLY → Codex precheck → CC implementacja → Codex audyt exact SHA → merge wyłącznie na polecenie OWNERA.
-AUTOR BRIEFU: CC (Paweł 2026-10-18: „możemy pisać briefy”; kolejność wg zaakceptowanej diagnozy). Krok **K0** z `arch/DIAGNOZA_2026-10-18.md` r2 (`4f6c380`, Codex AKCEPTUJĘ `9c4db4e`).
+STATUS: PROPOZYCJA CC → Architekt pisze `brief.md` (zadanie) → Codex audytuje brief → CC ocenia i implementuje → Codex audyt exact SHA → merge wyłącznie na polecenie OWNERA.
+AUTOR PROPOZYCJI: CC (Paweł 2026-10-18: „możemy pisać briefy”; kolejność wg zaakceptowanej diagnozy). Krok **K0** z `arch/DIAGNOZA_2026-10-18.md` r2 (`4f6c380`, Codex AKCEPTUJĘ `9c4db4e`).
 PRODUCT_TRUTH: arch/spec.md S1 (brak jawnych danych), S2 (wierność tekstu: struktura wierszy zachowana, Przywróć 1:1), S3 (fail-closed), S4 (Guard bez zmian), S5.
 Źródła: BOARD `LYNX-NER-MULTILINE` (regresja z T03 `bfdcaea`), diagnoza §3 A1/A2 i trace Codexa r1 (`1679a3a`).
 
