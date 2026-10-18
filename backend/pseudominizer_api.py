@@ -992,23 +992,8 @@ async def profile_reset(request: Request):
     import glob as _glob
     from anonymizer import build_anonymizer as _build_anonymizer
 
-    # 1. Policz i usuń sesje PSE z DB + pliki .enc
-    docs = db_store.list_documents()
-    deleted_sessions = 0
-    for doc in docs:
-        pse = doc["pse"]
-        enc_path = MAPS_DIR / f"{pse}.enc"
-        try:
-            enc_path.unlink(missing_ok=True)
-        except Exception as e:
-            logger.warning(f"[RESET] Nie można usunąć {enc_path}: {e}")
-        try:
-            db_store.delete(pse)
-            deleted_sessions += 1
-        except Exception as e:
-            logger.warning(f"[RESET] Nie można usunąć DB {pse}: {e}")
-
-    # 2. Usuń pozostałe pliki PSE-*.enc (na wypadek braku rekordu DB)
+    # 1–2. Sesje: liczba z rejestru; wszystkie pliki PSE-*.enc (rekordy usuwa niżej db_store.reset_all — LYNX-SEC-DISK-PII)
+    deleted_sessions = len(db_store.list_documents())
     for enc_file in _glob.glob(str(MAPS_DIR / "PSE-*.enc")):
         try:
             Path(enc_file).unlink(missing_ok=True)
