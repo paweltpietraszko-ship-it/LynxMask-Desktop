@@ -1,0 +1,59 @@
+LYNX-STARTUP-COMPONENTS — wąski audyt dostawy r1+r2, 2026-10-18
+AUDITED_SHA: af8833b18bdce9e968530d807ff2b88c2807cbc6
+CODE_SHA: d827862e9ba10be454e1c9290cc06f6f2b5cfe7c
+DIFF_BASE: 40fed32 (baza dostawy CC; bez ponawiania audytów innych Tasków).
+STATUS: PARTIAL / OWNER_DECISION_NEEDED — brak końcowego PASS/FAIL.
+RECIPIENT: Paweł / CC.
+
+ZAKRES I DOWODY
+- Exact SHA w odizolowanym worktree; diff startup_check.py, _lifespan,
+  App.tsx i CrashScreen.tsx oraz kontrakt r2 z rozszerzeniem ekranu awarii.
+- Frozen spec: S3, S5; brak zmian produktu przez audytora.
+- Celowane testy implementera uruchomione niezależnie przez audytora:
+  tests/test_startup_check.py + tests/test_failclosed.py: 40 passed.
+  W tym prawdziwe SpaCy/Morfeusz/Guard i izolowane profile puste/niepuste,
+  porównanie SHA256/rozmiaru/mtime oraz sprzątnięcie profilu próby.
+- Niezależny reproduktor integracji z _lifespan: każdy z sześciu elementów
+  osobno zwraca niepowodzenie w _CHECKS, pozostałe próby są kontrolnie OK.
+  Dla każdego przypadku stary token i plik błędu umieszczone w katalogu
+  tymczasowym; realny _lifespan na izolowanym profilu. Wynik 6/6:
+  RuntimeError, STARTUP-COMPONENTS z właściwą nazwą, brak tokenu.
+  To dowód podłączenia wszystkich prób do blokady, a nie sześć awarii
+  rzeczywistych bibliotek ani dowód pełnego bezpieczeństwa programu.
+- tsc --noEmit na kodzie exact SHA: exit 0, istniejące zależności frontend.
+  Pierwsza próba bez dostępnego node_modules była błędem środowiska;
+  po udostępnieniu zależności kompilacja typów poprawna.
+
+OWNER_EXPLANATION_GATE — ODZYSKANIE PRACY PO AWARII
+OWNER_CONFIRMED: przy nieudanej próbie program blokuje start; UI pokazuje
+kod i listę niesprawnych elementów. Rozszerzenie usuwa niepotwierdzony e-mail.
+TECHNICAL_ONLY: nowy moduł prób, przesunięcie zapisu tokenu po próbach,
+kontrola /health i sprzątnięcie tokenu po łagodnym zamknięciu.
+OWNER_DECISION_NEEDED: DELIVERY r2 sam wskazuje nieskuteczne ponowienie.
+Wyzwalacz: backend zakończy start awarią i użytkownik kliknie istniejący
+przycisk „Uruchom ponownie”, zalecany teraz w nowej sekcji „Co zrobić”.
+Efekt z kodu: CrashScreen woła restart_app, a main.rs wykonuje app.restart().
+Tauri nie uruchamia backendu; restart interfejsu nie ponawia prób silnika.
+UI może więc wrócić do tego samego komunikatu. Przycisk nie wysyła raportu
+ani dokumentu; ponowne uruchomienie interfejsu odczytuje plik błędu/token.
+Bez skutecznego uruchomienia backendu użytkownik nie wróci do pracy.
+To ograniczenie starej komendy restartu, nie wykazany nowy wyciek ani FAIL.
+Rekomendacja do rozstrzygnięcia: komunikat ma uczciwie wyjaśnić, że należy
+ponownie uruchomić również silnik zgodnie z faktycznym sposobem instalacji;
+samo kliknięcie obecnego przycisku nie gwarantuje powrotu do pracy.
+Nie rozszerzać tego Tasku automatycznie o budowę launchera.
+
+NOT_CHECKED / GRANICE
+- Ręczne scenariusze GUI a–d i wygląd obu ekranów awarii: NOT_CHECKED.
+  W kontrakcie przewidziano ocenę Pawła po przebudowie Tauri; tsc jej nie zastępuje.
+- Pełna suita na działającym backendzie i pomiar rzeczywistego startu:
+  dowody CC w DELIVERY; nie powtarzano w tym wąskim etapie, nie są
+  niezależnym dowodem audytora.
+- Nie czytano ani nie modyfikowano profilu i dokumentów użytkownika.
+- Nie wykonano ogólnego audytu bezpieczeństwa ani certyfikacji RODO.
+- Bez merge. Końcowy werdykt po rozstrzygnięciu odzyskania pracy
+  i zamknięciu wymaganych dowodów UI/regresji odpowiednio do kontraktu.
+
+Następny etap proponowany w rozmowie: po zakończeniu tego Tasku i merge
+ograniczony przegląd bezpieczeństwa konkretnej wersji. Raport z datą,
+zakresem, wersją i ograniczeniami; nie deklaracja „zgodności z RODO”.
