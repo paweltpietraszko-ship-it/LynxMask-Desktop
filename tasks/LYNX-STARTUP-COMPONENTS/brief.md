@@ -47,8 +47,9 @@ TASK_SCOPE:
 - backend/pseudominizer_api.py
 - backend/tests/test_startup_check.py
 - frontend/src/App.tsx
+- frontend/src/screens/CrashScreen.tsx
 
-OUT_OF_SCOPE: Tauri (`main.rs`), `CrashScreen.tsx`, pozostałe UI, `smoke_test.py` (bez zmian treści), `anonymizer.py`/`MorfEnv` (cache trybu zostaje — próba funkcjonalna go weryfikuje), `seed_profile` (martwy, osobno M1), HerBERT/słownik nazwisk (dojdą w F2 LYNX-ARCH-CANDIDATES), S4.
+OUT_OF_SCOPE: Tauri (`main.rs`), pozostałe UI, `smoke_test.py` (bez zmian treści), `anonymizer.py`/`MorfEnv` (cache trybu zostaje — próba funkcjonalna go weryfikuje), `seed_profile` (martwy, osobno M1), HerBERT/słownik nazwisk (dojdą w F2 LYNX-ARCH-CANDIDATES), S4.
 
 ## Minimalna falsyfikacja
 1. Dla każdego z 6 elementów osobno: wymuszona awaria (brak modułu / wyjątek / BLOCKED / `get_forms` zwraca tylko wejście / Guard nie blokuje / Guard blokuje wyłącznie przez `GUARD_ERROR` / crypto FAIL / **automat istnieje, ale nie dopasowuje odmienionej formy**) → `run` zwraca niepowodzenie z nazwą elementu; `_lifespan` → `RuntimeError`, `startup_error.json` z `STARTUP-COMPONENTS`, **brak `api_token.txt`**; w pliku i logu brak treści wyjątku.
@@ -63,3 +64,13 @@ SpaCy — wczytanie modelu 4,5 s (dziś i tak następuje, tylko później: przy 
 Uwaga do prób: syntetyczne nazwisko musi być znane Morfeuszowi (nazwa nieznana, np. zmyślona, daje tylko formę podstawową — sprawdzone: wymyślone nazwisko 1 forma, „Kowalski” 8+ form), inaczej próba MORFEUSZ/PROFIL fałszywie nie przejdzie. Użyć pospolitego wzorca imienia i nazwiska (np. „Jan Kowalski” → „Jana Kowalskiego”).
 
 GATE: 2 nowe pliki; `pseudominizer_api.py` (legacy >600) — przyrost minimalny, raportowany (szacunek ±8 linii, logika w nowym module); `App.tsx` ok. +25 linii; >150 linii → WYMAGA_DECYZJI. Zgoda Pawła na ~220 udzielona przed kodem; po r2 (UI + izolowana próba profilu) szacunek ~290 (startup_check ~140, API ~8, App ~25, testy ~120) — zgłoszone Pawłowi przed kodem.
+
+## ROZSZERZENIE (r2 dostawy, polecenie Pawła 2026-10-18, przed audytem r1)
+Paweł: „musimy na ekranie zepsutego programu napisać, co użytkownik ma robić dalej. Ja proponuję, by spróbował ponownie lub skontaktował się z działem obsługi; jak będzie, to dodamy kontakt.”
+Stan `CrashScreen.tsx`: opis zawsze „Test bezpieczeństwa wykrył problem…” (także przy `STARTUP-NO-RESPONSE`); pokazuje sam kod, bez `message` (listy elementów, które nie przeszły); przycisk „Wyślij raport e-mail” na adres `support@lynxmask.app`, którego istnienia nikt nie potwierdził (Paweł: kontakt dopiero będzie); instrukcja „pobierz nową wersję instalatora” bez źródła.
+Zmiana (tylko tekst i układ, bez nowej logiki):
+- pod kodem błędu pokazać `message` (np. „Nie przeszły próby startowe: Output Guard.”);
+- sekcja „Co zrobić”: 1) kliknij „Uruchom ponownie”; 2) jeśli problem się powtarza, skontaktuj się z działem obsługi i podaj kod błędu oraz treść komunikatu powyżej;
+- usunąć przycisk e-mail z niepotwierdzonym adresem i instrukcję reinstalacji (kontakt dojdzie, gdy Paweł go poda — jedno miejsce w pliku);
+- opis ogólny: „Program nie uruchomił się, bo nie wszystkie zabezpieczenia działają poprawnie. Aby nie narazić danych, praca jest zablokowana.”
+Falsyfikacja: `tsc --noEmit`; ocena okiem Pawła po przebudowie Tauri (oba kody: STARTUP-COMPONENTS i STARTUP-NO-RESPONSE).
