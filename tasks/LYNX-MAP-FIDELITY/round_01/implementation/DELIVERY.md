@@ -47,3 +47,24 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 226 lines changed (threshold 150)
 ```
 153 z 226 linii to nowy test; kod produktu 56+17. Pliki przy limicie nie rosną (`ner_layer.py` 600 → 597). Wymaga decyzji Pawła.
+
+---
+
+# DELIVERY r2 (po FAIL r2 Codexa `3fee4af`, F1 — precyzja Decimal)
+
+Kod: `793e1da`. F1 potwierdzony: `Decimal(...).normalize()` używa kontekstu wątku (28 cyfr znaczących) → różne kwoty o ≥29 cyfrach dostawały jeden klucz. Poprawka: klucz kwoty budowany wprost z cyfr, bez arytmetyki — część całkowita bez zer wiodących, część dziesiętna bez zer końcowych (`kwota:<cyfry>.<ułamek>:<waluta>`); import `Decimal` usunięty. Brief („bezstratnie, bez float”) spełniony bez zależności od kontekstu.
+
+Przegląd rodziny `round_01/implementation/amount_sweep.py` (nowy): 26 100 próbek — losowe kwoty 1–40 cyfr w różnych zapisach (spacje/kropki tysięcy, kropka/przecinek dziesiętny, zera końcowe, zł/PLN) + pary celowane różniące się dopiero ostatnią cyfrą (20–45 cyfr); wyrocznia: dokładne `Decimal(str)` bez zmiany kontekstu. **Kod r1: 34 kolizje różnych wartości; poprawka: 0 kolizji, 0 rozbić tej samej wartości.** (Pierwsza wersja przeglądu ustawiała globalną precyzję 200 i przez to nie widziała błędu r1 — poprawione, opisane w nagłówku skryptu.)
+Test: `test_kwoty_ponad_precyzje_decimal` (alokator + Full + Express, Przywróć 1:1) — na kodzie r1 2 failed, na r2 passed. `test_map_fidelity.py` 31 passed; regresje (`test_layers`, `test_ner_multiline`, `test_text_limit_15k`, `test_audyt_2026_10`) 281 passed, 10 xfailed.
+Pomiar 178 dokumentów z r1 obowiązuje bez zmian: zmiana dotyczy wyłącznie kwot ≥29 cyfr znaczących (brak takich w zbiorze; klucz dla krótszych kwot identyczny co do równości).
+
+Gate r2 (dosłownie):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 793e1dac7b30bd7b0dc6b82c45974796279405ff
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 221/17 = 13.0:1 (threshold 5:1)
+  - TOTAL_LINES: 238 lines changed (threshold 150)
+```
+Kod produktu +55/−17 (166 linii to test). Rozmiar — decyzja Pawła.
