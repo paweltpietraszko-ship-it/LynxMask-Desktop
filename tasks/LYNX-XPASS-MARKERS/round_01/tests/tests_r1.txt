@@ -1,0 +1,6 @@
+LYNX-XPASS-MARKERS — wąski audyt dostawy, 2026-10-18
+WYNIK: PASS. Exact SHA d9b44dbed8ee3c37e66806fd21bea863c3df426c; kod 50fa77146f80db446bb53f99303783a210bfd1eb; diff base 8476bc2.
+Kontrakt: operacyjne polecenie Pawła „zdejmij markery”, trzy naprawione przypadki po S3; bez etapu architekta. Diff potwierdza wyłącznie zastąpienie trzech dekoratorów xfail komentarzami: BUG-EXPRESS-FAIL-OPEN, BUG-GUARD-MAPLEAK-UNREDACTED, BUG-ALLOWLIST-SUBSTRING. Treść testów, pozostałe markery i kod produktu bez zmian.
+Niezależnie uruchomiono wyłącznie objęty zmianą plik: backend pytest tests/test_audyt_2026_10.py -q --tb=short --disable-warnings — 134 passed, 7 xfailed, 2 warnings, zero failed/XPASS. Trzy przypadki są teraz zwykłymi przechodzącymi testami. Pozostałe 7 znanych xfail pozostaje otwarte, nie stanowi akceptacji ich błędów.
+Gate implementera PASS na kodzie 50fa771; końcowy commit dostawy dodaje tylko DELIVERY/gate. Nie powtarzano mechanicznego gate ani audytów S3, suity repo, UI i pomiarów dokumentów: nie są potrzebne do tej naprawy markerów. Brak nowych findingów w zakresie zmiany.
+Raport i BOARD publikowane na GitHubie. Bez zmian produktu przez audytora i bez merge. Merge tylko na polecenie Pawła.

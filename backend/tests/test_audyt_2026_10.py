@@ -238,7 +238,7 @@ def test_fallback_krotki_po_dlugim(long):
     assert expr[0] == "Nr NUMER_001, ref 12345678." and expr[1] == {"NUMER_001": long}, expr
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-EXPRESS-FAIL-OPEN: wyjątek w run_pipeline_express zwraca oryginał z force_block=False (S3)")
+# BUG-EXPRESS-FAIL-OPEN — naprawione w LYNX-FAILCLOSED-S3 (xfail zdjęty).
 def test_express_fail_closed():
     import pipeline_new
     def boom(state):
@@ -248,7 +248,7 @@ def test_express_fail_closed():
     assert force_block is True
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-GUARD-MAPLEAK-UNREDACTED: przy MAP_LEAK guard zwraca redacted_text=text, zamazanie HIGH ginie")
+# BUG-GUARD-MAPLEAK-UNREDACTED — naprawione w LYNX-FAILCLOSED-S3 (xfail zdjęty).
 def test_guard_map_leak_nie_odslania_pesel():
     from output_guard import guard_output_with_map, GuardMode
     text = "Pacjent Zenobiusz Audytowy, PESEL 44051401458."
@@ -257,7 +257,7 @@ def test_guard_map_leak_nie_odslania_pesel():
     assert "44051401458" not in r.redacted_text
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-ALLOWLIST-SUBSTRING: allowlista porównuje frazę z treścią komunikatu naruszenia, nie z wartością")
+# BUG-ALLOWLIST-SUBSTRING — naprawione w LYNX-FAILCLOSED-S3 (xfail zdjęty).
 def test_allowlist_nie_wylacza_innych_naruszen():
     from output_guard import guard_output_with_map, GuardMode
     text = "Spotkanie z Zenobiuszem Audytowym."
