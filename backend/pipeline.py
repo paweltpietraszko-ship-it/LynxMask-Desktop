@@ -129,7 +129,7 @@ except ImportError:
 
 # â”€â”€ StaĹ‚e â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
+_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")  # S2 (LYNX-TOKEN-RE-SPEC)
 
 # [FIX-T22] Numer dowodu osobistego â€” 3 wielkie litery + spacja + 6 cyfr.
 # Musi byÄ‡ PRZED _ADDR_RE w pipeline bo ADDR_RE Ĺ‚apie "ABC 123456" jako adres

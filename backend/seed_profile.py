@@ -1,5 +1,6 @@
 """
-seed_profile.py  v1.0
+seed_profile.py  v1.0 — NIEUŻYWANY PRZEZ PRODUKT (LYNX-TOKEN-RE-SPEC, 2026-10-18; diagnoza M1).
+Zostaje wyłącznie dla skryptów pomiarowych w audyt/. Start aplikacji go nie woła.
 Seeduje profil trie przy pierwszym starcie aplikacji.
 
 Ładuje z plików JSON wbudowanych w pakiet:

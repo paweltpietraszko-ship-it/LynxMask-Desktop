@@ -46,7 +46,7 @@ import logging
 
 logger = logging.getLogger("pseudominizer.verbal_amounts")
 
-_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
+_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")  # S2 (LYNX-TOKEN-RE-SPEC)
 
 # ── Stałe ─────────────────────────────────────────────────────────────────────
 

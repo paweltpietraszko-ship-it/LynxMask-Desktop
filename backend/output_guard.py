@@ -188,7 +188,7 @@ _LEAK_MEDIUM: list[tuple[str, re.Pattern, int]] = [
     ("TELEFON", re.compile(r"\b(?:\+?48[-\s]?\d{3}[-\s]?\d{3}[-\s]?\d{3}|\d{3}[-\s]\d{3}[-\s]\d{3})\b"), 1),
 ]
 
-_TOKEN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
+_TOKEN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")  # S2 (LYNX-TOKEN-RE-SPEC)
 
 _LEGAL_PROPER_NOUNS = re.compile(
     r"\b(?:Sąd|Kodeks|Ustawa|Rozporządzenie|Dyrektywa|Spółka|Towarzystwo|"

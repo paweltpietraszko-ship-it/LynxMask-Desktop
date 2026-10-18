@@ -228,8 +228,8 @@ TOKEN_KWOTA  = "KWOTA"
 TOKEN_ADRES  = "ADRES"
 TOKEN_EMAIL  = "EMAIL"  # BUG-6: adresy e-mail tokenizowane jako NUMER — nowy typ
 
-TOKEN_RE      = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_(\d{3})\b")
-TOKEN_SPAN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
+TOKEN_RE      = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_(\d{3})(?!\d)")  # S2: (?!\d), nie \b — LYNX-TOKEN-RE-SPEC
+TOKEN_SPAN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")
 
 INPUT_LIMIT_BYTES      = 500_000
 MAX_TOKENS_PER_REQUEST = 500      # unikalne tokeny [V4-3]

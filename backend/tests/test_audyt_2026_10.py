@@ -55,19 +55,15 @@ def _fresh_state(with_ner: bool = True):
 
 # ── Crashe ────────────────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="BUG-ONBOARD-BATCH: MAX_ONBOARD_BATCH nie jest importowany w anonymizer.py (NameError)")
+# BUG-ONBOARD-BATCH — naprawione w LYNX-TOKEN-RE-SPEC (xfail zdjęty).
 def test_add_entities_batch_dziala():
     st = _fresh_state(with_ner=False)
     result = st.anon_map.add_entities_batch([("Zenobiusz", "OSOBA")])
     assert len(result) == 1
 
 
-@pytest.mark.xfail(strict=True, reason="BUG-SEED-DEAD: seed_profile nie zasila trie (NameError, a po imporcie limit 100 < ~12 tys. wpisów)")
-def test_seed_profile_zasila_trie():
-    from seed_profile import seed_if_needed
-    st = _fresh_state(with_ner=False)
-    seed_if_needed(st.anon_map)
-    assert len(st.anon_map.get_entity_names()) > 1000
+# BUG-SEED-DEAD — zamknięte przez świadome wyłączenie seedu ze startu (LYNX-TOKEN-RE-SPEC, diagnoza M1), nie naprawę;
+# test „seed zasila trie” usunięty — seed nie ma zasilać profilu biura.
 
 
 # ── Wycieki PII ───────────────────────────────────────────────────────────────
@@ -310,7 +306,7 @@ def test_alokator_odrzuca_drugą_wartosc_dla_tego_samego_tokenu():
 # Korekta 2026-10-16 (FINDING_2026-10_MOBILE_PORT): Mobile TOKEN_RE = \b(...)_(\d{3})(?!\d)
 # (PseudonymEngine.kt:89) — \b na początku zostaje, (?!\d) dotyczy końca. Tokeny 4-cyfrowe
 # i token przyklejony z przodu do cyfr/liter nie pasują także w Mobile, więc nie są tu testowane.
-@pytest.mark.xfail(strict=True, reason="BUG-TOKEN-RE-SPEC: koniec TOKEN_RE to \\b, spec S2/Mobile wymaga (?!\\d)")
+# BUG-TOKEN-RE-SPEC — naprawione w LYNX-TOKEN-RE-SPEC (xfail zdjęty).
 @pytest.mark.parametrize("text,token", [("Zobacz OSOBA_001x tutaj", "OSOBA_001"), ("NUMER_004Teresa", "NUMER_004")])
 def test_token_re_zgodny_z_spec(text, token):
     from anonymizer_init import TOKEN_SPAN_RE

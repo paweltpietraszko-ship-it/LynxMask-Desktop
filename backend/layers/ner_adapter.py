@@ -76,7 +76,7 @@ _INITIALS_RE = re.compile(
 )
 
 # ── Token RE — żeby nie podmieniać już zamaskowanych fragmentów ──────────────
-_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|EMAIL|KWOTA|ADRES)_\d{3}\b")
+_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|EMAIL|KWOTA|ADRES|INSTYTUCJA)_\d{3}(?!\d)")  # S2 + pełna taksonomia (LYNX-TOKEN-RE-SPEC)
 
 # ── Filtry NER (port: FIX-NER-GLOBAL stary pipeline + Cursor review) ─────────
 # Odrzuć warianty będące prefiksem adresu ("os. Bolesława..." jako OSOBA)

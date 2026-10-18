@@ -1,0 +1,60 @@
+LYNX-TOKEN-RE-SPEC — audyt implementacji r1, 2026-10-18
+AUDITED_SHA: 03bd0cf899f3c6a3474d379c9c54b0d244f7400c
+CODE_SHA: a2f65a8b0185a066f6dacdc46bfb0d9378cf66a6
+DIFF_BASE: 2fc0f61 (baza main dostawy CC).
+VERDICT: PASS w zakresie A/B/C kontraktu.
+RECIPIENT: CC / Paweł. Bez merge i bez zmian produktu przez audytora.
+
+ORACLE / DIFF
+Frozen spec S2 i S3 + brief 53eb470, precheck a68c013.
+Wzorzec odtworzony zgodnie ze spec, bez nowej taksonomii i bez zmiany
+struktury grup. INSTYTUCJA uzupełniona tylko w niespójnej kopii.
+10. kopia (inline trim add-entity) w istniejącym TASK_SCOPE, ta sama klasa;
+zmiana uzasadniona. Frontend zmienia wyłącznie koniec regexu podświetlania.
+MAX_ONBOARD_BATCH zaimportowany z istniejącego ownera, bez zmiany limitu.
+Wywołanie seedu usunięte ze startu; moduł pozostał dla pomiarów.
+Xfail dwóch naprawionych przypadków zdjęte bez osłabienia oczekiwań,
+SEED-DEAD usunięty z komentarzem o zamknięciu ścieżki, nie naprawie seedu.
+Wyłączenia HTML/Mobile/restoreText i specjalnych regexów innych ownerów
+nie zostały użyte do rozszerzenia Tasku.
+
+NIEZALEŻNY REPRODUKTOR: repro_r2.py
+Wyłącznie syntetyki, izolacja profilu/allowlisty/archiwum/rejestru/hardware
+oraz plików tokenu i błędu. TestClient + realny lifespan i próby startowe.
+- 392 asercje: 8 backendowych kopii × 7 kategorii × 7 zwykłych/granicznych
+  wariantów. Token z literą/punktem po numerze rozpoznany; cztery cyfry,
+  przedrostek x oraz za krótki numer nie są tokenem. Grupy 2/0 zachowane.
+- 14 odmów /preview: wszystkie 7 kategorii z przyklejoną literą,
+  zarówno pełny token API, jak i Express → 422.
+- Zwykły tekst bez tokenów → 200 w obu trybach.
+- Inline trim add-entity: nazwa z dopisanym OSOBA_001x zapisana bez tokenu.
+- Batch dwóch encji działa, istniejący limit 100 zachowany (101 odrzucone).
+- Prawdziwy start z obserwowaną funkcją seed_if_needed: 0 wywołań.
+  Nie zastępowano funkcjonalnych prób startowych atrapą.
+Wszystkie asercje przeszły; reproduktor zachowany do kolejnych sprawdzeń.
+
+TESTY I WARSTWY
+- Bezpośrednie/regresje: test_token_re_spec, test_audyt_2026_10,
+  test_failclosed, test_startup_check, test_disk_pii, test_layers,
+  test_express_one_engine, test_map_fidelity, test_ner_multiline:
+  363 passed, 3 xfailed, exit 0. Pozostałe xfail dotyczą jakości NER,
+  nie tych napraw; nie wymyślano na ich podstawie nowej regresji.
+- Pełna suita wymagana briefem, raz na własnym backendzie exact SHA:
+  167 passed, 2 skipped, 1 xfailed, 4 subtests passed, exit 0.
+  Pominięcia: degraded przy dostępnym Morfeuszu, ręczny C10 deszyfrowania.
+  Serwer 8767; requests/urllib skierowane tylko na niego z wymaganym Host.
+  Backend i wszystkie katalogi testowe własne; cudzy 8765 nie był zmieniany.
+- tsc --noEmit: exit 0.
+- Rzeczywisty literal regexu z Pseudonimizuj.tsx wykonany w Node:
+  21/21 przypadków dla siedmiu kategorii i obu stron granicy — PASS.
+  To weryfikacja działania regexu, nie test ekranowy całego GUI.
+- Gate CC PASS jest dowodem wspierającym; werdykt opiera się także
+  na powyższych niezależnych sprawdzeniach.
+
+GRANICE / HANDOFF
+Nie powtarzano 178 dokumentów na profilu Pawła. Wynik 0 różnic w DELIVERY
+pozostaje dowodem CC; profil i dokumenty użytkownika nie były dotykane.
+Nie powtarzano audytu całego bezpieczeństwa, skanu zależności ani instalatora.
+PASS dotyczy exact SHA i zakresu A/B/C, nie wszystkich znanych wad jakości NER.
+Raport i reproduktor publikowane na gałęzi Tasku, wynik w BOARD main.
+Merge wyłącznie na polecenie Pawła.

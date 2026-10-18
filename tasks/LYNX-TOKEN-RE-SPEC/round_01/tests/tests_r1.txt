@@ -1,0 +1,37 @@
+LYNX-TOKEN-RE-SPEC — precheck briefu, 2026-10-18
+EXACT_SHA: 53eb470baaf4c594baeb6533381682c12cee854d
+STAGE: BRIEF_ONLY_PRECHECK.
+VERDICT: PASS PREIMPLEMENTATION.
+RECIPIENT: CC / Paweł. Obieg skrócony; bez merge.
+
+ORACLE I CZTERY KRYTERIA
+1. A wynika wprost z frozen arch/spec.md S2 i S3: koniec TOKEN_RE (?!\d),
+   kontrola wejścia 422. Uzupełnienie INSTYTUCJA w jednej kopii odtwarza
+   już istniejącą taksonomię Desktop; nie tworzy kategorii ani nowego formatu.
+2. Kontrakt jednoznaczny i testowalny: sklejone tokeny, granice obu stron,
+   trzy cyfry bez dopasowania początku czterocyfrowego numeru, Full/Express,
+   zachowanie grup, import batch, brak seedu w produkcyjnym starcie.
+3. Ownerzy istnieją. Jedno celowane wyszukanie potwierdziło kopie regexów,
+   MAX_ONBOARD_BATCH=100 w anonymizer_init i wywołanie seedu w _lifespan.
+   Nie jest potrzebny nowy owner, wspólny framework ani refaktor warstw.
+4. Implementacja może ruszyć bez nowej decyzji produktowej. A przywraca
+   wyraźny zamrożony kontrakt; B usuwa NameError; C jest koniecznym
+   powstrzymaniem niezamierzonego uruchomienia seedu po naprawie B,
+   zgodnym z zapisanym kierunkiem diagnozy M1. Nie przywracać seedu.
+
+UWAGI DO DOSTAWY, BEZ ROZSZERZANIA KONTRAKTU
+- W testach zgodności regexów porównywać dopasowane teksty/spany, nie
+  utożsamiać różnych kształtów findall. Zachować dotychczasowe grupy.
+- Batch zachowuje istniejący limit i izolowany profil; usunięcie xfail
+  ma towarzyszyć prawdziwemu przejściu testu, nie zmianie oczekiwania.
+- SEED-DEAD zamyka się przez świadome wyłączenie ścieżki, nie naprawę seedu.
+  Moduł i zastosowania pomiarowe pozostają; nie dodawać danych do profilu
+  użytkownika przy starcie ani przenosić seedu do innej warstwy.
+- Wyłączenia restoreText/HTML/Mobile/dependency scan zachować. Wyników
+  178 dokumentów nie kopiować do repo; ewentualny raport tylko zagregowany.
+
+WYKONANO: brief, aktualny wiersz BOARD, wskazany fragment frozen spec,
+punktowe sprawdzenie istniejących ownerów. Bez diffu implementacji,
+testów, reproduktorów, benchmarku, profilu użytkownika i zmian produktu.
+NEXT: CC implementuje; potem audyt exact SHA w zakresie A/B/C.
+Nie zamyka to końcowego etapu audytu bezpieczeństwa wydania.

@@ -223,11 +223,7 @@ async def _lifespan(app):
         _app_state.anonymizer, _, _app_state.anon_map, _app_state.morf_env = \
             _build_anonymizer(ANON_PROFILE_DIR, HARDWARE_PROFILE)
         logger.info(f"[STARTUP] Anonymizer załadowany: {ANON_PROFILE_DIR}")
-        try:
-            from seed_profile import seed_if_needed as _seed
-            _seed(_app_state.anon_map)
-        except Exception as _se:
-            logger.warning(f"[STARTUP] seed_profile pominięty: {_se}")
+        # [LYNX-TOKEN-RE-SPEC] seed_profile świadomie wyłączony (diagnoza M1): zaśmiecałby profil biura formami pospolitymi.
     except Exception as e:
         logger.warning(f"[STARTUP] Anonymizer niedostępny: {e}")
 
@@ -276,7 +272,7 @@ _TYPE_LABELS = {
 }
 _TYPE_ORDER = {"OSOBA": 0, "FIRMA": 1, "INSTYTUCJA": 2, "NUMER": 3, "EMAIL": 4, "KWOTA": 5, "ADRES": 6}
 
-_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b")
+_TOKEN_RE = re.compile(r"\b(FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")  # S2 (LYNX-TOKEN-RE-SPEC)
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -770,7 +766,7 @@ async def profile_add_entity(request: Request):
     # użytkownik mógł zaznaczyć za dużo tekstu (np. nazwę firmy + adres).
     # Obcinamy przy pierwszym \n, \r lub sekwencji TOKEN_xxx.
     import re as _re
-    text = _re.split(r"[\n\r]|\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}\b", text)[0].strip()
+    text = _re.split(r"[\n\r]|\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)", text)[0].strip()
 
     if not text:
         return JSONResponse({"error": "Brak pola text"}, status_code=400)

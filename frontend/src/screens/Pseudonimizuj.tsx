@@ -87,7 +87,7 @@ function guessEntityType(text: string): string {
 
 // ── Token highlight ───────────────────────────────────────────────────────────
 
-const TOKEN_RE = /\b[A-Z][A-Z_]+_\d{3}\b/g;
+const TOKEN_RE = /\b[A-Z][A-Z_]+_\d{3}(?!\d)/g;  // S2: (?!\d) — LYNX-TOKEN-RE-SPEC
 
 function HighlightedText({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
