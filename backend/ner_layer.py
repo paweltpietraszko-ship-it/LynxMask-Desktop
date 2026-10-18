@@ -254,7 +254,7 @@ def _split_lines(text: str, ner_results: list) -> list:
     out = []
     for r in ner_results:
         span = text[r.start:r.end]
-        if "\n" not in span:
+        if "\n" not in span.strip():  # koniec wiersza tylko na brzegu: dotychczasowa ścieżka (strip) — Codex F1
             out.append(r)
             continue
         if not _filter_institutions([dataclasses.replace(r, text=" ".join(span.split()))]) or (r.label == "FIRMA" and not re.search(r"(?i)\bsp(?:\.|ółka)|\bs\.\s?[ac]\.", span)):
@@ -455,7 +455,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
 # ── Implementacja ─────────────────────────────────────────────────────────────
 
 def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
-    ner_results = _firma_entities(text, _split_lines(text, spacy_ner_mod.detect_entities(text)))
+    ner_results = _split_lines(text, _firma_entities(text, spacy_ner_mod.detect_entities(text)))
     ner_results = _filter_institutions(ner_results)
 
     reverse_map:          dict[str, str] = {}

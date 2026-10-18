@@ -68,6 +68,20 @@ def test_span_z_nowa_linia_podstawiony_ner(text, frags, hidden, visible):
     _check(text, out, rev, hidden, visible)
 
 
+@pytest.mark.parametrize("span", ["Testopolia Systemy\n", "Testopolia Systemy\r\n", "\nTestopolia Systemy", "Testopolia\n",
+                                  "Testopolia Systemy\nSp. z o.o."])
+def test_firma_koniec_wiersza_na_brzegu_lub_z_forma(span):
+    """Codex r2 F1: koniec wiersza tylko na brzegu spanu = dotychczasowa ścieżka (FIRMA bez formy nadal maskowana);
+    forma prawna w następnej linii nie dokleja \\n do wartości (podział po _firma_bounds)."""
+    import spacy_ner
+    from pipeline_new import run_pipeline_new
+    text = "Wykonawca: " + span + "; koniec."
+    with patch.object(spacy_ner, "detect_entities", _fake_ner(("FIRMA", span))), contextlib.redirect_stdout(io.StringIO()):
+        out, rev, blocked = run_pipeline_new(text, anon_map={})
+    assert not blocked, (out, rev)
+    _check(text, out, rev, ["Testopolia"])
+
+
 def test_dwie_osoby_w_liniach_to_dwa_tokeny():
     import spacy_ner
     from pipeline_new import run_pipeline_new
