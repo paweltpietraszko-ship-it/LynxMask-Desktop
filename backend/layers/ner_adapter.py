@@ -292,7 +292,6 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
 
     # ── Inicjały: "K. Kowalski" → OSOBA (port: INITIALS_REGEX) ──────────────
     state.text = _apply_initials(state.text, state.allocator)
-
     # ── Warianty SpaCy (port: FIX-NER-GLOBAL) ────────────────────────────────
     # ner_variants zawiera WSZYSTKIE formy wykryte przez SpaCy (odmiany fleksyjne,
     # wersje bez cudzysłowów, warianty FIRMA). Stary pipeline.py stosował je przez
