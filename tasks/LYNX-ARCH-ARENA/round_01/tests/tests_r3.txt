@@ -1,0 +1,44 @@
+LYNX-ARCH-ARENA — wąska ocena propozycji Architekta po r1 CC
+Data: 2026-10-19
+Adresat: Architekt / Paweł / CC.
+Exact dokument: 595af427 (architect_review_r1.md).
+Etap: ocena kierunku eksperymentu, NIE audyt implementacji v0.1.
+Wniosek: propozycja sensowna i wnosi więcej niż dalsze strojenie zabawki
+na ręcznie wpisanych kandydatach. Brak nowych blokad do samego kierunku.
+
+CO JEST TRAFNE
+1. Oddzielić poprawność mechaniki od trafności hipotezy. Nadmierna odmowa
+   całego dokumentu nie obala pojedynczej podmiany ani kandydatów jako takich.
+   Pięć celowych ataków nie mierzy częstości takich sytuacji w dokumentach.
+2. REAL ma zasilać Arenę rzeczywistymi sygnałami, ale nie zakładać, że każda
+   obecna warstwa działa samodzielnie na oryginale. Adapter musi pokazać
+   poprawne pozycje; ADAPTER_UNSUPPORTED/mapping_error nie może udawać FN.
+3. Porównanie R1/R2/R3 na tych samych kandydatach oddziela wpływ arbitra od
+   zmiany detektorów. R2 nie jest bezwarunkowym „dłuższy wygrywa”.
+4. Osobne dołączanie HerBERT/słowników i stały sędzia pozwolą przypisać
+   poprawę lub pogorszenie konkretnej zmianie. Nie potrzeba od razu pełnego
+   iloczynu wszystkich kombinacji.
+5. Syntetyczny gold, osobny holdout, mała próba przed 178 dokumentami oraz
+   pomiar CPU są proporcjonalną drogą do sprawdzenia użyteczności pomysłu.
+   Dzisiejszy pipeline to punkt odniesienia, nie bezbłędna wyrocznia.
+
+CO TAKI POLIGON ROZSTRZYGNIE
+Czy realne detektory dostarczają użyteczne spany; które konflikty występują;
+czy inna polityka arbitra zmniejsza odmowy bez połykania odrębnych encji;
+czy kolejne źródło pomaga kosztem FP/czasu. Bez gold wolno mierzyć odmowy,
+konflikty i różnice, ale nie ogłaszać poprawy recall/ochrony danych.
+To istotny postęp względem samej zgodności z 16 znanymi przykładami.
+
+GRANICE OCENY
+R2/R3 to hipotezy, nie gotowy kontrakt do kodowania ani reguły produktu.
+Zwłaszcza odmowa ograniczona do fragmentu nie uprawnia do wydania jawnej
+reszty jako bezpiecznej. Dokument to wyraźnie zastrzega — nie dodaję nowego
+projektu ani wymagań implementacji. Najbliższa v0.2 wymaga własnego krótkiego
+kontraktu zakresu i pomiaru; nie kopiować całej listy kolejnych etapów naraz.
+
+Niezależny audyt zamrożonego kodu 4a1cbf0 pozostaje osobnym, niewykonanym
+krokiem. Deklaracje CC 16/16, 38 testów i wyniki ataków nie są tutaj
+potwierdzone. Nie uruchamiano kodu, testów, modeli ani realnych dokumentów.
+Przeczytano propozycję i odpowiadające jej wpisy BOARD, bez ponownego audytu
+briefu v0.1. Nie zmieniono kodu, gold ani prognoz. Bez merge.
+Następny raport audytu kodu musi użyć wolnej ścieżki r4 lub kolejnej.
