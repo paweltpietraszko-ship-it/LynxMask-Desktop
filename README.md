@@ -11,6 +11,12 @@ The two codebases do not share implementation files, but they are expected to pr
 
 This repository is included in my AI evaluation portfolio as evidence of hands-on system evaluation, adversarial testing, privacy failure analysis and human-in-the-loop control. It is not presented as evidence that I am a software engineer or ML engineer.
 
+## Running (Windows)
+
+- **Start:** double-click `LynxMask.vbs` (or the desktop shortcut to it). It starts the engine in the background if it is not running yet, waits until it is ready and opens the app.
+- **Build the app** (after code changes): `build.bat` — produces `frontend/src-tauri/target/release/pseudominizer.exe`.
+- Requirements: Python 3 with the `py` launcher, Node.js, Rust (for building only).
+
 ## My role
 
 My role has been to define product behavior, decide which failures matter, set acceptance targets, challenge AI-generated implementations and retain final product and architecture decisions. AI coding agents, especially Claude Code, were used heavily to inspect, implement and revise the codebase.
