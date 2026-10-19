@@ -1,0 +1,80 @@
+LYNX-ARCH-ARENA — niezależny przegląd przed implementacją
+Data: 2026-10-19
+Etap: BRIEF_ONLY. Adresat: Architekt / Paweł; następnie CC.
+Wynik: WYMAGA_KOREKTY_KONTRAKTU (C1–C2), bez werdyktu o kodzie.
+
+EXACT SNAPSHOT
+- Dostawa: f04c3370a6d86dfe48f992de6b569fd481dbf1a5.
+- Brief: 7f1fdf8196bd8d867f30f106a77dee078244b6a6; jego treść
+  nie zmieniła się w powyższym snapshocie z CASES_V01.
+- Zakres: brief.md oraz CASES_V01.md (16 syntetycznych przypadków).
+- Jawna zależność: LYNX-ARCH-CANDIDATES, architect_assessment.md
+  4df7c764f49ae86b4643436c21a6e9605a71298a i brief F0a
+  513c35dda66efa2ba0cb29bc2d22a0e030c9c664.
+- Oracle: zamrożona specyfikacja + kontrakt eksperymentu; eksperyment
+  nie zatwierdza nowych zachowań produktu ani nowego pipeline.
+
+SENS EKSPERYMENTU
+Pomysł ma sens jako tani falsyfikator wybranej mechaniki: kandydaci na
+oryginale, scalenie duplikatów, niezależność od kolejności, zatrzymanie przy
+konflikcie, jedna podmiana oraz dosłowna mapa. Oddzielenie gold od runtime,
+brak modeli/sieci i niezależne próby po zamrożeniu SHA są właściwe.
+Jawne prognozy kontrprzykładów są zaletą, lecz nie są wynikami wykonania.
+
+WIERNOŚĆ PRZYSZŁEMU PROGRAMOWI
+Arena odtwarza tylko hipotezę części mechaniki, nie przyszły silnik:
+- BASE jest wejściem od autora ataku, nie wynikiem rzeczywistych detektorów.
+  Nie zmierzy ich recall ani wpływu ich rzeczywistych błędów na całą ścieżkę.
+- Brakuje projekcji pozycji OCR na oryginał; to osobna trudność F0b.
+- Guard-dron jest atrapą, nie dowodem działania produkcyjnego OutputGuard/S4.
+- Własna mapa dosłownych wartości pomija zachowanie produkcyjnego alokatora.
+  F0a używa istniejącego alokatora i zatrzymuje kolizje różnych zapisów;
+  przyszłe mapowanie wariantów osoby/Q1 pozostaje odrębnym zagadnieniem.
+- Rozszerzenia Anchor to hipoteza Areny, nie zaakceptowana reguła produktu.
+- CLI nie sprawdza UI/API, archiwum, .lynxdict ani Przywróć w aplikacji.
+Są to jawne ograniczenia zakresu, a nie defekty ani powód do żądania pełnej
+aplikacji w symulatorze. Udany wynik nie potwierdzi jakości całego silnika.
+Porażka może obalić badaną regułę, ale nie dowodzi porażki każdej architektury
+kandydatów. Wnioski trzeba przypisać konkretnym regułom i wersji programu.
+
+ZAMKNIĘTA LISTA KOREKT PRZED IMPLEMENTACJĄ
+C1 — domknięcie reguł mechaniki.
+TRACE: brief, Mechanika A–D/F oraz deterministyczność i zakaz wyjątków pod testy.
+OWNERSHIP: reguły hipotezy ustala Architekt, CC je implementuje.
+Pojęcia „lokalna fraza”, „granice etykiet”, „1–3 sąsiednich członów”,
+„poprawnie ograniczony” i „podejrzany PESEL lub NIP” nie wyznaczają jeszcze
+jednoznacznej decyzji na nowym wejściu. Nie ustalono też, jak rozpoznać granicę
+następnej osoby/firmy, gdy BASE jej nie poda. Przykłady nie zastępują reguły.
+Korekta: zamrozić obserwowalne reguły granic, rozszerzenia albo STOP oraz
+warunek flag Guarda, z jednoznacznym zachowaniem przy niepewności.
+Nie wymaga to pełnej gramatyki adresów, RFC e-mail ani nowego NER; może być
+prostą, celowo ograniczoną hipotezą. Jej wybór nie należy do audytora ani CC.
+
+C2 — domknięcie niezależnego sędziowania.
+TRACE: brief, Niezmienniki i warunki porażki; CASES_V01, zasady sędziego.
+OWNERSHIP: oracle ustalony przed implementacją, niezależny od obrońcy.
+Lista liczników jest właściwa, ale nie domyka sposobu przypisania wyniku:
+częściowe pokrycie/FP, uzasadniony STOP vs STOP na rozwiązywalnym wejściu,
+ostrzeżenie Guarda vs udane maskowanie oraz zbiorczy wynik mechaniki vs jakość.
+Korekta: opisać reguły klasyfikacji i podsumowania, z rozróżnieniem np.
+A10/A12 (oczekiwane zatrzymanie) oraz przewidywanych strat A06/A07/A11/A15/A16.
+Zgodność programu z przewidzianą porażką może potwierdzić implementację
+reguły, ale nie może stawać się sukcesem ochrony danych. Nie żądam progu
+produkcyjnej skuteczności na 16 syntetykach ani rozszerzenia benchmarku.
+
+MINIMALNOŚĆ / GATE / DALSZY KROK
+Dwa izolowane pliki kodu i stdlib CLI są proporcjonalne do takiej próby.
+Nie ma podstaw do zmian produkcyjnych ownerów ani obowiązkowego where.py.
+Limity <=600 l./plik i <=50 l./funkcję oraz próg >150 l. lub ratio >5:1
+obowiązują. Zgoda na eksperyment nie znosi wymaganej decyzji przed kodem,
+jeżeli oszacowanie implementacji przekroczy próg.
+Po jednej korekcie C1–C2: ponowny krótki precheck. Po dostawie kodu dopiero
+niezależny audit exact SHA, weryfikacja gold i własne próby, w tym nieujawnione.
+Następny raport musi użyć wolnej ścieżki tests_r2.txt lub kolejnej; r1 istnieje.
+
+WYKONANE / WYŁĄCZONE
+Przegląd dokumentów i porównanie zakresu z jawną zależnością F0a.
+Brak implementacji: nie uruchamiano testów, reproduktorów ani symulacji;
+nie potwierdzono wykonaniem indeksów gold lub prognoz Architekta.
+Nie zmieniono kodu produktu. Bez merge. Brak FAIL przez DEFECT_GATE:
+C1–C2 są brakami testowalności briefu, nie odtworzonymi awariami programu.
