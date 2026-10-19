@@ -177,7 +177,7 @@ def _contained_loser(a: dict, b: dict) -> int:
 
 
 def _word_char(ch: str) -> bool:
-    return ch.isalnum() or ch == "_" or unicodedata.combining(ch) > 0
+    return ch.isalnum() or ch == "_" or unicodedata.category(ch).startswith("M")  # Codex r5: kategoria M (nie tylko combining>0)
 
 
 def _inside_word(text: str, i: int) -> bool:

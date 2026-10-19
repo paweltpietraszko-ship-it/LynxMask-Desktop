@@ -171,3 +171,10 @@ def test_granica_w_srodku_wyrazu_to_odmowa_nie_sklejenie():
     for r in (cut_right, cut_left):
         assert r["status"] == "STOP" and r["reason_code"] == "WORD_BOUNDARY" and r["masked"] is None
     assert whole["status"] == "RENDERED" and whole["masked"] == "OSOBA_001" and invariants_ok(t, whole)
+
+
+def test_znak_m_o_klasie_laczenia_zero_tez_jest_czescia_wyrazu():
+    """Codex r5: U+034F (Mn, combining class 0) w środku słowa — ucięcie przy nim to nadal granica w wyrazie (N2)."""
+    t = "Ja͏n Kowalski"
+    r = run([_inp(t, [{"start": 0, "end": 2, "kind": "OSOBA"}])])[0]
+    assert r["status"] == "STOP" and r["reason_code"] == "WORD_BOUNDARY"
