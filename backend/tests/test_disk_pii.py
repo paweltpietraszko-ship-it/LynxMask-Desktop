@@ -180,7 +180,9 @@ def test_f3_logi_bez_wartosci_na_poziomie_debug(iso, debug_logs):
 
 
 def test_f3_launcher_bez_zapisu_logu_na_dysk():
-    vbs = (Path(__file__).resolve().parents[1] / "uruchom.vbs").read_text(encoding="utf-8")
-    cmd = vbs[vbs.index("strCmd ="):vbs.index("objShell.Run strCmd")]
-    assert ">>" not in cmd and "strLog" not in cmd, cmd
-    assert "objFSO.DeleteFile strLog" in vbs
+    """Jedyny starter (LYNX-ONE-LAUNCHER): silnik bez okna i bez przekierowania wyjścia do pliku (S5)."""
+    vbs = (Path(__file__).resolve().parents[2] / "LynxMask.vbs").read_text(encoding="utf-8")
+    run = [ln for ln in vbs.splitlines() if "pseudominizer_api.py" in ln and "sh.Run" in ln]
+    assert run and all(">" not in ln for ln in run), run
+    assert ".log" not in vbs.lower()
+    assert not (Path(__file__).resolve().parents[1] / "uruchom.vbs").exists()

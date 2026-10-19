@@ -61,8 +61,8 @@ _EMAIL_OCR_RE = re.compile(
     # OCR: 1–3 spacje/taby po kropce w lokalnej części („anna. nowak@”, „ANNA. NOWAK@”), dowolna wielkość liter, jedno słowo
     # w tym samym wierszu. Niejednoznaczne „kontakt. jan@” też w całości — zaakceptowane nadmaskowanie jednego słowa,
     # Przywróć 1:1 (LYNX-EMAIL-LOCALPART-OCR, OWNER_ACCEPTED 2026-10-17)
-    r"(?:(?<![\w.])[a-z0-9][a-z0-9_%+\-]*\.[ \t]{1,3}(?=[a-zA-Z0-9._%+\-]{2,}[ \t\n]{0,2}[@©]))?"
-    r"[a-zA-Z0-9._%+\-]{2,}"       # czesc lokalna
+    r"(?:(?<![\w.])[^\W_][\ẁ-ͯ%+\-]*\.[ \t]{1,3}(?=[\ẁ-ͯ.%+\-]{2,}[ \t\n]{0,2}[@©]))?"
+    r"(?<![\ẁ-ͯ.%+\-])[\ẁ-ͯ.%+\-]{2,}"  # czesc lokalna: Unicode + NFD, od granicy (LYNX-ADDR-EMAIL-LEAKS L4/L5)
     r"[ \t\n]{0,2}"                 # OCR: spacja/newline przed @
     r"[@©]"                    # @ lub © (OCR mylka)
     r"[ \t\n]{0,2}"                 # OCR: spacja/newline po @

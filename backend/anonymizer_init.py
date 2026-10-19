@@ -311,11 +311,11 @@ STRUCTURAL_PATTERNS = [
     # Email — BUG-6: poprzednio przypisany do TOKEN_NUMER, teraz TOKEN_EMAIL
     # Umieszczony przed telefonem — @ jest unikalnym separatorem, zero false positives.
     (TOKEN_EMAIL, re.compile(
-        r"\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b"
+        r"(?<![\ẁ-ͯ.%+\-])[\ẁ-ͯ.%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b"  # LYNX-ADDR-EMAIL-LEAKS L4/L5
     )),
     # Email OCR-broken — local part na jednej linii, @domain na następnej
     (TOKEN_EMAIL, re.compile(
-        r"\b[a-zA-Z0-9._%+\-]+[ \t]*\n[ \t]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+        r"(?<![\ẁ-ͯ.%+\-])[\ẁ-ͯ.%+\-]+[ \t]*\n[ \t]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
     )),
     # Telefon — dwa formaty:
     # format stacjonarny 2+3+2+2 (np. "22 123 45 67", "22-123-45-67")
