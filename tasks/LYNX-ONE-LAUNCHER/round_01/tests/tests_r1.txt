@@ -1,0 +1,49 @@
+LYNX-ONE-LAUNCHER — wąski audyt exact SHA
+Data: 2026-10-19
+Exact dostawa: c822c2bc911d65ebdb04def6f285300a23b1999c.
+Kod: 335420ba7a2d23d5e168f00e6e6b49c662d0538e; diff base: c884900.
+Oracle: Task brief (jedna ikona + porządek), S5/S6 w zakresie narzędzia.
+Wynik: PASS techniczny zakresu; rzeczywisty start GUI/backendu PARTIAL.
+Adresat: CC / Paweł. Nie jest to merge ani zgoda na stały sidecar Tauri.
+
+DOWÓD NIEZALEŻNY
+Przeczytano cały LynxMask.vbs, diff README i testu oraz listę 14 usunięć.
+repro_r1.py wykonuje logikę dostarczonego skryptu przez rzeczywisty cscript
+(WSH). W kopii testowej zastępuje wyłącznie COM, Sleep i MsgBox atrapami;
+żaden backend ani aplikacja użytkownika nie jest uruchamiany/zatrzymywany.
+Sześć prób passed:
+- ready: brak startu silnika, jedno otwarcie aplikacji, brak czekania;
+- cold: jeden start py w stylu 0, aplikacja po gotowości, styl 1;
+- startup_error: wcześniejsze wyjście z oczekiwania i otwarcie aplikacji;
+- timeout: 120 iteracji oczekiwania, następnie aplikacja zgodnie z kontraktem;
+- brak exe: komunikat i exit 1, brak uruchomienia procesów;
+- brak py: komunikat i exit 1, brak otwarcia aplikacji.
+Sprawdzono także cytowanie ścieżki zawierającej spację i adres /health.
+Atrapy nie mierzą rzeczywistych 120 sekund ani zachowania procesów systemu.
+
+TESTY / ZAKRES
+backend/tests/test_disk_pii.py: 6 passed. Polecenie startu silnika nie ma
+przekierowania logu, korzysta z py -3 i stylu 0. Nie dodano pliku z PII.
+Punktowo sprawdzone odwołania usuniętych starterów: pozostała ścieżka do
+nieistniejącego HTML w API prowadzi do istniejącego 404, zgodnie z briefem;
+komentarz starego logu służy sprzątaniu historycznego pliku, nie nowemu zapisowi.
+Nie zmieniono backendu/Tauri ani formatu tokenów. Nie ma nowego ownera danych.
+
+PARTIAL / NIE POWTARZANO
+Nie wykonano niezależnego zimnego startu rzeczywistej aplikacji ani testu
+lokalnego skrótu pulpitu. Dowód CC (start 8 s i preview 200) jest pomocniczy,
+nie moim niezależnym wykonaniem. Nie zatrzymywano serwera Pawła na 8765.
+Nie powtarzano pełnej suity tests/ wymagającej zewnętrznego backendu/tokenu:
+nie potwierdziłaby sama z siebie exact SHA launchera; ten nie zmienia silnika.
+Brak nowego odtworzonego defektu; pełny odbiór użytkowy pozostaje PARTIAL.
+
+PORZĄDEK / GATE
+Własny worktree .audit_startup_af8833b przeniesiono poleceniem git worktree
+move do C:\Users\p_pie\AppData\Local\Temp\lynx-codex-audit-20261019.
+Raporty wcześniej opublikowane zachowane; rejestr worktree aktualny.
+Nie usuwano nieśledzonej kopii LynxMask.vbs w repo Pawła — CC ma nią zarządzić
+przed merge zgodnie z dostawą. Brak zmian skrótu ani plików użytkownika.
+GATE CC deklaruje TOTAL 1974 (przeważnie usunięcia), WYMAGA_DECYZJI.
+To jawny status proceduralny, nie defekt techniczny. Poprzednia zgoda na
+rozmiar symulatora nie jest automatycznie zgodą na każdy przyszły Task.
+Merge wyłącznie na polecenie Pawła. Audyt nie zmieniał kodu produktu.
