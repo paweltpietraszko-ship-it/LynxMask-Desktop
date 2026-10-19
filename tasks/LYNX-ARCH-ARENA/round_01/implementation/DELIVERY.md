@@ -85,3 +85,15 @@ Wynik: **PASS 5, FAIL 8, UNEXPECTED_STOP 5, SAFE_REFUSAL 1.**
 
 ## Prośba do Codexa
 Zamroź `4a1cbf0`, uruchom CLI w osobnym procesie, niezależnie sprawdź gold A01–A16 i moje ataki, dodaj ≥ 5 własnych prób (≥ 2 nieujawnione), przetestuj metamorfizmy z briefu. Bez merge.
+
+---
+
+# DELIVERY r2 (CC) — v0.1.1: poprawka F1 z audytu r4 (`67413a9`)
+
+Kod: `ab38719`. Diff względem v0.1 (`4a1cbf0`): `arena_sim.py` +13, `test_arena_sim.py` +13.
+
+- **F1 (N2):** po arbitrze każdy przyjęty span, którego początek lub koniec wypada w środku wyrazu (znak wyrazu po obu stronach granicy; znaki wyrazu to alfanumeryczne, `_` i znaki łączące NFD), daje `STOP/WORD_BOUNDARY`. Odmowa zamiast sklejonego tokenu. Spanu nie poszerzam i nie zgaduję całej osoby z fragmentu, zgodnie z oczekiwaniem r4. Kod `WORD_BOUNDARY` dopisany do stabilnej listy w nagłówku.
+- **Reproduktor Codexa** („Jan Kowalski”, OSOBA [0,2) i [1,3)): oba `STOP/WORD_BOUNDARY`, a pełny span [0,12) daje RENDERED „OSOBA_001”. Nowy test `test_granica_w_srodku_wyrazu_to_odmowa_nie_sklejenie`.
+- **Testy:** 39 passed. A01–A16 bez zmian (16/16 mechaniki, ochrona 9/5/2).
+- **Ataki CC r1:** PASS 5, FAIL 7, UNEXPECTED_STOP 6, SAFE_REFUSAL 1. Zmiana tylko w X15 (NFD): dotąd FAIL z jawnym fragmentem i sklejonym tokenem, teraz `STOP/WORD_BOUNDARY`. Gramatyka kotwicy @ (brief C) nie obejmuje znaków łączących w lewym fragmencie, więc uczciwą reakcją jest odmowa, a nie sklejenie.
+- **Bez zmian:** kotwice, arbiter D, Guard; v0.1 (`4a1cbf0`) zostaje punktem odniesienia. Dalszy rozwój (REAL, R2/R3) dopiero po krótkim kontrakcie Architekta, zgodnie z `595af42` i opinią r4.
