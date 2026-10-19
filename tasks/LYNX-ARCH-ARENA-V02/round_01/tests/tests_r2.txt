@@ -1,0 +1,33 @@
+LYNX-ARCH-ARENA-V02 — opinia o odpowiedzi Architekta
+Data: 2026-10-19
+Exact dokument: 069dfcf1631b76ff0f2b88a93afa8f0fe37af9a7,
+architect_review_codex_r1.md. Adresat: Architekt / Paweł / CC.
+Etap: wyłącznie ocena kierunku; bez nowego PASS/FAIL implementacji.
+Nie uruchamiano testów ani nie powtarzano audytu r1. Brak zmian produktu.
+
+Ocena: odpowiedź poprawnie interpretuje H1, lecz kolejny krok pozostaje
+częściowo opisany celem zamiast sprawdzalnym mechanizmem. Ryzyko utknięcia
+jest realne: sama deklaracja „niezależny detektor potwierdzi oba końce” nie
+rozwiązuje ustalania granic, tylko przenosi ten problem do kolejnego detektora.
+To nie jest jeszcze kontrakt R2b do implementacji. Nie wymagam doskonałego
+detektora ani absolutnego dowodu poprawności każdego rozpoznania.
+
+Co warto zachować: uznanie kontrprzykładu, brak łaty pod separator,
+zachowanie R1/R2 jako punktów odniesienia, brak głosowania skorelowanych
+regexów, czysty tekst i osobny tor OCR oraz gold niezależny od wyników.
+Samo znalezienie H1 było wartościowym wynikiem falsyfikacji; nie dowodzi
+utknięcia całej idei kandydatów/arbitra/jednej podmiany.
+
+Rekomendowany następny ruch wynika już z punktu B Architekta:
+krótki kontrakt modułu pomiarowego z rzeczywistymi sygnałami obecnych
+warstw na czystym tekście syntetycznym i niezależnych gold offsetach.
+Przed kolejnym arbitrem ustalić empirycznie, czy błędy pochodzą z braku
+kandydata, złego zakresu/typu, adaptera czy wyboru między kandydatami.
+Zamrożone R1/R2 mogą pokazać tę ostatnią różnicę. Nie trzeba najpierw
+implementować R2b ani dalej dowodzić kolejnymi separatorami znanej słabości H1.
+Dalsze ataki CC mogą uzupełniać dowód, ale nie powinny blokować tego pomiaru.
+
+To ocena kolejności istniejących propozycji, nie nowy projekt silnika ani
+lista dodatkowych wymagań do v0.2. Przygotowanie kontraktu jest po stronie
+Architekta; implementacja po jego krótkim prechecku. Kalibracja silnika
+bez zniekształceń OCR; odporność OCR raportowana osobno. Bez merge.
