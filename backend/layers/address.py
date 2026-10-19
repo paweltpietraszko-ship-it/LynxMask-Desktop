@@ -108,9 +108,12 @@ def _match_city(text: str, pos: int) -> tuple[int, str] | None:
 # Zatrzymuje się na kodzie pocztowym — miasto dopisuje _match_city (SIMC lookup).
 _ADDR_RE = re.compile(
     r"(?<!\w)(?:ul|al|pl|os|aleja|ulica|plac|osiedle|skwer|rondo|bulwar)"  # [LYNX-MAP-FIDELITY] nie „Szpit|al X 5”
-    r"\.?[ \t]+[A-ZŁŚŹĆŃ]"
+    r"\.?[ \t]+"
+    r"(?:\d{1,2}[ \t]+)?"                                  # [LYNX-ADDR-EMAIL-LEAKS] L3: „3 Maja”, „11 Listopada”
+    r"(?:[A-ZŁŚŹĆŃ][\wóżźćńłśąę]{0,3}\.[ \t]+)?"           # L2: jeden skrót z kropką („Św.”, „Gen.”, „Ks.”)
+    r"[A-ZŁŚŹĆŃ]"
     r"[\wóżźćńłśąę\- ]{1,40}"
-    r"[ \t]+\d+(?:[a-zA-Z])?(?:/\d+(?:[a-zA-Z])?)?"
+    r"[ \t]+[lIO]?\d+(?:[a-zA-Z])?(?:/[lIO]?\d+(?:[a-zA-Z])?)?"  # L1: litera OCR przed cyfrą („l2/8”)
     r"(?:[,\s]+\d{2}-\d{3})?",
     re.IGNORECASE | re.UNICODE,
 )
