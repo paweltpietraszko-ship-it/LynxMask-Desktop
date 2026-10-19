@@ -20,17 +20,9 @@ LynxMask Desktop, 19.10.2026 (aktualizacja po korekcie benchmarku CC). Ten dokum
 
 **Workflow:** OWNER/zgłoszenie → Architekt: minimalny brief i zakres → Codex BRIEF_ONLY → CC recenzja → CC implementacja i gate.py → Codex independent exact-SHA audit → OWNER akceptuje zachowanie/merge. Codex PASS ≠ zgoda OWNERA. Żaden merge bez jawnego polecenia. Aktualizacje i raporty muszą znaleźć się w GitHub, nie tylko w czacie.
 
-## 3. AKTUALNA KOLEJNOŚĆ — TRZY BRIEFY (uzgodnione z OWNEREM 19.10, BOARD TERAZ `e1a4a22`)
+## 3. AKTUALNA KOLEJNOŚĆ — ŹRÓDŁEM JEST `BOARD.md` → TERAZ
 
-Briefy w tej kolejności; 2 i 3 mogą powstawać równolegle po 1. Szczegóły, ścieżki kodu Mobile i dowody: BOARD.md sekcja TERAZ oraz wiersze `LYNX-OCR-PARITY` i `LYNX-K1-PERSONS-FIRMS`.
-
-1. **`LYNX-OCR-PARITY` krok 1 — benchmark mówi „silnik czy OCR”.** Do `backend/benchmark.py` klasyfikacja przegapień jak Mobile (`BenchmarkInstrumentedTest.kt`): BUG_SILNIKA / OCR_ZNIEKSZTAŁCONY / BRAK_W_OCR oraz klasy tokenów spoza gold. Tylko narzędzie. To miarka dla 2 i 3 i strażnik regresji po każdej zmianie. Mały.
-2. **`LYNX-OCR-PARITY` krok 2 — e-mail na skanie.** Port reguł e-mail z Mobile `OcrNormalizer.kt` (`OCR_EMAIL_AT_Q`, spacje). Jedyny zmierzony powtarzalny wyciek: 8/8 e-maili na skanach jawnych (OCR czyta „@” jako „Q”, także bez spacji przed Q). Decyzja w briefie: poprawka w miejscu czy widok wyszukiwania z mapą offsetów (`LYNX-SHADOW-NORMALIZE`; CC rekomenduje widok — tekst użytkownika bez zmian). Mały.
-3. **`LYNX-K1-PERSONS-FIRMS` K1a — HerBERT jako siatka na resztki.** OWNER 19.10 (po `edb7100`): HerBERT to dodatkowe zabezpieczenie, w testach pomagał i nie szkodził; sztuka to miejsce, w którym nie przeszkadza. Wariant: ostatni krok `run_pipeline_new` (po fallback, przed Guardem), tylko na fragmentach wciąż jawnych, te same filtry co NER + potwierdzenie jednowyrazowej OSOBY słownikiem; niczego zakrytego nie zmienia; efekt = lista dołożonych tokenów do oceny okiem OWNERA. Decyzje w briefie: budżet czasu (diagnoza: ~40 s przy 63 tys. znaków), ORG→instytucje, brak modelu (S3) i uznanie autorstwa (CC BY 4.0). **Zgoda OWNERA na rozmiar ~350 l. udzielona** (dotyczy rozmiaru, nie zastępuje briefu). [Propozycja](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/d6acbb4/tasks/LYNX-K1-PERSONS-FIRMS/cc_proposal.md). Uwagi Codexa SIGNALS-PILOT r2 do skryptów pomiaru HerBERT poprawione; inferencja nadal do niezależnego sprawdzenia przy audycie.
-
-**Na później, tylko po dowodach:** reguły OCR dla telefonów/numerów (wg klasyfikacji z kroku 1); K1b słownik nazwisk i K1c — tylko jeśli OWNER zobaczy okiem przecieki osób/firm (lekcja Mobile: duży słownik bez progu częstości dał lawinę FP); Guard ostrzega zamiast blokować (`LYNX-SPEC-S4-GUARD-WARN`, decyzja OWNERA).
-
-**Pozostałe wątki** (Przywróć, FIRMA-BARE-REPEAT, NO-CANDIDATE, pliki PDF i UI) to backlog/FINDINGi. Nie utożsamiaj ich historycznych statystyk z oceną dzisiejszego silnika i nie otwieraj automatycznie. `LYNX-POLIGON` i F0a odłożone.
+Od 19.10 wieczór cel, kolejność, dowody i miejsce na Wasz sprzeciw są w `BOARD.md`, sekcja **TERAZ** (porządek CC na polecenie OWNERA). W skrócie: **cel** — każde słowo tekstu wysyłanego dalej jest zakryte przez silnik albo pokazane człowiekowi; **kolejność** — (1) benchmark „silnik czy OCR” (`LYNX-OCR-PARITY` krok 1, brief wymaga korekty zakresu z recenzji CC), (2) zamiana OCR na PP-OCRv6 small po ocenie okiem OWNERA, (3) Guard pokazujący wszystko, czego nie rozpoznaje (`LYNX-GUARD-RESIDUE` + `LYNX-SPEC-S4-GUARD-WARN`), (4) HerBERT później, jako sposób na mniej pytań. Jeśli się nie zgadzasz — wpisz zdanie w TERAZ → „Zdanie Architekta i Codexa”.
 
 ## 4. JAKIE POMIARY SĄ WIARYGODNE, A JAKICH NIE WOLNO UŻYWAĆ
 
@@ -66,6 +58,6 @@ Security review Codexa: F1–F3 (jawny trie profilu, reset nieusuwający całoś
 
 ## 7. START PO OTWARCIU NOWEGO OKNA
 
-**Pierwsza praca:** odśwież `BOARD.md` (sekcja TERAZ) i wiersz `LYNX-OCR-PARITY`; odtwórz benchmark (`cd backend && py -3 benchmark.py --dataset dataset_20260627_095419 --no-generate`, oczekiwane 274/290, 0/107 kryt.) i przygotuj **brief 1** (klasyfikacja silnik/OCR w benchmarku). Następnie briefy 2 (e-mail OCR) i 3 (HerBERT jako siatka na resztki) — mogą iść równolegle. Kryterium odbioru każdej zmiany silnika umów z OWNEREM prostym językiem; strażnik regresji po każdej zmianie. Ewentualne poprawki mapy/Przywróć i UI mają osobne zadania i własne źródła prawdy.
+**Pierwsza praca:** przeczytaj `BOARD.md` → TERAZ (cel, dowody, kolejność). Skoryguj brief kroku 1 `LYNX-OCR-PARITY` według recenzji CC (nowy moduł zamiast rozbudowy `benchmark.py`), potem briefy kroków 2 i 3. Jeśli nie zgadzasz się z celem lub kolejnością, zapisz to w TERAZ przed pisaniem briefów.
 
 **Nie odziedzicz bezkrytycznie moich hipotez.** Pytanie nie brzmi „jak napisać piękny silnik?”, tylko „jaki minimalny zabieg daje mierzalnie lepszą ochronę i Przywróć na dokumentach użytkownika?”. Jeżeli OWNER zmieni priorytet — reaguj na aktualne polecenie, nie na tę migawkę.
