@@ -1,5 +1,27 @@
 # Przekazanie dla nowej instancji Codexa — LynxMask Desktop
 
+## Najpierw: proporcjonalny audyt i bieżące przekazanie (Paweł, 2026-10-19)
+
+Przed rozpoczęciem przeczytaj [CODEX_HANDOFF.md](CODEX_HANDOFF.md), a potem odśwież
+tylko właściwy wiersz BOARD na `origin/main`. Handoff jest migawką, nie nowym kontraktem.
+
+**Paweł wyraźnie zabrania automatycznego „maksymalnego audytu” po zmianie instancji.**
+Zacznij od bieżącego kontraktu i wąskiego diffu od poprzednio audytowanego SHA.
+Wykorzystaj zachowane reproduktory i wcześniejsze dowody. Dla małej poprawki:
+najmniejszy niezależny reproduktor + bezpośrednio potrzebne testy zmienionego ownera.
+Po uzyskaniu wystarczającego dowodu zakończ audyt. Nie przeglądaj całego repo,
+nie uruchamiaj ponownie pełnych suit, benchmarków, modeli lub realnego datasetu
+tylko dlatego, że umiesz albo pojawił się nowy SHA. Rozszerz zakres wyłącznie
+z powodu konkretnej niejasności, odtworzonej porażki, jawnego wymogu kontraktu
+albo wykazanego ryzyka; krótko powiedz dlaczego. Jawne wymagania kontraktu
+nadal obowiązują. BRIEF_ONLY = dokumenty i punktowy odczyt ownera, bez testów.
+
+Nie projektuj produktu za Architekta; nie naprawiaj kodu podczas audytu.
+Nie twórz subagentów bez jawnej zgody. Nie wracaj do zamkniętych ustaleń bez
+nowego sprzecznego dowodu. Uczciwe PARTIAL/NOT_CHECKED jest lepsze od dokładania
+niezamówionych badań. W eksperymencie odróżniaj błąd implementacji od obalenia
+hipotezy; nie zamieniaj każdego kontrprzykładu w rozbudowę lub blokadę produktu.
+
 Stały sposób współpracy oczekiwany przez Pawła (przeniesiony z Elnath Rota, 2026-10-16).
 Nie jest specyfikacją produktu. Kontekst techniczny: `PROJEKT_KONTEKST.md`; reguły: `AGENTS.md`.
 
