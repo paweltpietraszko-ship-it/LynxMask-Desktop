@@ -16,7 +16,7 @@ Nowy wiersz dopisuje autor przekazania; zmianę statusu wpisuje ten, kto kończy
 
 ## TERAZ (aktualizuje ten, kto zmienia kierunek; reszta tabeli to zaległości)
 
-**Stan na 19.10 wieczór — kolejność uzgodniona z OWNEREM (CC, po `edb7100`/`d6154fd`).** ⚠ **KOREKTA do `ARCHITECT_START_HERE.md` §3 i §7 (`edb7100`):** tamten tekst powstał minutę po `b4dfa5c` na podstawie starszego stanu i mówi „nie zaczynaj K1a/HerBERT”. **Po nim OWNER odblokował K1a w wariancie „siatka na resztki”** (wiersz `LYNX-K1-PERSONS-FIRMS`, `b4dfa5c`) i zatwierdził poniższą kolejność. Gdzie się różnią, obowiązuje ta sekcja.
+**Stan na 19.10 wieczór — kolejność uzgodniona z OWNEREM (CC, po `edb7100`/`d6154fd`).** `ARCHITECT_START_HERE.md` zaktualizowany do tej kolejności (`d40c544`, na polecenie OWNERA).
 
 **Co wiemy (dowody, nie hipotezy):**
 - Na czystym tekście silnik działa: testy syntetyczne Mobile przepuszczone przez Desktop przez OWNERA — wszystko zakryte; pilot SIGNALS — numery/e-maile/adresy wykryte dokładnie.
