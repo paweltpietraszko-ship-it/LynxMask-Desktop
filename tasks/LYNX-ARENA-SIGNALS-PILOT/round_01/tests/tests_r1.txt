@@ -1,0 +1,51 @@
+LYNX-ARENA-SIGNALS-PILOT — BRIEF_ONLY
+Data: 2026-10-19
+Exact brief/source snapshot: 2ebdf1e2e871945022fafcebad08be6ba2ce6f73.
+Werdykt: PASS PREIMPLEMENTATION, jako ograniczony pilot czystego tekstu.
+Adresat: CC / Architekt / Paweł.
+
+REALNOŚĆ SZWU
+Punktowo przeczytano allocate/PipelineState, końcowe ścieżki trzech warstw
+oraz detect_entities. identity i contact zbierają spany przed podmianą;
+address robi to samo we wspólnym _apply_hits. Każda używa allocate z pozycjami
+w wejściowym str. Świeży state na źródło i lokalny interceptor/subklasa
+pozwalają obserwować udane przydziały bez zmiany produkcyjnego pipeline.
+Rekonstrukcja kontrolna podmian może ujawnić zmianę poza tymi spanami.
+Dwa izolowane pliki są wystarczającym zakresem; brak potrzeby refaktoru.
+
+WAŻNE OGRANICZENIA POMIARU — NIE NOWE BLOKADY
+1. To sygnały po wewnętrznej selekcji obecnych warstw, nie wszystkie ich
+   pierwotne trafienia regex. is_occupied i wybór dłuższego zakresu potrafią
+   odrzucić hit jeszcze przed allocate. Zbiór nie jest pełną pulą hipotez
+   przyszłego silnika; brak kandydata dotyczy wybranego szwu.
+2. allocate.value bywa kanoniczne (np. numer bez spacji lub email po
+   normalizacji). Raw literal musi pochodzić z original[start:end],
+   niezależnie od kanonicznej wartości alokatora. Nie mylić kanonizacji
+   z przesunięciem offsetu; nie rekonstruować zakresu po wartości.
+3. SPACY_DIRECT to spacy_ner.detect_entities, nie surowe doc.ents ani cały
+   produkcyjny tor NER. Funkcja usuwa powtórzone wartości. Przy osobie
+   wielowierszowej skraca text do pierwszej linii, ale zachowuje ent.end_char.
+   To konkretna ścieżka, gdzie text != original[start:end]; zgodnie z briefem
+   ma być MAPPING_ERROR/ADAPTER_UNSUPPORTED, nie wyprodukowany poprawny span
+   ani milczące zero wykryć. Nie naprawiać wrappera w tym Tasku.
+4. H1 jest zachowanym kontrprzykładem ręcznego kandydata. Nie wymagać, żeby
+   rzeczywisty detektor koniecznie wygenerował ten sam zły zakres; raport
+   musi odróżniać zaobserwowany sygnał od hipotetycznego wejścia arbitra.
+
+GOLD / ZAKRES WNIOSKU
+Gold przy składaniu bloków, osobne statusy adapterów/modelu, jawne
+zagnieżdżenia i identyczni kandydaci do R1/R2 są właściwe. 10–12 prób
+sprawdzi metodę i wskaże pierwsze klasy strat. Nie jest to reprezentatywna
+ocena całego obecnego LynxMask: brak profilu, propagacji NER, normalizera,
+Guarda i innych warstw. Nie przesądzi też jakości firm z pominiętych źródeł.
+Na czystym wejściu strata nie pochodzi z rozpoznawania obrazu OCR, lecz
+może pochodzić z detektora, wrappera, adaptera lub arbitra — zachować podział.
+Udział strat OCR wymaga później porównania tych samych dokumentów przed
+OCR i po OCR z niezależnym gold. Pilota nie nazywać takim porównaniem.
+
+DALEJ
+CC może ocenić brief, oszacować rozmiar i implementować w jego zakresie.
+GATE >150 l./ratio >5:1 oraz wymóg decyzji dla tego Tasku pozostają jawne;
+nie rozszerzam starej zgody na dowolną nową dostawę. Bez merge.
+Nie uruchamiano testów/reproduktorów/modeli ani dokumentów (BRIEF_ONLY).
+Nie zmieniono kodu produktu. Kolejny raport pod wolną ścieżką r2+.
