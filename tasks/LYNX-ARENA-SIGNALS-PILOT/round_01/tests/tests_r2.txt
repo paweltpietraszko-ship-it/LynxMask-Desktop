@@ -1,0 +1,64 @@
+LYNX-ARENA-SIGNALS-PILOT — niezależny wąski audyt dostawy CC, 2026-10-19
+
+EXACT SHA: 243cc5088770f6adb8fa552a654da627e237d392 (kod ad3b6bc).
+BASE: add92f3 (dostarczona korekta bazy); poprzedni precheck: 4c75236.
+WYNIK: PASS mechaniki pilota na tym SHA. Nie jest to odbiór nowego silnika,
+certyfikacja produktu ani zgoda na zastąpienie SpaCy przez HerBERT.
+ODBIORCA: CC / Architekt / Paweł.
+
+ZAKRES I DOWODY
+- Aktualny origin/main: 57d7298; właściwe wiersze SIGNALS-PILOT, POLIGON,
+  ARENA-HERBERT i sekcja TERAZ. Pilot nie jest wstrzymany: dostarczony do audytu.
+  Wstrzymany jest F0a / budowa nowego silnika. HerBERT to propozycja do briefu.
+- Brief i DELIVERY na exact SHA; diff add92f3..243cc50: dwa pliki przyrządu/testów
+  plus DELIVERY/gate. Zmiany wcześniejszych zadań w merge bazy nie są nową dostawą.
+- Odczyt obu nowych plików: osobne źródła na oryginale, replay offsetów allocate,
+  jawne błędy SpaCy/dedup, gold poza Areną, te same kopie kandydatów R1/R2,
+  oddzielne STOP/NOT_RUN i mianowniki, agregaty bez literałów.
+- Python 3.14: -m pytest tests/test_arena_signal_probe.py
+  tests/test_arena_sim.py tests/test_arena_v02.py -q => 61 passed, 3 warnings.
+  To celowane testy przyrządu i dwóch zamrożonych wariantów, nie pełna suita repo.
+- Niezależny repro_r2.py: trzy NOWE syntetyki C01–C03, gold przy składaniu;
+  rzeczywiste cztery źródła -> CLI -> R1/R2 -> liczniki/inwarianty.
+  Gold 6/6 EXACT_CANDIDATE; źródła wszystkie OK. Dodatkowo niezależnie
+  przesunięty offset => MAPPING_ERROR, SOURCE_MAPPING_ERROR i NOT_RUN.
+  Brak literałów gold w stdout CLI. Uruchomienie:
+  python repro_r2.py <katalog backend na audytowanym SHA>.
+
+OGRANICZENIE WNIOSKU CC — ISTOTNE DLA ARCHITEKTA, NIE DEFEKT PILOTA
+C01 i C03: contact daje poprawny EMAIL, a SpaCy dodatkowo OSOBA na dokładnie
+tym samym zakresie. Strict: STOP/AMBIGUOUS w obu tekstach. Structured: RENDERED.
+C02: oba warianty RENDERED. Razem R1: 1 RENDERED + 2 STOP, R2: 3 RENDERED.
+Na wyrenderowanych wynikach FN/FN_PARTIAL/FP/OVERMASK/N1–N4 = 0.
+To rzeczywiste sygnały, a nie ręcznie wpisani kandydaci. Różnica R1/R2 istnieje
+poza fixture CC. Nie dowodzi konieczności nowego silnika, nie obala wcześniejszego
+H1, nie dowodzi błędu sekwencji obecnego pipeline. Pokazuje, że „R1=R2 / reguła
+R2 niewywołana” wolno odnosić tylko do 12 prób CC. Błąd typu SpaCy pozostaje,
+ale wynik zależy też od arbitra. Nie rozciągać wyniku fixture na cały poligon.
+
+HERBERT — WĄSKA OCENA PROPOZYCJI (NIE AUDYT IMPLEMENTACJI PRODUKTU)
+Exact propozycji/skryptów: 5d54f9aaefa1e07401f8744a9043f2ea7ea58473.
+CC jawnie zastrzega: 12 własnych syntetyków to kierunek, nie dowód; integracja
+z produktem dopiero osobnym zadaniem. To właściwy status. Pomiar HerBERT-a
+na danych spoza fixture jest uzasadniony; zastąpienie SpaCy nie jest jeszcze wykazane.
+Nie odtworzono inferencji HerBERT ani liczb 5/14 -> 10/14: NOT_CHECKED.
+Nie uruchamiano danych realnych, generatora ani /preview.
+
+Dwa konkretne ograniczenia skryptów do usunięcia przed szerszym pomiarem:
+1. herbert_probe.both_source sprawdza status SpaCy, pomija status HerBERT.
+   Niezależnie wykonana dokładna funkcja z podstawionym DETECTOR_ERROR HerBERT
+   zwróciła OK. Awaria dodatkowego źródła może udawać udany wariant „oba”.
+2. herbert_run.chunks nie dzieli długiej pojedynczej linii: wykonanie dokładnej
+   funkcji na syntetycznej linii 6000 znaków dało jeden kawałek 6000 znaków.
+   predict_chunk ucina ids i offsets do 512. Statycznie istnieje więc droga
+   pominięcia końca długiej linii; ilości utraconych encji NIE mierzono modelem.
+To ograniczenia pomocniczej propozycji, nie FAIL audytowanego pilota. Brief
+szerszego pomiaru powinien zapewnić jawny błąd źródła i pełne pokrycie wejścia;
+to warunki wiarygodnego porównania, nie projekt nowego produktu.
+
+REKOMENDACJA
+Zamknąć odbiór mechaniki pilota. Zbadać HerBERT osobno na niezależnych danych,
+z punktem odniesienia w obecnym pipeline. Nie wyciągać z 12 prób decyzji
+o produkcyjnym zamienniku ani twierdzenia, że rozstrzyganie nie ma znaczenia.
+Zachować wcześniejsze dowody; nie powtarzano historycznych audytów/datasetów.
+Bez zmian kodu produktu, nowych reguł, modeli w produkcie i merge.
