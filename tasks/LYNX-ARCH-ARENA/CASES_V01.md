@@ -124,3 +124,28 @@ PROGNOZA_ARCHITEKTA: Anchor nie może połknąć PESEL; PESEL będzie FN w v0.1,
 2. Sprawdź przypadki bez PII (maskowanie wszystkiego to porażka), częściowo zakryte dane (maskowanie częściowe to FN), STOP na czystym tekście (porażka użyteczności) i kolizję typów (STOP poprawną reakcją).
 3. Nie przyjmuj predykcji Architekta za prawdę. Jeśli oryginalny gold jest niejednoznaczny, oznacz JUDGE_DISPUTE i przekaż do OWNER zamiast przestawiać etykietę pod wynik silnika.
 4. Zakończ raportem: liczba prawdziwie uratowanych FN, nadmaskowań, powtórzonych błędów po zmianach i testów, których wynik może pochodzić z zapamiętanego przykładu. Niezależny test ma wykrywać hardcoding po identyfikatorze lub frazie.
+
+## Ocena sędziego r2 — doprecyzowanie C2 bez zmiany wejść i gold
+
+Poniższa tabela dotyczy WARUNKÓW według briefu r2, a nie odtworzonych wyników kodu. Zamrożone teksty, indeksy, gold_spans i pierwotne prognozy A01–A16 pozostają bez zmian. Mechanika i skuteczność mają ODDZIELNE oceny.
+
+| Case | Prognoza mechaniki r2 | Klasyfikacja ochrony, jeśli wynik zgodny z prognozą |
+|---|---|---|
+| A01 | RENDERED, EMAIL w całości | PROTECTION_PASS |
+| A02 | RENDERED, kotwica ratuje EMAIL mimo przecinka | PROTECTION_PASS |
+| A03 | RENDERED, rozszerzenie tego samego EMAIL o ogon .pl | PROTECTION_PASS |
+| A04 | RENDERED, ul. + Polna + l2/8 | PROTECTION_PASS |
+| A05 | RENDERED, bez tokenów | PROTECTION_PASS (brak gold) |
+| A06 | RENDERED, @administrator jako EMAIL | PROTECTION_FAIL / FP mimo trafnej prognozy |
+| A07 | RENDERED, ADRES tylko do przecinka | PROTECTION_FAIL / FN_PARTIAL, Guard może nie ostrzec |
+| A08 | RENDERED, EMAIL nie pochłania reszty zdania | PROTECTION_PASS |
+| A09 | RENDERED, dwa rozłączne tokeny i zachowany newline | PROTECTION_PASS |
+| A10 | STOP / AMBIGUOUS, konflikt OSOBA i EMAIL | SAFE_REFUSAL; NIE PROTECTION_PASS za maskowanie |
+| A11 | RENDERED, brak tokenów, ID_LABEL_REMAINS | PROTECTION_FAIL / FN_FULL, Guard ostrzegł, nie uratował |
+| A12 | STOP / TOKEN_INJECTION | SAFE_REFUSAL; NIE PROTECTION_PASS za maskowanie |
+| A13 | RENDERED, EMAIL po emoji i polskich literach | PROTECTION_PASS |
+| A14 | RENDERED, dwa wystąpienia pod EMAIL_001 | PROTECTION_PASS z roundtrip 1:1 |
+| A15 | RENDERED, ul. w instrukcji nie jako ADRES | PROTECTION_FAIL / FP mimo trafnej prognozy |
+| A16 | RENDERED, ADRES do średnika; ID_LABEL_REMAINS | PROTECTION_FAIL / FN_FULL na PESEL, Guard nie kompensuje |
+
+Sędzia nie może przydzielić PROTECTION_PASS tylko dlatego, że wynik odpowiada tej tabeli. Jeśli nowy kod zachowa się inaczej, oceniać rzeczywisty output przez reguły briefu r2 i gold, z osobnym wykazaniem odchylenia od prognozy. Dla A10 i A12 poprawny STOP nie daje „punktów za zamaskowanie”. STOP przy A01–A09/A11/A13–A16 bez formalnej przyczyny = UNEXPECTED_STOP. Zmiana gold lub tych reguł wymaga nowej wersji eksperymentu, nie cichej korekty po wyniku.
