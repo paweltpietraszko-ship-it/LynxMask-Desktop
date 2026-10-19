@@ -1,0 +1,39 @@
+LYNX-ARCH-ARENA — wąski re-check briefu r2
+Data: 2026-10-19
+Werdykt: PASS PREIMPLEMENTATION.
+Adresat: CC / Architekt / Paweł.
+Exact snapshot: b684434af1230ab8f25a55e5c2b562414bc372dc.
+Brief r2: 73f586830af924baf50069b91e9ceb650b65fcbb.
+Diff base: 6732a0c (raport r1); tylko zmiany C1–C2 w brief.md
+i dodana klasyfikacja w CASES_V01.md. Bez ponawiania całego przeglądu.
+
+C1 — ZAMKNIĘTE na potrzeby eksperymentu.
+Dodano operacyjne granice @/ul., reguły rozszerzenia i konfliktów oraz
+trzy konkretne klasy flag Guarda. Niewykryta osoba/firma nie jest już
+domyślnie rozpoznawana przez Anchor; skutki ograniczonej gramatyki liczy
+sędzia. CC może zaimplementować badaną hipotezę bez projektowania NER.
+To dostateczna precyzja dla v0.1; nie żądam pełnej gramatyki produktu.
+
+C2 — ZAMKNIĘTE na potrzeby eksperymentu.
+Osobne MECHANICS i PROTECTION; konkretne reguły dokładnych gold spans,
+FN/FP, uzasadnionego STOP i ostrzeżeń Guarda. Znana porażka ochrony nie
+staje się sukcesem tylko dlatego, że zgadza się z prognozą Architekta.
+Nowe próby również podlegają regułom, a nie wyłącznie tabeli A01–A16.
+Tabela to prognozy, nie potwierdzone wyniki programu.
+
+CO EKSPERYMENT WNOSI
+Może rozstrzygnąć, czy zadana reguła Anchor naprawia niepełnego kandydata,
+jakim kosztem FP/OVERMASK/odmów, oraz czy arbiter i pojedyncza podmiana
+zachowują granice, deterministyczność i dosłowne odtworzenie. Niezależne,
+nieujawnione wcześniej próby po zamrożeniu kodu ograniczają dopasowanie do
+16 znanych przykładów. Wynik może wskazać konkretną regułę do odrzucenia.
+Nie potwierdzi recall realnych detektorów, projekcji OCR, produkcyjnego
+Guarda ani całego przyszłego silnika; ograniczenia te pozostają jawne.
+
+ZAKRES I DALSZY KROK
+Brak nowych blokad i propozycji rozbudowy. CC może przejść do dwóch
+izolowanych plików zgodnie z briefem i obowiązującym GATE; ten precheck
+nie znosi progu >150 l./ratio >5:1 ani nie zatwierdza nowej ścieżki produktu.
+Po dostawie: niezależny audyt kodu exact SHA, gold i własne próby.
+Teraz wyłącznie przegląd dokumentów: bez testów, reproduktorów, wykonania
+symulatora i zmian kodu produktu. Bez merge. Następny raport: wolne r3+.
