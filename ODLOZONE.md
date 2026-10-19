@@ -54,3 +54,12 @@ Uwaga Pawła: produkt jest dla tekstu polskiego; każdy kolejny taki finding ci�
 Ocena CC: zgoda na odłożenie (nie dotyczy S1). Nazwiska ukraińskie zapisane łacinką w polskim tekście są obsługiwane jak każde inne.
 Jeśli wróci: najtańszy wariant to nie przyjmować OSOBA z NER dla fragmentów pisanych cyrylicą (numery/e-maile i tak maskowane regexami) —
 bez wykrywania języka i bez drugiego modelu.
+
+
+## 2026-10-19 Poligon Arena — odłożony przez OWNERA
+
+OWNER: „Odstawiamy Arenę na boczny tor, nie pokazuje znacznej poprawy jakości”. Decyzja o **priorytecie**: nie uruchamiać kolejnego F0a/LYNX-ARCH-CANDIDATES, R2b/R3/R4 ani przepisywania pipeline na kandydatów i arbitra. Dopracowywać istniejący silnik LynxMask (szczególnie OSOBA/FIRMA, mapę, Przywróć i błędy end-to-end); Arena może służyć jako przyrząd diagnostyczny, ale nie przyszły silnik bez nowego pomiaru. Nie twierdzić, że sekwencja warstw jest formalnie bezbłędna.
+
+Dowody: experiment/lynx-architecture-arena (R1: nadmiar STOP, 16 i 19 prób), experiment/lynx-architecture-arena-v02 (R2: mniej STOP na 35 syntetykach, ale fałszywie szeroka FIRMA pochłania OSOBA+prozę — Codex H1), task/LYNX-ARENA-SIGNALS-PILOT (mechanika zatwierdzona exact 243cc508; r2 Codexa: na trzech NOWYCH syntetykach rzeczywiste kandydatury pozwoliły odróżnić R1 od R2; nie uogólniać „R1=R2”). W żadnym z tych badań nie wykazano dostatecznej przewagi całego nowego silnika nad działającym produktem ani realnego wycieku jednoznacznie spowodowanego sekwencją podmian.
+
+Historia: git log -p BOARD.md dla wierszy LYNX-POLIGON, LYNX-ARENA-SIGNALS-PILOT i dawnych ARCH-ARENA; raporty Codexa w tasks/LYNX-ARCH-ARENA*/round_01/tests/ oraz tasks/LYNX-ARENA-SIGNALS-PILOT/round_01/tests/. Powrót tylko na nowe jawne polecenie OWNERA albo gdy zmierzone powtarzalne błędy produkcji dają **dowód**, że warstwy sekwencyjne są przyczyną, a nie błędne detektory czy mapy. Przed wznowieniem porównanie na tym samym gold, metryki FN/FP, STOP, Przywróć i koszty, nie same testy kontraktowe.
