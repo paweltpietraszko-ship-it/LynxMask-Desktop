@@ -9,7 +9,8 @@ Wejście:  {"text": str, "base_candidates": [{"start","end","kind","source","evi
 Wyjście:  {"status": "RENDERED"|"STOP", "masked", "tokens", "trace", "reason_code", "guard_flags"}
 
 Fazy (brief r2): A BASE → B/C ANCHOR (@ i ul. na ORYGINALE) → D ARBITER → E ONE APPLY → F GUARD-DRON.
-reason_code (stabilne): INVALID_INPUT, TOKEN_INJECTION, ANCHOR_UNCERTAIN, AMBIGUOUS, INTERNAL_ERROR.
+reason_code (stabilne): INVALID_INPUT, TOKEN_INJECTION, ANCHOR_UNCERTAIN, AMBIGUOUS, WORD_BOUNDARY, INTERNAL_ERROR.
+WORD_BOUNDARY (v0.1.1, Codex r4 F1): przyjęty span zaczyna się lub kończy w środku wyrazu (N2) — odmowa zamiast sklejonego tokenu.
 Trace: tylko metadane (faza, typ, indeksy, decyzja) — bez wartości; wyjątek nigdy nie ujawnia tekstu.
 
 Decyzja CC (luka briefu, D.ii): kotwica, której wyprowadzony span leży W CAŁOŚCI wewnątrz kandydata BASE tego samego
@@ -21,6 +22,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import unicodedata
 
 KINDS = ("FIRMA", "OSOBA", "NUMER", "KWOTA", "ADRES", "INSTYTUCJA", "EMAIL")
 TOKEN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")  # S2
@@ -133,7 +135,7 @@ def _anchors(text: str, base: list[dict], trace: list) -> list[dict]:
 
 
 # ── D. ARBITER ──────────────────────────────────────────────────────────────────
-def _arbiter(cands: list[dict], trace: list) -> list[dict]:
+def _arbiter(text: str, cands: list[dict], trace: list) -> list[dict]:
     merged: dict[tuple, dict] = {}
     for c in sorted(cands, key=lambda c: (c["start"], c["end"], c["kind"])):
         key = (c["start"], c["end"], c["kind"])
@@ -151,6 +153,9 @@ def _arbiter(cands: list[dict], trace: list) -> list[dict]:
                 raise Stop("AMBIGUOUS")
             dropped.add(_contained_loser(a, b))
     kept = [c for c in items if id(c) not in dropped]
+    for c in kept:  # N2 (Codex r4 F1): granica w środku wyrazu → nie wydajemy sklejonego tokenu, nie poszerzamy spanu
+        if _inside_word(text, c["start"]) or _inside_word(text, c["end"]):
+            raise Stop("WORD_BOUNDARY")
     for c in items:
         trace.append({"phase": "arbiter", "kind": c["kind"], "start": c["start"], "end": c["end"],
                       "decision": "dropped_contained" if id(c) in dropped else "kept"})
@@ -169,6 +174,14 @@ def _contained_loser(a: dict, b: dict) -> int:
     if "anchor" not in big["origin"] or small["origin"] not in ("base", "base+anchor"):
         raise Stop("AMBIGUOUS")
     return id(small)
+
+
+def _word_char(ch: str) -> bool:
+    return ch.isalnum() or ch == "_" or unicodedata.combining(ch) > 0
+
+
+def _inside_word(text: str, i: int) -> bool:
+    return 0 < i < len(text) and _word_char(text[i - 1]) and _word_char(text[i])
 
 
 # ── E. ONE APPLY ────────────────────────────────────────────────────────────────
@@ -209,7 +222,7 @@ def run_case(case: object) -> dict:
         if TOKEN_RE.search(text):
             raise Stop("TOKEN_INJECTION")
         base = _base(text, case.get("base_candidates", []), trace)
-        kept = _arbiter(base + _anchors(text, base, trace), trace)
+        kept = _arbiter(text, base + _anchors(text, base, trace), trace)
         masked, tokens = _apply(text, kept)
         return {"status": "RENDERED", "masked": masked, "tokens": tokens, "trace": trace,
                 "reason_code": None, "guard_flags": _guard(masked)}

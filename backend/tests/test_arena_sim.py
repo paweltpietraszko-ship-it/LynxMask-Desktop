@@ -160,3 +160,14 @@ def test_niepoprawne_wejscie_bez_ujawniania():
 def test_kotwica_bez_prawej_strony_to_anchor_uncertain():
     r = run([_inp("Napisz na adres ala@ jutro", [])])[0]
     assert r["status"] == "STOP" and r["reason_code"] == "ANCHOR_UNCERTAIN"
+
+
+def test_granica_w_srodku_wyrazu_to_odmowa_nie_sklejenie():
+    """Codex r4 F1 (N2): ucięty kandydat BASE nie może dać tokenu sklejonego z literą; nie poszerzamy spanu bez dowodu."""
+    t = "Jan Kowalski"
+    cut_right = run([_inp(t, [{"start": 0, "end": 2, "kind": "OSOBA"}])])[0]
+    cut_left = run([_inp(t, [{"start": 1, "end": 3, "kind": "OSOBA"}])])[0]
+    whole = run([_inp(t, [{"start": 0, "end": 12, "kind": "OSOBA"}])])[0]
+    for r in (cut_right, cut_left):
+        assert r["status"] == "STOP" and r["reason_code"] == "WORD_BOUNDARY" and r["masked"] is None
+    assert whole["status"] == "RENDERED" and whole["masked"] == "OSOBA_001" and invariants_ok(t, whole)
