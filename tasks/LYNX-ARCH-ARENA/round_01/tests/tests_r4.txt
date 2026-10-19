@@ -1,0 +1,65 @@
+LYNX-ARCH-ARENA — niezależny audyt v0.1 i opinia o dalszym eksperymencie
+Data: 2026-10-19
+Werdykt: MECHANICS_FAIL — F1. To błąd eksperymentu, nie audyt produktu.
+Exact audited SHA: 4a1cbf093c3f489ef119ba2f0058358b01069da2.
+Diff base: 4a1cbf0^; dostawa: 916257a; brief: 73f5868 / CASES: b684434.
+Adresat: CC / Architekt / Paweł. Rozmiar kodu zatwierdzony przez Pawła
+w bieżącym poleceniu; nie zgłaszam ponownie blokady liczby linii.
+
+WYKONANIE
+- Przeczytano całe 240 l. symulatora i sędziego testowego. Runtime to stdlib,
+  JSONL stdin/stdout, bez gold, modeli i sieci; brak integracji z produktem.
+- Testy CC przez osobny proces: 38 passed.
+- Własny sędzia/repro_r4.py sprawdził wycinki gold A01–A16 względem
+  niezależnie wskazanych dosłownych wartości oraz wykonał CLI na tych wejściach:
+  ochrona 9 PASS, 5 FAIL, 2 SAFE_REFUSAL. Zgodne z deklaracją dostawy.
+- Uruchomiono 19 ataków CC: raport skryptu 5 PASS, 8 FAIL,
+  5 UNEXPECTED_STOP, 1 SAFE_REFUSAL — odtworzone.
+  UNEXPECTED_STOP w tym skrypcie oznacza niepożądaną odmowę z punktu widzenia
+  użyteczności; np. ANCHOR_UNCERTAIN może być poprawny mechanicznie wg C.
+  Nie traktuję tych etykiet jako pięciu regresji implementacji reguły STOP.
+- Sześć nowych własnych prób po zamrożeniu SHA, nieujawnionych CC wcześniej:
+  poprawna osoba, powtórzony e-mail po emoji, dwa typy z newline, dwa ucięte
+  spany osoby, e-mail NFD. Pięć sprawdzeń metamorfizmów: duplikaty/źródła,
+  powrót do dokumentu w tym samym procesie, przesunięcie po emoji.
+  Próby poprawnych granic zachowują N1/N3/N4; próby uciętych granic ujawniają F1.
+
+F1 — BASE przyjmuje span wewnątrz słowa i renderer skleja token z literą.
+TRACE: brief A wymaga jednoznaczności granic; N2 zabrania tokenu w środku
+wyrazu i sklejenia. Każde złamanie N1–N4 jest porażką niezależnie od wycieku.
+OWNERSHIP: arena_sim.py przyjmuje base_candidates bezpośrednio z JSONL;
+_base waliduje zakres/liczby/typ, lecz nie granice słowa. Nie ma właściciela
+upstream, którego nie da się ominąć. To właśnie eksperyment ma przyjmować
+także błędne propozycje detektorów; nie można założyć ich bezbłędności.
+REPRO na exact SHA (wyłącznie syntetyk): text='Jan Kowalski', OSOBA [0,2)
+=> RENDERED, masked='OSOBA_001n Kowalski'. Wariant lewostronny [1,3)
+=> RENDERED, masked='JOSOBA_001 Kowalski'. Oba naruszają N2.
+Oryginalny reproduktor zachowany jako own 4/5 w repro_r4.py.
+Przy drugim wariancie odtworzenie przez standardową granicę tokenu także
+zawodzi; to skutek tego samego sklejenia, nie osobny finding.
+Oczekiwanie: nie wydawać RENDERED łamiącego N2. Nie żądam wykrycia całej
+osoby z fragmentu ani automatycznego poszerzania spanów bez dowodu.
+Waga: błąd wiarygodności pomiaru mechaniki; brak dowodu wycieku produktu.
+
+OGRANICZENIA I ODDZIELONE DECYZJE
+Znane FP/FN kotwic i nadmierne odmowy nie są nowo odkrytymi regresjami.
+CC jawnie dodał pomijanie kotwicy zawartej w szerszym BASE tego samego typu.
+X17 działa według tej deklaracji; nie dowodzi to prawidłowości granic BASE.
+To dodatkowa hipoteza eksperymentu, bez zgody na przeniesienie do produktu.
+Sędzia CC liczy ogólne PASS/FAIL, nie wszystkie szczegółowe liczniki z briefu;
+nie używam jego wyniku jako kompletnego miernika FN/FP ani certyfikatu.
+Nie uruchamiano produkcyjnej suity ani realnych dokumentów dla izolowanego
+modułu — brak zmiany szwu z produktem. Nie zmieniono kodu ani gold. Bez merge.
+
+OPINIA: CZY CC MA POPRAWIAĆ SYMULATOR
+TAK. Najpierw naprawić F1 na nowym SHA, zachowując obecną wersję i ataki
+jako punkt odniesienia. Następnie kierunek Architekta z 595af427 jest zasadny:
+adapter rzeczywistych sygnałów z jawnym mapping_error/ADAPTER_UNSUPPORTED,
+mała próba przed całym zbiorem; porównanie polityk na identycznych kandydatach.
+R2/R3 wymagają krótkiego kontraktu eksperymentalnego przed kodem: sama
+„silna kotwica” lub „odmowa fragmentu” nie wyznacza jeszcze decyzji arbitra.
+To nie nowa lista wymagań produktu ani żądanie pełnego projektu architektury.
+Nie stroić jednocześnie detektorów i arbitra; nie uznawać jawnej reszty za
+bezpieczną. Zgoda Pawła na rozmiar usuwa tę przeszkodę dla zamówionej pracy,
+ale nie zamienia hipotez R2/R3 w zatwierdzone zachowanie produktu.
+Raport r3 z oceną propozycji pozostaje aktualny. Następny raport: wolne r5+.
