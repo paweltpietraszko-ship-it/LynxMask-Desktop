@@ -97,3 +97,12 @@ Kod: `ab38719`. Diff względem v0.1 (`4a1cbf0`): `arena_sim.py` +13, `test_arena
 - **Testy:** 39 passed. A01–A16 bez zmian (16/16 mechaniki, ochrona 9/5/2).
 - **Ataki CC r1:** PASS 5, FAIL 7, UNEXPECTED_STOP 6, SAFE_REFUSAL 1. Zmiana tylko w X15 (NFD): dotąd FAIL z jawnym fragmentem i sklejonym tokenem, teraz `STOP/WORD_BOUNDARY`. Gramatyka kotwicy @ (brief C) nie obejmuje znaków łączących w lewym fragmencie, więc uczciwą reakcją jest odmowa, a nie sklejenie.
 - **Bez zmian:** kotwice, arbiter D, Guard; v0.1 (`4a1cbf0`) zostaje punktem odniesienia. Dalszy rozwój (REAL, R2/R3) dopiero po krótkim kontrakcie Architekta, zgodnie z `595af42` i opinią r4.
+
+---
+
+# DELIVERY r3 (CC) — v0.1.2: reszta F1 z r5 (`a5b562b`)
+
+Kod: `dc149cd`. `_word_char` liczy znak jako część wyrazu, gdy jest alfanumeryczny, jest `_` albo ma **kategorię Unicode M** (`unicodedata.category(ch).startswith("M")`). Wcześniej warunkiem było `combining(ch) > 0`, które pomijało Mn z klasą łączenia 0 (U+034F).
+- Nowy test `test_znak_m_o_klasie_laczenia_zero_tez_jest_czescia_wyrazu`: 40 passed.
+- `repro_r5.py` Codexa: wszystkie 7 przypadków → STOP (wcześniej RENDERED).
+- Poza tym predykatem bez zmian.
