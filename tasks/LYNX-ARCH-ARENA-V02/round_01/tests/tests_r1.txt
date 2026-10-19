@@ -1,0 +1,76 @@
+LYNX-ARCH-ARENA-V02 — niezależny audyt dostawy Architekta/ChatGPT
+Data: 2026-10-19
+Exact snapshot: f3e547a0e233a72b4856de1a40bdedb87249a15c.
+Kod: 6dae87df08b877e115b6bf05d335b81dad21aa35.
+Testy: 08c7a5ba944427edb8ad5fab568c62eaf4d900bc.
+Diff base: b03dfed (audytowana v0.1.2); tylko 132 l. nowego modułu,
+101 l. nowych testów, 41 l. kontraktu. Diff względem main nie jest zakresem
+Tasku — gałąź eksperymentalna ma inną bazę. Stara Arena/testy niezmienione.
+Adresat: Architekt / CC / Paweł.
+Wynik: MECHANICS_PASS w badanym zakresie; R2 NIE potwierdzone jako
+bezpieczna reguła ochrony. Eksperyment ujawnił granicę hipotezy H1 poniżej.
+
+ZAKRES / ZGODNOŚĆ Z CELEM
+To porównanie arbitra na identycznych ręcznych kandydatach, nie kalibracja
+rzeczywistych detektorów. Brak modeli, gold, profilu, API i sieci w runtime.
+Czytelna mini-reguła na oryginale nie ufa samemu evidence/source.
+Nie stroi jednocześnie kotwic, detektorów i Guarda. Izolacja jest sensowna.
+R2 jest jawnie hipotezą eksperymentalną, nie nowym zachowaniem produktu
+(TECHNICAL_ONLY). Nie przypisuję mu zgody na wdrożenie produkcyjne.
+Kalibracja na czystym tekście i osobne testy OCR nadal dotyczą następnego
+etapu z generatorem/adapterami; tej dostawy nie nazywać kalibracją silnika.
+
+WYKONANIE
+- Testy oryginalnej Areny 40 + nowe 5: 45 passed, przez osobne procesy CLI.
+- Niezależny repro_r1.py: 16 zachowanych A, 19 ataków X, 7 własnych O.
+  Gold zostaje wyłącznie po stronie sędziego; runtime dostaje tylko tekst
+  i kandydatów. Stare wzorce gold to zachowany materiał poprzednich rund;
+  własne O mają niezależnie wskazane dosłowne zakresy.
+- strict zwraca bajtowo równy stdout co oryginalny arena_sim: 42/42 wejścia.
+- structured niezależne od odwrócenia kolejności kandydatów: 42/42.
+  Stary trace R1 może zależeć od kolejności zgłoszeń; nie mylić go ze zmianą
+  decyzji R2 (pierwszą zbyt szeroką asercję reproduktora skorygowano).
+- N1–N4 i rzeczywiste odtworzenie tokenów przez mapę: PASS dla wszystkich
+  RENDERED obu polityk. STOP ma null masked i puste tokens/guard_flags.
+- Nowe próby: fałszywie szeroka FIRMA, sprzeczne trzy typy, pełna osoba NFD,
+  lista e-maili bez spacji, FIRMA bez formy prawnej, osoba w ulicy/e-mailu.
+
+PORÓWNANIE: protection PASS / protection FAIL / STOP
+                   strict          structured
+A01–A16             9 / 5 / 2       10 / 5 / 1
+X01–X19             5 / 7 / 7        8 / 7 / 4
+O1–O7               1 / 0 / 6        3 / 1 / 3
+35 zachowanych: STOP 9 -> 5, poprawne RENDERED 14 -> 18.
+To liczby syntetycznych prób, nie częstość zdarzeń ani skuteczność na pismach.
+Dla RENDERED A: obie polityki 2 FN_FULL, 1 FN_PARTIAL/błąd granic i 3 FP/overmask.
+Dla RENDERED X: obie 2 FN_FULL, 4 FN_PARTIAL/błędy granic i 5 FP/overmask.
+Przy STOP nie przyznaję punktów za maskowanie ani nie zliczam jawnego eksportu.
+R2 na własnych O: 1 FP/overmask, 2 gold o niewłaściwej granicy/kategorii
+w tej samej próbie H1. Nie jest to dowód dwóch fizycznie jawnych wycieków.
+Roundtrip bez błędów również w H1 — odwracalność nie potwierdza trafności encji.
+
+H1 — KONTRPRZYKŁAD HIPOTEZY, NIE DEFECT_GATE/FAIL IMPLEMENTACJI
+Wejście syntetyczne: Odbiorca: Jan Kowalski; wzór: Alfa Sp. z o.o.
+BASE błędnie zgłasza FIRMA od Jana do końca oraz OSOBA Jan Kowalski.
+Gold: OSOBA Jan Kowalski, FIRMA Alfa Sp. z o.o.; środkowe „; wzór: ” to proza.
+R1: STOP. R2: RENDERED „Odbiorca: FIRMA_001”, jedna mapa obejmuje wszystko.
+TRACE: brief jawnie mówi, że końcowa forma prawna jest hipotezą dowodu,
+a test fałszywego szerokiego zakresu ma ją falsyfikować.
+OWNERSHIP: proof(FIRMA) sprawdza sam sufiks, nie dowodzi początku/granic;
+niezmienniki techniczne nie mogą zastąpić niezależnego gold.
+REPRO: O2 w zachowanym repro_r1.py, exact SHA jak wyżej.
+Wniosek: R2 odzyskuje część prawidłowych przypadków, ale może zaakceptować
+połknięcie dwóch odrębnych encji i prozy. Nie ogłaszać sukcesu ochrony ani
+nie przepisywać gold pod wynik. Nie dodaję blokującej reguły za Architekta.
+
+GATE / DALSZY RUCH
+233 nowe linie kodu/testów przekraczają 150. Brief tej dostawy wprost wymaga
+osobnego wskazania GATE i nie pozwala zastąpić kontroli zgodą na pierwszą
+Arenę. Odnotowuję WYMAGA_DECYZJI rozmiaru tej gałęzi; nie jest to defekt
+techniczny i nie zatrzymało zamówionego audytu. Bez automatycznej zgody na
+dalszą implementację lub merge. Dwa pliki kodu pozostają zgodne z zakresem.
+Następny ruch: CC może dostać do niezależnych ataków zamrożoną dostawę,
+bez zmiany gold; Architekt ocenia H1 przed ewentualną nową wersją reguł.
+Bez dopisywania wyjątku pod O2 i bez równoczesnego strojenia detektorów/OCR.
+Brak zmian produktu/implementacji, brak pełnej suity produktu (izolowany
+moduł), brak realnych dokumentów. Kolejny raport pod wolną ścieżką r2+.
