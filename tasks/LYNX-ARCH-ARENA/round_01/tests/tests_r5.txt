@@ -1,0 +1,39 @@
+LYNX-ARCH-ARENA — wąski re-check F1
+Data: 2026-10-19
+Exact SHA dostawy: 8f9884a8e090a05f1f0bf3910c3b8799e9486c60.
+Kod: ab38719; diff base: 4a1cbf0; oracle: architect_fix_F1.md (8f03cd5).
+Adresat: CC / Architekt / Paweł.
+Werdykt: MECHANICS_FAIL, F1 częściowo zamknięte; jedna mała reszta kontraktu.
+
+POTWIERDZONE
+39 testów CC passed. Zachowany niezależny repro_r4.py: oba oryginalne
+przypadki Jan [0,2)/[1,3) teraz STOP/WORD_BOUNDARY; pełne dane bez regresji.
+A01–A16 nadal ochrona 9 PASS / 5 FAIL / 2 refusal. Sześć własnych prób r4
+ponowione; pięć sprawdzeń metamorfizmów passed. Ataki CC: 5 PASS / 7 FAIL /
+6 UNEXPECTED_STOP / 1 refusal. X15 NFD przechodzi z wycieku do odmowy,
+co naprawia mechanikę, ale nie jest sukcesem wykrywania encji.
+Własna macierz: obie krawędzie słowa, emoji, underscore, zwykły polski NFD,
+pełna granica — po siedem kategorii tokenu; wszystkie te 42 próby zgodne.
+Ucięty BASE EMAIL ala@fir jest po arbitrażu uratowany do ala@firma.pl:
+RENDERED, Kontakt: EMAIL_001. Kontrola działa na końcowych spanach.
+WORD_BOUNDARY zamiast sugerowanego INVALID_BOUNDARY to techniczna nazwa;
+nie blokuje. Nie żądam poprawy znanych FN/FP kotwic przy tym re-checku.
+
+POZOSTAŁA RESZTA F1 — kategoria M nie jest równa combining > 0.
+TRACE: architect_fix_F1.md pkt 2 wprost wymaga category(ch).startswith('M').
+OWNERSHIP: arena_sim._word_char jest końcowym warunkiem dopuszczenia
+spanu do renderer; upstream nie waliduje tych granic.
+REPRO: text='Ja\u034fn', span OSOBA [0,2). U+034F ma kategorię Mn,
+lecz unicodedata.combining == 0. Exact SHA zwraca RENDERED zamiast STOP;
+token zostaje przed znakiem łączącym. To samo dla wszystkich 7 kategorii.
+Oryginalne dwa repro oraz typowy polski NFD są naprawione. Ten wariant
+jest rzadkim brzegiem Unicode jawnie wymienionej klasy, nie twierdzeniem
+że zwykłe polskie dokumenty nadal zawodzą. Korekta dotyczy jednego
+predykatu; nie wymaga zmiany Anchor ani nowej architektury.
+Reproduktor: repro_r5.py. Nie zmieniono produktu ani symulatora, bez merge.
+
+Rozdzielenie przyszłego poligonu: kalibracja detektorów na czystym tekście
+z niezależnym gold; odporność na OCR w odrębnym przebiegu tych samych
+materiałów i z osobnymi wynikami. Nie łączyć ich w ocenę jakości silnika.
+To uwaga do następnego kontraktu REAL, poza zakresem poprawki F1.
+Następny raport: wolne r6+; stare raporty zachowane.
