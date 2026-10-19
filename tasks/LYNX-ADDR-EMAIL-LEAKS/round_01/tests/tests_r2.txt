@@ -1,0 +1,39 @@
+LYNX-ADDR-EMAIL-LEAKS — niezależny audyt r1
+Data: 2026-10-19
+Werdykt: PASS w zakresie poprawki; pełna regresja środowiska PARTIAL.
+Exact SHA: c9f1b54c0afd638a88758b584ee8a32e706263df.
+Kod: 6ee688ab57267f986ae6ca5580538e9b872d5173; diff base: 8e499cc.
+Oracle: brief 19b7259 / precheck 7931a21 / S1; bez zmian normalizacji,
+tokenów, alokatora i Guarda. Adresat: CC / Paweł.
+
+DOWÓD NIEZALEŻNY — repro_r2.py
+RED na 8e499cc: każde L1–L5 odtworzone; 11/12 prób rodziny nie spełniało
+pełnego maskowania i odtworzenia. GREEN na audytowanym SHA:
+12/12 prób pipeline + odtworzenie 1:1, 15/15 sprawdzeń trzech wzorców EMAIL
+(w tym właściwy wariant z newline), 5/5 tekstów bez PII bez zmian.
+Własne warianty: polskie litery, NFD, OCR w numerze i po ukośniku,
+skrót ulicy, nazwa liczbowa, wielkość liter, istniejący prefiks OCR e-maila.
+Zlepione doŻaneta@... maskowane w całości, bez pozostawienia ogona/prefiksu.
+Sprawdzenie trzeciego wzorca wymaga wejścia z newline — nie testu zwykłego
+e-maila; poprawiono w tym celu własny reproduktor przed oceną.
+
+DOSTAWA / REGRESJE
+- test_addr_email_leaks.py: 22 passed, w tym pięć /preview TestClient
+  z rzeczywistym silnikiem; w pozostałych próbach NER izolowany.
+- Jawne 8 plików regresji wymienionych w dostawie: 373 passed, 3 xfailed.
+- Domyślny zestaw tests/: 137 passed, 30 failed, 2 skipped, 1 xfailed.
+  Te 30 porażek pochodzi z test_pseudominizer.py, który odpytuje stały
+  port 8765, czyta token z lokalnego pliku i przy błędzie używa surowego
+  wejścia jako fallback. Brak tokenu w audytowym worktree; niezależne
+  żądanie bez tokenu potwierdziło HTTP 401. Nie jest to reprodukcja wycieku
+  ani regresji dokładnego SHA. Pełna regresja HTTP: NOT_CHECKED/PARTIAL.
+- 178 dokumentów: deklaracja i agregaty CC jako dowód pomocniczy;
+  nie powtarzano prywatnego benchmarku. Nie potwierdzam niezależnie 16
+  poprawionych dokumentów ani liczby 59 blokad. Dane realne nie publikowane.
+
+GATE / ZAKRES
+Paweł w bieżącym poleceniu zatwierdził ilość linii kodu. Przyjmuję zgodę
+na dostarczony rozmiar (TOTAL 108, program +9/-6, nowy test; ratio 17:1).
+Brak nowych odtworzonych defektów zmienionej klasy; ograniczenia upstream
+normalizacji i znane C5 nie zostały zamknięte tym audytem.
+Nie zmieniono produktu. Bez merge; wymaga osobnego polecenia Pawła.
