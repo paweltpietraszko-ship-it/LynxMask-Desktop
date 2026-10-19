@@ -1,0 +1,28 @@
+LYNX-ARCH-ARENA — wąski re-check v0.1.2
+Data: 2026-10-19
+Werdykt: PASS, F1 z r4/r5 ZAMKNIĘTE na tym SHA.
+Exact dostawa: 897351ce0c969f1535678cad45b317327c908158.
+Kod: dc149cd; diff base: ab38719 (v0.1.1).
+Oracle: architect_fix_F1.md pkt 2 i raport r5.
+Adresat: Architekt / CC / Paweł.
+
+Sprawdzono wyłącznie poprawkę jednego predykatu _word_char oraz dodany test.
+Kategoria Unicode M obejmuje teraz także znaki o klasie łączenia zero,
+zgodnie z rozstrzygnięciem Architekta. Nie zmieniono arbitra ani Anchor.
+Niezależny, zachowany repro_r5.py: U+034F, siedem kategorii tokenu,
+7/7 STOP zamiast RENDERED. Testy zmienionego ownera: 40 passed.
+Nie powtarzano benchmarku, modeli, API ani zakończonych prób r4/r5;
+jednoliniowy diff nie uzasadnia ich ponownego wykonania.
+PASS dotyczy poprawki F1 i mechaniki w tym zakresie, nie skuteczności
+całego silnika ani zamknięcia znanych porażek ochrony danych w Arenie.
+Nie zmieniono kodu produktu/symulatora. Bez merge. Kolejny raport r7+.
+
+NASTĘPNY RUCH
+Architekt może teraz przygotować krótki kontrakt następnego eksperymentu
+według architect_review_r1.md (595af427). Nie ma blokady F1.
+Kalibracja detektorów na czystym tekście z niezależnym gold; osobne wejścia
+po OCR i osobne wyniki odporności. Nie obniżać oceny samego silnika
+błędami OCR. Adaptery muszą odróżniać błąd mapowania od braku wykrycia;
+warianty arbitra porównywać na identycznych kandydatach.
+To zgoda na przygotowanie projektu eksperymentu, nie potwierdzenie
+nieopisanych jeszcze R2/R3 ani pozwolenie na zmianę produkcyjnego silnika.
