@@ -1,0 +1,50 @@
+LYNX-OCR-PARITY / krok 1 — BRIEF_ONLY, wąski precheck, 2026-10-19
+
+WYNIK: PASS PREIMPLEMENTATION.
+EXACT SHA briefu i punktowo czytanych ownerów:
+9de29138f6d43cfe223e70d36554b87893ff292e.
+BRANCH: task/LYNX-OCR-PARITY-STEP1.
+ODBIORCA: CC / Architekt / Paweł.
+
+ZAKRES
+Aktualny wiersz BOARD i TERAZ, brief Tasku, punktowy odczyt istniejących
+analyze/run_benchmark w backend/benchmark.py oraz odpowiedzi /preview
+w backend/pseudominizer_api.py. Źródło zasad Mobile odczytane przez GitHub:
+app/src/androidTest/java/com/lynxmask/app/BenchmarkInstrumentedTest.kt,
+blob 8928f153ca42796a58daf7e75d008ffa9046f15b.
+Bez diffu implementacji, uruchamiania kodu, testów, reproduktorów,
+backendu, modeli, OCR ani datasetu.
+
+USTALENIA
+1. Zgodność celu: dodatkowy widok diagnostyczny odpowiada pytaniu silnik/OCR.
+   Nie zmienia polityki maskowania, S3, Guarda, UI ani wspólnych tokenów.
+   BUG_SILNIKA jest kandydatem do sprawdzenia szwu/metryki, a nie automatycznym
+   defektem. BRAK_W_OCR nie jest dowodem nieobecności danych na obrazie.
+2. Wykonalność: /preview na tym SHA pobiera text z _extract_text, stripuje
+   go, przekazuje do pseudonymize_document i zwraca ten sam text w
+   original_text. Nie potrzeba nowego endpointu ani ponownego Tesseracta.
+   analyze już zwraca entities z privacy_found i false_positives;
+   run_benchmark posiada jednocześnie gt_entry, resp i wynik analyze.
+   Istniejący benchmark jest właściwym ownerem; API nie wymaga zmiany.
+3. Kontrakt ma rozłączne statusy, jawny brak danych, progi Levenshteina,
+   lokalność dopasowania, mapowanie typów, sumy kontrolne względem legacy,
+   odrębność błędów/OCR reject/Guard oraz ograniczenie do zamrożonego
+   syntetycznego zbioru. Nie wymaga stworzenia nowej miary jakości produktu.
+4. Dane źródłowe original_text tylko w pamięci; nowy plik ma zawierać
+   identyfikatory, kategorie i liczniki bez literałów. Legacy pliki i miary
+   pozostają nietknięte. Syntetyki nie uzasadniają pracy na danych realnych.
+5. Dwie ścieżki TASK_SCOPE wystarczają: istniejący benchmark i nowy test.
+   Brak nowej odpowiedzialności w produkcie, zdublowanej walidacji
+   produkcyjnej i potrzeby nowego rozstrzygnięcia produktowego.
+   GATE rozmiaru nadal obowiązuje przed implementacją.
+6. Odbiór określa granice długości, brak pola OCR, obce podobne słowa,
+   spacje w numerach, rozłączne extra, zachowanie legacy i deterministyczność.
+   Historyczne 274/290, 0/107 i 0/10/6 nie są oracle nowej klasyfikacji.
+
+GRANICE PASS
+To wyłącznie zgoda na rozpoczęcie recenzji CC i implementacji tego briefu.
+Nie potwierdzono działania backendu, dostępności datasetu, historycznych
+liczb ani poprawności przyszłej implementacji. Nie otwierano odłożonego
+poligonu/HerBERT ani wycofanych pomiarów publicznych. Brak uwag blokujących.
+Następny krok: merytoryczna recenzja i szacunek CC -> GATE -> implementacja
+-> niezależny audyt exact SHA. Bez merge.
