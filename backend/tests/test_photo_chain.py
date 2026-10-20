@@ -95,7 +95,7 @@ def test_exif_rotation_is_not_doubled(chain, monkeypatch):
 
 @pytest.mark.parametrize("ori,known,total,decision", [
     (0.60, 4, 5, "ok"), (0.5999, 5, 5, "ORIENTATION_UNCERTAIN"), (0.95, 4, 4, "QUALITY_UNEVALUABLE"),
-    (0.95, 0, 0, "QUALITY_UNEVALUABLE"), (0.95, 8, 10, "ok"), (0.95, 7, 10, "QUALITY_LOW")])
+    (0.95, 0, 0, "QUALITY_UNEVALUABLE"), (0.95, 7, 10, "ok"), (0.95, 69, 100, "QUALITY_LOW")])   # próg OWNERA 0,70
 def test_single_boundary_without_warning_band(ori, known, total, decision):
     assert photo_chain.accept(ori, known, total) == decision
 

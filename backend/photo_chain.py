@@ -5,8 +5,8 @@ Włączany wyłącznie jawnie (LYNX_OCR_ENGINE=rapid w ocr_engine.py); domyślni
 - Orientacja: lokalny model PP-LCNet_x1_0_doc_ori (Apache-2.0, ONNX, SHA256 w kodzie) na miniaturze 224 px; obrót pełnej
   rozdzielczości. Model i PP widzą te same piksele (dekodowanie z EXIF), więc obrót nie może się zdublować; EXIF nie jest arbitrem.
 - Przyjęcie odczytu: pewność klasyfikatora ORIENTACJI ≥ ORI_MIN_CONF i udział słów ≥3-literowych znanych Morfeuszowi ≥ DICT_MIN_SHARE
-  przy co najmniej MIN_WORDS słowach. Pewność PP NIE jest używana (B1 NO_SAFE_GATE). Progi to kandydaci do pomiaru i zgody OWNERA
-  (nadpisywalne zmiennymi środowiska wyłącznie na potrzeby pomiaru).
+  przy co najmniej MIN_WORDS słowach. Pewność PP NIE jest używana (B1 NO_SAFE_GATE). Próg słownikowy 0,70 zatwierdzony przez OWNERA
+  20.10; orientacja 0,60 i MIN_WORDS 5 — kandydaci (zmienne środowiska tylko na potrzeby pomiaru).
 - Słaby odczyt → odmowa z alternatywą (bez tekstu w odpowiedzi API). Awaria techniczna → kod przyczyny (str) → ocr_engine
   jednorazowo używa Tesseracta z jego bramką. Słaby, ale wykonany odczyt PP nigdy nie przechodzi do Tesseracta.
 Logi bez treści dokumentu i nazw plików: tylko kody.
@@ -27,7 +27,7 @@ ORI_MODEL = "PP-LCNet_x1_0_doc_ori.onnx"
 ORI_SHA256 = "5dcaf4e3359c35af086f64445ceefab0b4461ad5de752ca89e1d2a0fbefd37f5"
 ORI_ANGLES = (0, 90, 180, 270)            # klasa = obrót obrazu zgodnie z ruchem wskazówek (pomiar CC 20.10, 600/600)
 ORI_MIN_CONF = float(os.environ.get("LYNX_PHOTO_ORI_MIN", "0.60"))
-DICT_MIN_SHARE = float(os.environ.get("LYNX_PHOTO_DICT_MIN", "0.80"))
+DICT_MIN_SHARE = float(os.environ.get("LYNX_PHOTO_DICT_MIN", "0.70"))   # OWNER 20.10: 0,70 (OWNER_THRESHOLD_2026-10-20.md)
 MIN_WORDS = 5
 REJECT_MSG = ("Popraw ujęcie: skorzystaj ze skanera dokumentów, ustaw lepsze światło i kąt aparatu. "
               "Możesz też wkleić tekst dokumentu.")
