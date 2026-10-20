@@ -216,6 +216,47 @@ def _apply_first_names(text: str, allocator: TokenAllocator) -> str:
     return _NAME_BEFORE_RE.sub(lambda m: name(m, 1) + m.group(2) + m.group(3), text)
 
 
+# [LYNX-OCR-GATE-COMPARE E2b] Port Mobile NameEngine 3a „samo nazwisko/samo imię”: słowo z wielkiej litery ze słownika
+# nazwisk (≥4 litery) albo imion → OSOBA także bez kontekstu (lista „Grażyna / Jankowski”). Najniższy priorytet — po NER.
+# Wyjątki 1:1 z Mobile: OSOBA_DENYLIST (potwierdzone kolizje ze zwykłymi słowami) i białe listy kalendarza/krajów/miast.
+# Nadmaskowanie słowa pospolitego (np. „Malina”) świadomie akceptowane, jak w Mobile (polityka: zakryć zamiast przepuścić).
+_STANDALONE_RE = re.compile(r"(?<![\wŁŚŹĆŃĄĘÓŻ])([A-ZŁŚŹĆŃĄĘÓŻ][a-ząćęłńóśźż]{2,})(?![a-ząćęłńóśźż\w])")
+_OSOBA_DENYLIST = frozenset((
+    "zamieszkania zameldowania służbowa służbowy wydział wydziału wydzialu wydziatu informacji informacj uzyskanych "
+    "niejszej nin icznie sąd sądu rejonowy rejonowa okręgowy okręgowa skarbowy skarbowa sędzia sędziego sędzi urząd "
+    "urzędu gminy gmina ulica ulicy adres adresu imię nazwisko pesel numer miejscowość miejscowości rodo data dane "
+    "danych nikach osoba osoby osobie osobę osobą osób osobom osobami osobach zapłata zapłaty zapłacie zapłatę zapłatą "
+    "zapłat zapłatom zapłatami zapłatach łączna łącznej łączną łączny łączne łącznego łącznemu łącznym łącznych "
+    "łącznymi działający działająca działające działającego działającej działającemu działającym działających "
+    "działającymi działając musi musisz musimy musicie muszę muszą "
+    # białe listy Mobile: kalendarz, kraje, miasta (formy najczęstsze w dokumentach)
+    "styczeń luty marzec kwiecień maj czerwiec lipiec sierpień wrzesień październik listopad grudzień stycznia lutego "
+    "marca kwietnia maja czerwca lipca sierpnia września października listopada grudnia poniedziałek wtorek środa "
+    "czwartek piątek sobota niedziela polska niemcy francja włochy hiszpania portugalia irlandia belgia austria "
+    "szwajcaria czechy słowacja węgry rumunia bułgaria grecja szwecja norwegia dania finlandia estonia łotwa litwa "
+    "białoruś ukraina rosja kanada chiny japonia korea warszawa kraków gdańsk wrocław poznań łódź katowice lublin "
+    "białystok rzeszów szczecin bydgoszcz toruń kielce gliwice zabrze bytom olsztyn opole gdynia częstochowa radom "
+    "sosnowiec tychy rybnik warszawy krakowa gdańska wrocławia poznania łodzi lublina białegostoku rzeszowa szczecina "
+    "bydgoszczy torunia kielc gliwic zabrza bytomia olsztyna opola gdyni częstochowy radomia sosnowca warszawie "
+    "krakowie gdańsku wrocławiu poznaniu lublinie białymstoku rzeszowie szczecinie toruniu kielcach gliwicach zabrzu "
+    "bytomiu olsztynie opolu górze górę górą zielonej").split())
+
+
+def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
+    """Imię obok osoby (_apply_first_names), potem samotne nazwisko, potem samotne imię ze słownika (kolejność Mobile)."""
+    text = _apply_first_names(text, allocator)
+
+    def standalone(words: frozenset[str], min_len: int):
+        def repl(m: re.Match) -> str:
+            w = m.group(1)
+            if len(w) < min_len or w.lower() not in words or w.lower() in _OSOBA_DENYLIST:
+                return w
+            return allocator.assign("OSOBA", w)
+        return repl
+    text = _STANDALONE_RE.sub(standalone(_SURNAMES_FORMS_FLAT, 4), text)
+    return _STANDALONE_RE.sub(standalone(_FIRST_NAMES, 3), text)
+
+
 def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
     """Ekstrahuje wyniki NER z bieżącego state.text i zapisuje w state.ner_results.
 
@@ -334,7 +375,7 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = _sub_whole(state.text, _var_text, _tok_id)
         state.text = _sub_whole(state.text, _target, _tok_id)
-    state.text = _apply_first_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] po wariantach
+    state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 

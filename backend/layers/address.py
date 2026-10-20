@@ -42,8 +42,10 @@ from pipeline_core import PipelineState, TokenAllocator
 # Baza miast SIMC (GUS) — formy morfologiczne wygenerowane przez Morfeusz2.
 # ---------------------------------------------------------------------------
 _CITIES_PATH = pathlib.Path(__file__).parent.parent / 'cities_forms.json'
+_L_STROKE = str.maketrans('łŁ', 'lL')
 def _ascii_fold(s: str) -> str:
-    return unicodedata.normalize('NFD', s).encode('ascii', 'ignore').decode('ascii')
+    # [LYNX-OCR-GATE-COMPARE E2] ł/Ł nie rozkłada się w NFD — bez tego „Bielsko-Biała” → „Bielsko-Biaa”, a OCR czyta „Biala”
+    return unicodedata.normalize('NFD', s.translate(_L_STROKE)).encode('ascii', 'ignore').decode('ascii')
 
 
 try:
