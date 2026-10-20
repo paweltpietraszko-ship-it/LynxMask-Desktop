@@ -1,0 +1,40 @@
+LYNX-OCR-GATE-COMPARE v3.3 — wąski BRIEF_ONLY re-check C1, r2, 2026-10-20
+
+WYNIK: PASS PREIMPLEMENTATION; C1 ZAMKNIĘTE w kontrakcie.
+EXACT SHA: 27f1880a2f0369a7c9629a660f69c793b672617e.
+Poprzedni brief: 052f1d768db979b932e078a6ab7d94718cd2ec9a.
+Poprzedni raport: caf7faac57ffbf85e430b91274f44c6f0e2241eb.
+BRANCH: task/LYNX-OCR-GATE-COMPARE.
+ODBIORCA: CC / Architekt / Paweł.
+
+ZAKRES
+Aktualny wiersz BOARD, zmieniona sekcja C3 i nagłówek wersji briefu.
+Wcześniejsze dowody szwu API oraz zamknięte recenzje zachowano.
+Bez diffu implementacji, ponownej analizy pozostałego kontraktu,
+testów, modeli, zdjęć i backendu 8765.
+
+ZAMKNIĘCIE C1
+1. Każdy wariant i zbiór dostaje nową kopię śledzonego backendu przez
+   git archive exact SHA. API importowane z kopii, więc token i błąd
+   startowy zależne od __file__ nie trafiają do backendu źródłowego.
+   Nie wymaga nadpisywania stałych ani refaktoru API.
+2. Kontekst TestClient ma uruchomić rzeczywisty lifespan i komponenty;
+   nieudany start/health -> NOT_RUN(STARTUP). Brak zgody na pominięcie
+   inicjalizacji albo atrapy silnika, Guarda, OCR czy endpointu.
+3. Pusty profil odtwarzany od zera, wszystkie wskazane zmienne procesu
+   i cwd do kopii; dodano PROFILE_DIR dla allowlisty. Modele tylko odczyt.
+4. Migawki repo/OWNER backendu, ~/.pseudominizer i ~/lynx_models mają
+   wykazać brak zmian w chronionych źródłach; naruszenie -> NOT_RUN(ISOLATION).
+5. Próba wykonalności CC jest opisana jako wspierający dowód. Nie
+   uruchamiano jej niezależnie w prechecku i nie zamieniono w PASS kodu.
+   Implementacja musi dopiero wykazać to zachowanie na exact SHA.
+
+GRANICE PASS / NASTĘPNY KROK
+C1 zamknięte: kontrakt umożliwia pełny prawdziwy start bez zapisów do
+oryginalnego backendu. Brak nowych uwag w zakresie tej korekty.
+PASS dotyczy briefu, nie wdrożonej izolacji, jakości eksperymentu,
+zachowania ETAPU 2 ani gotowości produktu.
+Nie otwierano pozostałych ustaleń Architekta i OWNERA. Jeden Task,
+dwa etapy i ETAP1-FROZEN pozostają.
+CC określa ostateczny rozmiar -> zgoda OWNERA przed kodem -> implementacja
+według kontraktu -> audyt exact SHA. Merge wyłącznie na polecenie.
