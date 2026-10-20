@@ -1,0 +1,60 @@
+LYNX-OCR-PARITY-STEP2 / B1 — niezależny wąski audyt, r2, 2026-10-20
+
+EXACT SHA: a9547667d2a289a4c0c9017b344e69429d176509.
+Kod: 9e48593e66c9d0648db3509cae485488bcab4161; diff base/precheck b695b2c.
+WYNIK: FAIL narzędzia B1 — jeden finding F1 (P2).
+Nie jest to FAIL produktu ani obalenie wniosku pomiarowego NO_SAFE_GATE.
+ODBIORCA: CC / Architekt / Paweł. Bez zmian produktu i merge.
+
+F1 — NIEZGODNOŚĆ MODELI NIE ZATRZYMUJE PREFLIGHTU
+TRACE: brief B1 §2 wymaga przed pomiarem potwierdzenia wersji i SHA256
+trzech lokalnych modeli z DELIVERY fazy A. Pomiar na ustalonych modelach
+jest podstawą porównywalności. To nie polecenie dodania walidacji ONNX:
+chodzi o konkretną tożsamość zamrożonych modeli, nie zdolność ich załadowania.
+OWNERSHIP: pp_quality.preflight oblicza models_match_phase_a=False, lecz
+main kontroluje wyłącznie pre is None. Flaga nie jest warunkiem zatrzymania.
+_get_engine w istniejącym adapterze sprawdza obecność plików; nie zastępuje
+weryfikacji zamrożonego SHA256.
+REPRO: zachowany repro_r2.py na exact SHA. Trzy lokalne syntetyczne pliki
+mają inne SHA256. Rzeczywisty preflight wykrywa models_match_phase_a=False.
+Rzeczywisty main mimo tego woła _get_engine, przechodzi do pomiaru i zapisuje
+raport, exit 0. Inferencja/datasets podstawione syntetycznym stubem wyłącznie
+dla obserwacji dalszego sterowania; nie ładowano fałszywych ONNX i nie
+udawano rzeczywistych wyników OCR. W dwóch wariantach raport kończy się
+odpowiednio CANDIDATE i NO_SAFE_GATE z flagą niezgodności modeli.
+Oczekiwane: wykryta niezgodność ma zatrzymać przed silnikiem/pomiarem,
+NOT_RUN/exit 2, bez raportu zakończonego pomiaru. Sama flaga w metadanych
+nie jest potwierdzeniem wymaganej tożsamości modeli.
+
+POZYTYWNE DOWODY / ZAKRES
+- Celowane testy tests/test_pp_ocr_calibration.py: 12 passed, 0.92 s
+  (Python 3.14, nowy zapisywalny --basetemp).
+- Niezależnie dwa syntetyczne holdouty, przy identycznym known:
+  chosen_on_known identyczne; holdout ze stratą krytyczną zmienia werdykt
+  na NO_SAFE_GATE, bez zmiany wybranej reguły. Izolacja wyboru PASS.
+  Nie użyto rzeczywistego 100-obrazowego holdoutu.
+- Właściwy diff: wyłącznie skrypt, jego testy i DELIVERY/gate.
+  Produkcyjny adapter/OCR/API niezmienione. Faza A pozostaje odmową,
+  Tesseract domyślny. Wybór modelowych progów nie aktywuje B2.
+- Implementer testuje niepoprawne/NaN/inf/brakujące scores, wykluczenie
+  jakości, pusty odczyt, liczniki i deterministykę raportu bez wartości.
+  Nie powtarzano modeli, OCR, 50+100 ani pełnej suity.
+- Zgoda OWNERA na ~370 linii i dostarczone 337 nie były ponownie otwierane.
+  Gate wykluczył skrypt jako artefakt; limity/ręczne sprawdzenie opisane
+  przez CC nie są samodzielnym dowodem poprawności funkcjonalnej.
+
+GRANICE WNIOSKÓW
+NO_SAFE_GATE to dozwolony wynik B1, nie defekt narzędzia. STOP B2 zgodny
+z briefem na podstawie dowodów CC; nie uruchomiono niezależnie zbiorów
+i nie potwierdzono ilościowo wszystkich tabel/wyjaśnień detektora.
+F1 sam w sobie nie dowodzi, że CC użył innych modeli w dostarczonym pomiarze.
+Nie zamieniamy negatywnego wyniku hipotezy w wymóg kolejnej architektury.
+Propozycje kaskady/HerBERT/Guarda z BOARD nie są implementacją B1,
+nie były audytowane ani włączane do zakresu tego werdyktu.
+
+NASTĘPNY KROK
+CC naprawia tylko warunek preflightu, zachowuje repro; wąski re-check
+od a954766 + testy celowane. Bez konieczności ponawiania 150 obrazów,
+jeśli zmiana nie dotyka pomiaru i dotychczasowe hashe rzeczywiście zgodne.
+Odtworzenie: python repro_r2.py <repo exact SHA> <zapisywalny temp>.
+Exit 1 potwierdza F1; po zamknięciu (i adaptacji HEAD) exit 0.

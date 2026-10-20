@@ -1,0 +1,34 @@
+LYNX-OCR-PARITY-STEP2 / B1 — wąski re-check F1, r3, 2026-10-20
+
+WYNIK: PASS narzędzia B1 na exact SHA; F1 ZAMKNIĘTE.
+EXACT SHA: 1e0174f60ed1432e4c4dab2b9094267d1551c7e7; kod 40d6673.
+DIFF BASE: a9547667d2a289a4c0c9017b344e69429d176509.
+Poprzedni raport/dowody: 35dfba5, repro_r2.py.
+ODBIORCA: CC / Architekt / Paweł.
+
+DOWODY
+- Wąski diff narzędzia/testów: main sprawdza models_match_phase_a przed
+  pobraniem silnika i zwraca NOT_RUN/2 dla niezgodnego SHA256; dodano test.
+  Żadnych zmian algorytmu pomiaru, wyboru reguł, inferencji ani produktu.
+- Celowane tests/test_pp_ocr_calibration.py: 13 passed (0.93 s).
+- Zachowany repro_r2.py, jedyna adaptacja w pamięci: asercja HEAD do
+  audytowanego SHA. Oba warianty: exit_code=2, engine_called=false,
+  report_written=false, models_match=false. F1_CLOSED, exit 0.
+  Oryginalny reproduktor pozostawiono bez zmian.
+- Wcześniejsze dowody izolacji holdoutu i testowalności B1 zachowane;
+  zakres poprawki nie uzasadnia ich ponawiania ani nowego pomiaru 50+100.
+
+GRANICE PASS
+PASS dotyczy narzędzia B1 i zamknięcia F1, nie jakości pełnego produktu.
+NO_SAFE_GATE z pomiaru CC pozostaje osobnym, dopuszczalnym wynikiem
+eksperymentu; STOP B2 według obecnego briefu pozostaje bez zmian.
+Nie odtwarzano ilościowych wyników 150 obrazów. Inferencja/model nie
+uruchamiane; bez HTTP, zmian backendu OWNERA, danych realnych i merge.
+Propozycje kaskady z BOARD nie należą do audytowanej implementacji B1.
+Następny krok: przekazanie OWNEROWI / Architektowi. Merge na polecenie.
+
+ODTWORZENIE
+python -m pytest backend/tests/test_pp_ocr_calibration.py -q --tb=short
+  --basetemp=<nowy zapisywalny katalog>
+python repro_r2.py <repo exact SHA> <zapisywalny temp>
+  (wyłącznie adaptacja asercji HEAD z a954766 do 1e0174f).
