@@ -56,7 +56,7 @@ interface PreviewResult {
   error:              string | null;
   anonymizer_active:  boolean;
   original_text:      string;
-  ocr:                { quality: string; warning: string; confidence: number } | null;
+  ocr:                { quality: string; warning: string; confidence: number; engine?: string } | null;
 }
 
 // ── Krypto helper ─────────────────────────────────────────────────────────────
@@ -135,12 +135,14 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   const [pasteText,    setPasteText]    = useState("");
   const [dragOver,     setDragOver]     = useState(false);
   const [ocrWarning,   setOcrWarning]   = useState(false);
+  const [ocrRejected,  setOcrRejected]  = useState(false);  // [LYNX-PHOTO-CHAIN] odmowa zdjęcia → „Wklej tekst”
   const [copiedPse,    setCopiedPse]    = useState(false);  // [UI-PSE-05]
   const [copiedText,   setCopiedText]   = useState(false);  // [UI-PSE-06]
   const [, setPendingFile]  = useState<File | null>(null);
   const fileRef    = useRef<HTMLInputElement>(null);
   const imgRef     = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const pasteRef   = useRef<HTMLTextAreaElement>(null);
 
   // Śledź zaznaczenie w oknie podglądu przez selectionchange
   useEffect(() => {
@@ -170,6 +172,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
     setAddedToken("");
     setGuardBlocked(false);
     setOcrWarning(false);
+    setOcrRejected(false);
     setPendingFile(null);
     const form = new FormData();
     form.append("file", file);
@@ -188,8 +191,9 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
         let errData: any = {};
         try { errData = await res.json(); } catch { /* brak JSON */ }
 
-        // [OCR-REJECT]
-        if (res.status === 422 && errData?.ocr_rejected) {
+        // [OCR-REJECT] [LYNX-PHOTO-CHAIN] odmowa zdjęcia przychodzi też jako 400 z ocr.quality="reject" (bez tekstu)
+        if ((res.status === 422 && errData?.ocr_rejected) || errData?.ocr?.quality === "reject") {
+          setOcrRejected(true);
           setError(errData.error ?? "Jakość OCR zbyt niska do bezpiecznego maskowania.");
         } else {
           setError(errData?.error ?? `Błąd serwera (${res.status})`);
@@ -447,6 +451,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
 
               {/* [UI-PSE-04] flex:1 — textarea wypełnia dostępną wysokość */}
               <textarea
+                ref={pasteRef}
                 value={pasteText}
                 onChange={e => setPasteText(e.target.value)}
                 onDrop={e => {
@@ -509,6 +514,12 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
               fontSize: 15, color: T.red, lineHeight: 1.5,
             }}>
               ✕ {error}
+              {ocrRejected && (
+                <button onClick={() => { setError(""); setOcrRejected(false); pasteRef.current?.focus(); }}
+                  style={{ marginLeft: 12, padding: "4px 12px", borderRadius: 6, fontSize: 14, cursor: "pointer" }}>
+                  Wklej tekst
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -816,7 +827,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
               {result.ocr?.warning || "Jakość odczytu jest niska. Maskowanie może zawierać błędy."}
             </div>
             <div style={{ fontSize: 14, color: T.textMuted, marginBottom: 14 }}>
-              Pewność odczytu: {result.ocr?.confidence?.toFixed(0)}%
+              {result.ocr?.engine !== "rapid" && <>Pewność odczytu: {result.ocr?.confidence?.toFixed(0)}%</>}
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button

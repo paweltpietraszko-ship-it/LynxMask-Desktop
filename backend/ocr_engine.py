@@ -126,8 +126,9 @@ class OCRResult:
     confidence:  float        # 0.0 – 100.0
     quality:     str          # "ok" | "warn" | "reject"
     warning_msg: str          # komunikat dla użytkownika
-    engine:      str          # "tesseract" | "unavailable"
+    engine:      str          # "tesseract" | "rapid" | "unavailable"
     word_count:  int
+    reason:      str = ""     # [LYNX-PHOTO-CHAIN] kod decyzji/awarii łańcucha zdjęć (bez treści)
 
     @property
     def quality_label(self) -> str:
@@ -450,11 +451,13 @@ def extract_text_from_image(image_bytes: bytes, filename: str) -> OCRResult:
     Jeśli Tesseract niedostępny — zwraca OCRResult z instrukcją instalacji
     zamiast rzucać wyjątek (fail-graceful dla UI).
     """
-    if os.environ.get("LYNX_OCR_ENGINE", "").strip().lower() == "rapid":  # [LYNX-OCR-PARITY-STEP2] faza A, tylko jawnie
-        from ocr_rapid import extract_rapid
-        rapid = extract_rapid(image_bytes, OCRResult)  # None = awaria techniczna → Tesseract z własną bramką
-        if rapid is not None:
-            return rapid
+    fallback = ""
+    if os.environ.get("LYNX_OCR_ENGINE", "").strip().lower() != "tesseract":  # [LYNX-PHOTO-CHAIN] domyślnie (OWNER 20.10)
+        from photo_chain import read_photo
+        photo = read_photo(image_bytes, OCRResult)  # str = awaria techniczna → jednorazowo Tesseract z własną bramką
+        if not isinstance(photo, str):
+            return photo
+        fallback = photo
     if not _tesseract_available():
         msg = (
             "OCR niedostępny — Tesseract nie jest zainstalowany. "
@@ -469,6 +472,7 @@ def extract_text_from_image(image_bytes: bytes, filename: str) -> OCRResult:
 
     try:
         result = _run_tesseract(image_bytes, filename)
+        result.reason = fallback
         logger.info(
             f"[OCR] obraz: {result.word_count} słów, "  # [LYNX-SEC-DISK-PII] bez nazwy pliku
             f"conf={result.confidence:.1f}%, jakość={result.quality}"

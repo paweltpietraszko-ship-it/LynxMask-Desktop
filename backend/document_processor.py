@@ -138,7 +138,7 @@ def _extract_text(content: bytes, filename: str) -> tuple[str, str | None, dict 
             "quality":    result.quality,
             "warning":    result.warning_msg,
             "engine":     result.engine,
-            "word_count": result.word_count,
+            "word_count": result.word_count, "reason": result.reason,  # [LYNX-PHOTO-CHAIN] kod bez treści
         }
         if not result.text:
             return "", result.warning_msg, ocr_meta
