@@ -33,7 +33,6 @@ ROOT = Path(__file__).resolve().parents[3]
 if "--worker" not in sys.argv:   # worker importuje backend wyłącznie z kopii (cwd)
     sys.path.insert(0, str(ROOT / "backend"))
     sys.path.insert(0, str(ROOT / "tasks" / "LYNX-OCR-PARITY-STEP2" / "measure"))
-
 # ── reguły zamrożone przed holdoutem ─────────────────────────────────────────
 N_GRID = (15, 20, 30, 40, None)        # None = ∞
 FRAG_MIN = 4                           # fragment gold widoczny: >= 4 kolejne znaki alfanumeryczne
