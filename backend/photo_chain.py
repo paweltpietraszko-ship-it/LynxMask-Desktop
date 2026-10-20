@@ -44,7 +44,9 @@ def _ori_session() -> Any:
         import onnxruntime as ort
         path = ocr_rapid.verified_model(ORI_MODEL, ORI_SHA256)
         ocr_rapid.disable_onnx_telemetry()
-        _session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = ocr_rapid.THREADS
+        _session = ort.InferenceSession(str(path), opts, providers=["CPUExecutionProvider"])
     return _session
 
 

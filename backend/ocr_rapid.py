@@ -31,6 +31,9 @@ MODEL_SHA256 = {
     "ch_ppocr_mobile_v2.0_cls_mobile.onnx": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c",
 }
 TIMEOUT_S = float(os.environ.get("LYNX_OCR_RAPID_TIMEOUT", "60"))
+# Wątki ONNX: więcej ≠ szybciej (pomiar 20.10, 24 wątki logiczne: wszystkie 1,7–2,2 s/str. i ~84% CPU; 6 wątków 1,0–1,4 s
+# i ~47% CPU) — użytkownik pracuje obok, więc PP nie zajmuje całego procesora. Ocena sprzętu: LYNX-INSTALLER.
+THREADS = int(os.environ.get("LYNX_OCR_THREADS", 0)) or min(6, max(2, (os.cpu_count() or 8) // 4))
 COLUMN_GAP = "    "   # duża przerwa w linii = osobne pole/kolumna, nie jeden wyraz
 
 _engine: Any = None
@@ -73,7 +76,7 @@ def _get_engine() -> Any:
             "Global.log_level": "error",
             "Det.ocr_version": OCRVersion.PPOCRV6, "Det.model_type": ModelType.SMALL, "Det.model_path": str(paths["det"]),
             "Rec.ocr_version": OCRVersion.PPOCRV6, "Rec.model_type": ModelType.SMALL, "Rec.model_path": str(paths["rec"]),
-            "Cls.model_path": str(paths["cls"]),
+            "Cls.model_path": str(paths["cls"]), "EngineConfig.onnxruntime.intra_op_num_threads": THREADS,
         })
     return _engine
 

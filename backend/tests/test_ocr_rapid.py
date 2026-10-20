@@ -70,3 +70,7 @@ def test_build_text_rows_columns_and_polish_letters():
 def test_build_text_keeps_one_value_together():
     # dwa fragmenty jednego numeru z małą przerwą → jedna spacja, nie separator kolumn
     assert ocr_rapid.build_text([box(10, 10, 100, 30), box(108, 10, 200, 30)], ["+48 605", "858 864"]) == "+48 605 858 864"
+
+
+def test_threads_leave_cpu_for_the_user():
+    assert 2 <= ocr_rapid.THREADS <= 6 or os.environ.get("LYNX_OCR_THREADS")

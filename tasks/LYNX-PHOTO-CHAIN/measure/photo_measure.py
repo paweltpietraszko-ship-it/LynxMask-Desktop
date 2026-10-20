@@ -4,6 +4,9 @@ photo_measure.py — LYNX-PHOTO-CHAIN §3: pomiar odbioru łańcucha zdjęć (po
 Kroki (--steps):
   thresholds  w procesie (bez API): pewność orientacji i udział słownikowy odczytu PP na zbiorze ZNANYM (obroty 0/90/180/270)
               i — tylko agregaty — na realnych zdjęciach (--real). Tabela kandydatów progów: odmowy wg poziomu L0–L3.
+  sizes       w procesie: wpływ zmniejszenia obrazu przed PP (dłuższy bok ≤ L) na czas i utratę drobnych znaków — syntetyki
+              ZNANE (gold obecny w odczycie, benchmark_ocr_diagnostics) oraz realne zdjęcia (tylko agregaty: identyfikatory
+              z odczytu pełnej rozdzielczości zachowane po zmniejszeniu). Proces bez dławienia Windows (jak silnik).
   e2e         obraz → prawdziwy /preview w jednorazowej kopii `git archive <SHA> backend` (TestClient, pełny _lifespan, pusty
               profil, katalog OWNERA chroniony migawką) — wariant main (Tesseract) albo gałąź z LYNX_OCR_ENGINE=rapid.
               Ocena wartości gold i would_ask: funkcje z tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py (bez zmian).
@@ -95,6 +98,73 @@ def step_thresholds(a) -> dict:
             real.append({"ori": round(conf, 2), "share": round(known / total, 2) if total else 0.0, "words": total,
                          "secs_ocr": round(time.perf_counter() - t0, 2), "megapixels": round(img.shape[0] * img.shape[1] / 1e6, 1)})
         out["real_aggregates_sorted_by_ori"] = sorted(real, key=lambda r: r["ori"])   # bez nazw plików i tekstu
+    return out
+
+
+# ── sizes ────────────────────────────────────────────────────────────────────
+def _limit(img, side):
+    import cv2
+    h, w = img.shape[:2]
+    if side is None or max(h, w) <= side:
+        return img
+    s = side / max(h, w)
+    return cv2.resize(img, (round(w * s), round(h * s)), interpolation=cv2.INTER_AREA)
+
+
+def _ids(text: str) -> set:
+    import re
+    flat = re.sub(r"(?<=\d)[ -](?=\d)", "", text)
+    return set(re.findall(r"\d{6,}|[\w.+-]+@[\w-]+\.[\w.]+|[A-Z]{2,3}\d{5,7}", flat))
+
+
+def _timed_read(img):
+    import ocr_rapid
+    import photo_chain
+    t0 = time.perf_counter()
+    angle, _ = photo_chain.classify(img)
+    text = ocr_rapid.recognize(photo_chain.upright(img, angle), 600)
+    return text, time.perf_counter() - t0
+
+
+def step_sizes(a) -> dict:
+    import startup_check
+    from benchmark_ocr_diagnostics import classify_miss
+    out = {"full_speed": startup_check.keep_full_speed()}
+    gt = json.loads((a.known / "ground_truth.json").read_text(encoding="utf-8"))
+    syn = {}
+    for side in (None, 1600, 1400, 1200, 1000):
+        kept = total = 0
+        secs = []
+        for g in gt:
+            text, t = _timed_read(_limit(_imread(a.known / g["file"]), side))
+            secs.append(t)
+            vals = [str(v) for v in g["entities"].values()]
+            total += len(vals)
+            kept += sum(classify_miss(v, text)[0] == "BUG_SILNIKA" for v in vals)
+        syn[str(side or "full")] = {"gold_in_ocr": kept, "gold_total": total, "secs_median": _med(secs), "secs_max": round(max(secs), 2)}
+        print("[PHOTO] sizes synt", side, syn[str(side or "full")], flush=True)
+    out["synthetic_known"] = syn
+    if a.real:
+        real = {str(s or "full"): {"ids_kept": 0, "secs": []} for s in (None, 3500, 3000, 2500, 2000)}
+        ids_full = 0
+        for p in sorted(q for q in a.real.iterdir() if q.suffix.lower() in (".jpg", ".jpeg", ".png")):
+            img = _imread(p)
+            ref = None
+            for side in (None, 3500, 3000, 2500, 2000):
+                text, t = _timed_read(_limit(img, side))
+                ids = _ids(text)
+                if ref is None:
+                    ref = ids
+                    ids_full += len(ref)
+                r = real[str(side or "full")]
+                r["ids_kept"] += len(ref & ids)
+                r["secs"].append(t)
+        for r in real.values():
+            r["ids_full"] = ids_full
+            r["secs_median"], r["secs_max"] = _med(r["secs"]), round(max(r["secs"]), 2)
+            del r["secs"]
+        out["real_aggregates"] = real
+        print("[PHOTO] sizes real", real, flush=True)
     return out
 
 
@@ -238,9 +308,9 @@ def main() -> int:
         return 2
     report = json.loads(a.out.read_text(encoding="utf-8")) if a.out.is_file() else {}
     for step in a.steps.split(","):
-        if step == "thresholds":
+        if step in ("thresholds", "sizes"):
             _cc()
-            report["thresholds"] = step_thresholds(a)
+            report[step] = step_thresholds(a) if step == "thresholds" else step_sizes(a)
         else:
             report[f"e2e_{a.name}"] = step_e2e(a)
         a.out.parent.mkdir(parents=True, exist_ok=True)
