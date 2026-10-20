@@ -44,9 +44,23 @@ Rozmiar: +457/−102 (produkt +254/−51 w 7 plikach, testy +218/−51). Zgoda O
   katalog modeli przy silniku, **prawdziwe modele z blokadą połączeń wychodzących** (mapa klas 0/90/180/270 + odczyt), limit wątków,
   wyłączenie dławienia.
 - Pełna suita main `2c9fdb9` vs gałąź: identycznie `30 failed, 137 passed, 2 skipped, 1 xfailed` (porażki istniejące, niezależne).
-- **Strażnik `benchmark.py` — nie uruchomiony (świadomie):** wymaga portu 8765, na którym chodzi silnik deweloperski OWNERA; przy
-  fladze OFF ścieżka Tesseracta różni się od main jedną linią (`result.reason = ""`), warstwy maskowania nietknięte. Do decyzji
-  Codexa, czy wymaga.
+- **Strażnik `benchmark.py` przez nowy czytnik** (na polecenie OWNERA 20.10; serwer z gałęzi `b86cf6a`, `LYNX_OCR_ENGINE=rapid`,
+  próg słownikowy 0,60, świeża kopia profilu testowego, `dataset_20260627_095419`, `--no-generate`; serwer OWNERA zatrzymany na czas
+  pomiaru i uruchomiony potem z main). Dosłownie:
+  ```
+  ── Paczka 1 ──  recall=97.4%  precision=66.5%  FP=168  crit_miss=1  rej=0  guard=0  err=0
+  [OCR-DIAG] pominięte BUG_SILNIKA=1 OCR_ZNIEKSZTAŁCONY=3 BRAK_W_OCR=5 NOT_MEASURED=0 REVIEW=0 | spoza gold EXTRA_MASK_OK=35 EXTRA_MASK_POLICY=69 UX_FP=0 REVIEW=64 | dok. accepted=50 guard_blocked=0 rejected=0 error=0 | zgodność z legacy: OK
+  ```
+  Odniesienie (main, Tesseract, ten sam zbiór): `recall=94.5% precision=62.3% FP=166 crit_miss=0 rej=7`, `[OCR-DIAG] BUG_SILNIKA=0
+  OCR_ZNIEKSZTAŁCONY=13 BRAK_W_OCR=3`, `accepted=43 rejected=7`. Rozbiór 9 pominięć gałęzi (klasyfikacja na odczycie PP):
+  - `crit_miss=1` = IBAN w `doc_00012` — **BRAK_W_OCR**: detektor PP pomija całą linię (znane z B1); wartości nie ma w tekście →
+    brak wycieku, strata treści. U Tesseracta ten dokument był odrzucany.
+  - `BUG_SILNIKA=1` = numer umowy `U-…/2024` w `doc_00004` (odczyt poprawny, niezakryty). **Luka silnika istniejąca także na czystym
+    tekście** (main: `Umowa nr U-00510/2024` → jawne; `nr UMOWA/2023/NR/0895` → zakryte). U Tesseracta dokument odrzucany, więc
+    niewidoczna. Inna klasa (NUMER, nie OCR) → **FINDING do `LYNX-ENGINE-BACKLOG`**, nienaprawiane w tym Tasku.
+  - Pozostałe 7: BRAK_W_OCR 4 (księgi wieczyste ×2, adresy ×2), OCR_ZNIEKSZTAŁCONY 3 (adresy ×2, sygnatura).
+  Uwaga do miarki E2E: `chain_compare` nie oznaczył `U-…/2024` jako HOLE (dowód „fragment ≥4 znaki” nie zadziałał na tym zapisie) —
+  benchmark jest tu ostrzejszy; oba narzędzia razem.
 
 ## Pomiar odbioru (§3) — `tasks/LYNX-PHOTO-CHAIN/measure/photo_measure.py`
 Odtworzenie (Codex lokalnie, modele w `backend/models/ocr/` jak niżej, raport poza repo):
