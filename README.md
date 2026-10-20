@@ -17,6 +17,18 @@ This repository is included in my AI evaluation portfolio as evidence of hands-o
 - **Build the app** (after code changes): `build.bat` — produces `frontend/src-tauri/target/release/pseudominizer.exe`.
 - Requirements: Python 3 with the `py` launcher, Node.js, Rust (for building only).
 
+## Experimental OCR: PP-OCRv6 small (phase A, off by default)
+
+The default OCR is Tesseract. A test-only PaddleOCR PP-OCRv6 small engine (via RapidOCR + onnxruntime, CPU) can be enabled for local measurements; in phase A it **never releases a result** — `/preview` refuses it (HTTP 422, `ocr.engine = "rapid"`) until its quality gate is calibrated (`tasks/LYNX-OCR-PARITY-STEP2/brief.md`).
+
+Offline setup (once, before starting the engine; nothing is downloaded while processing documents):
+
+1. `py -3 -m pip install rapidocr onnxruntime`
+2. Put the three model files in `%USERPROFILE%\lynx_models\ppocrv6_small\` (or set `LYNX_OCR_MODEL_DIR`): `PP-OCRv6_det_small.onnx`, `PP-OCRv6_rec_small.onnx`, `ch_ppocr_mobile_v2.0_cls_mobile.onnx` (the RapidOCR package ships them in `site-packages/rapidocr/models/`).
+3. Start the backend with `LYNX_OCR_ENGINE=rapid` (optional `LYNX_OCR_RAPID_TIMEOUT`, default 60 s). Missing package/models, an error or a timeout fall back to Tesseract with its own quality gate.
+
+Licences: RapidOCR — Apache-2.0; PP-OCRv6 model weights — Apache-2.0 (© Baidu / PaddleOCR authors, see RapidOCR `MODEL_LICENSES.md`). Attribution must accompany any distribution.
+
 ## My role
 
 My role has been to define product behavior, decide which failures matter, set acceptance targets, challenge AI-generated implementations and retain final product and architecture decisions. AI coding agents, especially Claude Code, were used heavily to inspect, implement and revise the codebase.
