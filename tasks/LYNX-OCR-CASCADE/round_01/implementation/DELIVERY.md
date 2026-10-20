@@ -48,6 +48,26 @@ Werdykt mechaniczny (reguła w `verdict()`): **naprawa sumą kontrolną `NOT_FEA
    (np. zakrycie spornego fragmentu + „zrób wyraźniejsze zdjęcie albo wklej tekst”), nie samą odmowę.
 5. Najmocniejszy sygnał bez drugiego OCR: `pp_invalid_id` (identyfikator o złej długości/sumie w odczycie PP) — 24 / 53 regiony.
 
+## Uzupełnienie po uwadze Pawła: bramka jakości obrazu (20.10)
+C1 mierzyło wszystkie obrazy, bez dzisiejszej bramki produktu (`ocr_engine._quality_from_confidence`: średnia pewność
+Tesseracta < 70 → odmowa). Przekrój tych samych wyników wg tej pewności (`_run_tesseract(...).confidence` na każdym obrazie,
+straty PP z raportu C1; „strata” = wartość gold nieodczytana wiernie, co nie oznacza wycieku — zniekształcone cyfry silnik nadal maskuje):
+
+| próg | znany: dok. przyjęte / straty PP (kryt.) | holdout: dok. przyjęte / straty PP (kryt.) | odrzucone obrazy bez degradacji (L0) |
+|---|---|---|---|
+| 0 | 50 / 32 (2) | 100 / 57 (0) | 0 |
+| 70 (dziś) | 43 / 21 (0) | 84 / 38 (0) | 0 |
+| 75 | 38 / 16 (0) | 78 / 32 (0) | 0 |
+| 80 | 29 / 13 (0) | 55 / 21 (0) | 5 z 38 |
+
+- **doc_00004 (pewność 19,6) i doc_00012 (15,8) produkt już dziś odrzuca.** Oba „flagowe” przypadki B1/C1 leżą poniżej bramki;
+  po bramce 70 PP nie traci żadnej wartości krytycznej na 127 przyjętych obrazach.
+- Próg 80 odrzuca też część obrazów niezdegradowanych (pewność Tesseracta zależy od układu i czcionki, nie tylko od jakości
+  zdjęcia); 75 nie odrzuca żadnego L0/L1 w holdoucie i 1 L1 w znanym.
+- Wniosek CC: kaskada powinna używać Tesseracta przede wszystkim jako **miernika jakości obrazu** (bramka przed PP),
+  a nie jako drugiego czytelnika. Zmiana progu to zmiana produktu — osobny kontrakt; syntetyczna degradacja nie wystarczy
+  do wyboru 75 vs 80, potrzebne realne zdjęcia z telefonu (lokalnie u Pawła).
+
 ## Powtarzalność
 Drugi identyczny przebieg na `aff284c` (te same zbiory i modele): raport JSON identyczny po usunięciu `rss_mb`, `secs_pp`, `secs_tess` (porównanie `==` całych słowników: True).
 
