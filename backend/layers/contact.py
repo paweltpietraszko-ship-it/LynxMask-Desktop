@@ -68,13 +68,15 @@ _EMAIL_OCR_RE = re.compile(
     r"[ \t\n]{0,2}"                 # OCR: spacja/newline po @
     # domena + TLD; spacja OCR przy separatorze TLD tylko gdy domena nie ma jeszcze kropki i TLD małymi literami —
     # „example.pl. termin”, „pl. Termin” to koniec zdania, nie TLD (LYNX-T11 E1)
-    r"(?:[a-zA-Z0-9.\-]{2,}[.,][a-zA-Z]{2,6}|[a-zA-Z0-9\-]{2,}[ \t]?[.,][ \t]?(?-i:[a-z]{2,6}))"
+    r"(?:[a-zA-Z0-9.\-]{2,}[.,][^\W\d_]{2,6}|"  # TLD: litery Unicode — OCR „.pì” (LYNX-OCR-GATE-COMPARE E2)
+    r"[a-zA-Z0-9\-]{2,}[ \t]?[.,][ \t]?(?-i:[a-z]{2,6}))"
     r"(?!\w)",                     # TLD — nie może ciągnąć się dalej (BUG-EMAIL-GREEDY)
     re.IGNORECASE,
 )
 
 # Numer wewnętrzny 3-2-2 (np. "322 19 27") — port z STRUCTURAL_PATTERNS
-_PHONE_322_RE = re.compile(r"(?<!\d)\d{3}[\s\-]\d{2}[\s\-]\d{2}(?!\d)")
+# [LYNX-OCR-GATE-COMPARE E2] dalsze grupy po „-”/„.” (9-cyfrowy NIP z OCR „742-33-75-90”) w całości — nie urywać ogona
+_PHONE_322_RE = re.compile(r"(?<!\d)\d{3}[\s\-]\d{2}[\s\-]\d{2}(?:[-.]\d{1,4})*(?!\d)")
 
 # Normalizacja emaila po OCR: usun biale znaki wokol @, © -> @, przecinek -> kropka w TLD
 _AT_NOISE_RE   = re.compile(r"[ \t\n]{0,2}[@©][ \t\n]{0,2}")
