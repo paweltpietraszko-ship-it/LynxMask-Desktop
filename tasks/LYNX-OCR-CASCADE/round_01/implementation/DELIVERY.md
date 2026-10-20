@@ -107,4 +107,21 @@ TOTAL_LINES: zgoda Pawła na ~470 l. (20.10) przed kodem; faktycznie 550 l. (w t
   przypadków gold identyczna. Zmienia się tylko podział linii „tylko Tesseract”: znany TESS_ONLY_UNCERTAIN 10→18; holdout
   PP_MISSING_TESS_PRESENT 22→23 (dodatkowe bez wartości gold), TESS_ONLY_UNCERTAIN 30→38; konkretne alarmy/dok. holdout 1,03→1,04.
   Reguł nie dostrajano do liczb (holdout był już otwarty — poprawka wynika wyłącznie z F1/F2).
-- Rozmiar po rundzie 2: 589 l. (zgoda Pawła ~470) — przekroczenie zgłoszone Pawłowi.
+- Rozmiar po rundzie 2: 584 l. (zgoda Pawła ~470) — przekroczenie zgłoszone Pawłowi.
+- GATE r2 (`gate.py … e164352 1accad3 …/gate_r2.txt`), stdout dosłownie:
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 1accad32fec47bd9f7f0fee0311bdc41cdb94e67
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 174 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - tasks\LYNX-OCR-CASCADE\round_01\tests\repro_r2.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OCR-CASCADE/cc_review_c1.md
+  - tasks/LYNX-OCR-CASCADE/measure/paired_ocr.py
+  - tasks/LYNX-OCR-CASCADE/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-OCR-CASCADE/round_01/implementation/gate.txt
+  - tasks/LYNX-OCR-CASCADE/round_01/tests/repro_r2.py
+  - tasks/LYNX-OCR-CASCADE/round_01/tests/tests_r2.txt
+```
