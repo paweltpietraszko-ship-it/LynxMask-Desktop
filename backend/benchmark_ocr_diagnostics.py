@@ -85,6 +85,7 @@ def has_fuzzy_counterpart(value_n: str, text: str) -> bool:
 
 _LEFT_JOIN = "._%+@-"   # znak przed wartością, który czyni ją częścią dłuższej (skrzynka, nazwisko złożone)
 _RIGHT_JOIN = "@_-"
+_RIGHT_CONT = ".,/:"  # interpunkcja to granica tylko, gdy nie idzie za nią dalszy ciąg wartości
 
 
 def present_as_whole(value_n: str, text: str) -> bool:
@@ -97,7 +98,9 @@ def present_as_whole(value_n: str, text: str) -> bool:
     for m in re.finditer(pattern, text, re.IGNORECASE):
         before = text[m.start() - 1] if m.start() > 0 else " "
         after = text[m.end()] if m.end() < len(text) else " "
-        if not (before.isalnum() or before in _LEFT_JOIN) and not (after.isalnum() or after in _RIGHT_JOIN):
+        nxt = text[m.end() + 1] if m.end() + 1 < len(text) else " "
+        continues = after in _RIGHT_CONT and nxt.isalnum()   # „.pl”, „,5” — dalszy ciąg innej wartości (Codex r3)
+        if not (before.isalnum() or before in _LEFT_JOIN) and not (after.isalnum() or after in _RIGHT_JOIN or continues):
             return True
     return False
 

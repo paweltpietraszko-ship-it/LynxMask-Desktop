@@ -32,6 +32,8 @@ def test_norm_identical_to_benchmark(v):
     ("anna@example.org", "Kontakt: joanna@example.org", "REVIEW"),
     ("44051401359", "Numer: 1440514013599", "REVIEW"),
     ("Jan Nowak", "Podpis: Jan Nowak.", "BUG_SILNIKA"),                             # interpunkcja to granica
+    ("anna@example.org", "Kontakt: anna@example.org.pl", "REVIEW"),                # Codex r3: dłuższa domena
+    ("anna@example.org", "Pisz na anna@example.org. Dziękuję", "BUG_SILNIKA"),     # kropka kończąca zdanie
     ("44051401359", "PESEL:\n440514 01359", "BUG_SILNIKA"),                         # spacje i nowa linia w środku
 ])
 def test_classify_miss(value, text, label):
