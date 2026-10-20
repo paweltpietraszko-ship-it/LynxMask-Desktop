@@ -130,6 +130,7 @@ przyjęty; wybór N wg funkcji C4 (w tym `NO_RULE`); P1 tie-break; wykrycie zapi
    z tym ograniczeniem dowodowym. Codex audytuje końcowy exact SHA z oboma zestawami dowodów.
 Testy ETAPU 2 trafiają do `backend/tests/test_ocr_chain_compare.py` (limit gate: 2 nowe pliki).
 **ETAP 2 — przyczyny potwierdzone reproduktorem przed kodem (CC, 20.10, po `ETAP1-FROZEN` `32ea383`):** (1) `layers/address.py::_ascii_fold` gubi „ł/Ł” (NFD nie rozkłada ł) → „Bielsko-Biała”→„Bielsko-Biaa”, OCR „Biala”/„Lodz”/„Glogow” nie pasuje do SIMC → miasto jawne przy tokenie ADRES; (2) `layers/contact.py::_EMAIL_OCR_RE` — TLD tylko `[a-zA-Z]`, OCR „.pì” → e-mail w całości jawny; (3) `layers/identity.py::_NIP_RE_OCR` dopasowuje „373251.0081” z numeru działki i urywa „.9795”; (4) `layers/contact.py::_PHONE_322_RE` dopasowuje „742-33-75” z 9-cyfrowego NIP i urywa „-90”; (5) wzorzec „ur.” wymaga `\d` → `ur. 12.O3.1985` jawne. Pliki `contact.py`, `address.py` dopisane do TASK_SCOPE przed kodem; `numeric.py` bez zmian.
+**ETAP 2b (OWNER 20.10: „Tak” — dopisać do tego bloku zamiast osobnego Tasku):** samotne imię/nazwisko ze słownika (test Mobile `testy/test_imiona_nazwiska_100_11_07.txt`: Desktop zostawia jawne Grażyna, Sergiej, Diego, Wiktoria, Kalina, Jankowski, Kwiatkowski; Mobile golden — wszystkie zakryte). Przyczyny: (a) Desktop używa słowników imion/nazwisk tylko obok osoby rozpoznanej przez spaCy, Mobile `NameEngine` 3a maskuje słowo ze słownika także samotnie (z `OSOBA_DENYLIST` i białymi listami); (b) Desktop `names_inflected.json` ma 199 imion, Mobile 3609. Port: reguła 3a w `layers/ner_adapter.py` (wywołanie zamiast istniejącej linii `_apply_first_names`, funkcja `apply_ner_layer` nie rośnie) + słownik imion Mobile ∪ 11 zdrobnień Desktop (format: jedno imię na linię). Nazwiska: zostaje `surnames_top1000.json` (39 tys. Mobile — osobna decyzja: pamięć/nadmaskowanie). Inna klasa niż „kotwica + OCR” — świadome rozszerzenie bloku na polecenie OWNERA.
 
 TASK_SCOPE:
 - tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py
@@ -138,6 +139,8 @@ TASK_SCOPE:
 - backend/layers/numeric.py
 - backend/layers/contact.py
 - backend/layers/address.py
+- backend/layers/ner_adapter.py
+- backend/names_inflected.json
 
 OUT_OF_SCOPE: zmiany produkcyjne poza ETAPEM 2 (OCR, `/preview`, Guard, HerBERT w produkcie, progi, prostowanie w produkcie,
 UI/onboarding, S4), aktywacja PP, przeniesienie N do polityki produktu, realne dane w repo, pełna suita. Wdrożenie łańcucha w produkcie
