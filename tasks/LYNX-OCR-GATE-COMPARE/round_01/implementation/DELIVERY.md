@@ -100,3 +100,61 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-OCR-GATE-COMPARE/round_01/implementation/DELIVERY.md
 ```
 TOTAL_LINES: zgoda OWNERA (20.10, „zleć”) na ~650 l. całego Tasku; ETAP 1 = 797 l. (skrypt 600 w artefakcie `tasks/` + testy 197) — przekroczenie zgłoszone OWNEROWI.
+
+---
+
+# ETAP 2 i 2b (CC, 2026-10-20) — po `ETAP1-FROZEN` `32ea383`
+
+## Orientacja (P2) — rozstrzygnięta pomiarem, poza zamrożonym skryptem
+Skrypt etapu 1 ma 600 linii (limit), więc porównanie orientacji wykonane narzędziem poza repo (`orient_cmp.py`, lokalnie u CC),
+na tych samych syntetykach obróconych w pamięci (0/90/180/270), mapowanie etykiet wybrane na zbiorze znanym:
+- `PP-LCNet_x1_0_doc_ori`, dwie niezależne konwersje ONNX (HF `marsena/paddleocr-test` sha256 `5dcaf4e3…`, `monkt/paddleocr-onnx`
+  sha256 `f5516822…`), preprocessing wg oficjalnego `inference.yml` (resize_short 256, crop 224, ImageNet), etykiety 0/90/180/270;
+- **trafność 600/600 (znany 200/200, holdout 400/400), wszystkie poziomy degradacji, 2–5 ms/str.; obie konwersje — identyczne predykcje**
+  (test zgodności zamiast instalacji Paddle);
+- realne zdjęcia OWNERA (8): oko OWNERA — 7 wyprostowanych poprawnie; błąd tylko na zdjęciu słabym (krzywe, jedna strona prawie
+  niewidoczna), gdzie model był niepewny: max-prob 0,35 (pozostałe 0,83–0,93; syntetyki min 0,76).
+→ Propozycja do kontraktu produktu: model orientacji z progiem pewności (~0,6); poniżej — odmowa „Popraw ujęcie: skorzystaj ze
+skanera, ustaw lepsze światło i kąt aparatu” / wklej tekst. OWNER 20.10: zgoda na mały dedykowany model, jeśli lepszy (jest).
+
+## ETAP 2 — kotwica + wartość uszkodzona przez OCR (`16c3f0a`)
+Reproduktory RED przed poprawką (6 + test `_ascii_fold`), GREEN po: `test_ocr_chain_compare.py::test_stage2_*`.
+| przyczyna (plik) | poprawka |
+|---|---|
+| `layers/address.py::_ascii_fold` gubi ł/Ł → „Bielsko-Biała”→„Bielsko-Biaa”, OCR „Biala”, „Lodz”, „Glogow” bez SIMC | ł→l przed NFD |
+| `layers/contact.py::_EMAIL_OCR_RE` TLD tylko `[a-zA-Z]` — OCR „.pì” | TLD: litery Unicode |
+| `layers/contact.py::_PHONE_322_RE` urywa 9-cyfrowy NIP („NUMER-90”) | dalsze grupy `[-.]\d{1,4}` w całości |
+| `layers/identity.py::_NIP_RE_OCR` urywa numer działki („NUMER.9795”) | j.w. |
+| wzorzec „ur.” wymaga `\d` — `ur. 12.O3.1985` jawne | `_DOB_OCR_RE`: kotwica „ur”, klasa cyfropodobnych jak Mobile A.7, ≥1 prawdziwa cyfra |
+`ur 12.03.1985` (bez kropki) był już maskowany — zostaje jako test regresji.
+
+## ETAP 2b — samotne imię/nazwisko ze słownika (`86809df`, rozszerzenie bloku na polecenie OWNERA)
+Test Mobile `testy/test_imiona_nazwiska_100_11_07.txt`: Desktop zostawiał jawne Grażyna, Sergiej, Diego, Wiktoria, Kalina, Jankowski,
+Kwiatkowski (Mobile golden: wszystkie zakryte). Port `NameEngine` 3a do `layers/ner_adapter.py::_apply_dictionary_names` (wywołanie
+w miejscu istniejącej linii — `apply_ner_layer` nie rośnie) z `OSOBA_DENYLIST` i białymi listami Mobile; `names_inflected.json` =
+słownik Mobile (3609) ∪ 11 zdrobnień Desktop, forma podstawowa dopisana do listy odmian (konwencja Desktop — inaczej
+`ocr_normalizer._de_leet` gubił „Paulina”). Nazwiska: bez zmian (`surnames_top1000.json`; 39 tys. Mobile — osobna decyzja).
+Po poprawce cały plik Mobile: 0 jawnych imion/nazwisk; jawne zostają tylko słowa z listy wyjątków (Data, Dane, Osoba, Zapłaty…).
+Zmienione 2 testy `test_ner_multiline.py` (dopisany do TASK_SCOPE): (1) C047 — inne osoby mają teraz własne tokeny, sprawdzane wprost,
+że token „Piotr Masłowski” stoi tylko w jego miejscu; (2) samotna „Róża” jest teraz zakryta (świadome nadmaskowanie jak „Malina” w Mobile).
+
+## Kontrola regresji
+- Szeroki zestaw testów silnika (`test_layers`, `test_pipeline_v2`, `test_anonymizer_adversarial`, `test_pipeline_adversarial`,
+  `test_map_fidelity`, `test_engine_quality_layout`, `test_addr_email_leaks`, `test_ner_multiline`, `test_ocr_chain_compare`):
+  wszystkie zielone; jedyne porażki — te same 30 w `test_pseudominizer.py` przed i po (testy łączą się z serwerem 8765 z innego
+  katalogu; środowiskowe, niezależne od zmian).
+- Strażnik `benchmark.py` (`dataset_20260627_095419`, serwer z kodu main vs gałęzi, ten sam świeży profil testowy): **identyczne** —
+  Privacy Recall 94,5% (274/290), Critical Leakage 0,0%, FP 38,8%, `[OCR-DIAG]` 0/13/3, przyjęte 43/50.
+- `dataset_clean` (300 tekstów Mobile), tokeny OSOBA main vs gałąź: +2 wartości gold zakryte, 1 nadmaskowanie („Góra”), 0 utraconych.
+- Ponowny pomiar łańcucha zamrożonym skryptem na `86809df`: krok `clean` (300) — izolacja OK, HOLE mech. 28 (było 30, ta sama klasa
+  fałszywych alarmów), UNKNOWN_REVIEW 17 (było 9 — do wyjaśnienia, prawdopodobnie tokeny OSOBA z 2b obok cyfr liczone przez `_weak_hit`),
+  mediana pytań 5. Kroki `known`/`holdout` **nie wykonane**: pierwsza próba unieważniona przez izolację (CC zrestartował serwer OWNERA
+  w trakcie — 1 zmieniony plik w chronionym katalogu, poprawne zadziałanie C3), druga przerwana przez system z braku pamięci RAM.
+  Do powtórzenia na polecenie OWNERA.
+
+## Wniosek CC i dalszy kierunek (OWNER 20.10)
+Etapy 2/2b gaszą konkretne klasy, ale test Mobile `test_b_word_boundary_diacritics_08_07.txt` pokazał, że wykrywanie OSOBA w Desktop jest
+źle zbudowane u podstaw (to samo na main: spaCy oznacza nagłówki WIELKIMI LITERAMI i słowa „KWOTA/OSOBA/TOKEN” jako osoby → fałszywe
+MAP_LEAK Guarda; samotne „Kowaliński” jawne). OWNER: koniec łatania pojedynczych błędów OSOBA — osobne, jedno miejsce decyzji o osobie
+(propozycja CC: `LYNX-OSOBA-REDESIGN`, HerBERT jako główny sygnał obok spaCy, słowniki/Morfeusz/kontekst, decyzja zakryj/zapytaj/zostaw,
+strojenie na wielu zbiorach naraz). Dalsze poprawki OSOBA w tym bloku — wstrzymane.
