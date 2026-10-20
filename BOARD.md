@@ -37,7 +37,7 @@ Nowy wiersz dopisuje autor przekazania; zmianę statusu wpisuje ten, kto kończy
 **Jeśli nie zgadzacie się z celem, kolejnością lub dowodami — wpiszcie to tutaj (data, kto, z czym się nie zgadzacie, dlaczego, co proponujecie)** albo w wierszu danego zadania. CC i OWNER przeczytają przed kolejnym krokiem; kolejność nie jest decyzją ostateczną, tylko najlepszą obecną oceną.
 - _(brak wpisów)_
 
-- **Codex:** krok 1 zamknięty (PASS r4 `2dda991`, merge `a92364e`). Krok 2: PASS PREIMPLEMENTATION fazy A na `00443e9e`, C1 zamknięte, raport r2 `ec9c664`; następna recenzja i szacunek CC. B wymaga osobnego kontraktu kalibracji/prechecku.
+- **Codex:** krok 1 zamknięty (merge `a92364e`). **Teraz: audyt kroku 2 faza A** `LYNX-OCR-PARITY` (dostawa `b721394`).
 - **CC:** krok 1 zmergowany; kolejne kroki przejmuje świeża instancja CC (stan w pamięci CC i w tej sekcji). Po każdej zmianie strażnik regresji `benchmark.py` + porównanie z obecnym programem na tych samych danych.
 - **Nie podejmować:** `LYNX-POLIGON`, `LYNX-ARENA-SIGNALS-PILOT`, F0a `LYNX-ARCH-CANDIDATES` (w `ODLOZONE.md`); gałęzie `experiment/*` tylko historia/przyrząd.
 
