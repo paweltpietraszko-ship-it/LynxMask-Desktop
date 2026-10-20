@@ -39,3 +39,46 @@ Ręczny skrypt CC brał kandydatów fuzzy z okien regex ≤4 słów; moduł bier
 ## Uwagi
 - IMPORTERS_FOR_REVIEW: `audyt/bench_offline.py` importuje `benchmark` (analyze/build_report bez zmian; import nowego modułu z katalogu `backend`). Nie uruchamiano.
 - Wyniki przebiegu lokalnie w worktree (`benchmark_results/`, ignorowane), nie w repo.
+
+---
+
+# Runda 2 — poprawka F1 z raportu Codexa r2 (`b6d546e`)
+
+Kod `6a57d6793008fff3141d385e3e6b4da606dc3977` (wąski diff od `578d7a5`: `benchmark_ocr_diagnostics.py` +29/−5, testy +6).
+
+**F1 przyjęte.** `classify_miss` uznawała podciąg obcej dłuższej wartości (globalnie bez spacji) za obecny gold → `BUG_SILNIKA`.
+- `BUG_SILNIKA` tylko gdy wartość występuje **jako całość**: dopasowanie znak po znaku z tolerancją spacji/łączników/nowej linii i wielkości liter, a znak przed nią nie jest literą/cyfrą ani `._%+@-`, znak po niej nie jest literą/cyfrą ani `@_-` (`present_as_whole`).
+- Fuzzy (`OCR_ZNIEKSZTAŁCONY`) pomija kandydata zawierającego cały gold z dopisanymi znakami — to dłuższa obca wartość, nie zniekształcenie (inaczej F1_EMAIL przechodził do OCR_ZNIEKSZTAŁCONY: „anna@…” vs „joanna@…”, odległość 2).
+- Gold widoczny tylko wewnątrz dłuższej wartości → `REVIEW` z powodem `only_inside_longer_value` (kontrakt: REVIEW, gdy nie da się uczciwie rozstrzygnąć).
+Testy: 3 przypadki Codexa + 2 kontrolne (interpunkcja jako granica; spacje i nowa linia w środku numeru → nadal BUG_SILNIKA).
+
+## Dowody
+```
+cd backend && py -3 -m pytest tests/test_benchmark_ocr_diagnostics.py -q   → 26 passed
+ruff (moduł + testy) → All checks passed!
+repro_r2.py Codexa (lokalna kopia bez asercji HEAD=578d7a5): INDEPENDENT_MECHANICS PASS; F1_REPRODUCED 0 / 3 (PERSON → REVIEW, EMAIL → REVIEW, NUMBER → REVIEW)
+py -3 benchmark.py --dataset dataset_20260627_095419 --no-generate (backend main, katalog OWNERA):
+  Privacy Recall 94,5%, Critical Leakage 0,0% (bez zmian)
+  [OCR-DIAG] pominięte BUG_SILNIKA=0 OCR_ZNIEKSZTAŁCONY=13 BRAK_W_OCR=3 NOT_MEASURED=0 REVIEW=0 | spoza gold EXTRA_MASK_OK=33 EXTRA_MASK_POLICY=65 UX_FP=0 REVIEW=68 | zgodność z legacy: OK
+```
+Na zbiorze 50 obrazów poprawka nie zmienia podziału (żadne z 16 pominięć nie było fragmentem dłuższej wartości).
+
+## Gate r2 (stdout dosłownie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 6a57d6793008fff3141d385e3e6b4da606dc3977
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 335/6 = 55.8:1 (threshold 5:1)
+  - TOTAL_LINES: 341 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-OCR-PARITY\round_01\tests\repro_r2.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OCR-PARITY/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-OCR-PARITY/round_01/implementation/gate.txt
+  - tasks/LYNX-OCR-PARITY/round_01/tests/repro_r2.py
+  - tasks/LYNX-OCR-PARITY/round_01/tests/tests_r2.txt
+```
+Rozmiar łącznie 341 l. (311 zaakceptowane przez OWNERA + 30 poprawki F1) — zgłoszone OWNEROWI.
