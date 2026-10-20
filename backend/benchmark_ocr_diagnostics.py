@@ -177,3 +177,16 @@ def record(gt: dict, resp: dict, result: dict) -> None:
 
 def write(run_dir: Path) -> dict:
     return _DEFAULT.write(run_dir)
+
+
+def analyze_and_record(analyze_fn, gt: dict, resp: dict) -> dict:
+    """Wywołanie z benchmark.run_benchmark (zamiast samego analyze — funkcja nie rośnie, ratchet gate)."""
+    result = analyze_fn(gt, resp)
+    record(gt, resp, result)
+    return result
+
+
+def build_report_and_write(build_fn, results: list, run_dir: Path) -> dict:
+    """Wywołanie z benchmark.main: dotychczasowy raport bez zmian, potem ocr_diagnostics.json."""
+    build_fn(results, run_dir)
+    return write(run_dir)

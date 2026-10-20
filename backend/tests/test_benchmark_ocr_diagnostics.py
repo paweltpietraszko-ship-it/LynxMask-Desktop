@@ -97,3 +97,13 @@ def test_report_has_no_values_and_is_deterministic(tmp_path):
     items = json.loads(a)["items"]
     assert {i["label"] for i in items} == {"BUG_SILNIKA", "OCR_ZNIEKSZTAŁCONY"}
     assert set(items[0]) == {"file", "kind", "key", "type", "label", "reason", "doc_status"}
+
+
+def test_benchmark_hooks_keep_legacy_result(tmp_path, monkeypatch):
+    c = d.Collector()
+    monkeypatch.setattr(d, "_DEFAULT", c)
+    gt, resp = _gt("a.png", pesel="44051401359"), _resp("PESEL 44051401359", [])
+    assert d.analyze_and_record(benchmark.analyze, gt, resp) == benchmark.analyze(gt, resp)
+    calls = []
+    s = d.build_report_and_write(lambda r, p: calls.append((r, p)), ["x"], tmp_path)
+    assert calls == [(["x"], tmp_path)] and s["miss"]["BUG_SILNIKA"] == 1

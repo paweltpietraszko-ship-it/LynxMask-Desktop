@@ -485,8 +485,7 @@ def run_benchmark(
             time.sleep(0.1)
 
             resp   = post_preview(img_path)
-            result = analyze(gt_entry, resp)
-            ocr_diag.record(gt_entry, resp, result)  # [v1.4] original_text tylko w pamięci
+            result = ocr_diag.analyze_and_record(analyze, gt_entry, resp)  # [v1.4] + diagnostyka silnik/OCR
             batch_results.append(result)
 
             # Linia statusu
@@ -979,8 +978,7 @@ Przykłady:
         run_dir=run_dir,
         batch_size=args.batch_size,
     )
-    build_report(results, run_dir)
-    ocr_diag.write(run_dir)
+    ocr_diag.build_report_and_write(build_report, results, run_dir)  # [v1.4] + ocr_diagnostics.json
 
 
 if __name__ == "__main__":
