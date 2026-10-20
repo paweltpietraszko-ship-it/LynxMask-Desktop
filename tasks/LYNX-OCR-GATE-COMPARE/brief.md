@@ -1,6 +1,6 @@
 # Brief — LYNX-OCR-GATE-COMPARE: łańcuch zdjęcie → PP → silnik → (HerBERT) → Guard-reszta (jeden blok: pomiar + naprawy z niego)
 
-STATUS: BRIEF v3.2 (CC, po recenzjach Architekta `ARCH_REVIEW_2026-10-20.md` @ `5154057` — C1–C4 — i `ARCH_REVIEW_V3_2026-10-20.md`
+STATUS: BRIEF v3.3 (CC; v3.3 = C3 doprecyzowane po prechecku Codexa r1 `caf7faa`; po recenzjach Architekta `ARCH_REVIEW_2026-10-20.md` @ `5154057` — C1–C4 — i `ARCH_REVIEW_V3_2026-10-20.md`
 @ `5eea65b` — F1, F2 i dwie uwagi redakcyjne wprowadzone)
 → Codex BRIEF_ONLY → zgoda OWNERA na rozmiar → CC implementuje ETAP 1 (pomiar) → ETAP 2 (naprawy w silniku wskazane pomiarem) →
 Codex audytuje exact SHA. **Jeden Task zamiast kilku** (OWNER 20.10: „nie mnóż zadań, jeśli mogą iść w jednym bloku — im więcej
@@ -47,16 +47,24 @@ uszkodzone identyfikatory po etykiecie bez sumy kontrolnej; znane dziury (data �
   `UNKNOWN_REVIEW` nigdy nie liczy się jako sukces; **listę przegląda CC** (syntetyki — wolno) i wpisuje rozstrzygnięcie każdego
   przypadku do DELIVERY przed werdyktem; Codex weryfikuje w audycie.
 
-## C3 — izolacja pomiaru (bez backendu OWNERA na 8765)
-`/preview` zmienia stan (`_next_pse()` → `pse_registry.json`, `record_preview()` → `pseudominizer_audit.jsonl` względem cwd,
-archiwum `ARCHIVE_DIR`, profil `ANONYMIZER_PROFILE_DIR`, `HARDWARE_PROFILE`). Dlatego:
-- pomiar woła **prawdziwy handler `/preview` w osobnym procesie** przez FastAPI `TestClient` (bez portu, `base_url`
-  `http://127.0.0.1:8765` dla `_ALLOWED_HOSTS`), uruchomionym z **cwd = świeży katalog tymczasowy** i zmiennymi `PSE_REGISTRY`,
-  `ANONYMIZER_PROFILE_DIR`, `ARCHIVE_DIR`, `HARDWARE_PROFILE` wskazującymi do niego; profil = **pusty profil testowy** (bez
-  danych OWNERA), odtwarzany od zera dla każdego wariantu i każdego zbioru; kod = exact SHA repo;
-- przed i po przebiegu: migawka (ścieżka, rozmiar, mtime) katalogu `backend/` repo i katalogu backendu OWNERA; **każda zmiana poza
-  katalogiem tymczasowym → `NOT_RUN(ISOLATION)`**, nie PASS;
-- bez refaktoru API; jeżeli izolacja wymagałaby zmiany kodu produktu → zatrzymanie i zgłoszenie przed kodem.
+## C3 — izolacja pomiaru (v3.3 po prechecku Codexa r1 C1: start API)
+`/preview` i start API zmieniają stan. Zapisy względem `__file__` (nie cwd/env): `_API_TOKEN_PATH` (`api_token.txt`, kasowany i
+zapisywany w `_lifespan`), `_STARTUP_ERROR_PATH` (`startup_error.json`), `PSE_REGISTRY` domyślnie, `dict_auto_builder.BACKEND_DIR`;
+względem cwd: `pseudominizer_audit.jsonl` (`record_preview`), `ARCHIVE_DIR`, `HARDWARE_PROFILE`; profil `ANONYMIZER_PROFILE_DIR`;
+odczyt allowlisty Guarda z `PROFILE_DIR` (domyślnie `~/.pseudominizer/profile`). Dlatego:
+- **Jednorazowa kopia backendu:** dla każdego przebiegu (wariant × zbiór) harness tworzy świeży katalog tymczasowy i rozpakowuje do
+  niego `git archive <exact SHA> backend` (tylko pliki śledzone, ~13 MB). Proces pomiaru importuje API **z tej kopii** — wszystkie
+  ścieżki zależne od `__file__` (token, błąd startu, PSE, `BACKEND_DIR`) trafiają do kopii, bez nadpisywania stałych modułów.
+- **Pełny start rzeczywistego silnika:** `with TestClient(app, base_url="http://127.0.0.1:8765") as c:` — kontekst uruchamia
+  `_lifespan` (anonimizator, mapa, Morfeusz, moduły) dokładnie jak w produkcie. Brak udanego startu (np. `startup_error.json` w kopii,
+  wyjątek, `/health` ≠ OK) → `NOT_RUN(STARTUP)`, nie wynik.
+- **Env procesu pomiaru:** cwd = kopia; `ANONYMIZER_PROFILE_DIR`, `PROFILE_DIR`, `PSE_REGISTRY`, `ARCHIVE_DIR`, `HARDWARE_PROFILE`
+  wskazują do kopii; profil = pusty profil testowy tworzony od zera. Modele (`~/lynx_models`, pakiety Pythona) tylko odczyt.
+- **Zakaz atrap:** nie wolno stubować, monkeypatchować ani pomijać maskowania, Guarda, `_lifespan`, OCR ani `/preview`; jedyne
+  „override” to zmienne środowiskowe i cwd wymienione wyżej. Wynik z jakąkolwiek atrapą ≠ `REAL_MASKING_PIPELINE`.
+- **Migawka przed/po** (ścieżka, rozmiar, mtime): `backend/` repo, katalog backendu OWNERA, `~/.pseudominizer/`, `~/lynx_models/`;
+  **każda zmiana poza kopią tymczasową → `NOT_RUN(ISOLATION)`**, nie PASS. Kopia usuwana po przebiegu (po zapisaniu raportu).
+- Bez zmian kodu produktu; jeżeli start w kopii okaże się niemożliwy bez zmiany produktu → STOP i zgłoszenie przed kodem.
 Powód izolacji = **porównywalność** (identyczny stan początkowy każdego wariantu), nie prywatność: OWNER 20.10 potwierdził, że
 backend 8765 to wersja deweloperska z danymi testowymi. Sprawdzenia ręczne CC mogą iść na 8765; pomiar — w izolacji.
 
