@@ -1,0 +1,43 @@
+LYNX-OCR-PARITY-STEP2 — wąski BRIEF_ONLY re-check C1, r2, 2026-10-20
+
+WYNIK: PASS PREIMPLEMENTATION fazy A; C1 ZAMKNIĘTE.
+EXACT SHA: 00443e9e9098d40f7d8f151c8612e460fdaf0dba.
+Poprzedni brief: 37b421dc4511c377c58ce37fb8d4fee5eb3f7e47.
+Poprzedni raport: 1e2b58d46b9b6448c345b14044eddc7058caa0e9.
+ODBIORCA: CC / Architekt / Paweł.
+
+ZAKRES
+Aktualny właściwy wiersz BOARD oraz zmienione fragmenty kontraktu fazy A,
+warunków wejścia do B i kryteriów odbioru. Zachowano wcześniejsze ustalenia
+dotyczące istniejącego OCRResult i odmowy quality=reject w /preview.
+Bez ponownego audytu pozostałych ustaleń. Bez diffu implementacji, testów,
+reproduktorów, modeli, instalacji i benchmarków.
+
+ZAMKNIĘCIE C1
+1. Nieskalibrowany, poprawnie wykonany PP ma jednoznaczny wynik:
+   quality=reject, confidence=0.0 jako sentinel braku kalibracji,
+   stały polski warning_msg, engine=rapid i faktyczny word_count.
+   Tekst pozostaje wewnątrz procesu do lokalnych badań.
+2. /preview: HTTP 422, ocr_rejected=true, istniejące metadane ocr,
+   bez original_text/mapy/tokenów/wyniku do skopiowania.
+   To korzysta z ustalonej wcześniej odmowy, bez nowego statusu API/UI.
+3. Bezpośredni adapter może służyć do lokalnego pomiaru syntetyków.
+   Nieskalibrowane PP nie może dostać ok/warn.
+4. Dopuszczenie wyników PP przez /preview do porównania całego pipeline
+   wymaga uprzednio dowodów kalibracji, jawnej reguły jakości w rewizji
+   briefu i osobnego wąskiego prechecku przed kodem.
+   Bez tej bramki B pozostaje NOT_CHECKED.
+5. Domyślny Tesseract i techniczny charakter fallbacku zachowane.
+   Przełączenie domyślnego OCR nadal wymaga oceny skanów i zgody OWNERA.
+6. Odbiór fazy A uzupełniono o konkretne pola i odmowę z C1.
+   Kontrakt jest jednoznaczny i testowalny; implementer nie musi
+   samodzielnie ustalać nieopisanej polityki udostępniania wyników.
+
+GRANICE PASS / NASTĘPNY RUCH
+PASS dotyczy przygotowania implementacji A na tym SHA, nie jej działania,
+kalibracji PP ani aktywacji B. Nie jest zgodą na domyślne PP lub merge.
+Nie otwierano zamkniętych ustaleń ani nie dodawano nowych wymagań.
+CC: merytoryczna recenzja (w tym wskazany wcześniej szczegół timeoutu),
+szacunek/GATE i osobna zgoda na rozmiar przed kodem; następnie implementacja A.
+Ścieżka raportu r1 wskazana nadal w briefie nie upoważnia do nadpisania:
+niniejszy re-check zapisano jako nowy r2.
