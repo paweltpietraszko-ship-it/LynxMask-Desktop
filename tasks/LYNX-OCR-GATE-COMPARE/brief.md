@@ -1,7 +1,9 @@
-# Brief — LYNX-OCR-GATE-COMPARE: czy łańcuch PP → silnik → (HerBERT) → Guard-reszta działa na zdjęciach?
+# Brief — LYNX-OCR-GATE-COMPARE: łańcuch zdjęcie → PP → silnik → (HerBERT) → Guard-reszta (jeden blok: pomiar + naprawy z niego)
 
 STATUS: BRIEF v3 (CC, po recenzji Architekta `ARCH_REVIEW_2026-10-20.md` @ `5154057`: C1–C4 i uwagi niefatalne wprowadzone)
-→ Codex BRIEF_ONLY → zgoda OWNERA na rozmiar → CC implementuje → Codex audytuje exact SHA. Pomiar offline, produkt bez zmian.
+→ Codex BRIEF_ONLY → zgoda OWNERA na rozmiar → CC implementuje ETAP 1 (pomiar) → ETAP 2 (naprawy w silniku wskazane pomiarem) →
+Codex audytuje exact SHA. **Jeden Task zamiast kilku** (OWNER 20.10: „nie mnóż zadań, jeśli mogą iść w jednym bloku — im więcej
+szwów, tym większy patchwork”): wchłania wiersze BOARD `LYNX-OCR-QUALITY-GATE`, `LYNX-OCR-ORIENTATION`, `LYNX-ANCHOR-PARITY`.
 PASS Codexa ≠ zgoda OWNERA na implementację/merge. Merge tylko na polecenie OWNERA.
 PRODUCT_TRUTH: `arch/spec.md` S1, S2, S3, S5 (S4 zamrożone — bez zmian); `BOARD.md` → TERAZ (cel: każde słowo wysyłane dalej jest
 zakryte albo pokazane człowiekowi), wiersze `LYNX-GUARD-RESIDUE`, `LYNX-K1-PERSONS-FIRMS`, `LYNX-OCR-ORIENTATION`, `LYNX-ANCHOR-PARITY`;
@@ -15,7 +17,7 @@ zdjęciach w **zapisanych niżej kryteriach** — na tyle, by napisać brief imp
 Wynik **nie** oznacza „bezpieczne / gotowe do wydania” ani parytetu z czystym tekstem (C1).
 
 Ustalone wcześniej, nie badane ponownie: PP czyta, Tesseract nie poprawia PP i nie mierzy jakości (C1, oko OWNERA); silnik zakrywa
-uszkodzone identyfikatory po etykiecie bez sumy kontrolnej (dziury → `LYNX-ANCHOR-PARITY`, osobny Task, poza tym zakresem).
+uszkodzone identyfikatory po etykiecie bez sumy kontrolnej; znane dziury (data „ur.” z literą zamiast cyfry, końcówka NIP) → ETAP 2.
 
 ## C1 — dane i punkty odniesienia (bez parytetu)
 - **Zdjęcia (decyzja):** `backend/dataset_20260627_095419` (50, znany — wybór N), `backend/dataset_20261016_fresh` (100, holdout —
@@ -52,8 +54,8 @@ archiwum `ARCHIVE_DIR`, profil `ANONYMIZER_PROFILE_DIR`, `HARDWARE_PROFILE`). Dl
 - przed i po przebiegu: migawka (ścieżka, rozmiar, mtime) katalogu `backend/` repo i katalogu backendu OWNERA; **każda zmiana poza
   katalogiem tymczasowym → `NOT_RUN(ISOLATION)`**, nie PASS;
 - bez refaktoru API; jeżeli izolacja wymagałaby zmiany kodu produktu → zatrzymanie i zgłoszenie przed kodem.
-Uwaga CC (jawnie): 20.10 CC wysłał ~13 krótkich syntetycznych tekstów na działający backend OWNERA (sprawdzenie kotwic) — licznik
-PSE i audyt OWNERA zostały przez to zmienione; zgłoszone OWNEROWI.
+Powód izolacji = **porównywalność** (identyczny stan początkowy każdego wariantu), nie prywatność: OWNER 20.10 potwierdził, że
+backend 8765 to wersja deweloperska z danymi testowymi. Sprawdzenia ręczne CC mogą iść na 8765; pomiar — w izolacji.
 
 ## Guard-reszta w symulacji (reguła zamrożona przed pomiarem, w kodzie skryptu)
 Słowo po `/preview`, niebędące tokenem, trafia do `would_ask`, chyba że jest bezsporne: zwykłe słowo Morfeusza bez interpretacji
@@ -61,11 +63,12 @@ imienia/nazwiska/nazwy własnej, skrót z listy, liczba ≤ 4 cyfry, data bez ko
 z interpretacją imienia/nazwiska, słowo nieznane Morfeuszowi, ciągi z cyframi/kodami, sąsiadujące krótkie grupy cyfr (≥ 2 grupy
 w odległości ≤ 1 słowa), data przy „ur.”. Reguła = walidacja CC 20.10 (`LYNX-GUARD-RESIDUE`); różnice w DELIVERY.
 
-## Prostowanie (P1) — P2 przeniesione
+## Prostowanie (P1; P2 tylko gdy P1 za wolny)
 P1: dla obrotów 0/90/180/270 odczyt PP; wybór = najwyższy **odsetek** słów (≥ 3 litery) znanych Morfeuszowi, przy minimum 20 słów;
 poniżej minimum lub remis (różnica < 0,02) → kolejność 0, 90, 270, 180. Trafność na kopiach syntetyków obróconych w pamięci
-(90/180/270) + czas. **P2 (klasyfikator `PP-LCNet_x1_0_doc_ori`) przeniesione do `LYNX-OCR-ORIENTATION`** (decyzja CC po przeglądzie
-redukcyjnym: brak lokalnego zweryfikowanego ONNX, nie jest potrzebny do pytania o łańcuch); bez pobierania/konwersji wag w tym Tasku.
+(90/180/270) + czas. P2 (klasyfikator `PP-LCNet_x1_0_doc_ori`) w tym samym Tasku **tylko jeśli** P1 przekroczy 4 × czas jednego
+odczytu PP na stronę albo trafność < 98% na obróconych kopiach — wtedy z lokalnym ONNX o jawnym źródle/SHA i testem zgodności;
+inaczej niepotrzebny. Wynik P1 to zarazem specyfikacja prostowania w produkcie (kontrakt produktu po pomiarze).
 
 ## C4 — reguła odmowy N i kryteria (zapisane przed implementacją)
 - **Reguła wewnętrzna:** dokument odrzucony, gdy `would_ask` / liczba stron > N. Użytkownik nie widzi liczby; komunikat odmowy
@@ -82,7 +85,7 @@ redukcyjnym: brak lokalnego zweryfikowanego ONNX, nie jest potrzebny do pytania 
   „0 dziur” osiągnięte przez odrzucenie > 20% dokumentów nie spełnia (4). Inaczej `NOT_READY` z główną przyczyną
   (OCR / silnik / reguła Guarda / próg) — następny krok wynika z przyczyny, nie z kolejnego progu.
 
-## Implementacja — pomiar, nie produkt
+## ETAP 1 — pomiar (produkt bez zmian)
 `tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py`: reużywa przez import `ocr_rapid`, `pp_quality` (hashe/preflight),
 `benchmark` (`_CRITICAL_KEYS`, `_ENTITY_TYPE_MAP`), `benchmark_ocr_diagnostics` (`classify_miss`, `norm`); handler `/preview`
 przez `TestClient` w izolowanym podprocesie (C3); HerBERT minimalnym wywołaniem ONNX. Raport JSON tylko do `--out` poza repo:
@@ -93,15 +96,29 @@ uszkodzonym NIP, IBAN i telefonie w grupach (`HOLE` vs `UNKNOWN_REVIEW` vs `ASKE
 przyjęty; wybór N wg funkcji C4 (w tym `NO_RULE`); P1 tie-break; wykrycie zapisu poza katalogiem tymczasowym → `NOT_RUN(ISOLATION)`;
 `NOT_RUN(HerBERT)` bez modelu; odmowa `dataset_real` w trybie gold i `--out` w repo; determinizm dwóch przebiegów (poza czasem).
 
+## ETAP 2 — naprawy w silniku wskazane pomiarem (ten sam Task, ta sama gałąź)
+Po ETAPIE 1 CC naprawia w silniku **tylko** przyczyny `HOLE`/`UNKNOWN_REVIEW`-wycieków klasy „kotwica + wartość uszkodzona przez OCR”,
+na wzór AnchorEngine Mobile (kotwica + klasa znaków cyfropodobnych `[0-9OolIiSsBbZz]`, bez walidacji sumy). Znane już przed pomiarem:
+`ur. 12.O3.1985` niezamaskowane (`layers/identity.py`, wzorzec „ur.” wymaga `\d`); `NIP: 742-33-75-90 | PESEL: …` → `NUMER_006-90`
+(końcówka jawna). Każda poprawka: test-reproduktor, strażnik `benchmark.py` (274/290, krytyczne 0/107, bez spadku) i ponowny
+ETAP 1 na holdoucie (tylko kontrola, bez strojenia). Inne klasy przyczyn (np. reguła Guarda, HerBERT w produkcie, UI) → wniosek w
+DELIVERY, nie kod. Pliki ETAPU 2 dopisywane do TASK_SCOPE przed kodem (gate czyta listę); spodziewane: `backend/layers/identity.py`,
+`backend/layers/numeric.py`, `backend/tests/test_ocr_chain_anchor_fixes.py`.
+
 TASK_SCOPE:
 - tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py
 - backend/tests/test_ocr_chain_compare.py
+- backend/layers/identity.py
+- backend/layers/numeric.py
+- backend/tests/test_ocr_chain_anchor_fixes.py
 
-OUT_OF_SCOPE: zmiany produkcyjne (OCR, `/preview`, warstwy, kotwice, Guard, HerBERT w produkcie, progi, UI/onboarding, S4),
-`LYNX-ANCHOR-PARITY`, P2/klasyfikator orientacji, aktywacja PP, przeniesienie N do polityki produktu, realne dane w repo, pełna suita.
+OUT_OF_SCOPE: zmiany produkcyjne poza ETAPEM 2 (OCR, `/preview`, Guard, HerBERT w produkcie, progi, prostowanie w produkcie,
+UI/onboarding, S4), aktywacja PP, przeniesienie N do polityki produktu, realne dane w repo, pełna suita. Wdrożenie łańcucha w produkcie
+(PP + prostowanie + reguła odmowy + komunikat) = kontrakt po werdykcie `READY_FOR_PRODUCT_BRIEF`.
 
 GATE: dwa nowe pliki ≤ 600 l., funkcje ≤ 50 l. **Przegląd redukcyjny CC:** po usunięciu P2 i z HerBERT jako ramieniem opcjonalnym
-pomiar jest wykonalny bez fałszywego uproszczenia; szacunek skrypt ~420 l. + testy ~160 l. ≈ 580 l. (> 150) → zgoda OWNERA przed kodem.
+pomiar jest wykonalny bez fałszywego uproszczenia; szacunek ETAP 1: skrypt ~420 l. + testy ~160 l.; ETAP 2: ~60–100 l. (wzorce +
+testy); razem ≈ 650 l. (> 150) → zgoda OWNERA przed kodem. Pliki istniejące (`identity.py`, `numeric.py`) — reguła ratchet gate.
 Jeżeli w implementacji skrypt przekroczy 600 l., HerBERT wydzielany jest do kolejnej rundy, nie upychany.
 
 PRZEKAZANIE: Codex → BRIEF_ONLY precheck `tasks/LYNX-OCR-GATE-COMPARE/round_01/tests/tests_r1.txt` (bez uruchamiania modeli, bez
