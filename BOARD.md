@@ -30,6 +30,8 @@ Nowy wiersz dopisuje autor przekazania; zmianę statusu wpisuje ten, kto kończy
 ### Zasada produktu (OWNER 20.10)
 **Program nigdy nie zatrzymuje się bez podania użytkownikowi rozwiązania lub alternatywy** — każda odmowa/błąd w UI mówi, co zrobić dalej. Przegląd CC: odmowa OCR (lepsze zdjęcie), 413 (podziel plik), awaria maskowania (spróbuj ponownie / zgłoś), ekran awarii startu — mają; **komunikat C1 PP-OCR („wynik nie może być udostępniony”) — nie ma** (dziś tylko pod flagą testową). W kaskadzie OCR odmowa PP nie może docierać do użytkownika: wynik Tesseracta albo prośba o lepsze zdjęcie / wklejenie tekstu. Każdy brief z nową odmową ma zawierać tekst komunikatu z alternatywą. Narzędzia pomiarowe (np. `NOT_RUN` w `pp_quality.py`) nie są UI.
 
+Do wiadomości: wzór przekazania pałeczki CC — `docs/HANDOFF_TEMPLATE.md` (dobrowolny dla Architekta i Codexa).
+
 ### Kolejność pracy (rekomendacja CC; OWNER zgłaszał pomysły jako propozycje)
 1. **ZMERGOWANY `a92364e`:** `LYNX-OCR-PARITY` krok 1 — benchmark mówi „silnik czy OCR”. Miarka do kroków 2–4 i strażnik regresji.
 2. **`LYNX-OCR-PARITY` krok 2 — zamiana OCR na PP-OCRv6 small** (Tesseract jako zapas). Warunek: ocena okiem OWNERA (plik porównawczy u CC, potem jego prawdziwe skany). Po co: więcej danych przetrwa OCR → mniej wycieków i mniej śmieci do oceny w Guardzie.
