@@ -1,0 +1,64 @@
+LYNX-OCR-PARITY-STEP2 — wąski BRIEF_ONLY precheck r1, 2026-10-20
+
+EXACT SHA: 37b421dc4511c377c58ce37fb8d4fee5eb3f7e47.
+BRANCH: task/LYNX-OCR-PARITY-STEP2.
+WYNIK: WYMAGA_KOREKTY_KONTRAKTU — jedna zamknięta uwaga C1.
+Nie jest to FAIL implementacji ani finding odtworzonego wycieku.
+ODBIORCA: Architekt / CC / Paweł.
+
+ZAKRES
+Aktualny wiersz BOARD, brief kroku 2, punktowy odczyt istniejącego łańcucha
+ocr_engine.extract_text_from_image -> OCRResult -> document_processor._extract_text
+-> odmowa jakości /preview na tym samym SHA.
+Bez diffu implementacji, testów, reproduktorów, modeli, instalacji pakietów,
+OCR, datasetów i odpytywania backendu.
+
+C1 — NIEOKREŚLONY WYNIK FAZY A PRZED KALIBRACJĄ
+Brief wymaga zachowania OCRResult/ocr/API/UI oraz w fazie A „wyraźnie
+oznaczyć status jakości jako testowy, bez dopuszczenia wyników produkcyjnych
+na podstawie fałszywej pewności”. Jednocześnie regułę jakości PP ma dopiero
+zaproponować i sprawdzić CC. Nie określono, jakie konkretnie quality,
+confidence i warning_msg oraz dostępność wyniku /preview obowiązują
+przed zatwierdzeniem tej reguły.
+
+Punktowo potwierdzony istniejący kontrakt:
+- OCRResult opisuje confidence jako 0–100 i quality jako ok/warn/reject;
+- document_processor przekazuje te pola do ocr bez dodatkowej interpretacji;
+- /preview blokuje jakość wyłącznie przy quality == "reject"; dla niepustego
+  tekstu inne wartości przechodzą do pseudonimizacji;
+- istniejący moduł ma też stare ścieżki low dla pustego wyniku/błędu;
+  to obserwacja, nie żądanie ich naprawy w kroku 2.
+
+Samo ustawienie nowego słowa „testowy” lub warning_msg nie rozstrzyga,
+czy eksperymentalny tekst będzie podlegał odmowie, czy stanie się wynikiem
+dostępnym przez obecne API/UI. Wybranie tego przez implementera stworzyłoby
+zachowanie bramki, którego audyt nie ma z czym porównać.
+
+Wymagana korekta: określić w briefie deterministyczny kontrakt fazy A dla
+nieskalibrowanego PP: wartości/semantykę istniejących pól OCRResult oraz
+efekt w /preview (dostępny wynik czy odmowa) i testowy zakres jego użycia.
+Jeśli CC ma najpierw zaproponować tę semantykę w recenzji, zamknąć ją
+w kontrakcie przed implementacją. Nie dobieramy za Architekta progów,
+nie wymagamy zmiany UI/API ani konkretnego mechanizmu obejścia bramki.
+
+POZOSTAŁE USTALENIA — BEZ UWAG BLOKUJĄCYCH
+- Istniejący owner OCR i adapter w osobnym module to właściwy wąski szew;
+  brak potrzeby drugiego pipeline, powtórnego OCR i zmian normalizatora.
+- Tesseract pozostaje domyślny do oddzielnej zgody OWNERA na B.
+  PASS prechecku nie przenosi tej zgody na CC/Codexa.
+- Osobna kalibracja PP, fallback wyłącznie techniczny z własną bramką
+  Tesseracta, odmowa pustego wyniku i jawne błędy mają uzasadnienie w S3.
+  Szczegół timeoutu ma zostać wskazany w recenzji CC przed kodem.
+- Offline/model preload, dokładne wersje i hashe, brak danych w logach,
+  lazy import i brak rozszerzania instalatora są ujęte w odbiorze.
+  Ich wykonalności nie potwierdzano uruchomieniem ani zewnętrznym researchem.
+- Porównanie tych samych plików i wszystkich gold, odrębne mianowniki,
+  holdout oraz osobna lokalna ocena skanów OWNERA zabezpieczają przed
+  wyciąganiem decyzji produktowej z jednego procentu na syntetykach.
+- TASK_SCOPE i nowa, nieprzenoszona zgoda na rozmiar ograniczają etap.
+  Benchmarków publicznych i odłożonego poligonu nie otwierano ponownie.
+
+NASTĘPNY RUCH
+Architekt doprecyzowuje tylko C1; następnie wąski re-check zmienionego
+fragmentu, bez ponownego czytania całego repo i uruchamiania modeli.
+Po zamknięciu kontraktu: recenzja CC, szacunek/GATE, implementacja A.

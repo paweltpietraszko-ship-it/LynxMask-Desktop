@@ -450,6 +450,11 @@ def extract_text_from_image(image_bytes: bytes, filename: str) -> OCRResult:
     Jeśli Tesseract niedostępny — zwraca OCRResult z instrukcją instalacji
     zamiast rzucać wyjątek (fail-graceful dla UI).
     """
+    if os.environ.get("LYNX_OCR_ENGINE", "").strip().lower() == "rapid":  # [LYNX-OCR-PARITY-STEP2] faza A, tylko jawnie
+        from ocr_rapid import extract_rapid
+        rapid = extract_rapid(image_bytes, OCRResult)  # None = awaria techniczna → Tesseract z własną bramką
+        if rapid is not None:
+            return rapid
     if not _tesseract_available():
         msg = (
             "OCR niedostępny — Tesseract nie jest zainstalowany. "

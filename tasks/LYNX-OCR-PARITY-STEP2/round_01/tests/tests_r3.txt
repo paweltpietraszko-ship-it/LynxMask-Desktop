@@ -1,0 +1,63 @@
+LYNX-OCR-PARITY-STEP2 — niezależny wąski audyt fazy A, r3, 2026-10-20
+
+WYNIK: PASS fazy A na exact SHA b72139461a2db14cb550b06523116dd4e6586dad.
+Kod 869a70d2d9e1b46f314439b9c4bdc0bd3007e189; diff base ec9c664.
+Kontrakt A: brief 00443e9e, precheck r2 ec9c664.
+ODBIORCA: CC / Architekt / Paweł.
+B / kalibracja / aktywacja domyślna: NOT_CHECKED, nieobjęte PASS.
+Bez zmian produktu, uruchamiania serwera OWNERA i merge.
+
+DOWODY
+1. Odczyt właściwego diffu: nowy adapter, lokalny wybór pod flagą,
+   9 testów i README. Bez flagi dotychczasowa ścieżka Tesseract;
+   zwykły start nie wymaga importu rapidocr. Brak zmian API/pipeline/UI.
+2. Exact SHA w czystym oddzielnym worktree. Celowane:
+   python -m pytest tests/test_ocr_rapid.py -q --tb=short
+     --basetemp=<nowy zapisywalny katalog>
+   9 passed (2.31 s). Nie powtarzano 28 niezmienionych testów kroku 1.
+3. Niezależny zachowany repro_r3.py:
+   rzeczywisty preview -> document_processor._extract_text ->
+   ocr_engine.extract_text_from_image -> adapter, przy stubie wyłącznie
+   interfejsu silnika OCR. Syntetyczny tekst; odizolowane archive/profil/PSE.
+   Rzeczywista odpowiedź endpointu ma status 422, ocr_rejected=true,
+   quality=reject, confidence=0.0, engine=rapid i stały warning C1.
+   Brak original_text/tokenów/mapy/wyniku; pseudonymize_document nie wywołano.
+   Test wywołuje endpoint bezpośrednio, bez HTTP middleware/lifespan/auth:
+   upload pozostaje w pamięci, coroutine wykonana bez sieciowej pętli.
+4. Niezależny techniczny wyjątek z syntetyczną treścią -> fallback,
+   zachowuje obiekty Tesseracta dla ok/warn/reject (90/75/60).
+   Treść wyjątku i syntetyczne identyfikatory nie występują w przechwyconych
+   logach. Zestaw CC dodatkowo sprawdza timeout/brak modelu/pusty odczyt,
+   domyślny Tesseract oraz składanie wierszy/kolumn/polskich znaków.
+5. Trzy lokalne modele mają SHA256 zgodne z DELIVERY. Niezależny pojedynczy
+   smoke na nowym syntetycznym obrazie z PIL: rzeczywisty RapidOCR daje
+   niepusty odczyt i fazę A reject/0.0/rapid. Blokowano socket.connect
+   i socket.create_connection w Pythonie przed inicjalizacją RapidOCR.
+   Nie pobierano modeli/pakietów. To lokalny smoke z blokadą na poziomie
+   Pythona, nie systemowy audyt całego ruchu natywnego.
+6. INDEPENDENT_C1_ENDPOINT_AND_FALLBACK PASS.
+   LOCAL_MODEL_HASHES_AND_OFFLINE_SMOKE PASS.
+   Wcześniejsze próby harnessu zatrzymano na ograniczeniu sandboxu
+   (socketpair pętli asyncio) i sprzątaniu sqlite na Windows; finalny
+   reproduktor rozwiązuje oba problemy. Nie były to defekty produktu.
+
+OGRANICZENIA
+- 93.9%/93.4%, 50/100 obrazów, RAM i czasy pozostają dowodami CC,
+  nie niezależnie powtórzonym benchmarkiem. Nie walidowano kalibracji,
+  prawdziwych skanów ani dopuszczenia PP do wyników produkcyjnych.
+- Limit czasu pozostawia pracujący wątek i jednowątkową kolejkę;
+  inicjalizacja _get_engine odbywa się przed oczekiwaniem z timeoutem.
+  Dostawa sama opisuje nieprzerywanie wątku. Nie traktujemy tego jako
+  dowodu twardego limitu całego żądania ani gotowości fazy B.
+- Nie wykonano audytu instalatora ani prawnego audytu licencji.
+  Wersje, hashe i atrybucja zostały opisane przez CC.
+- GATE na kopii briefu z TASK_SCOPE: zamiast ## TASK_SCOPE ma identyczną
+  listę plików; opisane odstępstwo formatu nie poszerza zakresu.
+  Zgody OWNERA na ~300 linii nie otwierano ponownie (dostawa 241).
+- Backend na 8765, tokeny i profil OWNERA nienaruszone. Bez danych realnych.
+
+ODTWORZENIE / NASTĘPNY RUCH
+python repro_r3.py <backend exact SHA> <zapisywalny katalog tymczasowy>
+Wymaga wcześniej lokalnie dostępnych modeli z DELIVERY.
+Odbiór dotyczy A. Kalibracja wymaga osobnej rewizji kontraktu i prechecku
+przed kodem; Tesseract pozostaje domyślny. Merge wyłącznie na polecenie OWNERA.
