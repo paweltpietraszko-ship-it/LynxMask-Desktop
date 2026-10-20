@@ -36,3 +36,14 @@ stdout: `[PP-QUALITY] NO_SAFE_GATE; reguła (zbiór znany): —`
 
 ## Rekomendacja CC (decyzja Architekta/OWNERA)
 Bramka jakości dla PP oparta wyłącznie na pewności linii nie spełnia kontraktu → STOP B2 w tej postaci. Przewaga PP w odczycie (93–94% vs 72% danych nienaruszonych) pozostaje faktem; możliwe dalsze drogi do rozważenia osobno, nie w tym Tasku: (a) PP bez własnej bramki, ale z **obowiązkowym Guardem pokazującym resztę** (`LYNX-GUARD-RESIDUE`) — zniekształcone wartości trafiają do oceny człowieka; (b) sygnał pokrycia (np. zgodność liczby linii/obszaru z detekcją Tesseracta) zamiast pewności; (c) zostać przy Tesseracie dla skanów.
+
+---
+
+# Runda 2 — F1 z audytu Codexa B1 r2 (`35dfba5`)
+Kod `40d6673a2ad8b3a357b73b29f97440a92218383c` (diff od `a954766`: `pp_quality.py` +3/−2, testy +11). **Przyjęte:** niezgodność SHA256 modeli z fazą A zatrzymuje preflight przed silnikiem i pomiarem — `NOT_RUN` (powód: „modele PP-OCRv6 inne niż w fazie A (SHA256)”), exit 2, bez raportu.
+```
+pytest tests/test_pp_ocr_calibration.py -q → 13 passed (nowy test: inne modele → exit 2, silnik niewywołany, brak raportu)
+ruff → All checks passed!
+repro_r2.py Codexa (kopia bez asercji HEAD): F1_HASH_0 / F1_HASH_1 → exit_code 2, engine_called false, report_written false → F1_CLOSED
+```
+Pomiar 50+100 nie powtarzany (zmiana nie dotyka pomiaru; modele użyte w pomiarze r1 miały SHA256 zgodne z fazą A — `models_match_phase_a: true` w raporcie). Werdykt NO_SAFE_GATE bez zmian. Gate r2: `STATUS: PASS`.
