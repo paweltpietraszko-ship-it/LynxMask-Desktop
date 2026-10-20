@@ -59,8 +59,8 @@ Rozmiar: +457/−102 (produkt +254/−51 w 7 plikach, testy +218/−51). Zgoda O
     tekście** (main: `Umowa nr U-00510/2024` → jawne; `nr UMOWA/2023/NR/0895` → zakryte). U Tesseracta dokument odrzucany, więc
     niewidoczna. Inna klasa (NUMER, nie OCR) → **FINDING do `LYNX-ENGINE-BACKLOG`**, nienaprawiane w tym Tasku.
   - Pozostałe 7: BRAK_W_OCR 4 (księgi wieczyste ×2, adresy ×2), OCR_ZNIEKSZTAŁCONY 3 (adresy ×2, sygnatura).
-  Uwaga do miarki E2E: `chain_compare` nie oznaczył `U-…/2024` jako HOLE (dowód „fragment ≥4 znaki” nie zadziałał na tym zapisie) —
-  benchmark jest tu ostrzejszy; oba narzędzia razem.
+  Uwaga do miarki E2E: `chain_compare` nie wykazał `U-…/2024` w HOLE/UNKNOWN tego dokumentu (status niesprawdzony — możliwe ASKED,
+  czyli hipotetyczne pytanie Guard-reszty, które dziś nie istnieje w produkcie) — dla obecnego produktu to jawna wartość.
 
 ## Pomiar odbioru (§3) — `tasks/LYNX-PHOTO-CHAIN/measure/photo_measure.py`
 Odtworzenie (Codex lokalnie, modele w `backend/models/ocr/` jak niżej, raport poza repo):
