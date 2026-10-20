@@ -2,6 +2,7 @@
 **/api_token.txt
 backend/anon_profiles/
 backend/dataset_*/
+backend/models/
 backend/.tmp.driveupload/
 **/__pycache__/
 **/*.py[cod]
