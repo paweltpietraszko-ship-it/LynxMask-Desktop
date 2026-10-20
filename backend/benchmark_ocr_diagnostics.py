@@ -4,12 +4,12 @@ benchmark_ocr_diagnostics.py — LYNX-OCR-PARITY krok 1: „silnik czy OCR” dl
 Dodatkowy widok do dotychczasowych metryk benchmarku (ich nie zmienia). Zasada z Mobile
 (BenchmarkInstrumentedTest.kt: classifyMiss, fuzzyMatch, classifyExtraToken):
   pominięta encja gold →
-    BUG_SILNIKA        — wartość jest w tekście oddanym silnikowi (`original_text` z /preview),
-                         z tolerancją białych znaków i łączników; KANDYDAT do sprawdzenia, nie dowód.
+    BUG_SILNIKA        — wartość jest w tekście oddanym silnikowi (`original_text` z /preview) jako całość
+                         (tolerancja spacji/łączników, nie fragment dłuższej wartości); KANDYDAT, nie dowód.
     OCR_ZNIEKSZTAŁCONY — brak dokładnej, jest bliski odpowiednik na granicach słów jednej linii
                          (Levenshtein: ≥9 znaków, odległość 1 / 2 od 15 / 3 od 24).
     BRAK_W_OCR         — brak dokładnego i bliskiego odpowiednika (nie dowód, że nic nie zostało na obrazie).
-    NOT_MEASURED       — brak/pusty `original_text`; REVIEW — wartość <9 znaków bez dokładnego dopasowania.
+    NOT_MEASURED       — brak/pusty `original_text`; REVIEW — tylko wewnątrz dłuższej wartości albo <9 znaków.
   token spoza gold (legacy false_positives) → EXTRA_MASK_OK / EXTRA_MASK_POLICY / UX_FP / REVIEW.
 Dokumenty odrzucone przez OCR i z błędem HTTP nie są klasyfikowane. Raport `ocr_diagnostics.json`
 bez wartości, fragmentów OCR i tokenów API — tylko ID pliku, klucz gold, typ, etykieta, powód.
@@ -17,6 +17,7 @@ bez wartości, fragmentów OCR i tokenów API — tylko ID pliku, klucz gold, ty
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -77,7 +78,28 @@ def has_fuzzy_counterpart(value_n: str, text: str) -> bool:
     if len(value_n) < MIN_FUZZY_LEN:
         return False
     d = max_distance(len(value_n))
-    return any(fuzzy_equal(value_n, c) for line in text.splitlines() for c in _line_candidates(line, len(value_n), d))
+    # kandydat zawierający cały gold plus dopisane znaki to dłuższa obca wartość, nie zniekształcenie (Codex r2 F1)
+    return any(fuzzy_equal(value_n, c) and value_n not in c
+               for line in text.splitlines() for c in _line_candidates(line, len(value_n), d))
+
+
+_LEFT_JOIN = "._%+@-"   # znak przed wartością, który czyni ją częścią dłuższej (skrzynka, nazwisko złożone)
+_RIGHT_JOIN = "@_-"
+
+
+def present_as_whole(value_n: str, text: str) -> bool:
+    """Wartość w tekście jako całość: tolerancja spacji/łączników/wielkości liter, ale nie fragment dłuższej
+    wartości (Codex r2 F1: „Nowak” w „Nowakowski”, skrzynka w dłuższej skrzynce, cyfry w dłuższym numerze)."""
+    if not value_n:
+        return False
+    sep = r"[\s\-]*"
+    pattern = sep.join(re.escape(ch) for ch in value_n)
+    for m in re.finditer(pattern, text, re.IGNORECASE):
+        before = text[m.start() - 1] if m.start() > 0 else " "
+        after = text[m.end()] if m.end() < len(text) else " "
+        if not (before.isalnum() or before in _LEFT_JOIN) and not (after.isalnum() or after in _RIGHT_JOIN):
+            return True
+    return False
 
 
 def classify_miss(value: str, original_text: Any) -> tuple[str, str | None]:
@@ -85,10 +107,12 @@ def classify_miss(value: str, original_text: Any) -> tuple[str, str | None]:
     if not isinstance(original_text, str) or not original_text.strip():
         return "NOT_MEASURED", "no_original_text"
     value_n = norm(value)
-    if value_n and value_n in norm(original_text):
+    if present_as_whole(value_n, original_text):
         return "BUG_SILNIKA", None
     if has_fuzzy_counterpart(value_n, original_text):
         return "OCR_ZNIEKSZTAŁCONY", None
+    if value_n and value_n in norm(original_text):
+        return "REVIEW", "only_inside_longer_value"
     if len(value_n) < MIN_FUZZY_LEN:
         return "REVIEW", "short_value_no_fuzzy"
     return "BRAK_W_OCR", None

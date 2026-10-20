@@ -27,6 +27,12 @@ def test_norm_identical_to_benchmark(v):
     ("44051401359", None, "NOT_MEASURED"),
     ("44051401359", "   ", "NOT_MEASURED"),
     ("Jan Nowak", "Jan Nowek", "REVIEW"),                                           # <9 znaków: bez fuzzy
+    # Codex r2 F1: fragment dłuższej obcej wartości to nie BUG_SILNIKA ani zniekształcenie
+    ("Jan Nowak", "Podpis: Jan Nowakowski", "REVIEW"),
+    ("anna@example.org", "Kontakt: joanna@example.org", "REVIEW"),
+    ("44051401359", "Numer: 1440514013599", "REVIEW"),
+    ("Jan Nowak", "Podpis: Jan Nowak.", "BUG_SILNIKA"),                             # interpunkcja to granica
+    ("44051401359", "PESEL:\n440514 01359", "BUG_SILNIKA"),                         # spacje i nowa linia w środku
 ])
 def test_classify_miss(value, text, label):
     assert d.classify_miss(value, text)[0] == label
