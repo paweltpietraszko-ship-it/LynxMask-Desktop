@@ -23,6 +23,7 @@ import document_processor  # noqa: E402
 import ocr_engine  # noqa: E402
 import ocr_rapid  # noqa: E402
 import photo_chain  # noqa: E402
+import startup_check  # noqa: E402
 
 GOOD = "Umowa najmu lokalu mieszkalnego zawarta pomiędzy stronami w dniu dzisiejszym"
 JUNK = "Xqzt wrrpl Umowa kkjhq zzvbn ppqrt najmu"
@@ -194,3 +195,9 @@ def test_real_models_offline_class_map_and_reading(monkeypatch):
         assert photo_chain.classify(img if rot is None else cv2.rotate(img, rot))[0] == angle
     r = photo_chain.read_photo(cv2.imencode(".png", cv2.rotate(img, cv2.ROTATE_180))[1].tobytes(), ocr_engine.OCRResult)
     assert r.engine == "rapid" and r.reason in ("ok", "QUALITY_LOW")
+
+
+def test_engine_process_opts_out_of_windows_background_throttling(monkeypatch):
+    assert startup_check.keep_full_speed() is (sys.platform == "win32")
+    monkeypatch.setattr(sys, "platform", "linux")
+    assert startup_check.keep_full_speed() is False
