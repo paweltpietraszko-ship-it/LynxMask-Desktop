@@ -1,88 +1,82 @@
-# Brief — LYNX-OCR-GATE-COMPARE: orientacja + odczyt PP + kotwice zamiast globalnej bramki? Eksperyment porównawczy
+# Brief — LYNX-OCR-GATE-COMPARE: czy pełny łańcuch działa na zdjęciach tak jak na czystym tekście?
 
-STATUS: PROJEKT BRIEFU CC na prośbę OWNERA (20.10, „pisz brief”) → Architekt akceptuje lub poprawia → Codex PREIMPLEMENTATION →
-zgoda OWNERA na rozmiar → CC implementuje → Codex audytuje exact SHA. Pomiar offline, produkt bez zmian. Bez merge bez polecenia OWNERA.
-PRODUCT_TRUTH: `arch/spec.md` S1 (lokalnie), S3, S5; `BOARD.md` → wiersze `LYNX-OCR-QUALITY-GATE`, `LYNX-OCR-ORIENTATION`,
-`LYNX-OCR-GATE-COMPARE`; wyniki C1 (`tasks/LYNX-OCR-CASCADE/round_01/implementation/DELIVERY.md`, merge `78648f7`).
+STATUS: PROJEKT BRIEFU CC na prośbę OWNERA (20.10, wersja 2 — zastępuje wersję 1 z `d359021`, która mierzyła sam OCR w oderwaniu
+od celu) → Architekt akceptuje lub poprawia → Codex PREIMPLEMENTATION → zgoda OWNERA na rozmiar → CC implementuje → Codex audytuje
+exact SHA. Pomiar offline, produkt bez zmian. Bez merge bez polecenia OWNERA.
+PRODUCT_TRUTH: `arch/spec.md` S1, S3, S5; `BOARD.md` → TERAZ (cel: każde słowo wysyłane dalej jest zakryte albo pokazane człowiekowi)
+i wiersze `LYNX-GUARD-RESIDUE`, `LYNX-K1-PERSONS-FIRMS`, `LYNX-OCR-QUALITY-GATE`, `LYNX-OCR-ORIENTATION`, `LYNX-ANCHOR-PARITY`;
+wyniki C1 (`tasks/LYNX-OCR-CASCADE/round_01/implementation/DELIVERY.md`).
 
-## Skąd ten Task
-1. C1: Tesseract nie naprawia odczytu PP-OCRv6; najsilniejszy sygnał to identyfikator o złym kształcie w odczycie PP.
-2. Realne zdjęcia OWNERA: 4 z 9 odmów wynika wyłącznie z obrotu; pewność Tesseracta odrzuca zdjęcie, które PP czyta czytelnie
-   (ocena oka OWNERA) → Tesseract to zła miarka jakości dla PP.
-3. CC zmierzył miarkę zastępczą (odsetek słów odczytu PP znanych Morfeuszowi) — obiecująca, ale to globalna liczba dla dokumentu.
-4. Alternatywa przekazana przez OWNERA: rozdzielić **orientację** (wyspecjalizowany klasyfikator), **błędne fragmenty**
-   (kontekst + struktura: „NIP:” + zła liczba cyfr → zakryj cały fragment, bez zgadywania) i **kompletność** (pominięta linia
-   to utrata treści, nie wyciek).
-5. OWNER: „część problemów rozwiązałby AnchorEngine z Mobile — system kotwic, nie waliduje cyfr”. **Sprawdzenie CC (20.10,
-   silnik Desktop przez `/preview`, teksty syntetyczne):** Desktop już dziś zakrywa uszkodzone identyfikatory po etykiecie bez
-   sumy kontrolnej — `NIP: 742-333-75-90`, `NIP 7423375 90`, `PESEL: 5002245882`, `PESEL: 50O22458822`, IBAN 25-cyfrowy,
-   `Nr rachunku: …`, `Sygn. akt Km 29O74/2025`, `tel. 6O1 234 5B7`, `Dowód osobisty: ABC 12345` → wszystkie zamaskowane.
-   **Dziury względem AnchorEngine Mobile** (kotwica + klasa znaków cyfropodobnych `[0-9OolIiSsBbZz]`):
-   - `ur. 12.O3.1985` → **niezamaskowane** (data urodzenia z literą zamiast cyfry; Mobile A.7/A.7b);
-   - `NIP: 742-33-75-90 | PESEL: …` (dokładnie odczyt PP z `doc_00004`) → `NIP: NUMER_006-90` — **końcówka „-90” jawna**;
-   - `ul. Zielona 2OO` → `ADRES_002O` — jawna litera po tokenie (kosmetyka, nie PII).
-   Wniosek: reguła fragmentów z alternatywy w Desktop w większości istnieje (warstwy `identity`/`numeric`); brakuje parytetu
-   kotwic z Mobile dla cyfr pomylonych z literami i granic. To **osobny Task naprawczy** (port reguł AnchorEngine A.5/A.7/A.7b
-   z klasą D), nie część tego eksperymentu — patrz OUT_OF_SCOPE i wiersz BOARD.
+## Cel produktu (bez zmian od rana 20.10)
+Silnik (warstwy + Morfeusz + kotwice) zakrywa to, co rozpoznaje; **HerBERT** jako siatka zakrywa część resztek; **Guard pokazuje
+człowiekowi wszystko, co zostało** (`LYNX-GUARD-RESIDUE`). Na czystym tekście zmierzone: 0 realnych dziur, ~4 pytania na dokument.
+Na skanach z Tesseractem: 5 dziur, ~9 pytań — bo OCR niszczy tekst. HerBERT też potrzebuje dobrego odczytu.
 
-## Cel: odpowiedź liczbami, którą drogą iść
-Porównać na tych samych danych, **na końcu ścieżki** (tekst gotowy do udostępnienia po istniejącym silniku), trzy warianty:
-- **A (CC):** orientacja = obrót o najwyższym odsetku słów Morfeusza (4 × PP) → PP → bramka słownikowa 0,8 → `/preview`.
-- **B (alternatywa):** orientacja = klasyfikator `PP-LCNet_x1_0_doc_ori` → jeden PP → `/preview` (istniejące kotwice/warstwy),
-  bez bramki dokumentu; pominięte linie raportowane osobno.
-- **B+ (rekomendacja CC):** jak B + **niska** bramka słownikowa tylko na śmieci (próg wybrany na zbiorze znanym z siatki
-  0,5/0,55/0,6/0,65, przed holdoutem).
-Punkt odniesienia: **dziś** (Tesseract bez obrotu, bramka 70) — ten sam `/preview`.
+## Pytanie tego Tasku
+**Czy łańcuch obraz → wyprostowanie → PP-OCRv6 → silnik → (HerBERT) → Guard-reszta daje na zdjęciach wynik bliski czystemu
+tekstowi: 0 realnych dziur i rozsądną liczbę pytań?** Punkty odniesienia mierzone tym samym narzędziem: (1) czysty tekst tych samych
+dokumentów (z gold), (2) dzisiejszy Tesseract bez prostowania.
+
+Ustalone wcześniej i tu NIE ponownie badane: PP czyta (Tesseract nie poprawia PP i nie mierzy jakości — C1 i oko OWNERA);
+silnik zakrywa uszkodzone identyfikatory po etykiecie bez sumy kontrolnej (dziury w `LYNX-ANCHOR-PARITY` — osobny Task).
+
+## Miary (osobno, bez jednej sumy)
+1. **Realna dziura** = wartość gold (lub jej fragment ≥ 4 znaki alfanumeryczne) widoczna w tekście po silniku (i HerBERT),
+   **której Guard-reszta nie pokazałby** człowiekowi. Krytyczne (`benchmark._CRITICAL_KEYS`) osobno.
+2. **Pytania Guarda na dokument** (mediana, max) i ich rodzaje.
+3. **Wartość gold zakryta / pokazana / dziura / nieobecna w odczycie** (ostatnie = kompletność, nie wyciek).
+4. **Odmowy** wg reguły „za dużo pytań” (niżej) i odrzucone obrazy bez degradacji (L0).
+5. Czas na stronę i RAM (PP, HerBERT, orientacja osobno).
+
+## Guard-reszta w pomiarze (reguła zamrożona przed pomiarem, w kodzie skryptu)
+Słowo po silniku, które nie jest tokenem, idzie do pytania, chyba że jest bezsporne: zwykłe słowo Morfeusza bez interpretacji
+imienia/nazwiska/nazwy własnej, skrót z listy, krótka liczba (≤ 4 cyfry) lub data bez kotwicy. **Zawsze pytamy:** słowo z wielkiej
+litery z interpretacją imienia/nazwiska (479/986 nazwisk to zwykłe słowa), słowa nieznane Morfeuszowi, ciągi z cyframi/kodami,
+**sąsiadujące krótkie grupy cyfr** (telefon rozbity przez OCR), data przy „ur.”. Reguła = ta zwalidowana przez CC 20.10
+(`LYNX-GUARD-RESIDUE`); różnice wpisać do DELIVERY. To symulacja do pomiaru, nie implementacja Guarda.
+
+## Warianty (małe elementy, nie nowa architektura)
+- **Prostowanie:** (P1) obrót wybierany przez największą liczbę słów znanych Morfeuszowi z 4 odczytów PP; (P2) klasyfikator
+  `PP-LCNet_x1_0_doc_ori` + jeden PP. Trafność obu na obróconych kopiach syntetyków (90/180/270, w pamięci).
+- **HerBERT:** bez / z (`~/lynx_models/herbert-polish-legal-ner`, ONNX lokalnie; encje PER/ORG/LOC na tekście po silniku
+  zakrywają te słowa przed Guardem). Brak modelu → NOT_RUN wariantu z powodem.
+- **Odmowa:** zamiast osobnej miarki jakości — **liczba pytań Guarda na stronę** (zdjęcie śmieciowe = prawie wszystko niejasne).
+  Próg N wybierany na zbiorze znanym z siatki (np. 15/20/30/40), przed holdoutem; obok raportować dla porównania miarkę słownikową
+  z pomiaru CC 20.10 (bez decydowania nią).
 
 ## Dane
-- `backend/dataset_20260627_095419` (50, znany — wybór progu B+), jego kopie obrócone o 90/180/270 (generowane w pamięci, bez zapisu),
-  `backend/dataset_20261016_fresh` (100, holdout — tylko kontrola, raz, po zamrożeniu reguł commitem).
-- Realne zdjęcia OWNERA `backend/dataset_real/images/*.jpg` (lokalne, bez gold): tylko orientacja wybrana przez A i B,
-  przyjęcie/odmowa, czas — **agregaty bez nazw plików i tekstu**; ocena poprawności = oko OWNERA na lokalnym pliku (nie w repo).
-
-## Miary (każda osobno, bez jednej sumy)
-1. **Pozostałość:** wartości gold widoczne w tekście do udostępnienia (`anonymized_preview`) — jawne całe, jawne fragmenty
-   ≥ 4 cyfry/litery identyfikatora (np. „-90” się nie liczy, „75-90” tak — reguła zapisana w kodzie przed pomiarem), per typ, krytyczne osobno.
-2. **Przyjęte / odrzucone dokumenty**, w tym odrzucone obrazy bez degradacji (L0).
-3. **Fałszywe alarmy:** tokeny na tekście nie-PII ponad punkt odniesienia (`classify_extra` z `benchmark_ocr_diagnostics`).
-4. **Kompletność (osobno, nie wyciek):** wartości gold nieobecne w odczycie PP (`classify_miss` = `BRAK_W_OCR`).
-5. **Orientacja:** trafność na obróconych kopiach (A vs B), czas na stronę, RAM.
-Zgoda wariantów ≠ prawda; procent bez odtworzenia punktu odniesienia (dziś = wynik `benchmark.py` 274/290, krytyczne 0/107
-dla Tesseracta bez obrotu) jest nieważny — narzędzie najpierw odtwarza ten punkt.
-
-## Model orientacji (bez zgadywania o pochodzeniu)
-Oficjalny `PaddlePaddle/PP-LCNet_x1_0_doc_ori` (Apache-2.0) jest w formacie Paddle. W eksperymencie dopuszczalne:
-(a) konwersja własna `paddle2onnx` w osobnym tymczasowym środowisku, albo (b) gotowy plik ONNX z jawnym źródłem i SHA256 w raporcie.
-Model leży poza repo (`~/lynx_models/doc_ori/`), brak pobierania w trakcie pomiaru; brak pliku → NOT_RUN wariantu B z powodem.
-Trafność modelu jest **mierzona** na obróconych syntetykach, nie przyjmowana z karty modelu (99,06% producenta to nie nasz wynik).
-Decyzja produkcyjna o źródle modelu — poza tym Taskiem.
+- `backend/dataset_20260627_095419` (50, znany — wybór N), `backend/dataset_20261016_fresh` (100, holdout — raz, po zamrożeniu
+  reguł commitem). **Czystego tekstu tych samych dokumentów nie da się odtworzyć** (sprawdzone przez CC: `ground_truth.json` ma tylko
+  `entities`, ziarno generatora nie zapisane). Punkt odniesienia „czysty tekst” = **ten sam skrypt w trybie tekstowym na
+  `dataset_clean` z repo Mobile (`paweltpietraszko-ship-it/LynxMask`, lokalnie u CC/Codexa) (Mobile, 100 dok. z gold; pomiar CC 20.10: 0 dziur / ~4 pytania)** + podzbiór obrazów
+  bez degradacji (L0) jako najlepszy przypadek zdjęcia.
+- Realne zdjęcia OWNERA `backend/dataset_real/images/*.jpg` (lokalnie, bez gold): wybrany obrót, liczba pytań, odmowa tak/nie,
+  czas — **tylko agregaty**; poprawność ocenia oko OWNERA na pliku lokalnym (nie w repo).
 
 ## Implementacja — pomiar, nie produkt
-Jeden skrypt `tasks/LYNX-OCR-GATE-COMPARE/measure/compare_gate.py`:
-- reużywa `ocr_rapid._get_engine/build_text`, `pp_quality.MODEL_SHA256`/`pp_quality.preflight`, `benchmark_ocr_diagnostics`,
-  `benchmark` (token, `_CRITICAL_KEYS`) przez import — bez kopiowania;
-- `/preview` z tekstem PP jako plik `.txt` na działającym silniku (SHA backendu w raporcie; silnik musi odpowiadać kodowi main —
-  sprawdzić i zapisać); bez zmian `/preview`, OCR, warstw, Guarda;
-- raport JSON tylko do `--out` poza repo: ID syntetyków, klucze/typy gold, liczby, czasy, SHA modeli/kodu/danych;
-  zero wartości, tekstu OCR i nazw plików realnych.
-Testy `backend/tests/test_ocr_gate_compare.py` na sztucznych danych (bez modeli): reguła fragmentu ≥ 4 znaków, liczenie pozostałości
-z tokenami obok wartości, NOT_RUN przy braku modelu, odmowa ścieżek `dataset_real` dla trybu gold i `--out` w repo, determinizm
-dwóch przebiegów (poza czasem), wybór progu B+ tylko ze zbioru znanego.
+`tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py`: reużywa przez import `ocr_rapid`, `pp_quality` (hashe/preflight),
+`benchmark` (token, `_CRITICAL_KEYS`, `_ENTITY_TYPE_MAP`), `benchmark_ocr_diagnostics` (`classify_miss`, `norm`); tekst do silnika
+przez `/preview` jako `.txt` na działającym silniku (SHA backendu w raporcie; musi odpowiadać kodowi main); HerBERT minimalnym
+wywołaniem ONNX (bez kopiowania produktu, którego jeszcze nie ma). Raport JSON tylko do `--out` poza repo: ID syntetyków, klucze/typy,
+liczby, czasy, SHA modeli/kodu/danych; zero wartości, tekstu OCR, nazw plików realnych.
+Testy `backend/tests/test_ocr_chain_compare.py` (bez modeli i silnika, na sztucznych tekstach): reguła Guard-reszty (nazwisko-zwykłe
+słowo z wielkiej litery → pytanie; rozbity telefon → pytanie; zwykłe słowo → bez pytania), definicja dziury (fragment ≥ 4 znaki;
+wartość pokazana w pytaniu ≠ dziura), wybór N tylko ze zbioru znanego, NOT_RUN bez modeli, odmowa `dataset_real` w trybie gold
+i `--out` w repo, determinizm dwóch przebiegów (poza czasem).
 
 TASK_SCOPE:
-- tasks/LYNX-OCR-GATE-COMPARE/measure/compare_gate.py
-- backend/tests/test_ocr_gate_compare.py
+- tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py
+- backend/tests/test_ocr_chain_compare.py
 
-OUT_OF_SCOPE: zmiany produkcyjne (OCR, `/preview`, warstwy, kotwice, Guard, progi), port reguł AnchorEngine (osobny Task po tym
-pomiarze — dziury opisane wyżej idą do BOARD), aktywacja PP, instalacja modeli w aplikacji, UI/onboarding, zmiana S3/S4,
-realne dane w repo, pełna suita.
+OUT_OF_SCOPE: zmiany produkcyjne (OCR, `/preview`, warstwy, kotwice, Guard, HerBERT w produkcie, progi, UI/onboarding),
+port reguł AnchorEngine (`LYNX-ANCHOR-PARITY`), aktywacja PP, S3/S4, realne dane w repo, pełna suita.
 
-GATE: dwa nowe pliki, każdy ≤ 600 l., funkcje ≤ 50 l. Szacunek CC: skrypt ~330 l. + testy ~130 l. ≈ 460 l. (> 150) → zgoda OWNERA
-na rozmiar przed kodem.
+GATE: dwa nowe pliki ≤ 600 l., funkcje ≤ 50 l. Szacunek CC: skrypt ~380 l. + testy ~140 l. ≈ 520 l. (> 150) → zgoda OWNERA przed kodem.
 
-KRYTERIUM WYNIKU (zapisane przed pomiarem): wariant wygrywa, jeśli na holdoucie ma **nie więcej** krytycznych pozostałości niż
-punkt odniesienia i najmniej odrzuconych obrazów L0; przy remisie — mniej fałszywych alarmów, potem krótszy czas. Gdy żaden
-wariant nie spełnia warunku krytycznego, wynik = `NO_WINNER` i nic nie idzie do produktu.
+KRYTERIUM WYNIKU (przed pomiarem): łańcuch na zdjęciach jest **gotowy do kontraktu produktu**, jeśli na holdoucie po wyborze N:
+0 realnych dziur krytycznych, realne dziury niekrytyczne ≤ 1 na 100 dokumentów (czysty tekst: 0),
+mediana pytań ≤ 2 × czysty tekst, odmowy L0 = 0. Inaczej `NOT_READY` z listą przyczyn (OCR / silnik / reguła Guarda / HerBERT)
+— wtedy następny krok wynika z największej przyczyny, nie z kolejnego progu.
 
-PRZEKAZANIE: Architekt → decyzja o briefie (akceptacja/poprawki) w tym pliku albo wierszu BOARD; Codex → precheck
-`tasks/LYNX-OCR-GATE-COMPARE/round_01/tests/tests_r1.txt`; CC po PASS i zgodzie OWNERA implementuje. Merge tylko na polecenie OWNERA.
+PRZEKAZANIE: Architekt → akceptacja/poprawki; Codex → precheck `tasks/LYNX-OCR-GATE-COMPARE/round_01/tests/tests_r1.txt`;
+CC po PASS i zgodzie OWNERA implementuje. Merge tylko na polecenie OWNERA.
