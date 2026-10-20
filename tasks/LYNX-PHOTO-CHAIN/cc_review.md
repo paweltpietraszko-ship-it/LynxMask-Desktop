@@ -8,12 +8,14 @@ jedyny importer produkcyjny `extract_text_from_image` to `document_processor._ex
 ## Werdykt CC: przyjmuję brief, z trzema korektami wykonawczymi (bez zmiany kontraktu)
 
 1. **Pakowanie — `tauri.conf.json` nie jest właścicielem modeli.** Instalator Tauri zawiera wyłącznie front (`bundle` bez `resources`);
-   silnik Python startuje z katalogu repo przez `LynxMask.vbs` (`py -3 pseudominizer_api.py`), a pakowanie silnika to zaległość
-   `LYNX-APP-LAUNCHER`. Wykonanie wymagania briefu „nie zakładać `~/lynx_models`”: domyślny katalog modeli = `backend/models/`
-   (względem kodu, nie katalogu domowego), pliki niewersjonowane w git (~37 MB), lista SHA256 w kodzie, krok instalacyjny w `README.md`
-   (modele det/rec/cls z pakietu `rapidocr`, model orientacji z przypiętego źródła — pobranie tylko przy instalacji, nigdy w trakcie pracy).
-   Brak pliku / zły hash → PP niedostępny → Tesseract (zapas techniczny). „Test instalacyjny” = uruchomienie bez `LYNX_OCR_MODEL_DIR`
-   i bez `~/lynx_models`. **TASK_SCOPE: dopisany `README.md`** (zgodnie z §4 briefu: zgłoszenie przed pracą); `tauri.conf.json` nietknięty.
+   silnik Python startuje z katalogu repo przez `LynxMask.vbs` (`py -3 pseudominizer_api.py`). **Uwaga OWNERA 20.10 (przyjęta przez CC):
+   żadnych ręcznych kroków instalacji dla użytkownika — instalator ma sam ocenić, czy urządzenie się nadaje, i zainstalować wszystkie
+   składniki; nie piszemy programu pod jeden komputer.** To dotyczy całego silnika (Python, spaCy, Morfeusz, Tesseract, modele), nie tylko
+   tego Tasku → osobny Task `LYNX-INSTALLER` (wiersz w BOARD, dawny `LYNX-APP-LAUNCHER`). W tym Tasku: modele w katalogu względem kodu
+   silnika `backend/models/ocr/` (miejsce, do którego instalator je wgra; nie `~/lynx_models`), lista SHA256 w kodzie, katalog w
+   `.gitignore` (~37 MB wag poza git). Brak pliku / zły hash → PP niedostępny → Tesseract. **Aktywacja dla użytkowników zależy od
+   `LYNX-INSTALLER`** (wymaganie briefu „pakiet musi zawierać modele” spełnia instalator, nie ten Task). TASK_SCOPE: dopisany
+   `.gitignore`; `tauri.conf.json` nietknięty; bez instrukcji ręcznej instalacji w README.
 2. **`startup_check.py` — bez blokady startu.** Każda nieudana próba w `_CHECKS` blokuje start silnika, a brak PP ma oznaczać zapas
    Tesseract, nie zablokowany program. Weryfikacja SHA przy pierwszym załadowaniu modelu (leniwie, w `ocr_rapid`/`photo_chain`) spełnia
    wymaganie „naruszenie hasha = PP niedostępny”; `startup_check.py` zostaje w TASK_SCOPE, ale planuję go nie zmieniać (redukcja).
@@ -40,13 +42,16 @@ jedyny importer produkcyjny `extract_text_from_image` to `document_processor._ex
 | `backend/ocr_engine.py` | ~+6/−4 — wywołanie łańcucha zamiast fazy A (plik 483 l., pod limitem) |
 | `backend/document_processor.py` | ~+2 — kod przyczyny w `ocr_meta` |
 | `frontend/src/screens/Pseudonimizuj.tsx` | ~+15 — przycisk „Wklej tekst”, brak procentu dla PP |
-| `README.md` | ~+12 — instalacja modeli, SHA, licencje (Apache-2.0) |
+| `.gitignore` | +1 — `backend/models/` |
 | testy (`test_photo_chain.py` nowy, `test_ocr_rapid.py`) | ~+170/−30 |
 | **razem** | **~200 l. kodu produktu + ~170 l. testów ≈ 370 l.** (powyżej 150 → zgoda OWNERA przed kodem) |
 
 Narzędzie pomiaru E2E i raport UNKNOWN — w `tasks/LYNX-PHOTO-CHAIN/` (poza produktem). Flaga domyślnie OFF: bez zgody OWNERA na progi
 użytkownik nie widzi zmiany.
 
-## Prośba do OWNERA
+## Zgoda OWNERA (20.10)
+Rozmiar i zachowanie: „Reszta ok” (po uwadze o instalatorze). Progi — osobno, po pomiarze.
+
+## Prośba do OWNERA (zrealizowana)
 Zgoda na rozmiar (~370 l. z testami) i na zachowanie widoczne po aktywacji: komunikat odmowy z briefu + przycisk „Wklej tekst”, brak
 procentu pewności przy nowym czytniku. Progi zatwierdzasz osobno, po pomiarze.
