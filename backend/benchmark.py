@@ -48,10 +48,7 @@ Changelog:
     - [L709] missed_candidates.json: uzupełniono o pola run_id i ocr_conf_real
       zgodnie ze SPEC_SLOWNIK_WORKFLOW_v1.0. Pole context=null (benchmark nie ma
       dostępu do surowego tekstu OCR w tym miejscu — odnotowane w raporcie).
-  v1.1
-    - Wersja z poprawkami pipeline (historia w repozytorium)
-  v1.0
-    - Wersja bazowa
+  v1.4 diagnostyka silnik/OCR: benchmark_ocr_diagnostics.py (LYNX-OCR-PARITY); v1.0–v1.1 w historii repozytorium
 """
 from __future__ import annotations
 
@@ -66,6 +63,7 @@ from pathlib import Path
 from typing import Any
 
 import requests
+import benchmark_ocr_diagnostics as ocr_diag
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Konfiguracja
@@ -488,6 +486,7 @@ def run_benchmark(
 
             resp   = post_preview(img_path)
             result = analyze(gt_entry, resp)
+            ocr_diag.record(gt_entry, resp, result)  # [v1.4] original_text tylko w pamięci
             batch_results.append(result)
 
             # Linia statusu
@@ -981,6 +980,7 @@ Przykłady:
         batch_size=args.batch_size,
     )
     build_report(results, run_dir)
+    ocr_diag.write(run_dir)
 
 
 if __name__ == "__main__":
