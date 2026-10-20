@@ -1,0 +1,79 @@
+LYNX-OCR-GATE-COMPARE — audyt dostawy ETAP 1/2/2b, r3, 2026-10-20
+
+EXACT SHA: 392a433ac1744b07553c2e15081935dc03136a63.
+ETAP1-FROZEN: 32ea383d3e4a77b1c0381e67b798c3313048dce3.
+Punkt odniesienia prechecku: 09b1e25; produkt przed ETAPEM 2: 32ea383.
+WYNIK: PASS techniczny sprawdzonych poprawek ETAPU 2/2b;
+PARTIAL odbioru całego eksperymentu / brak podstaw do READY_FOR_PRODUCT_BRIEF.
+Brak nowego funkcjonalnego findingu FAIL w sprawdzonym zakresie.
+ODBIORCA: Paweł / CC / Architekt.
+
+DOWODY
+1. Odczyt DELIVERY, rozszerzeń kontraktu dodanych przed kodem i wąskiego
+   diffu czterech zmienionych ownerów + testów. Rozszerzenie 2b opisane
+   jako osobne polecenie OWNERA; nie mylone z klasą kotwica+OCR.
+   Dalsze prace OSOBA w tym bloku zostały przez OWNERA wstrzymane.
+2. chain_compare.py byte-for-byte bez zmian 32ea383..392a433.
+   N, reguły i definicje nie zostały przestrojone po ETAP1-FROZEN.
+3. Testy celowane test_ocr_chain_compare.py + zmieniony test_ner_multiline.py:
+   68 passed w pierwszej próbie. 1 failure sprzątania temp + 4 errors
+   tworzenia profilu pochodziły z niezapisywalnego sandbox Temp.
+   Po ustawieniu tempfile.tempdir na zapisywalny katalog wyłącznie
+   tych 5 przypadków: 5 passed, 68 deselected. Łącznie 73/73 sprawdzone.
+   Nie zaklasyfikowano ograniczenia środowiska jako regresji produktu.
+4. Własny repro_r3.py, rzeczywisty pipeline.pseudonymize_document z pustym
+   odizolowanym stanem, realnym NER/Morfeuszem i Guardem, bez HTTP:
+   - CITY: miasto z utraconym ł po polu adresu;
+   - EMAIL: TLD z literą OCR Unicode;
+   - NIP_TAIL i PARCEL_TAIL: brak jawnych końcówek numeru;
+   - DOB: cyfra O w dacie po ur.;
+   - NAME/SURNAME: samodzielne imię i nazwisko z właściwym tokenem;
+   wszystkie 7/7: wskazany fragment zakryty, brak error/Guard-block,
+   roundtrip równy wejściu. Wyjątki Data/Dane/Osoba pozostają jawne.
+5. Zmiany dwóch wcześniejszych testów nie ukrywają technicznej regresji:
+   nowe kontraktowe zakrywanie samodzielnych nazw zmienia oczekiwane
+   wyjście; test nadal wymaga własnej wartości i niepowielania tokenu
+   cudzej pełnej osoby, a sprawdzenie roundtrip pozostaje.
+6. Strażnik 274/290 / 0/107 i 0/13/3 main-vs-branch pozostają dowodem CC.
+   Nie ponawiano benchmarku, 300 tekstów, 50+100 zdjęć ani pełnej suity.
+
+ISTOTNE OGRANICZENIE — PARTIAL, NIE AUTOMATYCZNY FAIL
+Brief wymaga po poprawkach ponownego porównania tym samym skryptem 50/100
+i osobnego wyniku po zmianach. DELIVERY jawnie podaje:
+- po 2/2b ukończono tylko clean;
+- 17 UNKNOWN_REVIEW na clean nie ma jeszcze końcowego wyjaśnienia;
+- known/holdout nieukończone (izolacja / RAM);
+- pełny wynik po poprawkach nie został dostarczony.
+Dlatego odbioru całego Tasku nie zamykamy bezwarunkowym PASS.
+Wynik bazowy pozostaje NOT_READY; nie wolno nazwać produktu gotowym.
+Brak kompletnego pomiaru nie jest odtworzonym defektem silnika.
+
+P2 ORAZ ZMIANY PRODUKTU
+600/600, źródła konwersji modelu orientacji i agregaty zdjęć realnych
+to dowody CC poza zamrożonym skryptem; nie były tu niezależnie odtwarzane.
+Nie zatwierdzono orientacji w produkcie ani progu 0.6, Guarda-reszty,
+HerBERT-a, nowego OCR, N i zmian S4.
+Akceptacja portu słownika 2b nie dowodzi jakości wszystkich klas OSOBA.
+Znane ograniczenia OSOBA nie były ponownie odkrywane ani naprawiane.
+
+GATE
+Dostawa raportuje WYMAGA_DECYZJI 6512 zmienionych linii (większość słownik),
+wobec wcześniejszego szacunku ~650. Nie udzielono w imieniu OWNERA
+zgody rozmiarowej ani zgody na merge. To bramka odrębna od wyniku testów.
+
+PRZEKAZANIE
+Zgodnie z poleceniem Pawła następne zadanie w BOARD -> Architekt:
+LYNX-OSOBA-REDESIGN (propozycja 48399b8). Bez dopisywania nowej
+architektury w tym audycie i bez uruchamiania dalszych poprawek OSOBA.
+Architekt powinien dostać obecny exact SHA, PASS poprawek i uczciwe
+PARTIAL pomiaru; nie zakładać READY_FOR_PRODUCT_BRIEF ani nowego holdoutu.
+Decyzja o ponowieniu brakującego pomiaru / dalszym zakresie po stronie
+OWNERA i Architekta. Backend 8765, profile i realne dokumenty nienaruszone.
+Bez zmian kodu produktu i merge.
+
+ODTWORZENIE
+python -m pytest tests/test_ocr_chain_compare.py tests/test_ner_multiline.py -q
+  --tb=short --basetemp=<nowy zapisywalny katalog> (cwd backend).
+Dla fixture używającej tempfile.mkdtemp ustawić tempfile.tempdir
+na zapisywalny katalog w procesie testowym.
+python repro_r3.py <repo exact SHA> <zapisywalny katalog tymczasowy>.
