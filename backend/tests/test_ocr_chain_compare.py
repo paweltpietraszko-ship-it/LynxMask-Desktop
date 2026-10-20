@@ -195,3 +195,43 @@ def test_two_runs_identical():
     runs = [json.dumps(cc.summarize([dict(cc.eval_doc(out, resp(out, originals=["Jan Kowalski"]), ents), level=1, id="d",
                                           n_gold=4)], 20), sort_keys=True) for _ in range(2)]
     assert runs[0] == runs[1]
+
+
+# ── ETAP 2: kotwica + wartość uszkodzona przez OCR (reproduktory, pełny silnik w katalogu tymczasowym) ──────────
+@pytest.fixture(scope="module")
+def engine(tmp_path_factory):
+    sys.path[:0] = [str(ROOT / "backend"), str(ROOT / "audyt")]
+    import engine_quality as eq
+    ok, why = eq._engine_available()
+    if not ok:
+        pytest.skip(f"NER/Morfeusz niedostępny: {why}")
+    import pipeline
+    st = eq.build_state(str(tmp_path_factory.mktemp("lynx_stage2")))
+    return lambda t: pipeline.pseudonymize_document(t, st).text
+
+
+@pytest.mark.parametrize("text,leak", [
+    ("zamieszkały/a: ul. Chopina 74, 10-100 Bielsko-Biala\nNIP: 7423337590", "Bielsko-Biala"),   # ł→l (OCR)
+    ("Adres: ul. Piotrkowska 5, 90-001 Lodz\nTel.: 601 234 567", "Lodz"),
+    ("Adres e-mail:\nslawomirdabrowski@poczta.pì\nDANE PODATKOWE", "slawomirdabrowski"),        # l→ì w TLD
+    ("Nr działki ewidencyjnej:\n373251.0081.9795\nObręb 0012", "9795"),                         # ogon numeru
+    ("NIP: 742-33-75-90 | PESEL: 50022458822", "-90"),                                          # 9-cyfrowy NIP z OCR
+    ("Jan Nowak, ur. 12.O3.1985 w Gdańsku", "12.O3.1985"),                                      # O zamiast 0
+    ("Jan Nowak, ur 12.03.1985", "12.03.1985"),                                                 # „ur” bez kropki
+])
+def test_stage2_ocr_damaged_value_after_anchor_masked(engine, text, leak):
+    assert leak not in engine(text)
+
+
+@pytest.mark.parametrize("text,kept", [
+    ("ur. 12.03.1985", None), ("tel. 322 19 27", None), ("Spotkanie w sobotę, kurs ur. bez daty", "kurs ur. bez daty"),
+    ("Kielce, dnia 12 maja", "Kielce, dnia"),
+])
+def test_stage2_no_regression(engine, text, kept):
+    out = engine(text)
+    assert (kept in out) if kept else (text.split()[-1] not in out)
+
+
+def test_ascii_fold_keeps_l_stroke():
+    from layers.address import _ascii_fold
+    assert (_ascii_fold("Bielsko-Biała"), _ascii_fold("Łódź")) == ("Bielsko-Biala", "Lodz")
