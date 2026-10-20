@@ -155,3 +155,20 @@ def test_paths_outside_repo_and_synthetic_only(tmp_path):
     assert po._check_paths(args) is None
     args.known = tmp_path / "dataset_real"
     assert po._check_paths(args) is not None
+
+
+@pytest.mark.parametrize("gap,parts", [(0, 1), (650, 2)])
+def test_tess_rest_split_by_column_gap(gap, parts):
+    """Codex r2 F1: dwa odległe pola jednej linii TSV nie tworzą razem poprawnego NIP."""
+    words = [((1, 1, 1), 10, 20, 100, 40, NIP_OK[:5], 90), ((1, 1, 1), 110 + gap, 20, 200 + gap, 40, NIP_OK[5:], 90)]
+    out = classify([], words)
+    assert len(out) == parts
+    assert [r["reason"] for r in out] == (["valid_id"] if parts == 1 else ["text", "text"])
+
+
+def test_bad_box_in_full_doc_is_status_not_crash():
+    """Codex r2 F2: ramka None przechodzi przez measure_doc jako UNMEASURABLE, bez wyjątku."""
+    doc = po.measure_doc(_png(), lambda b: _Res([None, box(10, 10, 200, 40)], ["x", "Ala"]),
+                         lambda img: tsv([((1, 1, 1), 10, 10, 200, 40, "Ala", 90)], size=(400, 200)))
+    assert doc["unmeasurable"] is None and doc["pp_text"] == "Ala"
+    assert [(r["status"], r["reason"]) for r in doc["regions"]] == [("UNMEASURABLE", "bad_box"), ("BOTH_AGREE", "text_equal")]

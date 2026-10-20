@@ -40,6 +40,7 @@ MAX_SKEW_DEG = 10.0      # ramka PP bardziej obrócona → brak wspólnej geomet
 DUP_IOU = 0.5            # dwie ramki PP na tym samym miejscu → niejednoznaczne
 TESS_LOW_CONF = 30       # jak `ocr_engine`: słowo conf < 30 to znak złej jakości
 TIMEOUT_S = 60
+COLUMN_GAP_H = 2.0      # jak `ocr_rapid.build_text`: przerwa > 2 × wysokość słowa = osobne pole/kolumna (Codex r2 F1)
 CHECKSUM_PREFIXES = ("pesel", "nip", "regon", "iban")
 _ID_RUN = re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]{2}[ \-]?)?\d[\d \-]{7,40}\d(?![0-9])")
 _MEANINGFUL = re.compile(r"[^\W\d_]{3,}|\d{4,}")
@@ -190,10 +191,21 @@ def classify_doc(regs: list[dict], lines: list[dict]) -> list[dict]:
     used: set = set()
     out = [dict(_pp_region_status(i, r, regs, lines, used), src="pp") for i, r in enumerate(regs)]
     for k, ln in enumerate(lines):
-        rest = [w for w in ln["words"] if (k, id(w)) not in used]
-        if rest:
-            out.append(dict(_tess_only(rest), src="tess"))
+        for seg in _segments([w for w in ln["words"] if (k, id(w)) not in used]):
+            out.append(dict(_tess_only(seg), src="tess"))
     return out
+
+
+def _segments(words: list[dict]) -> list[list[dict]]:
+    """Pozostałe słowa jednej linii TSV dzielone na pola: duża przerwa pozioma nie skleja obcych wartości."""
+    segs: list[list[dict]] = []
+    for w in words:
+        h = w["rect"][3] - w["rect"][1]
+        if segs and w["rect"][0] - segs[-1][-1]["rect"][2] <= COLUMN_GAP_H * h:
+            segs[-1].append(w)
+        else:
+            segs.append([w])
+    return segs
 
 
 # ── pomiar dokumentu ─────────────────────────────────────────────────────────
@@ -228,7 +240,11 @@ def measure_doc(image_bytes: bytes, pp_fn=run_pp, tess_fn=run_tess) -> dict:
         doc[f"secs_{name}"] = time.perf_counter() - t0
         if doc["unmeasurable"]:
             return {k: v for k, v in doc.items() if k not in ("pp", "tess")}
-    return _finish(doc, img.size)
+    try:
+        return _finish(doc, img.size)
+    except Exception as e:  # noqa: BLE001 — błąd składania = status, nie przerwany zbiór (Codex r2 F2)
+        return {**{k: v for k, v in doc.items() if k not in ("pp", "tess")}, "regions": [], "pp_text": "",
+                "unmeasurable": f"assemble_{type(e).__name__}"}
 
 
 def _finish(doc: dict, size) -> dict:
@@ -242,7 +258,8 @@ def _finish(doc: dict, size) -> dict:
         return dict(doc, unmeasurable="pp_inconsistent")
     lines, doc["tess_bad_words"] = tess_lines(tsv)
     regs = pp_regions(boxes, txts)
-    doc["pp_text"] = build_text(boxes, txts) if boxes is not None and len(boxes) else ""
+    ok = [i for i, r in enumerate(regs) if r.get("rect")]   # tekst PP tylko z ramek o poprawnej geometrii
+    doc["pp_text"] = build_text([boxes[i] for i in ok], [txts[i] for i in ok]) if ok else ""
     doc["regions"] = classify_doc(regs, lines)
     return doc
 
