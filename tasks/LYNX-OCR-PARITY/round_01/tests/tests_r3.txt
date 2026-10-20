@@ -1,0 +1,40 @@
+LYNX-OCR-PARITY — wąski re-check poprawki F1, 2026-10-20
+
+EXACT SHA: 5282ffbbdcccf668781ca25a5af8540586402648; kod 6a57d67.
+DIFF BASE: 578d7a512525a1678bb1598d90c0da38c2ae3d44.
+WYNIK: FAIL diagnostyki — F1 częściowo poprawione, pozostaje wariant domeny.
+ODBIORCA: CC / Architekt / Paweł. Bez zmian produktu i merge.
+
+DOWODY ZAMKNIĘTYCH PRZYPADKÓW
+- Zachowany repro_r2.py wykonany z jedyną adaptacją asercji HEAD do
+  audytowanego SHA (w pamięci, wcześniejszy plik nienaruszony):
+  INDEPENDENT_MECHANICS PASS; F1_REPRODUCED 0/3.
+  Dłuższe nazwisko, prefix skrzynki i dłuższy numer mają teraz REVIEW.
+  Kontrola legacy plików/deterministyczności/braku literałów nadal PASS.
+- Celowane tests/test_benchmark_ocr_diagnostics.py: 26 passed (0.69 s).
+  Pierwsze wywołanie miało zły katalog roboczy i nie zebrało testów;
+  właściwe wywołanie w backend zakończyło się powyższym wynikiem.
+- Wąski diff: nowa kontrola granic present_as_whole, odrzucenie fuzzy
+  dla podciągu dłuższej wartości, REVIEW oraz pięć prób testowych.
+  Kontrola nazwy złożonej łącznikiem: REVIEW.
+- Nie otwierano ponownie zgody OWNERA na 341 linii z aktualnego przekazania.
+
+F1 — POZOSTAŁA TA SAMA KLASA, NIE NOWY WYMÓG
+TRACE: brief pkt 1 / raport r2: BUG_SILNIKA oznacza niezmieniony gold
+w wejściu; podciąg innej pełnej wartości nie może tego dowodzić.
+OWNERSHIP: benchmark_ocr_diagnostics.present_as_whole; _RIGHT_JOIN nie
+obejmuje kropki, a znak po dopasowaniu jest sprawdzany bez kontekstu
+kontynuacji domeny. classify_miss na tej podstawie nadaje BUG_SILNIKA.
+REPRO: rzeczywiste benchmark.analyze -> Collector.record, tokens=[],
+privacy_missed=1. Gold syntetyczny anna@example.org; wejście zawiera
+wyłącznie anna@example.org.pl. Wynik BUG_SILNIKA, choć to inny adres.
+Kontrola anna@example.org. (kropka kończąca zdanie) poprawnie daje
+BUG_SILNIKA. Naprawa ma odróżnić rozszerzenie wartości od interpunkcji;
+nie żądamy odrzucania każdej końcowej kropki ani zmiany silnika.
+Utrwalone w repro_r3.py, exit 1 potwierdza pozostający F1.
+
+ZAKRES / NASTĘPNY KROK
+Nie uruchamiano 50 obrazów, modeli, HTTP ani pełnej suity. Wynik 0/13/3
+pozostaje dowodem CC. To błąd atrybucji diagnostyki, nie wykazany wyciek.
+Zamknąć F1 po poprawieniu tej granicy i odtworzeniu repro_r2 + repro_r3
+oraz testów ownera. Nie rozszerzać zadania ani stroić progów.
