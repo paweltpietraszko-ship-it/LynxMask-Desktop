@@ -2,6 +2,17 @@
 
 LynxMask Desktop, 19.10.2026 (aktualizacja po korekcie benchmarku CC). Ten dokument to **migawka operacyjna, NIE PRODUCT_TRUTH**. Repo: paweltpietraszko-ship-it/LynxMask-Desktop. Przed podjęciem zadania odśwież origin/main, nagłówek i sekcję TERAZ w BOARD.md oraz WŁAŚCIWY wiersz. Nie zakładaj, że wskazany tutaj SHA nadal jest HEAD.
 
+## AKTUALIZACJA 20.10.2026 — TEST OSOBA I RZECZYWISTE PRIORYTETY
+
+**Czytaj tę sekcję PRZED historycznym stanem z 19.10 poniżej.** Bieżący status i ostatnie SHA zawsze potwierdź w `BOARD.md`; poniższe streszczenie może się zestarzeć. Przebudowa OSOBA jest już osobną propozycją CC, nie dotychczasowym „jedynie HerBERT bez przebudowy”.
+
+- **PHOTO-CHAIN pierwszy:** brief Architekta w `tasks/LYNX-PHOTO-CHAIN/brief.md`. BOARD 20.10: CC ma zgodę OWNERA na rozmiar około 370 linii i implementację pod flagą **domyślnie OFF**. Zgoda na aktywację/progi jeszcze nie zapadła; status `OWNER_DECISION_NEEDED` nie oznacza, że CC ma przerwać samo kodowanie. Nie odwracaj tych decyzji według starej sekcji „START” z 19.10.
+- **OSOBA-REDESIGN drugi:** propozycja CC `tasks/LYNX-OSOBA-REDESIGN/cc_proposal.md`. Priorytet: jedno miejsce decyzji „czy konkretne wystąpienie jest osobą” na podstawie zgodnych dowodów ZA i PRZECIW; spaCy, Morfeusz, słowniki, wielka litera, odmiana i kontekst — źródła dowodów, nie autonomiczne wyrocznie. HerBERT zgodnie z ustaleniem **jako ostatnia siatka na nadal jawny tekst**, bez cofania decyzji silnika. Nie zmieniać S4 Guarda bez zgody OWNERA.
+- **Krytyczne nowe dane:** [handoff z kompletnym 68-zdaniowym testem syntetycznym, kluczem, dosłownym wynikiem Mobile oraz fragmentem mapy Desktop](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/c1a469304ee03ecc16baa6c93dada0a6b00b537d/tasks/LYNX-OSOBA-REDESIGN/HANDOFF_EXPERIMENT_2026-10-20.md) (branch `task/LYNX-OSOBA-REDESIGN`, commit `c1a4693`). Mobile nie rozwiązuje w pełni homonimów: maskuje `Róża`, `Malina` i zwierzęta w nieosobowym kontekście; ten sam token stosuje dla różnych znaczeń tego samego słowa. Wstępnie 18/32 nieosobowych wystąpień błędnie zakryte jako OSOBA oraz 5/36 oczekiwanych osób jawnych (+ fragment `Anna Maj`); te liczby są **diagnostyczne, do odtworzenia na exact SHA, nie benchmark produkcyjny**.
+- **Desktop:** OWNER dostarczył tylko MAPĘ maskowania, nie pełny wynik na 68 zdań; są np. `OCZEKIWANA → OSOBA_022`, podczas gdy Mobile pozostawił nagłówki 61–64 jawne. Nie twórz porównania FP/FN Desktop–Mobile bez rzeczywistego tekstu wyjściowego Desktop.
+- **Następny eksperyment:** niezależne uruchomienie obu silników na identycznym wejściu, izolowanych profilach i wskazanych SHA; porównać per *wystąpienie* FP, FN, role FIRMA/ADRES, zniekształcenia granic tokenu, mapę i Przywróć. Nie stroić pod oglądany test i nie udawać, że jest świeżym holdoutem. Dopiero potem minimalny brief `OSOBA-REDESIGN`.
+- **Wątek projektu poza kolejką:** sekcja `Kierunki zastosowania` w BOARD: klawiatura LynxMask / Secure Compose dla Androida (bez zastępowania Gboarda) oraz wsadowa pseudonimizacja folderów i baz przez CLI — **pomysły przyszłe, nie zlecenia implementacji**.
+
 ## 1. NAJWAŻNIEJSZA ZMIANA KIERUNKU
 
 **OWNER 19.10: odstawiamy Arenę na boczny tor.** Eksperymenty kandydat/arbiter/one-apply nie wykazały przekonującej przewagi jakościowej nad obecnym programem. Nie wracaj teraz do R2b/R3/R4, hybrydy, przepisywania pipeline ani F0a LYNX-ARCH-CANDIDATES. Historię gałęzi experiment/lynx-architecture-arena, experiment/lynx-architecture-arena-v02 i task/LYNX-ARENA-SIGNALS-PILOT zachowujemy jako przyrząd badawczy i dowód, nie plan wdrożenia. Szczegóły: ODLOZONE.md i git log -p BOARD.md. To **decyzja priorytetowa**, nie naukowy dowód braku wad kolejności warstw.
@@ -58,6 +69,6 @@ Security review Codexa: F1–F3 (jawny trie profilu, reset nieusuwający całoś
 
 ## 7. START PO OTWARCIU NOWEGO OKNA
 
-**Pierwsza praca:** przeczytaj `BOARD.md` → TERAZ (cel, dowody, kolejność). Skoryguj brief kroku 1 `LYNX-OCR-PARITY` według recenzji CC (nowy moduł zamiast rozbudowy `benchmark.py`), potem briefy kroków 2 i 3. Jeśli nie zgadzasz się z celem lub kolejnością, zapisz to w TERAZ przed pisaniem briefów.
+**Pierwsza praca (aktualizacja 20.10):** przeczytaj `BOARD.md` → TERAZ i bieżące wiersze PHOTO-CHAIN / OSOBA-REDESIGN; przeglądnij wskazany wyżej nowy handoff z testem 68 przypadków. Poprzednie zadania OCR-PARITY krok 1 i GATE-COMPARE są historyczne, nie pisać ich briefów ponownie. Wszelkie nowe decyzje wymagają aktualnego kontekstu, nie tej migawki.
 
 **Nie odziedzicz bezkrytycznie moich hipotez.** Pytanie nie brzmi „jak napisać piękny silnik?”, tylko „jaki minimalny zabieg daje mierzalnie lepszą ochronę i Przywróć na dokumentach użytkownika?”. Jeżeli OWNER zmieni priorytet — reaguj na aktualne polecenie, nie na tę migawkę.
