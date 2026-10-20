@@ -1,0 +1,55 @@
+LYNX-OCR-PARITY-STEP2 / faza B1 — wąski BRIEF_ONLY precheck, 2026-10-20
+
+WYNIK: PASS PREIMPLEMENTATION wyłącznie narzędzia B1.
+EXACT SHA: 065c56c20de1a29cbde6e815b779f78f9448b6bd.
+BRANCH: task/LYNX-OCR-PARITY-STEP2B.
+Kontrakt: tasks/LYNX-OCR-PARITY-STEP2/brief_phase_b.md.
+Zamknięta faza A: main 570995e; wcześniejsze dowody PASS fe035b6 zachowane.
+ODBIORCA: CC / Architekt / Paweł.
+
+ZAKRES
+Aktualny wiersz BOARD i TERAZ, nowy kontrakt B1, punktowe potwierdzenie
+istniejących _get_engine i classify_miss na exact SHA; pozostały szew
+build_text i zachowanie A wykorzystano z wcześniejszego audytu.
+Bez diffu implementacji, testów, reproduktorów, modeli, instalacji,
+odpytywania /preview i uruchamiania datasetów.
+
+USTALENIA
+1. B1 jest narzędziem badawczym poza produktem. Nie zmienia istniejącej
+   odmowy PP, domyślnego Tesseracta, pól OCRResult, API ani UI.
+   Odpowiada celowi sprawdzenia jakości i S1/S3/S5, nie tworzy polityki B2.
+2. Właściwy istniejący szew: _get_engine pozwala wykorzystać lokalny silnik
+   bez kopiowania inferencji; build_text jest dotychczasowym składaniem.
+   Dostępność i kształt scores w RapidOCR 3.10.0 ma zweryfikować CC;
+   nie potwierdzano go uruchomieniem podczas prechecku.
+3. Kontrakt obejmuje powiązanie boxes/txts/scores, niespójność długości,
+   brak/NaN/inf, pusty wynik i odróżnienie recognition score od kompletności
+   odczytu. Brak scores nie może udawać zmierzonego 0%.
+4. Wszystkie wartości gold, krytyczne typy, rozłączne etykiety i odrębne
+   ok/warn/accepted pozwalają zbadać straty bez zmiany mianownika.
+   Reuse classify_miss służy relacji gold/OCR; jego obecna etykieta
+   BUG_SILNIKA odpowiada obecności pełnego gold w tekście, nie jest
+   w B1 dowodem defektu maskowania (B1 w ogóle go nie uruchamia).
+5. Siatka kandydatów ma być jawna z góry; 50 obrazów służy wyborowi,
+   100 kontrolnych tylko jednorazowej falsyfikacji. Jawnie ujawniono
+   wcześniejsze wykorzystanie kontrolnych do porównania adaptera.
+   Nie ma strojenia na realnych danych ani nieadekwatnych PDF/TXT.
+6. Jawny --out poza repo, raport przez ID/klucze/agregaty, brak HTTP,
+   profilu i pobierania modeli ograniczają odpowiedzialność skryptu.
+   Dwa nowe pliki TASK_SCOPE są wystarczające. GATE i osobna zgoda
+   na rozmiar przed kodem pozostają obowiązujące.
+7. Liczbowa propozycja albo NO_SAFE_GATE są uczciwymi wynikami pomiaru.
+   Niewykazana separacja strat przez score może zatrzymać B2 bez
+   nazywania tego porażką implementacji B1.
+8. B2 pozostaje przyszłym kontraktem: dokładne progi/statusy/confidence,
+   precheck przed kodem, porównanie /preview, osobna ocena OWNERA.
+   Znane ograniczenie timeoutu ma osobną kontrolę przed B2; B1 nie
+   upoważnia do niezamówionej architektury procesowej.
+
+GRANICE PASS
+Brak uwag blokujących rozpoczęcie recenzji i implementacji narzędzia B1.
+Nie potwierdzono jakości OCR, kalibracji, konkretnych progów, gotowości B2
+ani bezpieczeństwa pełnego produktu. Żadnej zgody na wyniki PP w /preview,
+na zmianę domyślnego OCR lub merge.
+Następny krok: merytoryczny review i szacunek CC -> GATE/zgoda rozmiaru
+-> implementacja i jeden pomiar B1 -> niezależny audyt exact SHA.
