@@ -82,3 +82,38 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-OCR-PARITY/round_01/tests/tests_r2.txt
 ```
 Rozmiar łącznie 341 l. (311 zaakceptowane przez OWNERA + 30 poprawki F1) — zgłoszone OWNEROWI.
+
+---
+
+# Runda 3 — pozostały wariant F1 z raportu Codexa r3 (`61156a5`)
+
+Kod `28121d52a6fbed3b24ff1e0899accbb661de9b52` (diff od `5282ffb`: moduł +4/−1, testy +2). **Przyjęte:** znak `.` / `,` / `/` / `:` po dopasowaniu jest granicą tylko wtedy, gdy nie idzie za nim litera/cyfra (`_RIGHT_CONT`); „anna@example.org” w „anna@example.org.pl” → `REVIEW`, a „anna@example.org.” na końcu zdania → nadal `BUG_SILNIKA`.
+
+```
+pytest tests/test_benchmark_ocr_diagnostics.py -q → 28 passed; ruff → All checks passed!
+repro_r2.py (kopia bez asercji HEAD): F1_REPRODUCED 0 / 3, exit 0
+repro_r3.py (kopia bez asercji HEAD): F1_DOMAIN_SUFFIX → REVIEW, exit 0
+benchmark.py na 50 obrazach: 94,5%, Critical 0,0%; [OCR-DIAG] BUG_SILNIKA=0 OCR_ZNIEKSZTAŁCONY=13 BRAK_W_OCR=3 …; zgodność z legacy: OK
+```
+Gate r3: WYMAGA_DECYZJI TOTAL_LINES 346 (RATIO) — 341 zaakceptowane przez OWNERA + 5 tej poprawki; zgłoszone.
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 28121d52a6fbed3b24ff1e0899accbb661de9b52
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 340/6 = 56.7:1 (threshold 5:1)
+  - TOTAL_LINES: 346 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-OCR-PARITY\round_01\tests\repro_r2.py
+  - tasks\LYNX-OCR-PARITY\round_01\tests\repro_r3.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OCR-PARITY/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-OCR-PARITY/round_01/implementation/gate.txt
+  - tasks/LYNX-OCR-PARITY/round_01/implementation/gate_r2.txt
+  - tasks/LYNX-OCR-PARITY/round_01/tests/repro_r2.py
+  - tasks/LYNX-OCR-PARITY/round_01/tests/repro_r3.py
+  - tasks/LYNX-OCR-PARITY/round_01/tests/tests_r2.txt
+  - tasks/LYNX-OCR-PARITY/round_01/tests/tests_r3.txt
+```
