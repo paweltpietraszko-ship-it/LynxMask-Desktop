@@ -1,6 +1,6 @@
-# LYNX-MANUAL-REVEAL — kontrakt v3: odkrycie bez pętli alarmów
+# LYNX-MANUAL-REVEAL — kontrakt v4: zatwierdzona lokalna zgoda bez pętli alarmów
 
-Data 2026-10-20. **STATUS: PROPOZYCJA ARCHITEKTA / OWNER_DECISION_NEEDED. NIE IMPLEMENTOWAĆ JESZCZE.** Zastępuje brief v2 `306c597ca99fd02e4bdd4e18a0a8b409bf85f60a`, po zwrocie Codexa `5ed8d61cf847873ae27073dd10424f9d7326c0f4`. Raport r2 `ebfa55d` potwierdzał wyłącznie wykonalność szwu API, nie brak pętli.
+Data 2026-10-20. **STATUS: OWNER_APPROVED_POLICY / READY_FOR_CODEX BRIEF_ONLY.** OWNER po rekomendacji Architekta odpowiedział jednoznacznie „TAK” na wąski wyjątek `MAP_LEAK` dla świadomie odkrytego wystąpienia, z utrzymaniem wszystkich pozostałych zabezpieczeń. Zgoda dotyczy **polityki funkcji**, nie merge, zmian poza Taskiem ani przekroczenia budżetu. Spec S4 formalnie zmodyfikowany na **gałęzi zadania**: `arch/spec.md` commit `4bb9e86209a777889830f424a71195052da6fa26`; `arch/FROZEN.lock` w osobnym commicie `eb44b6b73abcefb452bba4ae945f78f74a039433` (SHA256 pliku `1b13cd99b941269d383a2e0ffdf953870858c08796fec3051bdd166f38b5ae76`). Nie zmienia to zamrożonego spec na `main` przed osobnym poleceniem merge. Historyczny zwrot Codexa: `5ed8d61cf847873ae27073dd10424f9d7326c0f4`; r2 `ebfa55d` potwierdzał szew API, nie politykę.
 
 ## Cel i rozdział ról
 
@@ -46,15 +46,15 @@ Nie utożsamiać `APPROVED` z decyzją użytkownika: `APPROVED` wymaga poprawneg
 
 **Rewizje i wyjście:** każda nowa operacja odkrycia/cofnięcia, domaskowania, zmiana dokumentu albo tekstu unieważnia poprzedni wynik walidacji `APPROVED`. Dotychczasowe zgody dla innych poprawnych wystąpień mogą pozostać w sesji, lecz pełny *nowy* `finalText` musi ponownie przejść walidację; wynik spóźnionej odpowiedzi dla starej rewizji nie autoryzuje nowej. Jedna kanoniczna wartość `finalText` obsługuje ekran, kopiowanie i zapis, nie `result.anonymized_preview`. Przy `/archive` backend nadal dostaje szyfrogram — kontrola, że zaszyfrowano dokładnie zatwierdzony tekst, odbywa się w UI i testach; nie przedstawiać archiwum jako niezależnie zweryfikowanego przez backend.
 
-## Granica frozen spec i niezbędna decyzja OWNERA
+## Granica S4 — decyzja OWNERA zatwierdzona
 
-Dziś `arch/spec.md` S3/S4 oraz `output_guard.guard_output_with_map` blokują `MAP_LEAK`. Przeprowadzenie map-checku na projekcji ukrywającej **wyłącznie wcześniej potwierdzone konkretne wystąpienie** jest wyjątkiem od tej praktyki. Nie wolno traktować starego PASS r2 ani samego polecenia korekty jako zgody na ten wyjątek.
+W historycznym S3/S4 i `output_guard.guard_output_with_map` każde `MAP_LEAK` blokowało wynik. OWNER jawnie zatwierdził **wyłącznie** wyjątek dla potwierdzonego konkretnego wystąpienia, nie globalne wyciszenie ani zwolnienie z HIGH/MEDIUM. Architekt doprecyzował S4 na gałęzi Tasku, z osobnym `FROZEN.lock`. Nie wolno traktować historycznego PASS r2 jako audytu tego nowego kontraktu.
 
-**Rekomendowana, precyzyjna decyzja do zatwierdzenia:** „Po normalnym przejściu Guarda użytkownik może świadomie odkryć wskazane pojedyncze wystąpienie tokenu. Ponowna kontrola wyłącza jedynie mapowy alarm `MAP_LEAK` wywołany przez to zatwierdzone wystąpienie; wszystkie pozostałe pozycje oraz reguły HIGH/MEDIUM i S3 nadal obowiązują. Zgoda nie przechodzi między dokumentami, nie jest trwałym wyjątkiem i może zostać cofnięta.” Tę zasadę należy po osobnej aprobacie OWNERA wpisać jawnie do S4 i ponownie zamrozić zgodnie z procedurą repo. **Do tego czasu NIE IMPLEMENTOWAĆ.**
+**Zatwierdzony zakres decyzji OWNERA:** „Po normalnym przejściu Guarda użytkownik może świadomie odkryć wskazane pojedyncze wystąpienie tokenu. Ponowna kontrola wyłącza jedynie mapowy alarm `MAP_LEAK` wywołany przez to zatwierdzone wystąpienie; wszystkie pozostałe pozycje oraz reguły HIGH/MEDIUM i S3 nadal obowiązują. Zgoda nie przechodzi między dokumentami, nie jest trwałym wyjątkiem i może zostać cofnięta.” **Wersja do wdrożenia wymaga jeszcze przejścia Codex BRIEF_ONLY, recenzji budżetu CC, implementacji, niezależnego audytu SHA i decyzji o merge.**
 
 ## Test i kolejność prac
 
-**Codex** może przejrzeć ten kontrakt pod kątem spójności po decyzji OWNERA; nie kierować v2 do CC. **CC** po zatwierdzeniu recenzuje minimalny owner/API i budżet (>150 linii zmian, pliki >600 linii, funkcja >50, ratio >5:1 wymagają zgody OWNERA przed kodowaniem), a potem implementuje jedynie w uzgodnionym zakresie. Codex następnie audytuje exact SHA; żaden PASS nie oznacza automatycznego merge.
+**Codex BRIEF_ONLY najpierw:** wąska weryfikacja **v4 + zmienionej S4 i lock na gałęzi Tasku**, bez testów kodu, w szczególności czy mapa jest kontrolowana na projekcji tylko potwierdzonych pozycji, rzeczywisty finalText nadal podlega HIGH/MEDIUM, a żadne nieobsłużone blokady S3/S4 nie uzyskują zgody. **CC** po prechecku recenzuje minimalny owner/API i budżet (>150 linii zmian, pliki >600 linii, funkcja >50, ratio >5:1 wymagają zgody OWNERA przed kodowaniem), a potem implementuje jedynie w uzgodnionym zakresie. Codex następnie audytuje exact SHA; żaden PASS nie oznacza automatycznego merge.
 
 Kontrpróby: `Róża` dwa wystąpienia, odkrycie tylko pierwszego; drugi jawny `Róża` *bez zgody* powoduje nadal map alarm; trzy wystąpienia i cofnięcie jednego; nowy dokument i reset zgód; ten sam token/dwa różne wystąpienia; zawyżony offset, wielowyrazowy oryginał, brak sesji, ponowione zatwierdzenie, wyścig walidacji z nową rewizją, restart serwera, awaria Guarda, `HIGH` odkryty w kontrolowanej lokalizacji, nieuprawniona edycja poza tokenem; każde wyjście ma używać tego samego zaakceptowanego `finalText`. Żadnych autentycznych dokumentów/PII w repo i logach.
 
