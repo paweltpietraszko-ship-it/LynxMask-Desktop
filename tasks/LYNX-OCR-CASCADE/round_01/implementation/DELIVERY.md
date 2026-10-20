@@ -61,4 +61,16 @@ Tylko syntetyki (`dataset_20260627_095419`, `dataset_20261016_fresh`); narzędzi
 w repo; raport bez wartości, tekstu OCR i współrzędnych (test `test_deterministic_and_value_free_summary`).
 
 ## GATE
-(wynik `gate.py` poniżej, dosłownie)
+`py -3 gate.py tasks/LYNX-OCR-CASCADE/brief.md e164352 a8b70bd …/gate.txt`, stdout dosłownie:
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: a8b70bdb9dc6ae4f306c1608209b0481c3931037
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 157 lines changed (threshold 150)
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OCR-CASCADE/cc_review_c1.md
+  - tasks/LYNX-OCR-CASCADE/measure/paired_ocr.py
+  - tasks/LYNX-OCR-CASCADE/round_01/implementation/DELIVERY.md
+```
+TOTAL_LINES: zgoda Pawła na ~470 l. (20.10) przed kodem; faktycznie 550 l. (w tym 393 w artefakcie `tasks/`, który gate pomija) — przekroczenie zgłoszone Pawłowi. Limity artefaktu sprawdzone ręcznie: `paired_ocr.py` 393 l. ≤600, najdłuższa funkcja ≤35 l. ≤50.
