@@ -129,12 +129,15 @@ przyjęty; wybór N wg funkcji C4 (w tym `NO_RULE`); P1 tie-break; wykrycie zapi
    DELIVERY podaje werdykt `READY_FOR_PRODUCT_BRIEF`/`NOT_READY` **osobno dla wyniku bazowego (ETAP 1) i po poprawkach (ETAP 2)**,
    z tym ograniczeniem dowodowym. Codex audytuje końcowy exact SHA z oboma zestawami dowodów.
 Testy ETAPU 2 trafiają do `backend/tests/test_ocr_chain_compare.py` (limit gate: 2 nowe pliki).
+**ETAP 2 — przyczyny potwierdzone reproduktorem przed kodem (CC, 20.10, po `ETAP1-FROZEN` `32ea383`):** (1) `layers/address.py::_ascii_fold` gubi „ł/Ł” (NFD nie rozkłada ł) → „Bielsko-Biała”→„Bielsko-Biaa”, OCR „Biala”/„Lodz”/„Glogow” nie pasuje do SIMC → miasto jawne przy tokenie ADRES; (2) `layers/contact.py::_EMAIL_OCR_RE` — TLD tylko `[a-zA-Z]`, OCR „.pì” → e-mail w całości jawny; (3) `layers/identity.py::_NIP_RE_OCR` dopasowuje „373251.0081” z numeru działki i urywa „.9795”; (4) `layers/contact.py::_PHONE_322_RE` dopasowuje „742-33-75” z 9-cyfrowego NIP i urywa „-90”; (5) wzorzec „ur.” wymaga `\d` → `ur. 12.O3.1985` jawne. Pliki `contact.py`, `address.py` dopisane do TASK_SCOPE przed kodem; `numeric.py` bez zmian.
 
 TASK_SCOPE:
 - tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py
 - backend/tests/test_ocr_chain_compare.py
 - backend/layers/identity.py
 - backend/layers/numeric.py
+- backend/layers/contact.py
+- backend/layers/address.py
 
 OUT_OF_SCOPE: zmiany produkcyjne poza ETAPEM 2 (OCR, `/preview`, Guard, HerBERT w produkcie, progi, prostowanie w produkcie,
 UI/onboarding, S4), aktywacja PP, przeniesienie N do polityki produktu, realne dane w repo, pełna suita. Wdrożenie łańcucha w produkcie
