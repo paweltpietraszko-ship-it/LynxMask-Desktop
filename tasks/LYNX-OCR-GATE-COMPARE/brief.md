@@ -43,6 +43,9 @@ litery z interpretacją imienia/nazwiska (479/986 nazwisk to zwykłe słowa), s�
 - **Odmowa:** zamiast osobnej miarki jakości — **liczba pytań Guarda na stronę** (zdjęcie śmieciowe = prawie wszystko niejasne).
   Próg N wybierany na zbiorze znanym z siatki (np. 15/20/30/40), przed holdoutem; obok raportować dla porównania miarkę słownikową
   z pomiaru CC 20.10 (bez decydowania nią).
+  **Liczba pytań to wyłącznie wewnętrzna reguła decyzji — użytkownik jej nie widzi.** Komunikat odmowy (propozycja OWNERA 20.10,
+  prosty przekaz, co zrobić): „Popraw ujęcie: skorzystaj ze skanera, ustaw lepsze światło i kąt aparatu.” + droga zastępcza
+  „albo wklej tekst dokumentu”. Bez procentów i liczb w komunikacie. Tekst komunikatu do kontraktu produktu, nie do tego pomiaru.
 
 ## Dane
 - `backend/dataset_20260627_095419` (50, znany — wybór N), `backend/dataset_20261016_fresh` (100, holdout — raz, po zamrożeniu
