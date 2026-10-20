@@ -14,21 +14,26 @@ Dowody z jednego pliku Mobile (`testy/test_b_word_boundary_diacritics_08_07.txt`
 osoby nagłówki WIELKIMI LITERAMI (KONTROLA, OCZEKIWANE, MIESZANE) i słowa-typy tokenów (KWOTA, OSOBA, TOKEN) oraz „Anchor”,
 „AddressEngine” → trafiają do mapy i profilu → fałszywe `MAP_LEAK [GLOBALNY_PLAIN]` Guarda w kolejnych tekstach; jednocześnie samotne
 „Kowaliński” (spoza słownika 1000 nazwisk, bez kontekstu) zostaje jawne. Mobile (bez spaCy, słowniki + kontekst) ma tu 0 takich błędów.
-HerBERT: od rana „byłoby lepiej” — nie przegrał żadnego wiarygodnego pomiaru (pilot Areny „oba gorzej” = artefakt arbitra; motywacja
-częściowo na niewiarygodnym benchmarku 17.10; K1a ma zgodę na ~350 l. od 19.10, brief nie powstał). W nowym projekcie jest głównym
-sygnałem od początku, nie „siatką na koniec”.
+HerBERT: nie przegrał żadnego wiarygodnego pomiaru (pilot Areny „oba gorzej” = artefakt arbitra; motywacja częściowo na niewiarygodnym
+benchmarku 17.10; K1a ma zgodę na ~350 l. od 19.10, brief nie powstał). **Pozycja HerBERT — bez zmian względem ustalenia 19.10
+(OWNER: „w testach pomagał i nie szkodził; sztuka — miejsce, w którym nie przeszkadza”; BOARD `LYNX-K1-PERSONS-FIRMS`):** ostatnia
+warstwa na tekście już zamaskowanym, tylko na fragmentach wciąż jawnych; dokłada zakrycie albo pytanie, **nigdy nie zmienia ani nie
+cofa** decyzji wcześniejszych warstw → brak regresji z konstrukcji. (Wersja `7ca10ba` tej propozycji błędnie stawiała HerBERT jako
+główny, konkurujący sygnał — poprawione po uwadze OWNERA 20.10.)
 
 ## Projekt (do oceny Architekta)
 1. **Kandydaci** (jeden przebieg na tekście po warstwach strukturalnych, przed instytucjami/fallback): spany 1–4 słów zaczynających się
-   wielką literą w obrębie linii (w tym WIELKIE LITERY), spany PER z HerBERT i spaCy (także w środku zdania).
-2. **Dowody za / przeciw — każdy liczony niezależnie, zapisywany w śladzie decyzji:**
-   - HerBERT PER (pewność) — `lexedit/herbert-polish-legal-ner` (lokalnie, CC BY 4.0); wariant `…-ner-ocr` (odporny na OCR) do porównania;
+   wielką literą w obrębie linii (w tym WIELKIE LITERY) i spany PER ze spaCy (także w środku zdania).
+2. **Dowody za / przeciw (bez HerBERT — on działa po, pkt 3a) — każdy liczony niezależnie, zapisywany w śladzie decyzji:**
    - spaCy PER (obecny model);
    - Morfeusz: interpretacja imię/nazwisko vs wyłącznie pospolita/przymiotnik;
    - słowniki imion/nazwisk (pełne z Mobile, z progiem częstości ≥100 i wyczyszczone jak w Mobile `15e7e8c`/`2e9a232`);
    - kontekst w oknie (Pan/Pani, ur., PESEL, zam., „Imię i nazwisko:”, podpis, funkcja w umowie, przecinek „Kowaliński, Tomasz”);
    - przeciw: linia-nagłówek WIELKIMI LITERAMI bez innych dowodów, nazwy typów tokenów i słowa techniczne (CamelCase, `_`), słowo jest
      częścią instytucji/adresu/firmy już zakrytej, jedna wspólna lista wyjątków (`OSOBA_DENYLIST` Mobile + polityka OWNERA).
+3a. **HerBERT jako ostatnia warstwa (ustalenie 19.10):** po decyzji z pkt 3 i po fallbacku, przed Guardem — PER/ORG tylko w miejscach
+   wciąż jawnych (span nie przecina tokenu), przez te same dowody przeciw; wynik: dołożone zakrycie albo pytanie do Guarda. Mierzone
+   wprost jako „co HerBERT dołożył”; wariant `herbert-polish-legal-ner-ocr` (odporny na OCR) do porównania; fail-closed jak NER.
 3. **Decyzja trójstopniowa:** silne dowody → zakryj (OSOBA, z mapą i Przywróć jak dziś); słabe → **zapytaj** (Guard pokazujący resztę,
    `LYNX-GUARD-RESIDUE`); brak → zostaw. Progi i wagi wybierane na zbiorze znanym, kontrola na odłożonym; przy wątpliwości — zakryj
    albo zapytaj, nigdy cicho przepuść (polityka: nadmaskowanie zamiast wycieku).
