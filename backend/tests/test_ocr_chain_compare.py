@@ -235,3 +235,14 @@ def test_stage2_no_regression(engine, text, kept):
 def test_ascii_fold_keeps_l_stroke():
     from layers.address import _ascii_fold
     assert (_ascii_fold("Bielsko-Biała"), _ascii_fold("Łódź")) == ("Bielsko-Biala", "Lodz")
+
+
+# ── ETAP 2b: samotne imię/nazwisko ze słownika (port Mobile NameEngine 3a, test Mobile test_imiona_nazwiska_100) ──
+@pytest.mark.parametrize("word", ["Grażyna", "Sergiej", "Diego", "Wiktoria", "Kalina", "Jankowski", "Kwiatkowski"])
+def test_stage2b_standalone_dictionary_name_masked(engine, word):
+    assert word not in engine(f"Lista:\n{word}\nKoniec")
+
+
+@pytest.mark.parametrize("word", ["Data", "Dane", "Osoba", "Zapłaty", "Łączna", "Działając", "Maja", "Warszawa"])
+def test_stage2b_denylisted_words_kept(engine, word):
+    assert word in engine(f"Lista:\n{word}\nKoniec")

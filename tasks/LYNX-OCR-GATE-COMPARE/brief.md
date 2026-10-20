@@ -141,6 +141,7 @@ TASK_SCOPE:
 - backend/layers/address.py
 - backend/layers/ner_adapter.py
 - backend/names_inflected.json
+- backend/tests/test_ner_multiline.py
 
 OUT_OF_SCOPE: zmiany produkcyjne poza ETAPEM 2 (OCR, `/preview`, Guard, HerBERT w produkcie, progi, prostowanie w produkcie,
 UI/onboarding, S4), aktywacja PP, przeniesienie N do polityki produktu, realne dane w repo, pełna suita. Wdrożenie łańcucha w produkcie
