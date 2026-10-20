@@ -1,0 +1,64 @@
+LYNX-OCR-CASCADE / C1 — niezależny wąski audyt r2, 2026-10-20
+
+WYNIK: FAIL narzędzia C1 — dwa findingi F1/F2 (P2).
+EXACT SHA: 359fca88ce923c322d377078f0d585531a2cb1cb.
+Kod/reguły: aff284c; diff base/precheck e164352.
+ODBIORCA: CC / Architekt / Paweł.
+To nie FAIL produktu ani dowód, że hipoteza kaskady powinna zadziałać.
+
+F1 — SKLEJANIE OSOBNYCH KOLUMN W POZOSTAŁOŚCI TESSERACTA
+TRACE: brief, dopuszczalne scalanie TSV tylko wewnątrz udowodnionego regionu
+jednej linii, bez słów z innych kolumn/pól/tabel; kontrpróba 1: brak łączenia
+obcych fragmentów. Sam wspólny block/par/line nie wystarcza.
+OWNERSHIP: classify_doc zbiera wszystkie niewykorzystane słowa jednej
+linii TSV jako rest, a _tess_only łączy je spacją bez geometrii przerw.
+Reguła parowania odpowiada za podział tych regionów, nie walidator sumy.
+REPRO: repro_r2.py na exact SHA. Przy pustym PP ta sama linia TSV ma dwa
+5-cyfrowe, osobne pola oddzielone przerwą 660 pikseli, wysokość 20 pikseli.
+Narzędzie skleja je w jeden 10-cyfrowy NIP z poprawną sumą i nadaje jednemu
+regionowi PP_MISSING_TESS_PRESENT/valid_id. Oczekiwane: nie tworzyć
+identyfikatora z dwóch obcych pól. Kontrola tych samych fragmentów blisko
+siebie poprawnie zachowuje jeden identyfikator.
+To kontrpróba wymaganej geometrii, nie twierdzenie, że konkretna taka
+fałszywa zbitka wystąpiła w 150 obrazach albo w rzeczywistym produkcie.
+
+F2 — BRAKUJĄCA RAMKA PRZERYWA POMIAR ZAMIAST STATUSU
+TRACE: brief, UNMEASURABLE przy braku geometrii; kontrpróba 5 (brak ramki,
+nieprawidłowe wymiary -> niepewność) i 6 (nie ukrywać porażek w procentach).
+OWNERSHIP: _finish tworzy pp_regions z bad=bad_box, ale następnie wywołuje
+build_text na pierwotnych, niesprawdzonych ramkach. measure_doc łapie
+wyjątki wywołań silników, nie tego etapu składania.
+REPRO: rzeczywiste measure_doc -> _finish na syntetycznym PNG; stub PP
+boxes=[None], txts=['synthetic'], poprawna strona TSV o tych samych
+wymiarach. Wynik: nieprzechwycony TypeError. Oczekiwane: jawny
+UNMEASURABLE z powodem, bez przerwania całego zbioru.
+Test CC obejmuje osobno pp_regions(None), ale nie ten pion.
+
+DOWODY / ZAKRES
+- 14 testów tests/test_ocr_cascade_probe.py passed (0.75 s).
+- Niezależny repro_r2: F1_reproduced=true, F2_reproduced=true; exit 1.
+  Bez modeli, datasetów, HTTP i danych realnych.
+- Odczyt obu plików TASK_SCOPE i DELIVERY, właściwy wąski diff.
+  Produkcyjny OCR, API i silnik maskowania nie zostały zmienione.
+- Nie ponawiano 50+100 obrazów ani pełnej suity. Liczności, czasy,
+  NOT_FEASIBLE/PARTIAL oraz przekrój progów jakości w DELIVERY pozostają
+  dowodami CC, nie niezależnie odtworzonym pomiarem Codexa. PARTIAL
+  weryfikacji liczb nie jest osobnym FAIL. Wykazane błędy narzędzia
+  uzasadniają korektę przed inwestowaniem w pełne ponowne odtworzenie.
+- Wynik negatywny hipotezy nie jest findingiem: poprawny eksperyment
+  może zakończyć się NOT_FEASIBLE. Nowy QUALITY-GATE i próg 75/80
+  to osobne propozycje; nie przyjęto ich w tym audycie za produkt.
+- Przekazanie wskazuje zgodę na ~470 linii i faktycznie 550. Nie
+  rozstrzygano za OWNERA akceptacji przekroczenia; to osobna bramka
+  rozmiaru, nie podstawa funkcjonalnego F1/F2.
+
+NASTĘPNY RUCH
+CC koryguje wyłącznie te dwie ścieżki, zachowuje repro i dodaje celowane
+pokrycie; potem wąski re-check od 359fca8. Nie tworzyć nowego silnika
+ani dopasowywać reguł pod odzyskanie liczb z DELIVERY.
+Bez zmian produktu i merge.
+
+ODTWORZENIE
+python -m pytest tests/test_ocr_cascade_probe.py -q --tb=short
+  --basetemp=<nowy zapisywalny katalog> (cwd backend).
+python repro_r2.py <repo exact SHA>.
