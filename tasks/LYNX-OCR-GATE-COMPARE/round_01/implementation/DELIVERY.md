@@ -82,4 +82,21 @@ Reguła fragmentu ≥ 4 (`_fragment_hit`: rdzeń słowa wartości) liczy jako HO
 miasto w nagłówku). Mechaniczne liczby HOLE są zawyżone; rozstrzyga przegląd powyżej. Zmiana reguły — tylko w nowej rundzie,
 nie po obejrzeniu wyników.
 
-## GATE (stdout dosłownie — poniżej, sekcja dopisywana po commicie)
+## GATE ETAPU 1 (`gate.py … 09b1e25 32ea383 …/gate_stage1.txt`, stdout dosłownie; commit ETAP1-FROZEN = `32ea383`)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 32ea383d3e4a77b1c0381e67b798c3313048dce3
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 197 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - tasks\LYNX-IBAN-FOREIGN-ALNUM\round_01\tests\tests_r2_repro.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_pipeline_v2.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OCR-GATE-COMPARE/measure/chain_compare.py
+  - tasks/LYNX-OCR-GATE-COMPARE/round_01/implementation/DELIVERY.md
+```
+TOTAL_LINES: zgoda OWNERA (20.10, „zleć”) na ~650 l. całego Tasku; ETAP 1 = 797 l. (skrypt 600 w artefakcie `tasks/` + testy 197) — przekroczenie zgłoszone OWNEROWI.
