@@ -180,8 +180,9 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     import ocr_rapid
     pre = preflight(ocr_rapid.model_dir())
-    if pre is None:
-        print("NOT_RUN: brak pakietu rapidocr/onnxruntime albo modeli PP-OCRv6 w", ocr_rapid.model_dir())
+    if pre is None or not pre["models_match_phase_a"]:   # Codex B1 r2 F1: inne modele = brak porównywalności
+        why = "modele PP-OCRv6 inne niż w fazie A (SHA256)" if pre else "brak pakietu rapidocr/onnxruntime albo modeli PP-OCRv6"
+        print("NOT_RUN:", why, "w", ocr_rapid.model_dir())
         return 2
     engine = ocr_rapid._get_engine()
     known, holdout = run_dataset(engine, a.known), run_dataset(engine, a.holdout)

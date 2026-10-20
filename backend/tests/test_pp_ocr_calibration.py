@@ -121,3 +121,13 @@ def test_not_run_without_models(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(ocr_rapid, "model_dir", lambda: tmp_path)
     assert pq.main(["--known", str(tmp_path), "--holdout", str(tmp_path), "--out", str(tmp_path / "o.json")]) == 2
     assert "NOT_RUN" in capsys.readouterr().out and not (tmp_path / "o.json").exists()
+
+
+def test_not_run_when_model_hashes_differ_from_phase_a(tmp_path, monkeypatch, capsys):
+    import ocr_rapid
+    for name in pq.MODEL_SHA256:
+        (tmp_path / name).write_bytes(b"inny model")
+    monkeypatch.setattr(ocr_rapid, "model_dir", lambda: tmp_path)
+    monkeypatch.setattr(ocr_rapid, "_get_engine", lambda: pytest.fail("pomiar nie może ruszyć przy innych modelach"))
+    assert pq.main(["--known", str(tmp_path), "--holdout", str(tmp_path), "--out", str(tmp_path / "o.json")]) == 2
+    assert "SHA256" in capsys.readouterr().out and not (tmp_path / "o.json").exists()
