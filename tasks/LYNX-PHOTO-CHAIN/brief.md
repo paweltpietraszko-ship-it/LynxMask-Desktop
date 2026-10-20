@@ -48,6 +48,7 @@ TASK_SCOPE:
 - backend/tests/test_ocr_rapid.py
 - frontend/src/screens/Pseudonimizuj.tsx
 - frontend/src-tauri/tauri.conf.json
+- README.md
 
 OUT_OF_SCOPE: zmiany `backend/layers/*`, silnika OSOBA/FIRMA, HerBERT, Output Guarda, S4, formatu tokenów/.lynxdict, eksportu i redakcji obrazów/PDF, nowych ekranów, drugiej opinii Tesseracta, naprawy niezwiązanych findingów security review. Zmiana `arch/spec.md` wymaga osobnej decyzji OWNERA. Nie tworzyć dodatkowego managera OCR, schedulera, frameworku modeli ani nowego stanu użytkownika.
 
