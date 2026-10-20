@@ -1,6 +1,6 @@
 # Brief — LYNX-OCR-PARITY / krok 1: diagnostyka „silnik czy OCR”
 
-STATUS: BRIEF_ONLY; najpierw precheck Codexa, następnie merytoryczna recenzja CC. Bez implementacji ani merge przed tymi bramkami.
+STATUS: BRIEF_ONLY po PASS PREIMPLEMENTATION Codexa (`8444503786d673d89662d446888bb481d39d6871`) i recenzji CC z BOARD.md (19.10). Korekta TASK_SCOPE po tej recenzji: wąski re-check zmienionego zakresu przez Codexa, następnie zgoda OWNERA na rozmiar przed implementacją. Bez merge.
 PRODUCT_TRUTH: `arch/spec.md` S1/S3/S5 oraz `AGENTS.md` (PRIVACY, BRIEF_ONLY, DEFECT_GATE). Źródło celu: `BOARD.md` sekcja TERAZ i wiersz `LYNX-OCR-PARITY` (19.10.2026), `ARCHITECT_START_HERE.md` §3–4. OWNER uzgodnił rozdzielenie diagnostyki od zmian silnika: ten krok nie wymaga pełnego E2E produktu.
 Źródło reguł porównawczych: `paweltpietraszko-ship-it/LynxMask/app/src/androidTest/java/com/lynxmask/app/BenchmarkInstrumentedTest.kt` (metody `classifyMiss`, `fuzzyMatch`, `classifyExtraToken`). Portuj zasadę, nie cały tester Androida.
 
@@ -8,7 +8,7 @@ PRODUCT_TRUTH: `arch/spec.md` S1/S3/S5 oraz `AGENTS.md` (PRIVACY, BRIEF_ONLY, DE
 
 Na dokładnie tym samym, zamrożonym zbiorze syntetycznych obrazów odróżnić: (A) gold nadal czytelny w tekście oddanym silnikowi, ale niezamaskowany; (B) wartość zniekształconą przez OCR; (C) wartość nieodnalezioną w OCR. Osobno zaklasyfikować nadmiarowe tokeny, bez traktowania każdego tokenu spoza gold jako błędu. To miarka zmian w kolejnych Taskach, nie ocena bezpieczeństwa produkcyjnego na wszystkich dokumentach.
 
-Istniejący owner: `backend/benchmark.py`, szczególnie `analyze`, `run_benchmark`, `build_report`. **Ważne odkrycie z punktowego odczytu kodu:** `backend/pseudominizer_api.py` zwraca w poprawnej odpowiedzi `/preview` pole `original_text` — tekst po OCR i ekstrakcji, przed `pseudonymize_document`. Benchmark obecnie go nie odczytuje. Nie uruchamiać ponownie Tesseracta i nie zmieniać endpointu. `ocr` w odpowiedzi zawiera tylko metadane jakości.
+Istniejący punkt integracji: `backend/benchmark.py`, szczególnie `analyze`, `run_benchmark`, `build_report`. Ze względu na ratchet `gate.py` (plik `benchmark.py` ma 987 l. i nie może rosnąć) właściwa logika klasyfikacji i zapisu `ocr_diagnostics.json` należy do nowego modułu `backend/benchmark_ocr_diagnostics.py`; w `benchmark.py` wyłącznie minimalne wywołanie, bez wzrostu liczby linii (dopuszczalne skrócenie changelogu w docstringu, bez refaktoru). **Ważne odkrycie z punktowego odczytu kodu:** `backend/pseudominizer_api.py` zwraca w poprawnej odpowiedzi `/preview` pole `original_text` — tekst po OCR i ekstrakcji, przed `pseudonymize_document`. Benchmark obecnie go nie odczytuje. Nie uruchamiać ponownie Tesseracta i nie zmieniać endpointu. `ocr` w odpowiedzi zawiera tylko metadane jakości.
 
 ## Kontrakt diagnostyczny
 
@@ -19,12 +19,15 @@ Istniejący owner: `backend/benchmark.py`, szczególnie `analyze`, `run_benchmar
    Jeśli `original_text` jest niedostępny, pusty z przyczyn technicznych lub nie da się uczciwie sklasyfikować: `NOT_MEASURED` / `REVIEW` z powodem, **nigdy domyślnie `BRAK_W_OCR` ani `BUG_SILNIKA`**. Nie utożsamiać tekstu z `original_text` z surowymi pikselami/skanem.
 2. Dla tokenów uznanych przez dotychczasowy benchmark za `false_positives` (spoza dopasowania gold) dodać rozłączne etykiety, zgodnie z Mobile: `EXTRA_MASK_OK` (dodatkowe dopasowanie odpowiedniego typu do gold), `EXTRA_MASK_POLICY` (typ objęty obowiązującą polityką maskowania, np. `KWOTA`/`NUMER`), `UX_FP` (tylko potwierdzony negatywny przypadek, np. mała jawna lista zakazanych fraz z Mobile), `REVIEW` (pozostałe). Uwzględnić desktopowe mapowanie `FIRMA`/`INSTYTUCJA` → `ORGANIZACJA`. `REVIEW` nie liczy się automatycznie jako prawdziwy FP.
 3. Oddzielnie zachować status `ocr_rejected`, błędy HTTP, `guard_blocked`. Odrzucone/błędne dokumenty **nie wchodzą do mianownika** etykiet ani starego recall. Guard-blocked nie oznacza automatycznie skutecznej pseudonimizacji i musi być widoczny osobno.
-4. **Nie zmieniać** dotychczasowej logiki dopasowania gold–token, tabel wyników, liczników recall/critical/precision, struktury `report.json` i dotychczasowych plików `summary.txt`/`bugs.txt`. Dopisać obok lokalny `ocr_diagnostics.json` dla przebiegu: ID pliku, klucz gold, etykieta, typ, status i ewentualny powód `REVIEW`/`NOT_MEASURED`; dodatkowo sumy per etykieta/typ oraz sumy `accepted/rejected/errors/guard_blocked`. Bez pełnych wartości, fragmentów OCR, tokenów API i surowych dokumentów. Jedna zwięzła linia sum diagnostyki na stdout. Pracować tylko na syntetycznym zbiorze `backend/dataset_20260627_095419`; żadnych prawdziwych dokumentów ani automatycznych commitów wyników.
+4. **Nie zmieniać** dotychczasowej logiki dopasowania gold–token, tabel wyników, liczników recall/critical/precision, struktury `report.json` i dotychczasowych plików `summary.txt`/`bugs.txt`. Klasyfikację i zapis raportu realizuje `backend/benchmark_ocr_diagnostics.py`; `backend/benchmark.py` jedynie wywołuje moduł bez przyrostu linii. Dopisać obok lokalny `ocr_diagnostics.json` dla przebiegu: ID pliku, klucz gold, etykieta, typ, status i ewentualny powód `REVIEW`/`NOT_MEASURED`; dodatkowo sumy per etykieta/typ oraz sumy `accepted/rejected/errors/guard_blocked`. Bez pełnych wartości, fragmentów OCR, tokenów API i surowych dokumentów. Jedna zwięzła linia sum diagnostyki na stdout. Pracować tylko na syntetycznym zbiorze `backend/dataset_20260627_095419`; żadnych prawdziwych dokumentów ani automatycznych commitów wyników.
 5. Etykietowanie jest **dodatkowym widokiem**, nie nowym „procentem jakości silnika”. Liczba etykiet miss musi odpowiadać staremu `privacy_missed` na tych samych zaakceptowanych dokumentach, wraz z jawnym `NOT_MEASURED` (jeżeli wystąpi); analogicznie suma kategorii extra równa się dotychczasowej liczbie `false_positives`. Żadnego dobierania progów do historycznego podziału 0/10/6.
 
 TASK_SCOPE:
+- backend/benchmark_ocr_diagnostics.py
 - backend/benchmark.py
 - backend/tests/test_benchmark_ocr_diagnostics.py
+
+Odpowiedzialność: nowy moduł = cała klasyfikacja pominięć i dodatkowych tokenów oraz zapis `ocr_diagnostics.json`; istniejący `benchmark.py` = tylko wywołanie nowego modułu, bez netto przyrostu liczby linii (np. poprzez skrócenie changelogu w docstringu); plik testowy = celowane testy nowej diagnostyki. Bez rozbudowy 987-liniowego `benchmark.py`.
 
 OUT_OF_SCOPE: zmiany endpointów lub `original_text` w API, produkcyjny OCR/normalizer, pipeline, tokeny, Guard, Przywróć, UI, generowanie nowej paczki, HerBERT, port reguł e-mail, pełny E2E, poprawianie starych raportów publicznych i przesądzanie przyczyn każdego błędu.
 
@@ -44,6 +47,6 @@ WHERE_MAP:
 - TARGETS: backend/pseudominizer_api.py --symbol preview
 - REASON: narzędzie korzysta z istniejącego pola `original_text`; nie zmieniamy właściciela produkcyjnego.
 
-GATE: maks. dwa nowe pliki, nowy plik ≤600 l., funkcja ≤50 l.; >150 nowych/zmienionych linii lub ratio >5:1 wymaga WYMAGA_DECYZJI **przed** implementacją. W pierwszym kroku żaden nowy endpoint, biblioteka OCR ani refaktor benchmarku; jeśli założenie o polu `original_text` okaże się fałszywe w bieżącym trybie, CC zgłasza problem zamiast rozszerzać zakres.
+GATE: maks. dwa nowe pliki (moduł + test), nowy plik ≤600 l., funkcja ≤50 l.; `backend/benchmark.py` ma 987 l. i z powodu ratchet `gate.py` nie może urosnąć. CC szacuje ~220 linii łącznie z testami; **wymagana jawna zgoda OWNERA na rozmiar przed kodem** (>150 nowych/zmienionych linii lub ratio >5:1 = WYMAGA_DECYZJI). Korekta TASK_SCOPE sama w sobie nie jest taką zgodą. W pierwszym kroku żaden nowy endpoint, biblioteka OCR ani refaktor benchmarku; jeśli założenie o polu `original_text` okaże się fałszywe w bieżącym trybie, CC zgłasza problem zamiast rozszerzać zakres.
 
-PRZEKAZANIE: Codex robi teraz wyłącznie BRIEF_ONLY i raportuje w `tasks/LYNX-OCR-PARITY/round_01/tests/tests_r1.txt` na gałęzi Tasku. Po jego PASS → CC recenzja → implementacja → Codex exact-SHA audit → OWNER ocena/merge. PASS techniczny nie jest zgodą na merge.
+PRZEKAZANIE: Codex zakończył BRIEF_ONLY PASS w raporcie r1 (`8444503`), a CC zaakceptował brief merytorycznie pod warunkiem korekty zakresu (BOARD.md, 19.10). Po niniejszej korekcie: Codex ewentualnie wąski re-check samego TASK_SCOPE, następnie jawna zgoda OWNERA na rozmiar ~220 l. → CC implementacja → Codex exact-SHA audit → OWNER ocena/merge. PASS techniczny nie jest zgodą na merge.
