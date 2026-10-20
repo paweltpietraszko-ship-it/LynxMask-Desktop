@@ -1,0 +1,66 @@
+LYNX-OCR-PARITY krok 1 — niezależny wąski audyt CC, 2026-10-20
+
+EXACT SHA: 578d7a512525a1678bb1598d90c0da38c2ae3d44.
+Kod: 7aaa83b2cef41196caae143d7e720fdfeae553a1; brief: 4bb7c84.
+Poprzedni precheck: 8444503. Sprawdzono zmieniony TASK_SCOPE i właściwy diff.
+WYNIK: FAIL narzędzia diagnostycznego — jeden finding F1 (P2).
+Nie jest to FAIL silnika LynxMask, wykazany wyciek PII ani ocena jakości OCR.
+ODBIORCA: CC / Architekt / Paweł. Bez zmian produktu i merge.
+
+F1 — obca dłuższa wartość udaje obecny, niezmieniony gold
+TRACE: brief, Kontrakt diagnostyczny pkt 1: BUG_SILNIKA wymaga wartości gold
+obecnej bez merytorycznej zmiany znaków, z tolerancją formatowania; nie wolno
+przypisywać wyniku do przypadkowo podobnego obcego słowa. Pkt 5: to dodatkowy
+widok strat, nie nowa miara jakości. Dłuższe inne nazwisko/adres skrzynki/ciąg
+cyfr nie jest tą samą kompletną encją. Sama obecność jej liter jako podciągu
+nie dowodzi, że gold przetrwał OCR bez zmiany.
+OWNERSHIP: backend/benchmark_ocr_diagnostics.py, classify_miss: warunek
+value_n in norm(original_text) globalnie usuwa spacje i sprawdza podciąg,
+bez granic wartości. Nowy owner klasyfikacji odpowiada za etykietę; nie
+wymagamy zmian produkcyjnego OCR, silnika ani starego benchmark.analyze.
+REPRO: repro_r2.py na powyższym exact SHA. Przez rzeczywiste analyze ->
+Collector.record dla trzech niezależnie złożonych syntetyków: legacy ma
+privacy_missed=1 i brak tokenów, nowy moduł nadaje BUG_SILNIKA w 3/3:
+- F1_PERSON: gold krótsze nazwisko, OCR zawiera wyłącznie inne dłuższe nazwisko;
+- F1_EMAIL: gold skrzynki jest końcową częścią innej nazwy skrzynki;
+- F1_NUMBER: gold 11 cyfr znajduje się wewnątrz dłuższego numeru.
+W pliku reproduktora wyłącznie jawne syntetyki. Oczekiwanie: takie przypadki
+nie mogą dostać BUG_SILNIKA na podstawie podciągu obcej wartości. Gdy nie
+można uczciwie rozstrzygnąć przybliżenia, kontrakt dopuszcza REVIEW; nie
+narzucamy nowej reguły produktu ani przebudowy legacy.
+Skutek: raport może niesłusznie obciążyć silnik zamiast wskazać brak pewnego
+odpowiednika OCR. To błąd atrybucji narzędzia, bez dowodu wycieku produktu.
+
+WERYFIKACJA POZYTYWNA
+- Celowane testy CC na exact SHA: 21 passed (0.65 s). Pierwsza próba miała
+  18 passed / 3 błędy zakładania pytest tmp_path w sandboxie; po wskazaniu
+  zapisywalnego --basetemp komplet 21 passed. Nie był to defekt dostawy.
+- Niezależne granice 9/14/15/23/24 dla zmian znaków: poprawne etykiety
+  w limicie i ponad limitem; jawny NOT_MEASURED i kontrolny BUG_SILNIKA
+  dla faktycznej pełnej wartości.
+- Mały pion narzędzia: analyze -> analyze_and_record -> rzeczywisty
+  build_report -> build_report_and_write -> pliki. Wynik legacy analyze
+  równy bezpośredniemu; report.json/summary.txt/bugs.txt zgodne z wywołaniem
+  bez diagnostyki (stały zegar, pominięta tylko różnica ścieżki runu).
+  Dwa świeże Collectory dają identyczny ocr_diagnostics.json, bez literałów.
+- Diff benchmark.py: wyłącznie import, dwa wywołania i skrócenie changelogu.
+  Logika analyze/build_report niezmieniona. Nowy moduł odpowiada poprawionemu
+  zakresowi briefu. BOARD podaje akceptację 311 linii przez OWNERA; nie
+  otwierano ponownie zamkniętej zgody na rozmiar.
+
+POLECENIA
+Python: C:\Users\p_pie\AppData\Local\Python\pythoncore-3.14-64\python.exe.
+W backend audytowanego worktree:
+  python -m pytest tests/test_benchmark_ocr_diagnostics.py -q --tb=short
+    --basetemp=<nowy zapisywalny katalog>
+  python <repro_r2.py> <backend exact SHA> [zapisywalny katalog tymczasowy]
+Repro: INDEPENDENT_MECHANICS PASS, F1_REPRODUCED 3/3; exit 1 celowo potwierdza F1.
+
+OGRANICZENIA I NASTĘPNY RUCH
+Nie powtarzano 50 obrazów ani pełnej suity; kontrakt żąda od audytora małego
+niezależnego reproduktora i testów celowanych. Wynik 0/13/3, stare 94.5% i
+166 extra pozostają dowodami CC, nie niezależnie odtworzonym pomiarem Codexa.
+Backend OWNERA nie był restartowany/odpytywany; bez danych realnych i modeli.
+Po korekcie F1: zachować reproduktor, wąski diff od 578d7a5 i celowane testy.
+Nie dopasowywać progów do 0/10/6 lub 0/13/3. Nie naprawiać silnika w tym Tasku.
+
