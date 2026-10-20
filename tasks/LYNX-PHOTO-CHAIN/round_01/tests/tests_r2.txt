@@ -1,0 +1,102 @@
+LYNX-PHOTO-CHAIN — niezależny audyt r2, 2026-10-20
+Exact SHA implementacji: df612f7c6257a25e6de122c478a05d1c41e50353
+Diff base: 5cc5b6f40e2dcf21f254d300c2496e29b19571a2
+Brief: 08a8d528c6ccdd471f376142bba41a57008ceb03
+DELIVERY odczytane na 6063c3ea08514db61564d0a325ce0f4e1c7b0216.
+Etap: implementacja pod flagą OFF; bez merge/aktywacji.
+Kod produktu nie był zmieniany przez Codexa.
+
+Dowody niezależne:
+- 30 testów celowanych zaliczonych, 1 pominięty (lokalizacja modeli).
+  tests/test_photo_chain.py + tests/test_ocr_rapid.py, 4,77 s.
+- Własny nowy dokument syntetyczny jako obraz: 0/90/180/270 stopni.
+  Prawdziwy klasyfikator i PP, wszystkie cztery orientacje poprawne;
+  prawdziwy /preview z lifespan, silnikiem i Guardem, HTTP 200,
+  engine=rapid, quality=ok, PESEL i email ukryte, tokeny obecne.
+  Czasy: 1,56 / 0,68 / 0,72 / 0,68 s (ta próba nie certyfikuje wydajności).
+- Pusty obraz: HTTP 400, odmowa, brak tekstu wyjściowego/tokenów,
+  komunikat zawiera alternatywę wklejenia tekstu.
+- Lokalna weryfikacja pełnych SHA256 wszystkich czterech modeli.
+- Jednorazowy git archive exact SHA; startup=OK, isolation=OK,
+  changed_paths=0. Bez restartowania i użycia profilu backendu OWNERA.
+Reproduktor: repro_r2.py, obrazy generowane przez reproduktor poza repo.
+
+Odczyt diffu:
+- Domyślna ścieżka Tesseract pozostaje; PP uruchamia wyłącznie flaga rapid.
+- Decyzja jakościowa nie uruchamia fallbacku; awaria techniczna tak.
+- Hashe przed inicjalizacją modeli, lokalne ścieżki, telemetria ONNX off.
+- Po timeout PP ustawiany jako niedostępny; kolejne sekwencyjne próby
+  nie dokładają pracy do executora (test celowany).
+- Maskowanie/Guard/tokeny bez zmian. Nie wymagano napraw OSOBA.
+- Odmowa PP idzie realnie jako 400 z ocr.quality=reject; frontend obsługuje
+  ten przypadek i przycisk wklejenia. Zmiana procentu PP odczytana w kodzie.
+
+Punkt kontrolny wymagający rozszerzenia:
+DELIVERY podaje 1 krytyczne ASKED na kontrolnym 100, przy niewdrożonym
+GUARD-RESIDUE. Hipotetyczne ASKED nie dowodzi ochrony dzisiejszego UI.
+Dlatego jednorazowo odtworzono tylko kontrolny 100 na prawdziwym /preview;
+nie powtarzano znanego 50, rozmiarów obrazów ani realnych zdjęć.
+
+Niezależny przebieg kontrolny, progi 0,60/0,60:
+100 dokumentów, 99 przyjętych, 1 odmowa, 0 błędów, 0 blokad Guarda;
+startup=OK, isolation=OK, changed_paths=0, czas całego wariantu 139,0 s.
+Mechaniczny wynik miarki zgodny z CC:
+MASKED 579 / ASKED 14 / HOLE 9 / UNKNOWN_REVIEW 1 / NOT_IN_OCR 11;
+krytyczne MASKED 207 / ASKED 1. Would_ask mediana 10, maksimum 31.
+To statusy miarki, NIE liczby potwierdzonych wycieków ani prawdziwe pytania UI.
+W reproduktorze poziomy degradacji nie są dodawane do podsumowania;
+metryki L0/L1 z tego podsumowania nie są niezależnym dowodem.
+
+Punktowa kontrola krytycznego ASKED:
+doc_00047 / iban, HTTP 200, blocked=false, guard_reasons=0.
+Oryginalny IBAN nie występuje w wyniku także po normalizacji;
+pasuje do wartości w mapie tokenów. Dowód ASKED to inny, 12-znakowy
+numer zaczynający się U-, błędnie dopasowany przez regułę fragmentów cyfr.
+Nie potwierdzono krytycznego wycieku IBAN; nie uznano hipotetycznego pytania
+za zabezpieczenie. Zachowany critical_probe_r2.py odtwarza 100 albo punktowo
+doc_00047 (opcjonalny trzeci argument). Nie poprawiano miarki w tym audycie.
+
+Status odbioru: PARTIAL / OWNER_DECISION_NEEDED, bez końcowego PASS/FAIL produktu.
+W sprawdzonych mechanizmach nie odtworzono defektu wymagającego poprawki.
+Brak findingu spełniającego DEFECT_GATE. To nie certyfikat całej prywatności.
+
+OWNER_EXPLANATION_GATE:
+- OWNER_CONFIRMED: lokalna ścieżka, obecny silnik i Guard, domyślnie Tesseract,
+  brak aktywacji nowej ścieżki i brak zmian OSOBA/HerBERT.
+- OWNER_DECISION_NEEDED: kandydat orientacja >=0,60 i udział słownikowy >=0,60,
+  co najmniej 5 kwalifikujących się słów. Kod bez nadpisania środowiska nadal
+  ma próg słownikowy 0,80; pomiar 0,60 nie zmienia tej wartości automatycznie.
+  Wyzwalacz: obraz z włączoną flagą rapid. Odczyt i model lokalne;
+  akceptacja przekazuje OCR do obecnego maskowania/Guarda. Niska pewność
+  orientacji, słaby odczyt lub mniej niż 5 słów = odmowa bez treści/tokenów;
+  użytkownik poprawia zdjęcie lub wybiera Wklej tekst. Prawidłowy krótki
+  dokument również może zostać odrzucony. Nowa ścieżka nie wysyła danych.
+  Awaria techniczna uruchamia Tesseract; po timeout PP nie wraca do restartu.
+- TECHNICAL_ONLY: SHA wag, limit wątków ONNX, wyłączenie dławienia procesu
+  Windows, metadane reason, obsługa HTTP 400 zamiast planowanego 422.
+- UNAUTHORIZED: nie ustalono samowolnej aktywacji ani zmiany silnika/spec.
+- SAFETY_PRIVACY: w tym audycie nie potwierdzono nowego krytycznego wycieku.
+  Jawnego numeru umowy z DELIVERY nie zamknięto jako naprawionego;
+  pozostaje odrębnym findingiem ENGINE-BACKLOG, nie zadaniem OSOBA/OCR.
+
+Granice dowodów:
+- 17 starych UNKNOWN oraz pozostałe HOLE/UNKNOWN CC opisał jako przejrzane.
+  To ponownie wykorzystany dowód CC; nie wykonano drugiego ręcznego przeglądu
+  każdego z tych przypadków. Nie nazwać ich 17 potwierdzonymi wyciekami.
+- Instalator/maszyna bez modeli, pełne GUI i ocena zdjęć OWNERA NOT_CHECKED.
+  Pakowanie przeniesione do LYNX-INSTALLER i blokuje aktywację u użytkowników.
+- Pełna suita, benchmark i znany 50: wykorzystano opublikowane wyniki CC,
+  bez ponownego uruchamiania. Brak nowego testu Przywróć w tym audycie.
+- Test socket.connect z testów CC nie był wykonany na rzeczywistych modelach
+  w tej lokalizacji (skip). Własny pion użył prawdziwych lokalnych modeli,
+  ale nie stanowi pełnego pomiaru natywnego ruchu wychodzącego.
+- CC raportuje 559 zmian kodu/testów i wcześniejszą zgodę na rozszerzenia
+  wydajności; nie odtwarzano rozmowy OWNERA z CC. Pomiar photo_measure.py
+  jest dodatkowym artefaktem narzędziowym, poza tym wynikiem gate.
+- Cel wydajności na zdjęciach 16 MP pozostaje czasem przekroczony wg CC;
+  niezależna mała próba nie zamyka tego ograniczenia.
+
+Następny ruch: Paweł — rozstrzygnięcie progów/ograniczenia krótkich obrazów
+i późniejsze polecenie merge, jeśli chce przyjąć etap pod flagą OFF.
+Aktywacja dla użytkowników dopiero po spełnieniu zależności instalatora.
+Brak polecenia merge/aktywacji w tym audycie; niczego nie mergowano.
