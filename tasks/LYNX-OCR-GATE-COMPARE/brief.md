@@ -65,6 +65,10 @@ odczyt allowlisty Guarda z `PROFILE_DIR` (domyślnie `~/.pseudominizer/profile`)
 - **Migawka przed/po** (ścieżka, rozmiar, mtime): `backend/` repo, katalog backendu OWNERA, `~/.pseudominizer/`, `~/lynx_models/`;
   **każda zmiana poza kopią tymczasową → `NOT_RUN(ISOLATION)`**, nie PASS. Kopia usuwana po przebiegu (po zapisaniu raportu).
 - Bez zmian kodu produktu; jeżeli start w kopii okaże się niemożliwy bez zmiany produktu → STOP i zgłoszenie przed kodem.
+- **Próba wykonalności CC (20.10, przed kodem, poza repo):** `git archive 052f1d7 backend` → kopia tymczasowa; env jak wyżej;
+  `with TestClient(app)` → `_lifespan` pełny: `/health` 200 (`anonymizer: True, spacy_ner: True, morfeusz: native, crypto_ok: True`),
+  `/preview` na syntetycznym `.txt` zamaskował osobę, PESEL i datę „ur.”, licznik PSE w kopii od `0001`; start ~7 s.
+  `find -mmin -3` na `backend/` repo, katalogu backendu OWNERA i `~/.pseudominizer` — brak zmienionych plików; kopia usunięta.
 Powód izolacji = **porównywalność** (identyczny stan początkowy każdego wariantu), nie prywatność: OWNER 20.10 potwierdził, że
 backend 8765 to wersja deweloperska z danymi testowymi. Sprawdzenia ręczne CC mogą iść na 8765; pomiar — w izolacji.
 
