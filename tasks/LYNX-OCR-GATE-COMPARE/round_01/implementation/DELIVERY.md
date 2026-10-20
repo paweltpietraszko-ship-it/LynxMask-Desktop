@@ -158,3 +158,13 @@ Etapy 2/2b gaszą konkretne klasy, ale test Mobile `test_b_word_boundary_diacrit
 MAP_LEAK Guarda; samotne „Kowaliński” jawne). OWNER: koniec łatania pojedynczych błędów OSOBA — osobne, jedno miejsce decyzji o osobie
 (propozycja CC: `LYNX-OSOBA-REDESIGN`, HerBERT jako główny sygnał obok spaCy, słowniki/Morfeusz/kontekst, decyzja zakryj/zapytaj/zostaw,
 strojenie na wielu zbiorach naraz). Dalsze poprawki OSOBA w tym bloku — wstrzymane.
+
+## GATE ETAPU 2/2b (`gate.py … 09b1e25 dbad756 …/gate_stage2.txt`, nagłówek dosłownie; pełna lista importerów w pliku)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: dbad756fe4edda2face36b2b3da0a4eff35d057c
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 6512 lines changed (threshold 150)
+```
+TOTAL_LINES 6512 to w ~95% słownik `names_inflected.json` (dane: 3622 nowe / 2570 usunięte linii); kod ETAPU 2/2b ≈ 120 linii + testy. Brak FAIL (ratchet rozmiaru/ruff spełniony).
