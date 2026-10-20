@@ -94,3 +94,17 @@ EXCLUDED_ARTIFACTS:
   - tasks/LYNX-OCR-CASCADE/round_01/implementation/DELIVERY.md
 ```
 TOTAL_LINES: zgoda Pawła na ~470 l. (20.10) przed kodem; faktycznie 550 l. (w tym 393 w artefakcie `tasks/`, który gate pomija) — przekroczenie zgłoszone Pawłowi. Limity artefaktu sprawdzone ręcznie: `paired_ocr.py` 393 l. ≤600, najdłuższa funkcja ≤35 l. ≤50.
+
+## Runda 2 — poprawki po audycie Codexa r2 (`tests_r2.txt`, FAIL F1/F2 na `359fca8`)
+- **F1 (sklejanie kolumn w pozostałości Tesseracta):** `_segments` dzieli niewykorzystane słowa jednej linii TSV na pola przy
+  przerwie > 2 × wysokość słowa (ta sama reguła co `ocr_rapid.build_text`). Test `test_tess_rest_split_by_column_gap` (blisko → 1
+  identyfikator, 650 px → 2 osobne pola bez sumy kontrolnej).
+- **F2 (zła ramka przerywała pomiar):** tekst PP składany tylko z ramek o poprawnej geometrii; błąd składania dokumentu →
+  `unmeasurable="assemble_<Typ>"`, bez przerwania zbioru. Test `test_bad_box_in_full_doc_is_status_not_crash`.
+- Oba nowe testy padają na kodzie `359fca8` i przechodzą po poprawce; `repro_r2.py` Codexa (z podmienionym SHA) →
+  `F1_reproduced: false, F2_reproduced: false`, exit 0. `pytest tests/test_ocr_cascade_probe.py` → `17 passed`; ruff czysty.
+- **Ponowny pełny pomiar (50 + 100) po poprawce:** werdykty bez zmian (`NOT_FEASIBLE` / `PARTIAL`, holdout `NO_LOSSES`), lista
+  przypadków gold identyczna. Zmienia się tylko podział linii „tylko Tesseract”: znany TESS_ONLY_UNCERTAIN 10→18; holdout
+  PP_MISSING_TESS_PRESENT 22→23 (dodatkowe bez wartości gold), TESS_ONLY_UNCERTAIN 30→38; konkretne alarmy/dok. holdout 1,03→1,04.
+  Reguł nie dostrajano do liczb (holdout był już otwarty — poprawka wynika wyłącznie z F1/F2).
+- Rozmiar po rundzie 2: 589 l. (zgoda Pawła ~470) — przekroczenie zgłoszone Pawłowi.
