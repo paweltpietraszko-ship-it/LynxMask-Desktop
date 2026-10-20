@@ -1,0 +1,43 @@
+LYNX-OCR-CASCADE / C1 — wąski re-check F1/F2, r3, 2026-10-20
+
+WYNIK: PASS techniczny; F1 i F2 ZAMKNIĘTE na exact SHA.
+EXACT SHA: 84cd9fcc06afa2be7fbd909454eeccfea080107b.
+Kod: 2eeb8f6; DIFF BASE: 359fca88ce923c322d377078f0d585531a2cb1cb.
+Poprzedni raport: c7195e8; zachowany repro_r2.py.
+ODBIORCA: CC / Architekt / Paweł.
+
+DOWODY
+- Właściwy diff dotyczy podziału pozostałych słów TSV po przerwie
+  kolumnowej, sprawdzenia ramek przed build_text i jawnego statusu
+  błędu składania. Produkt pozostaje niezmieniony.
+- Celowane tests/test_ocr_cascade_probe.py: 17 passed (0.74 s).
+- Zachowany repro_r2.py wykonany z jedyną adaptacją asercji HEAD
+  do 84cd9fc w pamięci, bez zmiany wcześniejszego pliku:
+  F1_CROSS_COLUMN -> 2 osobne regiony, reasons=[text,text],
+  false_join=false; kontrola bliskich części numeru nadal poprawna.
+  F2_BAD_BOX -> explicit UNMEASURABLE, bez wyjątku.
+  F1_reproduced=false, F2_reproduced=false; exit 0.
+- Nie powtarzano 150 obrazów ani historycznych testów/modeli.
+  Wcześniejsze dowody zachowano; dalsze poszerzanie nie jest potrzebne
+  do zamknięcia wykazanych dwóch findingów.
+
+OGRANICZENIA / BRAMKI
+PASS dotyczy technicznego odbioru poprawki i zamknięcia F1/F2 na tym SHA.
+Nowe liczności regionów i niezmienione przypadki gold/werdykty z ponownego
+przebiegu 50+100 są dowodami CC, nie niezależnym powtórzeniem Codexa.
+Negatywny wynik hipotezy (NOT_FEASIBLE/PARTIAL) jest odrębny od poprawności
+narzędzia. Nie zatwierdzano produkcyjnej kaskady ani QUALITY-GATE.
+GATE rozmiaru pozostaje WYMAGA_DECYZJI: przekazanie mówi o 584 liniach
+wobec wcześniejszego szacunku/zgody ~470. Ten re-check nie udziela
+w imieniu OWNERA zgody na przekroczenie. To osobna bramka od F1/F2.
+Tesseract domyślny, PP nadal odmawia; bez danych realnych, HTTP i merge.
+
+NASTĘPNY RUCH
+Przekazanie OWNER / Architekt; rozstrzygnięcie rozmiaru przed merge.
+Merge wyłącznie na polecenie OWNERA.
+
+ODTWORZENIE
+python -m pytest backend/tests/test_ocr_cascade_probe.py -q --tb=short
+  --basetemp=<nowy zapisywalny katalog>
+python repro_r2.py <repo exact SHA>
+  (wyłącznie adaptacja asercji HEAD z 359fca8 do 84cd9fc).
