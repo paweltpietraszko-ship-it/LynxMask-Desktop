@@ -452,7 +452,7 @@ def extract_text_from_image(image_bytes: bytes, filename: str) -> OCRResult:
     zamiast rzucać wyjątek (fail-graceful dla UI).
     """
     fallback = ""
-    if os.environ.get("LYNX_OCR_ENGINE", "").strip().lower() == "rapid":  # [LYNX-PHOTO-CHAIN] tylko jawnie, domyślnie OFF
+    if os.environ.get("LYNX_OCR_ENGINE", "").strip().lower() != "tesseract":  # [LYNX-PHOTO-CHAIN] domyślnie (OWNER 20.10)
         from photo_chain import read_photo
         photo = read_photo(image_bytes, OCRResult)  # str = awaria techniczna → jednorazowo Tesseract z własną bramką
         if not isinstance(photo, str):

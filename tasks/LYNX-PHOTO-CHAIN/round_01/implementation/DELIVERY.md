@@ -130,3 +130,12 @@ Zbiór 100 był używany historycznie — to nie świeży holdout.
 Audyt exact SHA `df612f7c6257a25e6de122c478a05d1c41e50353`: kod (S3/S5, fallback jednorazowy, timeout, SHA, offline, UI) i
 odtworzenie pomiaru wg poleceń wyżej (modele: skopiuj 3 pliki z `site-packages/rapidocr/models/` i plik orientacji do
 `backend/models/ocr/` — SHA w kodzie). Po audycie: OWNER — aprobata progów 0,60/0,60 i decyzja o merge (flaga OFF).
+
+## Po audycie r2 (20.10, polecenia OWNERA)
+- Próg słownikowy **0,70** (OWNER_ACCEPTED, `OWNER_THRESHOLD_2026-10-20.md`) — `d103c6d`; test granicy po obu stronach 0,70.
+  Wąskie sprawdzenie odmów przy 0,70 — **nie wykonane na polecenie OWNERA** („przy kalibracji programu ustalimy to dokładnie”).
+  Z wcześniejszych danych: znany 50 przy 0,65–0,75 → 2 odmowy (L2); zdjęcia OWNERA: 6/8 przyjęte jak przy 0,60.
+- **Nowy czytnik domyślnie** (polecenie OWNERA: „wyłącz flagę”, doprecyzowane: nowy czytnik domyślnie): ścieżka zdjęć =
+  `photo_chain`, `LYNX_OCR_ENGINE=tesseract` wymusza Tesseracta. Bez modeli w `backend/models/ocr/` (komputery bez instalatora) →
+  awaria techniczna → zapas Tesseract z jego bramką. Testy: 32 passed (łańcuch + adapter); pełna suita: jedyne porażki to testy
+  łączące się z działającym serwerem 8765 (inny token w katalogu gałęzi), niezależne od kodu gałęzi.

@@ -167,12 +167,19 @@ def test_default_dir_is_next_to_engine_not_home(monkeypatch):
     assert ocr_rapid.model_dir() == BACKEND / "models" / "ocr"
 
 
-def test_default_is_tesseract_and_chain_not_imported():
+def test_chain_is_default_and_tesseract_forced_by_env(chain, monkeypatch):
+    chain.use(FakeEngine(GOOD))
+    monkeypatch.delenv("LYNX_OCR_ENGINE")
+    assert ocr_engine.extract_text_from_image(png()[0], "x.png").engine == "rapid"   # OWNER 20.10: nowy czytnik domyślnie
+    monkeypatch.setenv("LYNX_OCR_ENGINE", "tesseract")
+    assert ocr_engine.extract_text_from_image(png()[0], "x.png") is chain.tess
+
+
+def test_import_of_ocr_engine_does_not_load_models():
     code = ("import sys; sys.path.insert(0, '.'); import ocr_engine; "
             "print(*(m in sys.modules for m in ('photo_chain', 'ocr_rapid', 'rapidocr', 'onnxruntime')))")
-    env = {k: v for k, v in os.environ.items() if k != "LYNX_OCR_ENGINE"}
-    out = subprocess.run([sys.executable, "-c", code], cwd=BACKEND, capture_output=True, text=True, env=env)
-    assert out.stdout.split() == ["False"] * 4
+    out = subprocess.run([sys.executable, "-c", code], cwd=BACKEND, capture_output=True, text=True)
+    assert out.stdout.split() == ["False"] * 4   # modele ładowane dopiero przy pierwszym zdjęciu
 
 
 _HAVE_MODELS = all((BACKEND / "models" / "ocr" / f).is_file()

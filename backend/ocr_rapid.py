@@ -1,7 +1,7 @@
 """
 ocr_rapid.py — PP-OCRv6 small (RapidOCR + onnxruntime, CPU): wykonawca odczytu dla łańcucha zdjęć (photo_chain.py).
 
-Włączany wyłącznie jawnie: LYNX_OCR_ENGINE=rapid (domyślnie Tesseract w ocr_engine.py). [LYNX-PHOTO-CHAIN] Ten moduł tylko czyta;
+Domyślny czytnik zdjęć (OWNER 20.10); LYNX_OCR_ENGINE=tesseract wymusza dawną ścieżkę Tesseracta. [LYNX-PHOTO-CHAIN] Ten moduł tylko czyta;
 o przyjęciu/odmowie odczytu decyduje photo_chain (pewność PP nie jest miarą jakości — B1 NO_SAFE_GATE).
 
 Modele tylko lokalne, bez pobierania w trakcie pracy: katalog model_dir() (domyślnie backend/models/ocr — miejsce dla instalatora;

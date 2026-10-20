@@ -49,11 +49,10 @@ def test_recognize_reads_bytes(monkeypatch):
     assert ocr_rapid.recognize(b"img", 5) == "Jan Kowalski\njan@poczta.pl"
 
 
-def test_default_is_tesseract_and_rapid_not_imported():
+def test_import_does_not_load_rapid():
     code = ("import sys; sys.path.insert(0, '.'); import ocr_engine; "
             "print('ocr_rapid' in sys.modules, 'rapidocr' in sys.modules)")
-    env = {k: v for k, v in os.environ.items() if k != "LYNX_OCR_ENGINE"}
-    out = subprocess.run([sys.executable, "-c", code], cwd=BACKEND, capture_output=True, text=True, env=env)
+    out = subprocess.run([sys.executable, "-c", code], cwd=BACKEND, capture_output=True, text=True)
     assert out.stdout.split() == ["False", "False"]
 
 

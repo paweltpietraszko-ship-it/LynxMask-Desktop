@@ -1,7 +1,7 @@
 """
 photo_chain.py — [LYNX-PHOTO-CHAIN] łańcuch zdjęcia: orientacja → obrót → PP-OCRv6 → przyjęcie albo odmowa odczytu.
 
-Włączany wyłącznie jawnie (LYNX_OCR_ENGINE=rapid w ocr_engine.py); domyślnie Tesseract bez zmian.
+Domyślna ścieżka zdjęć (OWNER 20.10); LYNX_OCR_ENGINE=tesseract wymusza Tesseracta. Brak modeli → zapas Tesseract.
 - Orientacja: lokalny model PP-LCNet_x1_0_doc_ori (Apache-2.0, ONNX, SHA256 w kodzie) na miniaturze 224 px; obrót pełnej
   rozdzielczości. Model i PP widzą te same piksele (dekodowanie z EXIF), więc obrót nie może się zdublować; EXIF nie jest arbitrem.
 - Przyjęcie odczytu: pewność klasyfikatora ORIENTACJI ≥ ORI_MIN_CONF i udział słów ≥3-literowych znanych Morfeuszowi ≥ DICT_MIN_SHARE
