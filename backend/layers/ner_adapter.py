@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
+from osoba_not_person import DICTIONARY_PATH_DENYLIST as _OSOBA_DENYLIST  # [LYNX-OSOBA-NOT-PERSON] listy w jednym miejscu
 from pipeline_core import PipelineState, TokenAllocator
 
 # ── Słownik form fleksyjnych nazwisk (port: LookupTables.surnamesForms) ─────
@@ -221,25 +222,6 @@ def _apply_first_names(text: str, allocator: TokenAllocator) -> str:
 # Wyjątki 1:1 z Mobile: OSOBA_DENYLIST (potwierdzone kolizje ze zwykłymi słowami) i białe listy kalendarza/krajów/miast.
 # Nadmaskowanie słowa pospolitego (np. „Malina”) świadomie akceptowane, jak w Mobile (polityka: zakryć zamiast przepuścić).
 _STANDALONE_RE = re.compile(r"(?<![\wŁŚŹĆŃĄĘÓŻ])([A-ZŁŚŹĆŃĄĘÓŻ][a-ząćęłńóśźż]{2,})(?![a-ząćęłńóśźż\w])")
-_OSOBA_DENYLIST = frozenset((
-    "zamieszkania zameldowania służbowa służbowy wydział wydziału wydzialu wydziatu informacji informacj uzyskanych "
-    "niejszej nin icznie sąd sądu rejonowy rejonowa okręgowy okręgowa skarbowy skarbowa sędzia sędziego sędzi urząd "
-    "urzędu gminy gmina ulica ulicy adres adresu imię nazwisko pesel numer miejscowość miejscowości rodo data dane "
-    "danych nikach osoba osoby osobie osobę osobą osób osobom osobami osobach zapłata zapłaty zapłacie zapłatę zapłatą "
-    "zapłat zapłatom zapłatami zapłatach łączna łącznej łączną łączny łączne łącznego łącznemu łącznym łącznych "
-    "łącznymi działający działająca działające działającego działającej działającemu działającym działających "
-    "działającymi działając musi musisz musimy musicie muszę muszą "
-    # białe listy Mobile: kalendarz, kraje, miasta (formy najczęstsze w dokumentach)
-    "styczeń luty marzec kwiecień maj czerwiec lipiec sierpień wrzesień październik listopad grudzień stycznia lutego "
-    "marca kwietnia maja czerwca lipca sierpnia września października listopada grudnia poniedziałek wtorek środa "
-    "czwartek piątek sobota niedziela polska niemcy francja włochy hiszpania portugalia irlandia belgia austria "
-    "szwajcaria czechy słowacja węgry rumunia bułgaria grecja szwecja norwegia dania finlandia estonia łotwa litwa "
-    "białoruś ukraina rosja kanada chiny japonia korea warszawa kraków gdańsk wrocław poznań łódź katowice lublin "
-    "białystok rzeszów szczecin bydgoszcz toruń kielce gliwice zabrze bytom olsztyn opole gdynia częstochowa radom "
-    "sosnowiec tychy rybnik warszawy krakowa gdańska wrocławia poznania łodzi lublina białegostoku rzeszowa szczecina "
-    "bydgoszczy torunia kielc gliwic zabrza bytomia olsztyna opola gdyni częstochowy radomia sosnowca warszawie "
-    "krakowie gdańsku wrocławiu poznaniu lublinie białymstoku rzeszowie szczecinie toruniu kielcach gliwicach zabrzu "
-    "bytomiu olsztynie opolu górze górę górą zielonej").split())
 
 
 def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
