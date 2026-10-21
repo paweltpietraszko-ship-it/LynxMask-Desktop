@@ -1,13 +1,9 @@
-"""[LYNX-OSOBA-NOT-PERSON] Jednowyrazowa OSOBA ze spaCy przechodzi przez listy Mobile; z małej litery odrzucona.
-Uruchamiać wprost: `.venv\\Scripts\\python.exe -m pytest tests/test_osoba_not_person.py -q` (cwd backend)."""
+"""[LYNX-OSOBA-NOT-PERSON] Jednowyrazowa OSOBA ze spaCy: listy Mobile, mała litera odrzucona. Uruchamiać wprost (cwd backend)."""
 import os
 import sys
 from types import SimpleNamespace
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import pytest
-
 import ner_layer
 import osoba_not_person as onp
 from layers import ner_adapter
