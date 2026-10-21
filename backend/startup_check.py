@@ -76,6 +76,14 @@ def _check_profile(state, guard_available, crypto_ok) -> bool:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _check_herbert(state, guard_available, crypto_ok) -> bool:
+    """[LYNX-HERBERT-NET] tylko gdy siatka włączona: model ładuje się i wykrywa osobę w syntetyku (off → nie dotyczy)."""
+    import herbert_net
+    if not herbert_net.enabled():
+        return True
+    return any(kind == "PER" for _, _, kind, _ in herbert_net.detect(f"Umowę podpisał {_NAME} w Krakowie."))
+
+
 _CHECKS = (
     ("maskowanie numerów i adresów", _check_pipeline),
     ("Output Guard", _check_guard),
@@ -83,6 +91,7 @@ _CHECKS = (
     ("rozpoznawanie osób (SpaCy)", _check_ner),
     ("odmiana nazw (Morfeusz)", _check_morfeusz),
     ("profil biura", _check_profile),
+    ("dodatkowa kontrola HerBERT", _check_herbert),
 )
 
 

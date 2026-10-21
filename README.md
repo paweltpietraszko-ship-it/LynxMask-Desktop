@@ -29,6 +29,8 @@ Offline setup (once, before starting the engine; nothing is downloaded while pro
 
 Licences: RapidOCR — Apache-2.0; PP-OCRv6 model weights — Apache-2.0 (© Baidu / PaddleOCR authors, see RapidOCR `MODEL_LICENSES.md`). Attribution must accompany any distribution.
 
+HerBERT safety net (`backend/herbert_net.py`, optional, `LYNX_HERBERT=off|PER|ORG|PER,ORG`): model `lexedit/herbert-polish-legal-ner` (fine-tuned from `allegro/herbert-base-cased`) — licence CC BY 4.0, attribution required; local files in `backend/models/herbert/`, SHA256 checked, nothing downloaded at runtime.
+
 ## My role
 
 My role has been to define product behavior, decide which failures matter, set acceptance targets, challenge AI-generated implementations and retain final product and architecture decisions. AI coding agents, especially Claude Code, were used heavily to inspect, implement and revise the codebase.
