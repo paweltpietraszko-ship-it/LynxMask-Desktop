@@ -1,0 +1,100 @@
+LYNX-MANUAL-REVEAL — audyt dostawy v5 / tests_r5
+Data: 2026-10-21
+Exact SHA implementacji: a75e73cb0c7653b0caf7229bab98179bc03f5d59
+Diff base / TASK_SCOPE: f6e5671fbfb2e7efbc6166b6ab059566fa04e70c
+Brief v5: dc36d38c6721994affc563c83dd2f76cae5a174e
+Precheck r4: 595a2f3d97daba7659c9c15566611a946fc2bcd2
+DELIVERY: 205063d3dc1620deaaaf700298f54508a970a658
+Werdykt: FAIL wyłącznie F1 [P2] — stan zapisu po późniejszym odkryciu/cofnięciu.
+Pozostała sprawdzona mechanika działa. Nie stwierdzono nowego wycieku
+przez samowolne odkrycie innego wystąpienia. Bez zmian kodu produktu.
+
+ROZMIAR / ZAKRES
+Zmiana jest prosta i proporcjonalna: helper 42 l., w istniejącym ekranie
+stan pozycji + renderowanie + wspólny shownText dla kopiowania i zapisu.
+Diff produktu/testu +119/-26, wyłącznie Pseudonimizuj.tsx, revealText.ts,
+tests/revealText.test.mjs. Zgoda na helper i wzrost dużego pliku opisana
+w DELIVERY. Bez API, sesji backendu, ponownego Guarda i globalnej allowlisty.
+Nie wracać do ciężkiej architektury v4 z powodu poniższego błędu UI.
+
+F1 [P2] — po zapisie korekta tekstu nie unieważnia stanu „Zapisano”
+TRACE:
+v5: „Jedna kanoniczna wartość tekstu po korekcie: wyświetlenie,
+«Kopiuj tekst» i archiwizacja anonymized_preview używają tego samego
+wyliczonego finalText”. Użytkownik ma móc cofać/zmieniać odkrycia.
+Po edycji ekran nie może twierdzić, że zapisał już nową treść, gdy zapisany
+jest wcześniejszy wariant i brak akcji zapisania aktualnego.
+
+OWNERSHIP:
+Pseudonimizuj.tsx zarządza zarówno revealed/shownText, jak i saved.
+W 635 handler onToggle zmienia wyłącznie revealed. Nie unieważnia saved.
+272 po zapisie ustawia saved=true. 767+ przy saved=true zastępuje formularz
+zapisu komunikatem sukcesu. Problem jest w zmienionym ownerze UI;
+backend, Guard i słowniki nie są potrzebne do naprawy kontraktu stanu UI.
+
+NIEZALEŻNY REPRO na exact SHA, realny komponent React w przeglądarce:
+1. Przyjąć niezablokowany syntetyczny /preview:
+   01. OSOBA_033 zakwitła.
+   02. Pani OSOBA_033 odebrała dokument.
+   03. OSOBA_001 podpisała.
+   Mapa: OSOBA_033=Róża; OSOBA_001=Anna Malina.
+2. Odkryć pierwszą Różę, skopiować, wpisać opis i zapisać.
+   Ekran, argument kopiowania i treść anonymized_preview przekazana do
+   archiwizacji są wtedy identyczne — ten etap działa.
+3. Cofnąć odkrycie Róży (Enter), odkryć Anna Malina (Enter).
+4. Ekran pokazuje już zakrytą pierwszą Różę i odkrytą Annę Malinę.
+   Zapisany blob nadal zawiera Różę i OSOBA_001.
+   UI nadal pokazuje „Zapisano w bibliotece jako PSE-TEST” i nie ma formularza
+   ani przycisku ponownego zapisu aktualnego tekstu.
+Oczekiwane: stan/akcja zapisu odzwierciedla niezapisaną korektę;
+nie pozostawiać fałszywego potwierdzenia dla wcześniejszej treści.
+Nie narzucono sposobu realizacji zapisu ani zmian API.
+
+Dowód lokalny:
+C:/Users/p_pie/.codex/visualizations/2026/10/19/01a152b6-e997-7cb0-a9e3-752fdcfd00f0/reveal-ui-audit/after-edit-saved.png
+
+JAK ODTWORZYĆ BEZ BUILDU TAURI
+Zachowano ui_harness_r5.cjs oraz ipc.ts. Skopiować oba do osobnego katalogu,
+uruchomić node ui_harness_r5.cjs (stała front wskazuje audytowany frontend;
+przy innym checkout zmienić wyłącznie tę ścieżkę w harnessie).
+Udostępnić powstałe index.html/bundle.js lokalnym serwerem HTTP.
+Harness importuje prawdziwy Pseudonimizuj.tsx z exact SHA. API /preview,
+clipboard, szyfrowanie IPC i /archive są atrapami na syntetykach.
+Panel AUDYT pokazuje argument kopiowania i payload archiwum.
+To reproduktor stanu React, NIE test rzeczywistego szyfrowania/SQLite/Tauri.
+Atrapy nie sterują saved/revealed; te stany pochodzą z komponentu produktu.
+Sama zgodność UI/payloadu nie wymaga przebudowy całego Tauri.
+
+ZALICZONE
+- Test implementera: node --test tests/revealText.test.mjs -> 6/6.
+- node node_modules/typescript/bin/tsc --noEmit -> exit 0.
+- Niezależny independent_r5.mjs -> 3/3:
+  Unicode/CRLF/taby i cofnięcie; dwa różne tokeny z tą samą wartością;
+  wydłużenie pierwszego oryginału bez przesunięcia drugiej bazowej pozycji.
+- Realny komponent, syntetyczna integracja:
+  klik odkrywa tylko pierwszą Różę, druga pozostaje zakryta;
+  Enter cofa i odkrywa całą wielowyrazową wartość;
+  pierwszy zapis i kopiowanie przekazują dokładnie tekst z podglądu;
+  nowy dokument/nowy wynik resetuje odkrycia;
+  Dodaj i zakryj z nową odpowiedzią /preview resetuje odkrycia;
+  przy pierwotnym blocked=true tokeny nie są aktywne, tekst ukryty,
+  Kopiuj/Zapisz pozostają nieaktywne w normalnej ścieżce.
+- Przeniesiony TOKEN_RE jest niezmieniony.
+- Nie ma ponownego Guarda ani nowych wyjść sieciowych z odkrywania.
+  Świadome odkrycie PII pozostaje decyzją użytkownika, zgodnie z v5
+  i zaakceptowanym zakresem. Nie otwierać tej polityki ponownie.
+
+GRANICE
+Natywne Tauri, rzeczywiste szyfrowanie/archiwum na dysku i pełna operacja
+Przywróć: NOT_CHECKED w tej rundzie; nie ogłasza się ich FAIL.
+Nie uruchamiano backendu OWNERA, modeli, benchmarków ani pełnej regresji.
+Start odczytu localhost w IAB wymagał lokalnego serwera poza sandboxem;
+pierwsza karta sieciowo nie załadowała strony. Świeża karta następnie
+działała poprawnie — nie jest to defekt produktu.
+Helper bez mapy sprawdzony testem logiki; nie testowano myszą każdego
+wariantu missing-map. Nie rozszerzano audytu po uzyskaniu dowodu F1.
+
+Następny odbiorca: CC — wąska poprawka F1, bez rozszerzania architektury.
+Recheck: zachować kroki zapis -> zmiana/cofnięcie -> stan/ponowny zapis;
+testy zmienionego ownera i tylko konieczna kontrola tego scenariusza.
+Nie mergowano i nie naprawiano produktu podczas audytu.
