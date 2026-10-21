@@ -1,0 +1,61 @@
+LYNX-DEPS-UPDATE — etap B, wąski audyt / tests_r2
+Data: 2026-10-21
+Werdykt: PASS etapu B na exact SHA.
+SHA: 5c28eb065fca3b3e86283c21ea56652e51e1797c
+Diff base (parent): 30c14743cf05931d02f871cb8a9029a085701c60
+Baza kodu/środowiska A: 0219ffd01bf3823a2ca7b57154541d8907608c6c
+Zakres: jedna linia requirements, morfeusz2 1.99.12 -> 1.99.15;
+uzupełnienie briefu o etap B. Bez zmian algorytmów maskowania i Guarda.
+
+NIEZALEŻNE SPRAWDZENIE
+Użyto własnego czystego środowiska z audytu A, bez system-site-packages.
+Najpierw próba na 1.99.12, potem zmieniono wyłącznie morfeusz2 przez
+pip install --no-deps morfeusz2==1.99.15. Globalny Python i środowisko
+aplikacji niezmienione. pip check: No broken requirements found.
+
+Rzeczywiste wartości załadowanego słownika:
+1.99.12: pl.sgjp.sgjp-2025.11.10
+1.99.15: pl.sgjp.sgjp-2026.06.01
+Nie pomylono wersji pakietu z wersją aktywnego słownika.
+
+Zachowany morf_probe_r2.py:
+- osobne git archive exact SHA dla obu przebiegów;
+- profile/rejestr/archiwum przekierowane przed importem, rzeczywiste
+  połączenia do 8765 zablokowane; TestClient działa wyłącznie w procesie;
+- prawdziwy lifespan, /health, silnik, spaCy, Morfeusz, OCR i Guard;
+- 8 własnych tekstów syntetycznych: odmiany polskich imion/nazwisk,
+  homonimy, wielowierszowe osoby, adres, forma prawna firmy, zwykła proza;
+- 1 własny syntetyczny obraz obrócony o 90 stopni;
+- 9/9 odpowiedzi identycznych: HTTP 200, blocked=false, tekst, tokeny,
+  błędy i metadane OCR. Usunięto jedynie dynamiczny nagłówek PSE;
+- 52 różne słowa z tych prób: identyczne analizy starego i nowego Morfeusza.
+Nie odtworzono nowej regresji ani usterki wymagającej poprawki.
+
+WYKORZYSTANY DOWÓD CC, BEZ PONOWNEGO URUCHAMIANIA KORPUSU
+Odczytano mh.py, lex.py, fragment analizy i wyniki lokalne w
+%TEMP%/lynx_cc_review/morfeusz_b/.
+Niezależnie przeliczono równość zapisanych raw_old.json/raw_new.json:
+- 389/389 rekordów po odjęciu nagłówka PSE;
+- porównano code/blocked/error/preview/tokens/orig;
+- bez normalizowania tokenów, wartości lub zakresów;
+- liczby rekordów i identyfikatory słowników potwierdzone.
+lex_old.json == lex_new.json: 3169/3169 haseł.
+To kontrola surowego materiału CC, nie własny ponowny pomiar 389 dokumentów.
+Pliki źródłowe CC nie osadzają exact SHA kopii (skrypt archiwizuje HEAD);
+własna próbka powyżej potwierdza bieżący audytowany SHA.
+Danych korpusu nie kopiowano do repo.
+
+OGRANICZENIA / STOP
+Pakiet z PyPI zawiera SGJP 2026-06-01, nie ręczny build 2026-10-18.
+Ten późniejszy build pozostaje w LYNX-INSTALLER zgodnie z briefem;
+nie jest brakiem tej dostawy. Nie pobierano go ręcznie.
+Nie powtarzano pełnych testów, kryptografii, native buildu, całego benchmarku
+ani pełnego Przywróć z etapu A. Teksty/mapy porównanej próbki i zapisanych
+389 wyników nie zmieniają się; nie jest to nowy test natywnego Przywróć.
+Ograniczenia wydania natywnego z A nie są przez PASS B automatycznie zamknięte.
+COLOR-TRACE Architekta nadal poza zakresem — wcześniejsze polecenie Pawła.
+Nie badano całego języka ani wszystkich możliwych nowych wpisów słownika.
+
+PASS dotyczy dostarczonej zmiany B, nie całego wydania.
+Bez nowych findingów. Bez zmian produktu, merge i wznowienia innych tematów.
+Następny odbiorca: Paweł — decyzja o merge etapu B.
