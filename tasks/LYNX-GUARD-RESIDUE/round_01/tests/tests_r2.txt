@@ -1,0 +1,28 @@
+LYNX-GUARD-RESIDUE — korekta BRIEF_ONLY r2, 2026-10-21
+Aktualny brief v1.1: 04e13c882049880bc8d3ea3794d8de3a848718ea.
+Pierwotny brief: 89895446629ccbcd074e7f24208580c777ebbf65; audyt r1: 232f3710963aeeaa9690410b78ac62bffc1ce973.
+Status: C1 WYCOFANE; pozostaje tylko C2 — doprecyzowanie zakresu ostrzeżeń v1. Bez PASS PREIMPLEMENTATION do zamknięcia C2.
+
+Źródło korekty:
+Po wyjaśnieniu audytu Paweł wskazał przepływ: Guard pyta, użytkownik maskuje albo zostawia, po obsłużeniu ostrzeżeń Guard pozwala zapisać dokument.
+Następnie polecił poprawić wymagania. Codex przyznał, że żądanie potwierdzania zawartości zaszyfrowanego blobu nadmiernie rozszerzyło zadanie.
+
+Poprawiono bezpośrednio brief (wyłącznie dokument, bez projektu nowego rozwiązania):
+- usunięto wymóg zaufanego powiązania treści ciphertextu z ocenionym tekstem i wynikający z niego kryptograficzny BLOCKER;
+- usunięto odbiór „niespójny ciphertext/status”;
+- pozostaje kontrola statusu bieżącego PSE/rewizji i wszystkich ostrzeżeń przed zapisem;
+- Zakryj i Zostaw są równoprawnymi sposobami rozstrzygnięcia konkretnego ostrzeżenia;
+- backend nie kwestionuje wyboru użytkownika, nie odszyfrowuje blobu i nie wymaga nowego protokołu;
+- S3 pozostaje nieodwołalną blokadą, a zmiana aktualnego dokumentu unieważnia nieaktualne dopuszczenie;
+- kopia i eksport respektują ten sam status obsłużenia ostrzeżeń.
+
+R1 pozostaje w historii, ale jego C1 NIE jest obowiązującym wymaganiem ani blokadą zadania.
+To nie jest dowód, że status sesji potwierdza zawartość dowolnego blobu — taka gwarancja została wyłączona z zakresu.
+
+Pozostały jeden punkt do Architekta (C2):
+Jednoznacznie wskazać, jakie ostrzeżenia obejmuje v1: dotychczasowe trafienia czy także nowe klasy resztek,
+z krótkimi przykładami dodatnimi/ujemnymi i oczekiwanym fragmentem. Bez nowej infrastruktury i bez ponownego otwierania C1.
+Architekt nie ma projektować kryptograficznego poświadczenia treści.
+
+Frozen S4 i jego formalna zmiana pozostają osobną bramką według briefu. S5/trwałe „zapamiętaj” bez zmian zakresu.
+Nie uruchamiano testów/modeli/reproduktorów, nie edytowano kodu produktu i nie wykonywano merge.
