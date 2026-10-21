@@ -473,7 +473,25 @@ _NER_BLOCKLIST = _NER_BLOCKLIST | _GEO_WORDS
 # prezesa rady ministrów") generowałyby prefiksy blokujące całe rodziny
 # słów ("kancelar" blokuje każdą kancelarię). Wielowyrazowe chronione
 # przez exact match w _NER_BLOCKLIST.
+# [LYNX-FIRMA-FILTER-FIX] Prefiks tylko ze słów, które Morfeusz zna i to wyłącznie jako nazwę własną (nieznane, np. zapis bez
+# polskich znaków „transportowcow”, też tylko dokładnie).
+# Słowa pospolite („piekarnicza”, „przedsiębiorców”, „pracownik”) działają tylko jako dokładne dopasowanie — prefiks
+# 8 liter blokował nimi „Piekarnię”, „Przedsiębiorstwo”, „Pracownię”. Bez Morfeusza — dotychczasowe zachowanie.
+def _proper_only(words: set) -> set:
+    try:
+        import morfeusz2
+        morf = morfeusz2.Morfeusz(generate=False)
+    except Exception:
+        return words
+    proper = {"nazwa_geograficzna", "nazwa_własna", "imię", "nazwisko", "nazwa_organizacji"}
+    keep = set()
+    for w in words:
+        known = [i[2] for i in morf.analyse(w.capitalize()) if not i[2][2].startswith("ign")]
+        if known and all({q.split("_(")[0] for q in i[3]} & proper for i in known):
+            keep.add(w)
+    return keep
+
+
 _NER_BLOCKLIST_PREFIXES: frozenset[str] = frozenset(
-    b[:8].lower() for b in _NER_BLOCKLIST
-    if len(b) >= 6 and " " not in b
+    b[:8].lower() for b in _proper_only({b for b in _NER_BLOCKLIST if len(b) >= 6 and " " not in b and "-" not in b})
 )
