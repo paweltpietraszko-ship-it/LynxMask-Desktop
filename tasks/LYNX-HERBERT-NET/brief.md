@@ -35,6 +35,20 @@ Nowy **jeden** plik produkcyjny `backend/herbert_net.py`, minimalne wywołanie w
 
 **Twarda granica propozycji CC: 350 linii łącznie z testami** (liczenie zgodnie z `gate.py`; uszczegółowić próg, nie wykorzystywać go jako celu). To **nie jest nowa zgoda OWNERA na przekroczenie istniejącego 150-liniowego gate**. Przed kodem CC zgłasza dokładny zakres i wymagane odstępstwo. Jeśli nie da się dotrzymać 350 albo zachować powyższych warunków — **STOP, zgłoś jeden najmniejszy wariant do decyzji OWNERA**. Żadnego „małego” dodatkowego podsystemu naprawy FIRMA ukrytego w Tasku.
 
+TASK_SCOPE:
+- backend/herbert_net.py
+- backend/pipeline.py
+- backend/startup_check.py
+- backend/requirements.txt
+- backend/tests/test_herbert_net.py
+- README.md
+
+**Uzupełnienie CC przed kodem (21.10):** lista plików wg akapitu powyżej (README = atrybucja CC BY 4.0). Budżet: zgoda OWNERA 21.10 do
+350 l. łącznie z testami („jeśli limit ma psuć kod/działanie — zatrzymaj się i zapytaj”). Szew: `_apply_guard` dzielony na siatkę +
+dotychczasowe ciało pod nową nazwą (funkcja Guarda nie rośnie — ratchet gate). Tokeny siatki tylko w mapie dokumentu (jak warstwy
+regex), numer powyżej najwyższego w dokumencie i profilu, **bez zapisu do profilu**. Komunikat awarii: API (poza zakresem) zwraca stały
+komunikat S3 z alternatywą — dedykowany tekst HerBERT nie trafi do UI; odnotowane w DELIVERY.
+
 ## Handoff
 
 **Teraz Codex BRIEF_ONLY v2 na dokładnym SHA gałęzi**; sprawdź wąsko: (A) poprawność mapowania `PER/ORG` na istniejące OSOBA/FIRMA bez `ORG_NNN`, (B) osiągalność obecnych filtrów instytucji w prostym szwie, (C) niewykonalność naiwnego sklejania/spółdzielenia `FIRMA_001` dla nazwy i „z o.o.”, (D) gwarancję OFF=main, S3 przy ON i wierności mapy, (E) realność 350 linii i pomiaru ORG. Nie uruchamiać kodu/testów, nie implementować. **Raport nowy, nie używać prechecku v1 jako PASS v2.** Po PASS / korekcie briefu: CC review, budżet do zgody OWNERA przed implementacją, implementacja, Codex independent exact-SHA audit, OWNER decyzja o merge i włączeniu.
