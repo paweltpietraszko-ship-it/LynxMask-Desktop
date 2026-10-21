@@ -1,0 +1,72 @@
+LYNX-NAMES-DICT-CLEAN — audyt dostawy r1, 2026-10-21
+Status: WYMAGA_DECYZJI / SAFETY_PRIVACY R1. Bez końcowego PASS/FAIL (OWNER_EXPLANATION_GATE).
+Exact SHA kodu/briefu: ad8b0d7b99433f3bd1fd5903345225ccb2165ac9
+Baza: 2297e3dfd40663c0580aa67b6701145a76343ced; gate: b263656.
+Odbiorca: Paweł / CC. Rekomendacja: zwrot do CC do wąskiej korekty ochrony prawdziwych form imion; bez nowej architektury i bez merge.
+
+R1 — utrata maskowania formy imienia Inna.
+Syntetyk: "Rozmowa z Inną."
+Przed, baza 2297e3d: /preview HTTP 200, blocked=false,
+    "Rozmowa z OSOBA_001."; mapa OSOBA_001 -> "Inną".
+Po, exact ad8b0d7: /preview HTTP 200, blocked=false,
+    "Rozmowa z Inną."; tokens=[].
+Przywrócenie z mapy jest 1:1 w obu wersjach, ale nie dowodzi maskowania.
+Kontrola "Pismo dla Kima." nadal maskuje Kima przed i po; nie zgłaszam jej jako regresji.
+
+TRACE i granice kwalifikacji:
+Brief: celem jest usunięcie form OBCYCH słów, sekcja Odbiór: prawdziwe formy imion zostają;
+BOARD dodatkowo zleca ocenę, czy reguły nie usuwają prawdziwych form imion.
+Jednocześnie szczegółowy algorytm uzależnia zachowanie od analiz Morfeusza i jawnie odrzuca część homografów.
+Nie zakładam, że zgoda na czyszczenie/rozmiar danych oznacza zgodę na nową utratę wykrywania.
+Przez tę rozbieżność celu i szczegółowej reguły: WYMAGA_DECYZJI, nie FAIL.
+Niezależnie od sporu o TRACE odtworzona utrata zakrycia syntetycznej osoby = SAFETY_PRIVACY.
+OWNERSHIP: backend/names_inflected.json:1393; tasks/LYNX-NAMES-DICT-CLEAN/clean_names.py:42–57;
+konsument layers/ner_adapter.py:_apply_dictionary_names. Skan słownika jest istniejącym ownerem tego wykrywania.
+REPRO: dwie izolowane kopie z git archive odpowiednich SHA, prawdziwy model spaCy, HerBERT OFF,
+TXT -> /preview -> pipeline -> Guard -> wynik; ten sam syntetyk, odrębne profile.
+
+Przyczyna i odtwarzanie minimalne:
+    before = git show 2297e3dfd40663c0580aa67b6701145a76343ced:backend/names_inflected.json
+    after  = git show ad8b0d7b99433f3bd1fd5903345225ccb2165ac9:backend/names_inflected.json
+    "inną" in json.loads(before)["inna"] == True
+    "inną" in json.loads(after)["inna"] == False
+Po zmianie klucz "inna" zachowuje tylko ["inna", "inno"].
+Reguła Morfeusza nie daje gwarancji poprawności wszystkich odmian imion, których sam nie rozpoznaje jako imię.
+Kontrola 390 słów gold nie obejmuje tego kontrprzykładu. Nie ma podstaw do tezy o zerowej stracie poza tym zbiorem.
+
+Wyjaśnienie zachowania:
+- OWNER_CONFIRMED (wg zgód odnotowanych przez CC w briefie/BOARD, nie nowych decyzji audytora):
+  kierunek naprawy słownika u źródła i istniejący kompromis wykluczania pojedynczych słów z denylisty;
+  "Jan Zawarta" nadal maskowany jako całość.
+- OWNER_DECISION_NEEDED: czy dopuszczalna jest utrata prawdziwych odmian imion takich jak Inna -> Inną.
+  Rekomenduję zachowanie tych form, nie akceptację tego ubytku.
+- SAFETY_PRIVACY: podgląd z wymienioną formą imienia nie pokazuje tokenu i nie blokuje wyniku;
+  użytkownik może skopiować jawne imię dalej. Sam ten test niczego na zewnątrz nie wysyła.
+  Odczytywane są lokalne tekst/słowniki; mapa/przetwarzanie lokalne, bez nowej transmisji.
+  Doraźna korekta: ręczne zakrycie przed przekazaniem tekstu; trwała: poprawka CC.
+- TECHNICAL_ONLY: odtwarzalność bajtowa, format pliku i dopuszczony rozmiar zmiany danych.
+- UNAUTHORIZED: nie stwierdzono osobnego rozszerzenia funkcji; nie przypisuję CC intencji nowego zachowania.
+
+Wykonane wąskie sprawdzenia:
+1. Brief + diff: dane imion, trzy słowa denylisty, dwa pliki testów; bez kodu warstw/Guarda.
+2. clean_names.py --closed na blobie bazowym -> wynik identyczny BAJT W BAJT z blobem exact SHA.
+   SHA256: 40b69d9e4ce9921934b861919d7500ac33f058b2180a5c0810e077a71e510af3.
+   20 504 -> 18 388 form, 2 116 usuniętych, 166 kluczy; klucze zachowane, bez dodawania nowych form.
+   Pierwsze porównanie z git archive różniło się wyłącznie LF/CRLF; porównanie blobów usuwa artefakt eksportu, nie zmienia danych.
+3. test_names_dict_clean.py + test_osoba_not_person.py: 47 passed.
+4. Kontrole słownika: zachowane m.in. annie/anną/maję/mają/oliwię/oliwią/tomasza/katarzyny/piotrowi/tomowi/alę/alą.
+   Audyt analiz Morfeusza nie znalazł usuniętej formy oznaczonej przez niego jako l.poj. TEJ SAMEJ bazy-imienia;
+   nie jest to dowód poprawności lingwistycznej — właśnie przypadek Inna ujawnia ograniczenie tego kryterium.
+5. Pięć własnych syntetyków /preview: zwykłe słowa bez OSOBA; Zawarta jako nagłówek pozostaje,
+   Jan Kowalski / Anna Nowak i Jan Zawarta maskowani; formy Anny/Mai/Oliwii/Piotra maskowane;
+   Maja, Tomasz Zając, Ala Kot maskowani. HTTP 200, blocked=false, mapa 1:1 5/5.
+   Nie certyfikowano granic semantycznych wszystkich tokenów.
+6. Ze względu na usunięte formy rozszerzenie wyłącznie o dwie sondy przed/po: Inną (R1), Kima (brak regresji).
+7. Duże pomiary KPWr/pl-pii/dataset_clean, 0 strat 390 słów gold, gate: dowody CC, nie niezależny rerun Codexa.
+   PARTIAL w zakresie niezależnego pomiaru całej jakości. Brak pełnej suity/OCR/HerBERT ON/Mobile.
+   Zgoda na >150 linii danych odnotowana w aktualnym briefie/BOARD; nie otwieram jej ponownie.
+
+Zachowane materiały: %TEMP%\lynx-names-audit-r1\ (repro.py, run.py, edge.py, before.json, regenerated.json,
+removed.json, api.json, api_edge.json, exact/) oraz %TEMP%\lynx-names-audit-base\ (edge.py, api_edge.json, exact/).
+Tylko dane syntetyczne w raporcie. Backend/profil Pawła nietknięte; izolowane profile, brak ruchu zewnętrznego.
+Brak zmian produktu, merge, subagentów i prac nad przyszłym ślepym zbiorem.
