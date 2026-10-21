@@ -31,7 +31,8 @@ def test_iso_like_not_fragment(text):
 
 @pytest.mark.parametrize("text,firm", [("Sprzedawca: Gamma sp.j.\nNIP: 525-000-11-22", "Gamma sp.j."),
                                        ("Wykonawca: Beta Sp.k.", "Beta Sp.k."),
-                                       ("Nabywca: Delta sp.z o.o.", "Delta sp.z o.o.")])
+                                       ("Nabywca: Delta sp.z o.o.", "Delta sp.z o.o."),
+                                       ("Nabywca: Omega sp.z  o.o.", "Omega sp.z  o.o.")])      # Codex F1: dwie spacje
 def test_legal_form_without_space_is_firm(text, firm):
     out, rmap = _run(text)
     assert firm not in out and firm.rstrip(".") in rmap.values(), (out, rmap)   # końcowa kropka poza tokenem (jak dotąd)

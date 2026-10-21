@@ -51,7 +51,8 @@ def _name_start(text: str, form_start: int) -> int | None:
 
 # [LYNX-FORMATS-PACK2] Forma prawna z kropką po „sp” (także bez spacji: „sp.j.”, „Sp.k.”, „sp.z o.o.”) — FIRMA bez encji spaCy
 # (Mobile NameEngine FIRMA_LEGAL_REGEX). „spj” bez kropki, S.A. i s.c. świadomie poza skanem (inicjały, spaCy łapie S.A.).
-_FORM_SCAN_RE = re.compile(r"(?<![\w.])(?:sp\.\s?z\s?o\.?\s?o|sp\.\s?k\.?\s?a|sp\.\s?[jkp]|p\.s\.a)\.?(?!\w)", re.IGNORECASE)
+_FORM_SCAN_RE = re.compile(r"(?<![\w.])(?:sp\.[ \t]*z[ \t]*o\.?[ \t]*o|sp\.[ \t]*k\.?[ \t]*a|sp\.[ \t]*[jkp]|p\.[ \t]*s\.[ \t]*a)\.?(?!\w)",
+                           re.IGNORECASE)  # odstępy dowolne w linii (Codex F1: „sp.z  o.o.”)
 
 
 def scan_legal_forms(text: str, ner_results: list) -> list:
