@@ -37,7 +37,7 @@ def run(text, *spans):
     ("NABYWCA\nALFA S.A.\nNIP", [("A.", "OSOBA")], [("ALFA S.A.", "FIRMA")]),           # dawniej: OSOBA „A.” wycięta → wyciek
     ("Umowa z firmą ALFA Sp. z o.o.", [("z o.o.", "FIRMA")], [("ALFA Sp. z o.o.", "FIRMA")]),   # stop na „firmą”
     ("Kowalski i Wspólnicy Sp. k. reprezentuje", [("Kowalski", "OSOBA"), ("Wspólnicy Sp. k.", "FIRMA")],
-     [("Kowalski i Wspólnicy Sp. k.", "FIRMA")]),
+     [("Kowalski", "OSOBA"), ("Kowalski i Wspólnicy Sp. k.", "FIRMA")]),   # osoba zostaje: inny zapis firmy → własny token
     ("Spółka z o.o. w organizacji", [("z o.o.", "FIRMA")], []),                          # brak nazwy → brak tokenu
 ])
 def test_legal_form_joins_the_name_or_disappears(text, spans, expected):

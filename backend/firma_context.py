@@ -70,5 +70,7 @@ def legal_form_entities(text: str, ner_results: list) -> list:
             firm = dataclasses.replace(ner, start=name, end=ner.end, text=text[name:ner.end], label="FIRMA")
             if (firm.start, firm.end) not in [(f.start, f.end) for f in firms]:
                 firms.append(firm)
-    kept = [r for r in out if not any(f.start <= r.start and r.end <= f.end for f in firms)]
+    # Usuwamy tylko fragmenty firm zawarte w nowej FIRMA; OSOBA zostaje (inny zapis tej firmy, np. „Sp.z”, może nie trafić
+    # w wartość mapy — wtedy nazwisko musi mieć własny token, a nie alias innej osoby; Przywróć 1:1).
+    kept = [r for r in out if r.label == "OSOBA" or not any(f.start <= r.start and r.end <= f.end for f in firms)]
     return sorted(kept + firms, key=lambda r: r.start)
