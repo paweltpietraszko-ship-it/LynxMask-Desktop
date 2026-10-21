@@ -39,3 +39,9 @@ PRZED = main `dcaa3e1`, PO = `2e9d128`; prawdziwy `/preview` w procesie, pusty p
   w Poznaniu” jako FIRMA, alias innej osoby w „Kowalski i Partnerzy Sp.z o.o.”.
 - Zostaje (poza zakresem): „Sp.k.” bez spacji w firma_sweep (22), „Biuro Rachunkowe RACHMISTRZ” bez formy prawnej, „Partnerzy Sp.z o.o.” jawne.
 - NOT_CHECKED: `benchmark.py` (port 8765 = silnik Pawła), Guard nie zwraca danych w /preview (kody/blokady porównane).
+
+## Poprawka F1 (Codex r3 `194a636`) — HEAD `3927a86bf8a25f0a03056a12ea2c4b0d9b8fed9a`
+Cała forma prawna jako kandydat („Sp. z o.o.”, „S.A.”, „Sp. k./j./p.”, „S.K.A.”, „P.S.A.”) — nowy `_FULL_FORM_RE` w `_form_start`: łączy się
+z nazwą w linii albo znika (np. „Forma prawna: Sp. z o.o.” → brak tokenu). Reproduktor Codexa `repro_f1_r3.py <backend>`: 7 passed (4 RED → zielone,
+3 kontrole inicjałów bez zmian). `tests/test_firma_context.py` 14 passed. Gate: `STATUS: WYMAGA_DECYZJI` — RATIO 176/5, TOTAL_LINES 181 (+3).
+Recheck Codexa: zachowany repro + wąski pion `/preview` dla pełnych form.
