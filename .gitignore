@@ -17,6 +17,7 @@ frontend/.vite/
 # === OGÓLNE ===
 *.log
 .env
+.venv/
 
 # === RUNTIME / GENEROWANE ===
 backend/benchmark_results/
