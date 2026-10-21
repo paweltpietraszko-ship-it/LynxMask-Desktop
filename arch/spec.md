@@ -37,9 +37,8 @@ zwróconym przez zewnętrzne AI. Żadne dane dokumentu nie opuszczają komputera
 - MEDIUM (suma wag ≥ 3 blokuje): REGON (1), TELEFON (1).
 - GuardAllowlist: użytkownik może oznaczyć konkretną wartość jako „to nie PII".
 
-- Ręczna korekta nadmaskowania (OWNER zatwierdził 2026-10-20, LYNX-MANUAL-REVEAL): dopiero po zwykłym przejściu OutputGuarda i obsłużeniu obowiązujących alertów użytkownik może świadomie odkryć **jedno dokładne wystąpienie** zamaskowanego tokenu w bieżącym dokumencie. Zgoda jest lokalna dla konkretnego wystąpienia/sesji i może zostać cofnięta; nie tworzy globalnej allowlisty ani wyjątku dla innych miejsc, nazwisk czy dokumentów.
-- Po takim odkryciu kontrola końcowego tekstu **nie zgłasza ponownie MAP_LEAK wyłącznie z powodu tej jednej potwierdzonej pozycji**. Pozostałe wystąpienia i niezależne naruszenia podlegają normalnej kontroli mapowej. Pełny rzeczywiście udostępniany tekst pozostaje objęty regułami HIGH/MEDIUM, bez wyjątków. Błąd Guarda, brak wiarygodnego kontekstu, niedozwolona edycja lub nieobsłużony alarm nadal oznacza blokadę (S3). Zgoda na odkrycie nie unieważnia żadnego wcześniejszego HIGH ani blokady.
-- Walidacja zgody musi opierać się na wiarygodnym kontekście sesji i konkretnym wystąpieniu, nie na samej nazwie tokenu, globalnej wartości, decyzji klienta ani wartości w allowliście. Odkrycie/cofnięcie i każda zmiana wersji wyniku unieważnia poprzednią zgodę na **udostępnienie całego tekstu**; ponowna kontrola musi dotyczyć dokładnie tekstu kopiowanego/zapisywanego/eksportowanego. Nie wolno odkrywać wszystkich identycznych tokenów przez globalną zamianę.
+- Po zakończonej, niezablokowanej kontroli OutputGuarda użytkownik może świadomie odkryć jedno wskazane wystąpienie tokenu w podglądzie; jest to ręczna korekta wyniku przez użytkownika, której Guard nie kontroluje ponownie. Nie tworzy ona trwałej allowlisty i nie unieważnia wcześniejszych blokad S3/S4.
+
 
 ## S5. Brak PII poza mapą
 
