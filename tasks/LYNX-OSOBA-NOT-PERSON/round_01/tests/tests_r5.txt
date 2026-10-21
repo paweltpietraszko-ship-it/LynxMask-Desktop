@@ -1,0 +1,97 @@
+LYNX-OSOBA-NOT-PERSON — wąski recheck R1 / tests_r5
+Data: 2026-10-21
+Exact SHA: 62c72a2387d58dc405113e37b3325d82479b9b23
+Diff base / poprzednia implementacja:
+389830290bc6e28573da1c17f405960bf0cf0c75
+Baza pierwotna: 1f60c060e3ecd2beab215e34ad4f817a1aeb8e24
+DELIVERY r2: 9987b69
+Poprzednie dowody: r3 b5b6547, r4 bccd204.
+
+WYNIK: PASS poprawki R1 na podanym SHA.
+Nowa utrata Czerwiec/Styczeń/Bill zamknięta w odtworzonych ścieżkach.
+Nie jest to pełna nowa certyfikacja OSOBA ani ponowny benchmark.
+Brak merge i brak edycji produktu przez Codexa.
+
+ZMIANA
+Przeczytano diff od 3898302: osoba_not_person.py i celowane testy.
+Właściwa denylista i reguła małej litery pozostają.
+Biała lista nie odrzuca kandydata, jeżeli imię/nazwisko potwierdzi
+dotychczasowy słownik albo Morfeusz.
+Gdy lokalna analiza Morfeusza jest niedostępna/zgłasza wyjątek,
+sam nowy odsiew białych list nie usuwa kandydata.
+Nie zmieniono formatu tokenów, mapy, alokatora, Guarda, API i frontendu.
+To domknięcie ochrony wykazanej w R1, bez poszerzenia kompromisu 2a.
+
+NIEZALEŻNE WYKONANIE
+1. Dokładny git archive 62c72a2; puste izolowane profile w Temp,
+   Python 3.14 / Morfeusz 1.99.15, lokalny spaCy, HerBERT OFF.
+   Odcięte połączenia zewnętrzne i rzeczywisty backend na 8765;
+   TestClient działał w procesie. Nie restartowano sesji właściciela.
+2. Oryginalne zachowane obserwatory bez zmiany ich logiki:
+   repro_bill_r3.py -> Bill kept;
+   repro_polish_r4.py -> Czerwiec i Styczeń kept.
+   Dalej nie ma ich w _PERSON_FORMS, są na WHITE_LISTS,
+   poza właściwą OSOBA_DENYLIST; ochrona wynika z korekty, nie ze
+   zmienionego zbioru/klucza testu.
+3. tests/test_osoba_not_person.py: 25 PASS.
+4. Dodatkowa niezależna macierz: 25 asercji:
+   - prawdziwy Morfeusz: Czerwiec, Styczeń, Bill, Wtorek,
+     Poniedziałek, Maja, Maj, Warszawa zachowane przez nowy helper;
+   - Data/Zapłata/Osoba oraz mała litera nadal odrzucane;
+   - Faktura bez dowodu osoby odrzucana;
+   - osobno kwalifikator imię, nazwisko i nazwisko_(odmężowskie);
+   - brak kwalifikatora / pusta analiza nie udają dowodu osoby;
+   - wyjątek analizy: Faktura/Czerwiec/Styczeń/Bill zachowane,
+     ale Data/Zapłata/mała litera nadal stosują wcześniejszą regułę.
+5. Prawdziwy pion dokument -> spaCy -> nowy filtr -> pipeline
+   -> Guard -> /preview: pięć syntetycznych dokumentów,
+   5/5 HTTP200, blocked=false.
+   "Podpisał Czerwiec." -> "Podpisał OSOBA_001.", mapa -> Czerwiec.
+   "Podpisał Styczeń." -> "Podpisał OSOBA_001.", mapa -> Styczeń.
+   "Podpisał Bill." -> "Podpisał OSOBA_001.", mapa -> Bill.
+   Odtworzono dokładne minimalne wejścia r3/r4, bez zmiany gold.
+   Kontrola Data/Zapłata/Faktura/Umowa nie tworzy fałszywych OSOBA.
+   Kontrola wielowyrazowa zachowuje wynik bazowy: Jan Data maskowany,
+   Anna Osoba nadal dziedziczy stary problem samego tokenu na Anna,
+   opisany już w r3. Nie zamykam tego osobnego ograniczenia.
+
+ZAKRES WERDYKTU I WYKORZYSTANIE STARYCH DOWODÓW
+R1 nie wymaga już rozszerzenia wyjątku 2a na białe listy:
+potwierdzona niepożądana utrata została usunięta.
+Zachowane 216 wpisów starej ścieżki słownikowej i port list pozostają
+niezmienione względem r3; nie powtarzano ich pełnego audytu.
+Nie powtarzano 21 testów wielowierszowych, 568 dokumentów CC, OCR
+ani kalibracji — zmienił się tylko nowy warunek pomocniczy.
+Korzyść 11 usuniętych FP z pomiaru r1 wynikała z właściwej denylisty
+i małej litery, a nie białych list. To nadal wspierające dowody r1,
+nie nowy pełny pomiar 62c72a2.
+Zachowanie wszystkich pozostałych nazwisk świata, brak nowych FP,
+wydajność/start, całe repo i natywny instalator: NOT_CHECKED tutaj.
+
+Nie wznawiano starych findingów i czterech porażek regresji CC z bazy:
+kod ich właścicieli poza nowym helperem się nie zmienił, wcześniejsze
+wyniki nie są przedstawiane jako nowe PASS całej regresji.
+Pierwotnego zgłoszenia zamieszkaly z żywego środowiska nadal nie
+odtworzono niezależnie; poprawność nowej reguły nie dowodzi przyczyny
+tej różnicy środowiska.
+
+GATE
+DELIVERY podaje 173 linie i zgodę Pawła na przekroczenie 150.
+RATIO 152/21 i TOTAL_LINES pozostają formalnymi wynikami gate CC,
+nie nowym odtworzonym defektem. Codex nie przyznaje kolejnego
+odstępstwa budżetu ani nie wykonuje merge.
+
+ZACHOWANE DOWODY
+Oryginalne zdalne reproduktory:
+tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/repro_bill_r3.py
+tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/repro_polish_r4.py
+Własne nowe wykonanie:
+C:/Users/p_pie/AppData/Local/Temp/lynx-osoba-audit-r5/
+recheck.py, matrix.json, results.json, exact/backend.
+Nie publikować wygenerowanych profili i kluczy.
+
+NASTĘPNY ODBIORCA
+Paweł — decyzja merge sprawdzonej poprawki.
+Otwarte OWNER_EXPLANATION_GATE / R1 z r3-r4 zamknięte dla wskazanej
+nowej utraty maskowania przez poprawkę, bez akceptowania dodatkowej
+utraty prywatności. Uzgodniony kompromis właściwej denylisty pozostaje.
