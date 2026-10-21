@@ -19,7 +19,7 @@ from pipeline_core import PipelineState, TokenAllocator
 _CASE_SIG_RE = re.compile(
     r"\b(?:"
     r"(?:I{1,3}V?|VI{0,3}|IX|XI{0,2}|XII)\s+[A-Z][A-Za-z]{0,4}"
-    r"|Km|Kmp|Ko|Kms|GC|C|K|W"
+    r"|(?i:km|kmp|ko|kms)|GC|C|K|W"  # [LYNX-AMOUNTS-NUMBERS] także „KM 8923/2023”
     r")\s+\d{1,6}/\d{2,4}\b",
     re.UNICODE,
 )

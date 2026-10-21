@@ -36,12 +36,24 @@ silników Mobile (`450204b`, test JVM) vs Desktop (`cc70822`) na tych samych 693
 - Bez zmian: format tokenów, `TOKEN_RE`, OCR-normalizer, spaCy, Guard, API, KW, adresy/miejscowości. Nie przenosimy fałszywych alarmów
   Mobile (numeracja listy „1. Os” jako KWOTA, daty „08.07”).
 
+## ROZSZERZENIE CC (ta sama klasa co E — końcówka sygnatury jawna; dopisane przed kodem tej części)
+Reproduktor: „Sprawa egzekucyjna nr KM 8923/2023” → `NUMER_001/2023`. Przyczyna: `layers/credentials.py` (wcześniej niż `legal`) —
+wzorzec „Tablica rejestracyjna pojazdu” w `backend/credential_patterns.json` dopasowuje „KM 8923”, `legal` nie dostaje całości.
+Zmiana: wzorzec tablicy nie dopasowuje, gdy bezpośrednio za nim jest „/cyfra” (`(?!/\d)`); całą sygnaturę bierze `_CASE_SIG_RE`.
+Test: „nr KM 8923/2023” → jedna wartość „KM 8923/2023”; tablica „KR 4AB67” nadal NUMER.
+
 TASK_SCOPE:
+- backend/credential_patterns.json
 - backend/verbal_amounts.py
 - backend/layers/amount.py
 - backend/layers/numeric.py
 - backend/layers/legal.py
 - backend/tests/test_amounts_numbers.py
+- backend/tests/test_audyt_2026_10.py
+
+`test_audyt_2026_10.py::test_wiernosc_tekstu_i_maskowanie` używał „Faktura nr 12/2026” jako stałego tekstu wokół e-maila — po zmianie C
+numer faktury jest zakryty (zgodnie z Zakresem 3); w teście zmieniona tylko ta kotwica („Faktura nr NUMER_001. Kontakt”), sprawdzenie
+wierności reszty tekstu i maskowania kontaktu bez zmian.
 
 ## Odbiór
 Testy celowane (`test_amounts_numbers.py`, przez warstwy i `run_pipeline_new` bez anonymizera): „(słownie: 44 tysięcy 813 złotych)” → jedna
