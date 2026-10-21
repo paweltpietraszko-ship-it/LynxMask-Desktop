@@ -632,7 +632,10 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
               Jeśli LynxMask zakrył coś niepotrzebnie, kliknij token, żeby odkryć tylko to miejsce. Odkryta wartość znajdzie się
               także w kopiowanym i zapisanym tekście.</div>}
             <HighlightedText text={result.anonymized_preview} map={tokenMap} revealed={revealed}
-              onToggle={guardBlocked ? undefined : (at, tok) => setRevealed(r => toggleReveal(r, at, tok, tokenMap))} />
+              onToggle={guardBlocked ? undefined : (at, tok) => {
+                setRevealed(r => toggleReveal(r, at, tok, tokenMap));
+                setSaved(false);  // [LYNX-MANUAL-REVEAL F1] nowa treść = do zapisania (ten sam PSE nadpisuje archiwum)
+              }} />
           </div>
 
           {/* Tabela tokenów */}
