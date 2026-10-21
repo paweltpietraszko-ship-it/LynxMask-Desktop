@@ -1,61 +1,48 @@
-# LYNX-MANUAL-REVEAL — kontrakt v4: zatwierdzona lokalna zgoda bez pętli alarmów
+# LYNX-MANUAL-REVEAL — brief v5 (prosty wariant CC, do Codex BRIEF_ONLY)
 
-Data 2026-10-20. **STATUS: OWNER_APPROVED_POLICY / READY_FOR_CODEX BRIEF_ONLY.** OWNER po rekomendacji Architekta odpowiedział jednoznacznie „TAK” na wąski wyjątek `MAP_LEAK` dla świadomie odkrytego wystąpienia, z utrzymaniem wszystkich pozostałych zabezpieczeń. Zgoda dotyczy **polityki funkcji**, nie merge, zmian poza Taskiem ani przekroczenia budżetu. Spec S4 formalnie zmodyfikowany na **gałęzi zadania**: `arch/spec.md` commit `4bb9e86209a777889830f424a71195052da6fa26`; `arch/FROZEN.lock` w osobnym commicie `eb44b6b73abcefb452bba4ae945f78f74a039433` (SHA256 pliku `1b13cd99b941269d383a2e0ffdf953870858c08796fec3051bdd166f38b5ae76`). Nie zmienia to zamrożonego spec na `main` przed osobnym poleceniem merge. Historyczny zwrot Codexa: `5ed8d61cf847873ae27073dd10424f9d7326c0f4`; r2 `ebfa55d` potwierdzał szew API, nie politykę.
+Data: 2026-10-21. **STATUS: READY_FOR_CODEX — BRIEF_ONLY, NIE WDRAŻAĆ JESZCZE.** Nowy kontrakt po [recenzji CC v4, commit `2b5a60f`](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/2b5a60f587c043fe8fe6d85ba62d1f932b1cdad2/tasks/LYNX-MANUAL-REVEAL/cc_review.md). OWNER preferuje prostą wersję podobną do Mobile i **wprost wymaga powrotu v5 do Codexa**. Historyczne PASS Codexa dla v4 (r3 `6e89ce2`) NIE obowiązuje dla v5. Brak zgody na kod/merge/przekroczenie budżetu.
 
-## Cel i rozdział ról
+## Zachowanie użytkownika (jedna funkcja)
 
-Na ekranie `Zamaskuj` użytkownik może w podglądzie wskazać i ręcznie odkryć **jedno wystąpienie** tokenu błędnie zakrywającego zwykłe słowo, a potem skopiować/zapisać **dokładnie ten widoczny tekst**. Jest już pole „Dodaj i zakryj”; obok prosta akcja „Odkryj tutaj”, z komunikatem „Jeżeli to słowo nie jest daną osobową, możesz odkryć je tylko w tym miejscu”. Bez JSON homonimów, reguł czasownikowych, nowego NER, zmian słowników i redesignu OSOBA.
+Po pseudonimizacji i normalnej, pomyślnej kontroli Guarda użytkownik na ekranie **Zamaskuj** może kliknąć konkretne wystąpienie zamaskowanego tokenu i wybrać **„Odkryj tutaj”**. Tekst pomocniczy: „Jeśli LynxMask zakrył coś niepotrzebnie, możesz odkryć wybrane miejsce. Odkryta wartość znajdzie się także w kopiowanym i zapisanym tekście.” Ponowne kliknięcie/„Cofnij odkrycie” przywraca token. Bez alertu przy każdym poprawnym maskowaniu i bez słownika homonimów.
 
-**Role:** silnik dokonuje maskowania; OutputGuard wykrywa wycieki i inne podejrzane pozostałości; interfejs umożliwia człowiekowi *świadomą korektę* wcześniejszego nadmaskowania. Guard nie rozstrzyga, czy Róża jest kwiatem.
+- Odkrywanie **tylko po niezablokowanym `/preview` i zakończonej obsłudze wymaganych ostrzeżeń** na istniejących zasadach. Nie obchodzimy HIGH, S3 ani `guardBlocked`; błędne/zablokowane dokumenty nie otrzymują tej funkcji. Nie dodawać nowych dialogów „obsługi Guarda” ani automatycznego odblokowania przy zwykłym kliknięciu.
+- Zgoda użytkownika dotyczy tylko bieżącego dokumentu i **dokładnie jednego wystąpienia**, nie wszystkich wystąpień tego samego identyfikatora. Stan odkryć utrzymuje **wyłącznie React UI**, nie serwer. „Nowy dokument” i ponowne `/preview` (także po „Dodaj i zakryj”) czyszczą odkrycia.
+- **Pełny token, pełna wartość:** np. `OSOBA_001 → Anna Malina` może ujawnić całe `Anna Malina`, ale nie można odsłaniać tylko fragmentu większego tokenu. UI powinno jednoznacznie pokazać, że chodzi o **całą wartość**, zanim użytkownik ją odkryje. Brak wartości w mapie → nie odkrywać, wyświetlić krótką instrukcję.
+- **Jedna kanoniczna wartość tekstu po korekcie:** wyświetlenie, „Kopiuj tekst” i archiwizacja `anonymized_preview` używają tego samego wyliczonego `finalText`, z zachowaniem nagłówka PSE, spacji, interpunkcji i pozostałych tokenów. Zapis do archiwum nadal używa dotychczasowego szyfrowania po stronie klienta; pierwotna mapa sesji nie jest modyfikowana.
+- **Guard pracuje raz przy `/preview`**, przed ręcznym odkryciem. Ręczne „Odkryj” to **świadoma edycja wyniku przez użytkownika**; nie uruchamiać ponownie Guarda, nie dopisywać globalnego wyjątku `MAP_LEAK`, nie przebudowywać/podmieniać wyniku przez pipeline. To **jawny kompromis**: Guard nie ocenia ryzyka wartości, którą człowiek sam postanowił odkryć. Nie przedstawiać skorygowanego tekstu jako niezależnie ponownie zweryfikowanego.
+- Nowe `ERROR` i bloki produktu nie są potrzebne. Gdy nie da się wskazać całego tokenu/znaleźć mapy, przycisk jest nieaktywny z prostym wyjaśnieniem; użytkownik nadal może korzystać z poprzedniego wyniku.
 
-## Kolejność operacji i zgoda użytkownika
+## Niezmienny test krytyczny
 
-1. `/preview`: normalna pseudonimizacja oraz dotychczasowy Guard. **Przed odkrywaniem** wszystkie alerty muszą być obsłużone na obowiązujących zasadach. Jeżeli stan końcowy wyniku jest zablokowany, silnik/Guard zwrócił błąd albo pozostał niezakończony alert: żadnego odkrycia, wyślij po poprawieniu/ponownej pseudonimizacji. Samo kliknięcie „obsłużone” nie odblokowuje HIGH. Zmiana frozen S4 na ogólny model ostrzeżeń NIE należy do tego Tasku.
-2. Użytkownik wskazuje **całe, pojedyncze wystąpienie tokenu** (nie wartość we wszystkich miejscach) i wybiera `Odkryj tutaj — potwierdzam, że to nie PII w tym miejscu`. Zgoda dotyczy tylko tej lokalizacji w bieżącym dokumencie. Może ją cofnąć; nie trafia do `GuardAllowlist`, profilu, `.lynxdict` ani globalnego wyjątku.
-3. Kontrola finalnego tekstu respektuje tę konkretną potwierdzoną operację. **Nie może generować ponownie tego samego `MAP_LEAK` dla zatwierdzonej pozycji** — to byłaby nieskończona pętla. Nie wyłącza jednak żadnego innego alarmu ani innej lokalizacji.
-
-**Ograniczenie fazy 1:** tylko pojedynczy token z jednoznaczną mapą do **jednego słowa**; nie umożliwiać częściowego odsłonięcia `OSOBA_001 → Anna Malina` ani świadomego ujawnienia całego wielowyrazowego tokenu bez odrębnej zgody produktowej. Brak tokenu w mapie, niejednoznaczny span lub zaznaczenie kilku tokenów → odmowa z instrukcją „Zaznacz jeden cały token”.
-
-## Przykład obowiązkowy (ten sam token, dwie role)
-
-Tekst wynikowy:
+Przykład syntetyczny:
 ```
 01. OSOBA_033 zakwitła rano na rabacie.
 02. Pani OSOBA_033 odebrała dokument.
 ```
-Mapa: `OSOBA_033 → Róża`. Zgoda na odkrycie pierwszego wystąpienia daje:
+Mapa `OSOBA_033 → Róża`. Po wskazaniu **pierwszego** wystąpienia wynik jest dokładnie:
 ```
 01. Róża zakwitła rano na rabacie.
 02. Pani OSOBA_033 odebrała dokument.
 ```
-Eksport tego wyniku MUSI być możliwy po prawidłowej, wąsko określonej zgodzie i pomyślnej kontroli innych zagrożeń. Drugie wystąpienie pozostaje zakryte. Nie wolno `replaceAll`, globalnych allowlist ani globalnego wyciszenia wartości `Róża`.
+Odkrycie drugiego wystąpienia to niezależna czynność. Cofnięcie pierwszego nie zmienia drugiego. **Niedozwolone globalne `replaceAll`** i trwałe wyjątki w `GuardAllowlist`, profilu lub `.lynxdict`.
 
-## Kontrakt techniczny, bez nowego silnika i bez zmiany reguł Guarda
+## Techniczny szew i TASK_SCOPE
 
-**Szew:** istniejące `frontend/src/screens/Pseudonimizuj.tsx` oraz minimalny punkt API `backend/pseudominizer_api.py` (np. `POST /preview/validate-final`). Bez ponownego `pseudonymize_document`; tokeny w wejściu edytora nie są nowym dokumentem do `/preview`. Nie zmieniać `backend/output_guard.py`, `pipeline`, formatów map/archiwum ani `/profile/guard-allowlist`.
+**Jeden owner:** `frontend/src/screens/Pseudonimizuj.tsx`. Obecny `HighlightedText` rozpoznaje token i jego `m.index` w `anonymized_preview`; zamiast samego numeru tokenu identyfikować **wystąpienie** stabilnym indeksem/pozycją w bazowym tekście. Zachować bazowy tekst jako źródło, stan odkryć jako zbiór pozycji; wyliczyć `finalText` z bazowego tekstu i mapy tokenów, nie robić kolejnych zamian na edytowanym tekście (przesunięcia offsetów). `selectionchange` domaskowania nie może przypadkowo odkrywać tokenów; element tokenu może mieć niezależny click i akcję „Odkryj tutaj”. Akcja „Dodaj i zakryj” działa jak dotąd. Zachować dostępność mysz/klawiatura.
 
-**Serwerowa prawda:** krótki kontekst w pamięci procesu (PSE + identyfikator sesji, bazowy tekst po Guardzie, mapa token→oryginał, stan zgód), bez zapisywania jawnych PII na dysk. Token API i PSE same w sobie nie autoryzują operacji; po restarcie/wygaśnięciu kontekstu STOP i komunikat „Przetwórz dokument ponownie”. Żądanie klienta nie jest autorytatywne co do mapy, oryginalnych wartości, obecnych blokad ani indeksów.
+**Tylko:** `frontend/src/screens/Pseudonimizuj.tsx` oraz najmniejsze celowane testy UI / funkcji przeliczenia tekstu. Domyślnie bez nowego modułu produkcyjnego. **OUT_OF_SCOPE:** `backend/pseudominizer_api.py`, `backend/output_guard.py`, `pipeline*`, `ner_layer`, nowe API, stan serwera, ponowne uruchomienie Guarda, projekcje mapy, analiza znaczenia, zmiany formatu mapy/archiwum, globalne słowniki, HerBERT, OSOBA-REDESIGN. S3 i obecne blokady początkowego wyniku nadal obowiązują. Jeśli CC wykryje rzeczywistą zależność wymagającą rozszerzenia zakresu, ma zgłosić ją **przed kodem**, nie dopisywać nowego subsystemu.
 
-**Zgoda lokalna:** wyłącznie identyfikator danego wystąpienia w niezmiennym wyniku bazowym (np. `(sesja, ordinal wystąpienia, offset źródłowy, token)`) wraz z jawnym potwierdzeniem. Serwer sam oblicza tekst docelowy ze zbioru zatwierdzonych odkryć i weryfikuje pełną zgodność z `finalText`, łącznie z prefiksem PSE, interpunkcją i pozostałymi tokenami. Inne dowolne edycje nie są uprawnione. Dwa identyczne tokeny mają różne identyfikatory wystąpień. Można mieć kilka osobnych zgód w tym dokumencie, ale każda wymaga osobnego działania użytkownika. Cofnięcie usuwa tylko właściwą zgodę.
+## S4 na gałęzi zadania — propozycja do oceny Codexa
 
-**Dwie niezależne kontrole (klucz do uniknięcia pętli):**
-- Na **rzeczywistym, odkrytym `finalText`** wykonać istniejącą kontrolę strukturalnych HIGH/MEDIUM (PESEL, NIP, IBAN, EMAIL, dowód, paszport, REGON, telefon) według `GuardMode.REDACT`, bez żadnego wyłączenia dla odkrytej lokalizacji. Jeśli Guard blokuje, ma błąd lub chce redagować tekst zamiast go zaakceptować, to NIE zatwierdzać nieredagowanego `finalText`.
-- Na **projekcji do kontroli mapy**: identyczny tekst, ale *tylko* świadomie odkryte i zweryfikowane pozycje zastąpione z powrotem ich bazowymi tokenami, uruchomić niezmieniony `guard_output_with_map` z profilem/znanymi wartościami *serwera*. Dzięki temu `MAP_LEAK` od tej dokładnej zatwierdzonej pozycji nie wraca, natomiast pozostałe jawne nazwiska, miejsca, wycieki i nieautoryzowane zmiany nadal są widoczne dla map-checku. **Nie wycinać wartości globalnie ze znanych nazw.** Projektowany mechanizm projekcji jest **wąską zmianą polityki użycia Guarda**, a nie zmianą jego wzorców.
-  
-Nie utożsamiać `APPROVED` z decyzją użytkownika: `APPROVED` wymaga poprawnego kontekstu, dozwolonej operacji, bazowego statusu bez blokad oraz przejścia *obu* kontroli. `BLOCKED` i `ERROR` zawsze uniemożliwiają kopiowanie/zapis/eksport edytowanej treści; błędy nie tworzą domyślnej zgody. Alert HIGH może zablokować wynik, ale nie powoduje powtarzanych pytań o tę samą świadomą korektę.
+Poprzedni v4 dodał do zamrożonego S4 rozbudowany mechanizm `MAP_LEAK`/podwójnej walidacji, który **nie jest częścią v5**. Proponowane brzmienie zastępcze: „Po zakończonej, niezablokowanej kontroli OutputGuarda użytkownik może świadomie odkryć jedno wystąpienie tokenu w podglądzie; jest to jego ręczna zmiana wyniku, której Guard nie kontroluje ponownie.” Jest to **zmiana granicy odpowiedzialności**, nie dowód, że ostateczny tekst został sprawdzony przez Guard. S3/S4 HIGH i MEDIUM dla pierwotnego wyniku pozostają bez zmian. Zmiana spec i lock na **gałęzi Tasku** jest do punktowego prechecku, a nie automatycznego przeniesienia na `main`. Codex ma ocenić, czy nie wprowadza to niezamierzonej regresji/obejścia istniejącej blokady.
 
-**Rewizje i wyjście:** każda nowa operacja odkrycia/cofnięcia, domaskowania, zmiana dokumentu albo tekstu unieważnia poprzedni wynik walidacji `APPROVED`. Dotychczasowe zgody dla innych poprawnych wystąpień mogą pozostać w sesji, lecz pełny *nowy* `finalText` musi ponownie przejść walidację; wynik spóźnionej odpowiedzi dla starej rewizji nie autoryzuje nowej. Jedna kanoniczna wartość `finalText` obsługuje ekran, kopiowanie i zapis, nie `result.anonymized_preview`. Przy `/archive` backend nadal dostaje szyfrogram — kontrola, że zaszyfrowano dokładnie zatwierdzony tekst, odbywa się w UI i testach; nie przedstawiać archiwum jako niezależnie zweryfikowanego przez backend.
+## Odbiór, budżet, workflow
 
-## Granica S4 — decyzja OWNERA zatwierdzona
+Testy celowane CC i niezależnego Codexa (po kodzie): dwie i trzy identyczne wartości, odkrycie wyłącznie klikniętego wystąpienia; cofnięcie jednego; wielowyrazowy token odkrywany w całości (widoczne ostrzeżenie zakresu); brak mapy; reset po nowym dokumencie i po „Dodaj i zakryj”; pierwotny stan `guardBlocked=true` nie pozwala na odkrycie/kopiowanie/zapis; podgląd = skopiowany tekst = odszyfrowany tekst archiwum; późniejsze `Przywróć` bez uszkodzenia tokenów. Brak PII w logach/niezaszyfrowanych plikach; bez rzeczywistych dokumentów w repo.
 
-W historycznym S3/S4 i `output_guard.guard_output_with_map` każde `MAP_LEAK` blokowało wynik. OWNER jawnie zatwierdził **wyłącznie** wyjątek dla potwierdzonego konkretnego wystąpienia, nie globalne wyciszenie ani zwolnienie z HIGH/MEDIUM. Architekt doprecyzował S4 na gałęzi Tasku, z osobnym `FROZEN.lock`. Nie wolno traktować historycznego PASS r2 jako audytu tego nowego kontraktu.
+**Budżet CC:** szacunek ~60–80 linii UI, ale to **nie gwarancja**. Obecny plik przekracza 600 linii; CC ma przed implementacją wskazać minimalną zmianę i potrzebne odstępstwo od limitu (>150 linii, plik >600, funkcja >50, ratio >5:1) do osobnej decyzji OWNERA, jeśli konieczne. Nie utrwalać wyjątków od limitu przez rozbudowę frameworka.
 
-**Zatwierdzony zakres decyzji OWNERA:** „Po normalnym przejściu Guarda użytkownik może świadomie odkryć wskazane pojedyncze wystąpienie tokenu. Ponowna kontrola wyłącza jedynie mapowy alarm `MAP_LEAK` wywołany przez to zatwierdzone wystąpienie; wszystkie pozostałe pozycje oraz reguły HIGH/MEDIUM i S3 nadal obowiązują. Zgoda nie przechodzi między dokumentami, nie jest trwałym wyjątkiem i może zostać cofnięta.” **Wersja do wdrożenia wymaga jeszcze przejścia Codex BRIEF_ONLY, recenzji budżetu CC, implementacji, niezależnego audytu SHA i decyzji o merge.**
+**Kolejność bez skrótów:** (1) Architekt zapisuje v5 i projekt S4 na gałęzi, (2) **Codex BRIEF_ONLY dla v5 na dokładnym SHA, bez testów i implementacji** → nowy raport (r4 albo następny wolny, nie nadpisywać r1–r3), (3) po PASS/rozstrzygnięciu braków **CC recenzuje zakres i budżet**, (4) CC implementuje, (5) Codex audytuje dokładny SHA implementacji, (6) OWNER decyduje o merge. PASS v4 i recenzja CC nie zastępują tego prechecku.
 
-## Test i kolejność prac
-
-**Codex BRIEF_ONLY najpierw:** wąska weryfikacja **v4 + zmienionej S4 i lock na gałęzi Tasku**, bez testów kodu, w szczególności czy mapa jest kontrolowana na projekcji tylko potwierdzonych pozycji, rzeczywisty finalText nadal podlega HIGH/MEDIUM, a żadne nieobsłużone blokady S3/S4 nie uzyskują zgody. **CC** po prechecku recenzuje minimalny owner/API i budżet (>150 linii zmian, pliki >600 linii, funkcja >50, ratio >5:1 wymagają zgody OWNERA przed kodowaniem), a potem implementuje jedynie w uzgodnionym zakresie. Codex następnie audytuje exact SHA; żaden PASS nie oznacza automatycznego merge.
-
-Kontrpróby: `Róża` dwa wystąpienia, odkrycie tylko pierwszego; drugi jawny `Róża` *bez zgody* powoduje nadal map alarm; trzy wystąpienia i cofnięcie jednego; nowy dokument i reset zgód; ten sam token/dwa różne wystąpienia; zawyżony offset, wielowyrazowy oryginał, brak sesji, ponowione zatwierdzenie, wyścig walidacji z nową rewizją, restart serwera, awaria Guarda, `HIGH` odkryty w kontrolowanej lokalizacji, nieuprawniona edycja poza tokenem; każde wyjście ma używać tego samego zaakceptowanego `finalText`. Żadnych autentycznych dokumentów/PII w repo i logach.
-
-Dalsza kolejność nie zmienia się: po MANUAL-REVEAL osobny `K1a` HerBERT jako ostatnia siatka na nadal jawne fragmenty, następnie punktowe ograniczanie nadmaskowania. Duży OSOBA-REDESIGN oraz JSON homonimów pozostają odłożone.
+Historia: v4 `5a6f13c` i freeze S4 `4bb9e86` / `eb44b6b` pozostają w historii Git; [CC review `2b5a60f`](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/2b5a60f587c043fe8fe6d85ba62d1f932b1cdad2/tasks/LYNX-MANUAL-REVEAL/cc_review.md) uzasadnia redukcję.
