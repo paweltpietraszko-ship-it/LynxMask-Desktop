@@ -1,0 +1,82 @@
+LYNX-OSOBA-NOT-PERSON — BRIEF_ONLY v2 / tests_r1
+Data: 2026-10-21
+Exact SHA briefu: dcfb0e943dd8ded5980158a5dbbd4c5536a8f9dc
+Branch: task/LYNX-OSOBA-NOT-PERSON
+Baza wskazana przez CC: 1f60c060e3ecd2beab215e34ad4f817a1aeb8e24
+Wynik: WYMAGA_DOPRECYZOWANIA C1. Bez PASS/FAIL implementacji.
+
+ZAKRES
+Aktualny wiersz BOARD, brief v2 na exact SHA, punktowy odczyt:
+Desktop ner_layer.py:331-365, layers/ner_adapter.py:221-257;
+Mobile NameEngine.kt:217-332 (portowane listy).
+Nie uruchamiano sond, kodu produktu, modeli, testów ani reproduktorów.
+Nie analizowano diffu implementacji; dostawa jest briefem.
+Nie wznawiano audytu FIRMA ani pomiaru HerBERT.
+Mobile odczyt lokalny:
+C:/Projects/LynxMask/app/src/main/java/com/lynxmask/app/NameEngine.kt
+SHA256 e35a04fbcd0358d93ca6cf89ab0cc00b873895fa1c05266eb650e7903ef07ff7.
+Git SHA Mobile niedostępny w tej sesji; hash dotyczy odczytanej treści.
+
+POTWIERDZONE SZWY / REDUKCJA
+Istnieje właściwy owner _filter_institutions przed obejściem T01.
+Przeniesienie istniejącej denylisty z adaptera do jednego modułu
+bez zmiany jej zawartości jest proporcjonalne; nie potrzeba nowego
+klasyfikatora ani zmian Guarda.
+Żądanie zachowania dotychczasowej ścieżki słownikowej jest jednoznaczne:
+ma ona nadal używać dotychczasowego zbioru, nie automatycznie szerszej
+sumy nowych whitelist. Nie interpretować portu jako zgody na zmianę
+wszystkich ścieżek.
+W odczytanych zbiorach nie ma Zając/Wróbel/Sowa/Kot/Karaś.
+Samo to nie rozstrzyga wszystkich kolizji słów i nazw osobowych.
+
+JEDNA ZAMKNIĘTA LISTA BRAKÓW — C1
+Nowy filtr spaCy ma bezwarunkowo odrzucać pojedynczą OSOBA po
+zrównaniu do małych liter, jeśli słowo należy do portowanych list.
+WHITE_LIST_COMMON_WORDS Mobile zawiera "bill"; dotychczasowy desktopowy
+zbiór zawiera m.in. kalendarzowe "maj" i "maja".
+To nie jest dowód, że każde wystąpienie takich słów nie jest osobą.
+Przy rzeczywistym imieniu Bill albo nazwisku Maj sam warunek listy
+odrzuci także kandydata osoby; kontekst podpisu w tym kontrakcie
+nie zmienia decyzji nowej reguły. Reguła stoi przed T01,
+więc samo potwierdzenie słownikiem/Morfeuszem jej nie ominie.
+To analiza jawnej reguły, nie uruchomiony reproduktor wycieku.
+Nie twierdzę, że aktualny spaCy musi wykryć te przykłady lub że już
+stwierdzono nowy wyciek w /preview.
+
+ŹRÓDŁO OCZEKIWANIA:
+Brief: OSOBA 0 nowych wycieków, brak zmiany wielowyrazowych osób,
+port list ma poprawiać fałszywe alarmy; S1 chroni dane osobowe.
+Lista sprawdzona w Mobile przy innym sposobie tworzenia kandydatów
+nie dowodzi równoważności po dodaniu przed arbitralnymi trafieniami spaCy.
+
+Do korekty przez CC przed kodem:
+jednoznacznie rozstrzygnąć kolizje rzeczywistych imion/nazwisk
+z listami i dodać ich klasę do macierzy odbiorowej obok Data/Zapłata
+oraz Zając/Wróbel/Kot. Uzgodnić to z deklaracją 0 nowych wycieków.
+Jeżeli bezwarunkowe pomijanie także rzeczywistych nazw jest zamierzonym
+kompromisem, opisać go jawnie do decyzji Pawła, zamiast nazywać listy
+zbiorem słów, które nie mogą być osobą.
+Nie projektuję za CC nowego arbitra, nie żądam GUARD-RESIDUE w tym Tasku
+i nie uzależniam tej małej poprawki od redesignu OSOBA.
+
+OWNER_EXPLANATION
+TECHNICAL_ONLY: wydzielenie niezmienionej listy do wspólnego modułu.
+Do wyjaśnienia przed zatwierdzeniem:
+wyzwalacz — model poda pojedyncze słowo z listy jako osobę;
+efekt — nowy filtr odrzuci je również w znaczeniu rzeczywistej nazwy;
+dane — istniejący tekst i lokalne listy, bez nowego magazynu lub wysyłki;
+UI/wyjście — jeśli inne istniejące mechanizmy go nie zamaskują,
+wyraz może pozostać jawny w podglądzie i kopiowanym/zapisanym wyniku.
+Nie zakładamy, że późniejszy, osobny GUARD-RESIDUE przejmie ten obowiązek.
+Powrót/odzyskanie — brak osobnej ścieżki dla tej kolizji w briefie;
+nie można obiecać automatycznego ostrzeżenia lub naprawy.
+
+GRANICE
+Nie ma REPRO na exact SHA implementacji, bo implementacji nie dostarczono.
+Nie ma podstaw do FAIL produktu. Zgodność wykonania i pomiar NOT_CHECKED.
+Nowa reguła małej litery jest jawnie opisana; jej wpływ także należy
+do zadeklarowanej macierzy 0 nowych wycieków, nie dowodu z samego Mobile.
+
+Następny odbiorca: CC — jedna korekta kontraktu C1 / jasny kompromis
+do rozstrzygnięcia, potem wąski recheck zmienionego fragmentu.
+Bez kodowania, merge i bez zmiany specyfikacji przez audytora.

@@ -1,0 +1,62 @@
+LYNX-OSOBA-NOT-PERSON — BRIEF_ONLY v3 / wąski recheck C1 / tests_r2
+Data: 2026-10-21
+Exact SHA: 42f83a8c25a78ad86bcf419d29c29df48a7e8daf
+Branch: task/LYNX-OSOBA-NOT-PERSON
+Poprzedni brief: dcfb0e943dd8ded5980158a5dbbd4c5536a8f9dc
+Poprzedni raport: f645f3a2b59913aa3d5c9228f738944dfdaf9cee
+Wynik: PASS PREIMPLEMENTATION w zakresie skorygowanego kontraktu.
+C1 zamknięte na poziomie briefu. Nie jest to audyt implementacji.
+
+ZAKRES
+Aktualny wiersz BOARD + skorygowany Zakres pkt 2 i Odbiór.
+Dokładny plik briefu potwierdzony na podanym SHA; blob
+0bf5abd496f0385a83b89a11f091ace3dbf632ae.
+Wykorzystano punktowe odczyty źródeł list/ownera z r1.
+Bez nowych testów, sond, reproduktorów, modeli, benchmarków lub diffu
+implementacji. Bez zmian produktu, briefu i specyfikacji.
+
+C1 — ROZSTRZYGNIĘTE
+1. Zamiast traktować wszystkie listy jako bezwarunkową negację osoby,
+   pkt 2 rozdziela właściwą OSOBA_DENYLIST i białe listy.
+2. Białe listy dla spaCy odrzucają słowo tylko bez potwierdzenia
+   w _PERSON_FORMS. Dlatego Maja/Maj/Bill pozostają kandydatami OSOBA,
+   JEŚLI są w tym zbiorze. Nie obiecuje się rozpoznania każdego obcego
+   imienia nieobecnego w słownikach.
+3. Właściwa denylista działa bezwarunkowo na jednowyrazową OSOBA.
+   Brief jawnie zapisuje kompromis: także rzeczywiste samotne nazwisko
+   Osoba/Data/Zapłata może pozostać jawne; nie jest już ukryte za
+   twierdzeniem, że lista zawiera wyłącznie słowa niebędące osobami.
+   Źródło akceptacji: Zakres 2a briefu v3, CC odnotował przedstawienie
+   kompromisu Pawłowi i akceptację 21.10; BOARD powtarza ten zapis.
+   Recheck opiera się na tak udokumentowanym rozstrzygnięciu, nie tworzy
+   własnej decyzji OWNERA i nie oznacza odtworzenia osobnej rozmowy CC.
+4. Wielowyrazowe Anna Osoba / Jan Data zachowują dotychczasową ścieżkę.
+   Macierz obejmuje Anna Osoba, Maja/Maj z kontrolą obecności w słowniku
+   oraz Zając/Wróbel/Kot. Pomiar ma wypisywać osobno każdy przypadek
+   kompromisu 2a, zamiast ukrywać go w "0 nowych wycieków".
+5. Zakres nadal ma jednego małego ownera list i istniejący szew przed T01.
+   Nie potrzeba nowego arbitra, przebudowy OSOBA ani GUARD-RESIDUE
+   jako warunku tej poprawki.
+
+GRANICE / WYMAGANIA DO ODBIORU, NIE NOWA LISTA BRAKÓW
+- Deklarację "zachowanie _apply_dictionary_names bez zmian" trzeba
+  sprawdzić na implementacji; samo wydzielenie/import list tego nie dowodzi.
+  Nowe białe listy nie są automatycznym dowodem równoważności starej sumy.
+- Ogólne not_person_word nie może samodzielnie zastąpić rozróżnienia
+  2a/2b i wyjątku _PERSON_FORMS dla białych list.
+- Przykłady białej listy są podporządkowane warunkowi 2b:
+  jeśli dane słowo ma rzeczywisty wpis w _PERSON_FORMS, nie należy
+  wymuszać jego odrzucenia jedynie dla zgodności z przykładem w prozie.
+- Mała litera pozostaje jawną regułą pkt 3; wpływ i ewentualne utraty
+  w OCR oceni pomiar zgodnie z kontraktem.
+- Nie potwierdzono runtime obecności Maja/Maj/Bill ani kompletności portu,
+  braku nowych strat, skuteczności na pliku Pawła i jakości OCR.
+  Implementacja i pomiar pozostają NOT_CHECKED.
+
+Zamknięta lista braków blokujących ten recheck: brak.
+PASS oznacza testowalność wyjaśnionego kontraktu na exact SHA,
+nie zgodę na dowolne zwiększenie list, utratę innych osób lub merge.
+
+Następny odbiorca: CC — implementacja w zadanym zakresie i pomiar
+z osobnym wykazem kompromisu 2a; następnie niezależny audyt exact SHA.
+Bez kodowania i merge przez Codexa.

@@ -127,6 +127,7 @@ import re
 import logging
 
 from firma_context import legal_form_entities
+from osoba_not_person import reject_single_osoba
 from ner_blocklist import (
     _GEO_WORDS,
     _LEGAL_SUFFIXES_LOWER,
@@ -335,8 +336,8 @@ def _filter_institutions(ner_results: list) -> list:
         entity_text = ner.text.strip()
         name_lower  = entity_text.lower()
 
-        if _TOKEN_RE.search(entity_text):
-            logger.debug("[FILTER] pominięto token [len=%d]", len(entity_text))
+        if _TOKEN_RE.search(entity_text) or (ner.label == "OSOBA" and reject_single_osoba(entity_text, _PERSON_FORMS)):  # [LYNX-OSOBA-NOT-PERSON] przed T01
+            logger.debug("[FILTER] pominięto token / nie-osobę [len=%d]", len(entity_text))
             continue
         if _ORDER_CODE_RE.match(entity_text.strip()):
             logger.debug("[FILTER] pominięto kod zamówienia [len=%d]", len(entity_text))

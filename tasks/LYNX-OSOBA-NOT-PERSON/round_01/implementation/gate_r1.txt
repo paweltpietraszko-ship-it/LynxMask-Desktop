@@ -1,0 +1,26 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 389830290bc6e28573da1c17f405960bf0cf0c75
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 128/21 = 6.1:1 (threshold 5:1)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\trace_layers.py
+  - backend\herbert_net.py
+  - backend\pipeline_new.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\implementation\firma_sweep.py
+  - backend\tests\test_addr_email_leaks.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_firma_context.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_map_fidelity.py
+  - backend\tests\test_pipeline_adversarial.py
+  - backend\tests\test_pipeline_v2.py
+  - backend\tests\test_pseudominizer.py
+  - backend\tests\test_token_re_spec.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OSOBA-NOT-PERSON/brief.md
+  - tasks/LYNX-OSOBA-NOT-PERSON/repo_before.hash
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r1.txt
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r2.txt
