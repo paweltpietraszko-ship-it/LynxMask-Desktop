@@ -32,7 +32,7 @@ pyahocorasick==2.3.1
 
 # --- Jezyk polski (NER, odmiana) ---
 spacy==3.8.13
-morfeusz2==1.99.12
+morfeusz2==1.99.15
 pl_core_news_lg @ https://github.com/explosion/spacy-models/releases/download/pl_core_news_lg-3.8.0/pl_core_news_lg-3.8.0-py3-none-any.whl
 
 # --- Tylko dla dewelopera (testy, narzedzia pomiarowe); instalator tego nie instaluje ---
