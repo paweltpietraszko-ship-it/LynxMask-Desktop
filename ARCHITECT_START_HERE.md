@@ -1,5 +1,18 @@
 # ARCHITECT_START_HERE — handoff dla następnej instancji Architekta
 
+## STAN 21.10.2026 — czytaj najpierw (sekcje niżej z datami wcześniejszymi to historia; bieżąca kolejka: `BOARD.md` → TERAZ)
+- **Zmergowane:** zdjęcia — PP-OCRv6 z prostowaniem (`PP-LCNet_x1_0_doc_ori`) **domyślnie**, Tesseract tylko zapas (`LYNX-PHOTO-CHAIN`
+  `7dfe261`); odkrywanie pojedynczego tokenu w UI jak Mobile (`LYNX-MANUAL-REVEAL` v5 `c426211`); własne środowisko `.venv` +
+  `backend/requirements.txt`, aktualizacje bezpieczeństwa, Morfeusz 1.99.15 (`LYNX-DEPS-UPDATE`); siatka HerBERT przed Guardem
+  `LYNX_HERBERT=off|PER|ORG|PER,ORG`, **domyślnie off** do decyzji po pomiarze (`LYNX-HERBERT-NET` `dcaa3e1`); FIRMA — forma prawna
+  nigdy sama, lista prefiksów tylko ze słów wyłącznie własnych, urzędy nigdy FIRMA (`LYNX-FIRMA-FILTER-FIX` `325b031`).
+- **Proces (Paweł 21.10):** poprawki (błędy, filtry, listy, zależności) idą **bez Architekta** — CC pisze `brief.md`, Codex precheck
+  i audyt; Architekt projektuje zmiany programu (nowe funkcje, architektura, kontrakt). Pomiary robi pomocnik CC; miarka = wycieki
+  i fałszywe alarmy na końcu łańcucha, wiele zbiorów naraz.
+- **Uruchamianie:** `LynxMask.vbs` startuje silnik z `.venv` (zapas: `py -3`); modele w `backend/models/{ocr,herbert}` (poza git,
+  SHA w kodzie; na komputery klientów dostarczy `LYNX-INSTALLER`).
+
+
 LynxMask Desktop, 19.10.2026 (aktualizacja po korekcie benchmarku CC). Ten dokument to **migawka operacyjna, NIE PRODUCT_TRUTH**. Repo: paweltpietraszko-ship-it/LynxMask-Desktop. Przed podjęciem zadania odśwież origin/main, nagłówek i sekcję TERAZ w BOARD.md oraz WŁAŚCIWY wiersz. Nie zakładaj, że wskazany tutaj SHA nadal jest HEAD.
 
 ## AKTUALIZACJA 20.10.2026 — TEST OSOBA I RZECZYWISTE PRIORYTETY

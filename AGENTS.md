@@ -15,6 +15,9 @@ Inne wiersze — tylko przy jawnej zależności. BOARD to dziennik techniczny, n
 - Testy weryfikują PRODUCT_TRUTH; nigdy jej nie tworzą ani nie poszerzają.
 - Brief nietestowalny po 1–2 rundach korekty: zgłoś i STOP.
 
+## FIXES_WITHOUT_ARCHITECT (Paweł 21.10.2026)
+Poprawki błędów, filtrów, list i zależności: brief pisze CC (`tasks/<id>/brief.md` z `TASK_SCOPE:`), Codex robi BRIEF_ONLY i audyt exact SHA. Architekt tylko przy projektowaniu zmian programu (nowe funkcje, architektura, kontrakt).
+
 ## OWNER_INPUT_IS_A_PROPOSAL
 OWNER_CORRECTED 2026-10-16 (Paweł): „Musisz uważać z nazywaniem wszystkiego co mówię jako decyzji, bo ja to
 traktuję jako propozycję do rozważenia […] twoja opinia i Codexa jest ważniejsza."
