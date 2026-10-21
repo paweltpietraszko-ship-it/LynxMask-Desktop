@@ -49,6 +49,24 @@ def _name_start(text: str, form_start: int) -> int | None:
     return start
 
 
+# [LYNX-FORMATS-PACK2] Forma prawna z kropką po „sp” (także bez spacji: „sp.j.”, „Sp.k.”, „sp.z o.o.”) — FIRMA bez encji spaCy
+# (Mobile NameEngine FIRMA_LEGAL_REGEX). „spj” bez kropki, S.A. i s.c. świadomie poza skanem (inicjały, spaCy łapie S.A.).
+_FORM_SCAN_RE = re.compile(r"(?<![\w.])(?:sp\.\s?z\s?o\.?\s?o|sp\.\s?k\.?\s?a|sp\.\s?[jkp]|p\.s\.a)\.?(?!\w)", re.IGNORECASE)
+
+
+def scan_legal_forms(text: str, ner_results: list) -> list:
+    """Kandydaci FIRMA „nazwa + forma prawna” nienakładający się na encje spaCy; nazwa jak w `_name_start`, bez nazwy — nic."""
+    from spacy_ner import NERResult
+    out = []
+    for m in _FORM_SCAN_RE.finditer(text):
+        if any(r.start < m.end() and m.start() < r.end for r in ner_results):
+            continue
+        name = _name_start(text, m.start())
+        if name is not None:
+            out.append(NERResult(text[name:m.end()], "FIRMA", 0.8, name, m.end()))
+    return out
+
+
 _CONNECTOR_HEAD_RE = re.compile(r"(?:[A-ZĄĆĘŁŃÓŚŹŻ0-9][\w-]*\.?\s+)+(?:i|&)\s+$")
 _HAS_FORM_RE = re.compile(r"\b(?:Sp\.|S\.\s?A\.?|z\s?o\.\s?o)", re.IGNORECASE)
 

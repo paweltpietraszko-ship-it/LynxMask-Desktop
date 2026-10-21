@@ -126,7 +126,7 @@ import dataclasses
 import re
 import logging
 
-from firma_context import legal_form_entities
+from firma_context import legal_form_entities, scan_legal_forms
 from osoba_not_person import reject_single_osoba
 from ner_blocklist import (
     _GEO_WORDS,
@@ -243,7 +243,8 @@ _FORM_WORDS = frozenset("sp spółka z o s a k j c akcyjna jawna komandytowa par
 def _firma_entities(text: str, ner_results: list) -> list:
     """[LYNX-FIRMA-HYPHEN-SUFFIX] Granice FIRMA (_firma_bounds); fragment samej formy prawnej („z o.o.”, „A.”) leżący
     wewnątrz rozpoznanej firmy nie dostaje osobnego tokenu — rozbiłby jej maskowanie."""
-    out = legal_form_entities(text, [_firma_bounds(text, r) for r in ner_results])  # [LYNX-FIRMA-FILTER-FIX]
+    bounded = [_firma_bounds(text, r) for r in ner_results]
+    out = legal_form_entities(text, bounded + scan_legal_forms(text, bounded))  # [LYNX-FIRMA-FILTER-FIX] + [LYNX-FORMATS-PACK2]
     firms = [(r.start, r.end) for r in out if r.label == "FIRMA"]
     return [r for r in out if not (_LEGAL_FRAGMENT_RE.fullmatch(r.text.strip())
                                    and any(a <= r.start and r.end <= b and (a, b) != (r.start, r.end) for a, b in firms))]

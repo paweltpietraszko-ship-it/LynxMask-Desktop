@@ -147,7 +147,7 @@ _TLD_OCR_MAP: dict[str, str] = {'1': 'l', '0': 'o'}
 # "u. Nazwa" / "u Nazwa" / "uI. Nazwa" → "ul. Nazwa"
 
 _UL_PREFIX_RE = re.compile(
-    r'(?<![a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ])'
+    r'(?<![a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ])'  # [LYNX-FORMATS-PACK2] nie po cyfrze („RKFL9U. Adres”)
     r'(?:[uU][lI1]\.?[^\S\n]*|[uU]\.[^\S\n]*|[uU][^\S\n]+|(?:ulica|ULICA)[^\S\n]+)'
     r'(?=[A-ZŁŚŹĆŃĄĘÓŻ])',
 )
@@ -519,8 +519,8 @@ def normalize_ocr(text: str) -> str:
     # Krok 12: safety net — l/O/I/o między cyframi → cyfra
     text = _DIGIT_IN_CONTEXT_RE.sub(lambda m: _fix_seg(m.group(0)), text)
 
-    # Krok 13: cyfra między literami → litera (K0walczyk → Kowalczyk)
-    text = _DIGIT_IN_WORD_RE.sub(lambda m: _DIGIT_TO_CHAR.get(m.group(1), m.group(1)), text)
+    # Krok 13: cyfra między literami → litera (K0walczyk → Kowalczyk); [LYNX-FORMATS-PACK2] tylko słowa z małą literą — kody/tablice CAPS zostają
+    text = re.sub(r'\b(?=\w*[a-ząćęłńóśźż])\w+\b', lambda w: _DIGIT_IN_WORD_RE.sub(lambda m: _DIGIT_TO_CHAR.get(m.group(1), m.group(1)), w.group(0)), text)
 
     # Krok 14: email TLD/SLD space
     text = _EMAIL_SLDSPACE.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)
