@@ -26,7 +26,7 @@ MODEL_SHA256 = {
     "tokenizer.json": "2e045c82c9ea8b5bc54162d92d5c72141492df88eff098f3e5436e499d1e29fb",
     "config.json": "10d72599fc1b58425c7dc8e24c4a84cdc69b9defcdd032549d968fa527461991",
 }
-MIN_SCORE = float(os.environ.get("LYNX_HERBERT_MIN", "0.5"))   # kandydat — kalibracja na zbiorze znanym
+MIN_SCORE = float(os.environ.get("LYNX_HERBERT_MIN", "0.7"))   # kalibracja na zbiorze znanym 21.10 (0.3–0.9)
 WINDOW = 800      # znaków na okno modelu (zakładka OVERLAP); okno > 512 subtokenów jest dzielone, nigdy obcinane
 OVERLAP = 200
 _TOKEN_RE = re.compile(r"\b[A-Z][A-Z_]+_\d{3}(?!\d)")   # S2
