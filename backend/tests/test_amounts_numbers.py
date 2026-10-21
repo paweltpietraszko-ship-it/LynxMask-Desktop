@@ -58,6 +58,14 @@ def test_document_number_after_nr(text, num):
     assert "nr" in out.lower() or "numer" in out.lower()
 
 
+def test_existing_tokens_not_taken_as_document_number():   # pomiar r1: „Nr NUMER_005” → słowo „NUMER” jako numer
+    from layers.numeric import apply_numeric_layer
+    text = "FAKTURA VAT Nr NUMER_005\nNumer klienta: NUMER_006\nUMOWA nr OSOBA_001"
+    st = PipelineState(text=text, allocator=TokenAllocator())
+    apply_numeric_layer(st)
+    assert st.text == text and not st.allocator.reverse_map
+
+
 def test_number_without_document_word_untouched():
     out, _ = _run("Spotkanie odbyło się w pokoju nr 12 na drugim piętrze.")
     assert "nr 12" in out

@@ -19,7 +19,7 @@ _NUM_FAKTURY_RE = re.compile(
 _NUM_UMOWY_RE = re.compile(r'\bUMW/\d{4}/\d{3,6}\b')
 # [LYNX-AMOUNTS-NUMBERS] Numer dokumentu po „nr”/„numer” (Mobile A.12): zawiera cyfrę i separator albo ≥ 4 znaki; tylko gdy
 # w 60 znakach wstecz jest słowo dokumentu. Maskowany sam numer, „nr” zostaje.
-_NUM_DOC_RE = re.compile(r'(?i)\b(?:nr|numer)\.?[ \t]*:?[ \t]*(?P<num>(?=[\w/.\-]*\d)[A-Za-z0-9]+(?:[/\-.][A-Za-z0-9]+)*)')
+_NUM_DOC_RE = re.compile(r'(?i)\b(?:nr|numer)\.?[ \t]*:?[ \t]*(?P<num>(?=[A-Za-z0-9/.\-]*\d)[A-Za-z0-9]+(?:[/\-.][A-Za-z0-9]+)*)(?![_\w])')
 _DOC_SIGNAL_RE = re.compile(r'(?i)\b(?:faktur|umow|umów|zlecen|zamówien|zamowien|aneks)')
 
 _NUMERIC_PATTERNS: list[re.Pattern] = [
