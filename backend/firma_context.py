@@ -14,6 +14,7 @@ import re
 
 _MULTI_FORM_RE = re.compile(r"(?:z\s?o\.\s?o|s\.\s?k\.\s?a|p\.\s?s\.\s?a|s\.\s?c)\.?", re.IGNORECASE)
 _LETTER_FORM_RE = re.compile(r"[akjp]\.?", re.IGNORECASE)
+_FULL_FORM_RE = re.compile(r"(?:Sp\.?\s?(?:z\s?o\.\s?o|[kjp])|S\.\s?A|S\.\s?K\.\s?A|P\.\s?S\.\s?A)\.?", re.IGNORECASE)
 _SP_BEFORE_RE = re.compile(r"(?:\bSp\.?|\bS\.)\s?$", re.IGNORECASE)
 _WORD_RE = re.compile(r"[\w&-]+\.?")
 
@@ -21,6 +22,8 @@ _WORD_RE = re.compile(r"[\w&-]+\.?")
 def _form_start(text: str, start: int, value: str) -> int | None:
     """Początek pełnej formy prawnej (z „Sp.”/„S.” przed nią) albo None, gdy kandydat nie jest formą prawną."""
     head = _SP_BEFORE_RE.search(text[max(0, start - 6):start])
+    if _FULL_FORM_RE.fullmatch(value):   # cała forma jako kandydat: „Sp. z o.o.”, „S.A.”, „Sp. k.” (F1 Codexa r3)
+        return start
     if _MULTI_FORM_RE.fullmatch(value):
         return start - len(head.group(0)) if head else start
     if _LETTER_FORM_RE.fullmatch(value) and head:
