@@ -26,10 +26,16 @@ def test_surnames_unchanged(word):
     assert onp.reject_single_osoba(word, _PERSON_FORMS) is False
 
 
-@pytest.mark.parametrize("word", ["Maja", "Maj"])
-def test_white_list_collision_with_known_name_stays(word):
-    assert word.lower() in _PERSON_FORMS and word.lower() in onp.WHITE_LISTS
+@pytest.mark.parametrize("word", ["Maja", "Maj", "Czerwiec", "Styczeń", "Bill"])
+def test_white_list_collision_with_known_name_stays(word):  # słownik albo Morfeusz (Codex r3/r4)
+    assert word.lower() in onp.WHITE_LISTS
     assert onp.reject_single_osoba(word, _PERSON_FORMS) is False
+
+
+def test_white_list_not_applied_without_morfeusz(monkeypatch):
+    monkeypatch.setattr(onp, "_morf", SimpleNamespace(analyse=lambda w: 1 / 0))
+    assert onp.reject_single_osoba("Faktura", _PERSON_FORMS) is False
+    assert onp.reject_single_osoba("Data", _PERSON_FORMS) is True
 
 
 def test_denylist_wins_over_name_dictionary():

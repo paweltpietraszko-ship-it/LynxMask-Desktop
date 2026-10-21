@@ -55,11 +55,29 @@ WHITE_LISTS: frozenset[str] = _CALENDAR_GEO | _DOCUMENTS | _COMMON_WORDS
 DICTIONARY_PATH_DENYLIST: frozenset[str] = OSOBA_DENYLIST | _CALENDAR_GEO
 
 
+_morf = None
+
+
+def _morfeusz_name(word: str) -> bool:
+    """Czy Morfeusz zna słowo jako imię/nazwisko („Czerwiec”, „Styczeń” — Codex r4). Bez Morfeusza: True (nie odrzucamy)."""
+    global _morf
+    try:
+        if _morf is None:
+            import morfeusz2
+            _morf = morfeusz2.Morfeusz()
+        quals = {q.split("_(")[0] for i in _morf.analyse(word[:1].upper() + word[1:].lower()) for q in i[2][3]}
+    except Exception:
+        return True
+    return bool(quals & {"imię", "nazwisko"})
+
+
 def reject_single_osoba(entity_text: str, person_forms: frozenset[str]) -> bool:
     """Jednowyrazowa OSOBA, która nie jest osobą: z małej litery (jak regexy Mobile), z OSOBA_DENYLIST (zawsze)
-    albo z białych list i spoza słowników imion/nazwisk. Wielowyrazowe — bez zmian (False)."""
+    albo z białych list, gdy nie jest imieniem/nazwiskiem ani w słownikach, ani wg Morfeusza. Wielowyrazowe — False."""
     word = entity_text.strip()
     if not word or len(word.split()) > 1:
         return False
     low = word.lower()
-    return word[0].islower() or low in OSOBA_DENYLIST or (low in WHITE_LISTS and low not in person_forms)
+    if word[0].islower() or low in OSOBA_DENYLIST:
+        return True
+    return low in WHITE_LISTS and low not in person_forms and not _morfeusz_name(word)
