@@ -72,3 +72,7 @@ Odłożone na etap końcowy („jak uznamy, że program jest zbudowany” — Pa
 PyMuPDF 1.27→1.28, uvicorn, pydantic, Python 3.14.4→3.14.8 (przebudowa `.venv`), Tauri 2.11→2.12 (npm + crate razem), Tesseract
 5.5.0→5.5.3 (tylko zapas); React 18→19 / Vite 5→8 / TypeScript 5→7 — osobny temat. Słownik SGJP 2026-10 (ręczne pobranie) i pełny lock
 zależności tranzytywnych → `LYNX-INSTALLER`. Metoda: nowe `.venv`, porównanie `/preview` przed/po (pomocnik), Codex.
+
+## [2026-10-21] Narzędzie porównujące silnik Mobile i Desktop
+
+Silnik Mobile uruchamia się na komputerze Pawła jako test JVM, bez telefonu: JDK z Android Studio (`C:\Program Files\Android\Android Studio\jbr`), `gradlew.bat testDebugUnitTest --offline`, punkt wejścia `PseudonymEngine.pseudonymize` (`PseudonymEngine.kt:116`), słowniki przez `LookupTables.initializeFromClasspath()`; w kopii repo trzeba podmienić przestarzały root `build.gradle.kts`. Dowód pomocnika CC 21.10: 758/761 testów JVM przechodzi, jedno zdanie zamaskowane poprawnie (kopia i logi lokalnie `%TEMP%\lynx_cc_review\mobile_engine\`). Narzędzie: te same pliki .txt przez Mobile i Desktop `/preview`, lista różnic (~1–2 h pracy pomocnika). Odłożone przez Pawła 21.10; wrócić przy ogólnym teście skuteczności maskowania (BOARD → TERAZ pkt 3) albo przy kolejnym pytaniu „jak robi to Mobile”.
