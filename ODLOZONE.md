@@ -63,3 +63,12 @@ OWNER: „Odstawiamy Arenę na boczny tor, nie pokazuje znacznej poprawy jakośc
 Dowody: experiment/lynx-architecture-arena (R1: nadmiar STOP, 16 i 19 prób), experiment/lynx-architecture-arena-v02 (R2: mniej STOP na 35 syntetykach, ale fałszywie szeroka FIRMA pochłania OSOBA+prozę — Codex H1), task/LYNX-ARENA-SIGNALS-PILOT (mechanika zatwierdzona exact 243cc508; r2 Codexa: na trzech NOWYCH syntetykach rzeczywiste kandydatury pozwoliły odróżnić R1 od R2; nie uogólniać „R1=R2”). W żadnym z tych badań nie wykazano dostatecznej przewagi całego nowego silnika nad działającym produktem ani realnego wycieku jednoznacznie spowodowanego sekwencją podmian.
 
 Historia: git log -p BOARD.md dla wierszy LYNX-POLIGON, LYNX-ARENA-SIGNALS-PILOT i dawnych ARCH-ARENA; raporty Codexa w tasks/LYNX-ARCH-ARENA*/round_01/tests/ oraz tasks/LYNX-ARENA-SIGNALS-PILOT/round_01/tests/. Powrót tylko na nowe jawne polecenie OWNERA albo gdy zmierzone powtarzalne błędy produkcji dają **dowód**, że warstwy sekwencyjne są przyczyną, a nie błędne detektory czy mapy. Przed wznowieniem porównanie na tym samym gold, metryki FN/FP, STOP, Przywróć i koszty, nie same testy kontraktowe.
+
+## 2026-10-21 — Aktualizacje składników bez wpływu na jakość maskowania (po LYNX-DEPS-UPDATE)
+Odłożone na etap końcowy („jak uznamy, że program jest zbudowany” — Paweł; decyzję zostawił CC). Załatwione w LYNX-DEPS-UPDATE (main
+`20d43e9`): wszystkie luki bezpieczeństwa (Pillow 13, cryptography 50, starlette/fastapi, multipart, urllib3, rustls/anyhow), Morfeusz
+1.99.15 (SGJP 2026-06-01), własne `.venv` + `backend/requirements.txt`. Czeka (bez znanych luk, bez wpływu na maskowanie): onnxruntime
+1.25→1.31 + numpy 2.4→2.5 (czytnik PP — z pomiarem odczytu), spaCy 3.8.13→3.8.16, phonenumbers 9.0.30→9.0.41 (z pomiarem telefonów),
+PyMuPDF 1.27→1.28, uvicorn, pydantic, Python 3.14.4→3.14.8 (przebudowa `.venv`), Tauri 2.11→2.12 (npm + crate razem), Tesseract
+5.5.0→5.5.3 (tylko zapas); React 18→19 / Vite 5→8 / TypeScript 5→7 — osobny temat. Słownik SGJP 2026-10 (ręczne pobranie) i pełny lock
+zależności tranzytywnych → `LYNX-INSTALLER`. Metoda: nowe `.venv`, porównanie `/preview` przed/po (pomocnik), Codex.
