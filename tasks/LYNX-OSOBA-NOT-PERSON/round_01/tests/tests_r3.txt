@@ -1,0 +1,137 @@
+LYNX-OSOBA-NOT-PERSON — niezależny audyt dostawy / tests_r3
+Data: 2026-10-21
+Exact SHA: 389830290bc6e28573da1c17f405960bf0cf0c75
+Baza porównania: 1f60c060e3ecd2beab215e34ad4f817a1aeb8e24
+Brief v3: 42f83a8c25a78ad86bcf419d29c29df48a7e8daf
+DELIVERY: 0e18ed4
+Branch: task/LYNX-OSOBA-NOT-PERSON
+
+STATUS: WYMAGA_DECYZJI / OWNER_EXPLANATION_GATE / SAFETY_PRIVACY.
+Nie wydaję PASS/FAIL całej dostawy przed rozstrzygnięciem nowego
+zachowania opisanego poniżej. Brak merge i brak napraw przez audytora.
+
+R1 — NOWA UTRATA MASKOWANIA POZA KOMPROMISEM 2a
+Minimalne syntetyczne wejście: "Podpisał Bill."
+Prawdziwe /preview w izolowanej kopii bazy:
+HTTP200, blocked=false, "Podpisał OSOBA_001."
+Mapa OSOBA_001 -> Bill.
+To samo wejście na exact SHA dostawy:
+HTTP200, blocked=false, "Podpisał Bill.", mapa pusta.
+
+Przyczyna potwierdzona niezależnie w ownerze:
+bill in WHITE_LISTS = True;
+bill in _PERSON_FORMS = False;
+bill in OSOBA_DENYLIST = False.
+_filter_institutions pozostawia Bill na bazie, odrzuca na dostawie.
+Nowe reject_single_osoba w osoba_not_person.py, ostatni warunek,
+usuwa trafienie spaCy, ponieważ imię nie ma potwierdzenia w słowniku.
+
+TRACE / DLACZEGO NIE AUTOMATYCZNY FAIL
+Brief 2b opisuje dokładnie taki warunek białej listy (brak w słowniku).
+Jednocześnie Odbiór wymaga 0 nowych wycieków POZA kompromisem 2a,
+a ten dotyczy wyłącznie właściwej OSOBA_DENYLIST.
+Bill nie należy do tej denylisty. Nie można równocześnie uznać nowej
+utraty za zgodną z wymaganiem 0 nowych strat i bezwarunkowo zatwierdzić 2b.
+TRACE jest więc sprzeczny na tym konkretnym przypadku; zgodnie z
+DEFECT_GATE / OWNER_EXPLANATION_GATE: WYMAGA_DECYZJI, nie wymuszony FAIL.
+OWNERSHIP jest jasny: nowy filtr usuwa poprawne dotychczasowe trafienie.
+REPRO obejmuje ownera i cały pion, na dokładnych SHA.
+
+WYJAŚNIENIE DLA OWNERA
+OWNER_CONFIRMED: kompromis właściwej denylisty z 2a, zapisany w briefie:
+samotne Data/Osoba/Zapłata mogą pozostać jawne także jako nazwiska.
+Nie otwieram ponownie tego kompromisu.
+TECHNICAL_ONLY: wydzielenie niezmienionych 216 wpisów starej ścieżki
+słownikowej i przeniesienie list.
+OWNER_DECISION_NEEDED: nowa utrata także dla białej listy, np. Bill,
+które baza już potrafiła zamaskować.
+Wyzwalacz: spaCy rozpozna pojedyncze imię z białej listy, którego nie ma
+w słowniku osób. Efekt: nowy filtr usuwa rozpoznanie.
+Dane: ten sam lokalny tekst, lokalne listy i słownik; brak nowego magazynu
+danych i połączenia zewnętrznego.
+UI/wyjście: imię pozostaje jawne w wyniku /preview; Guard go nie zatrzymuje
+w reproduktorze. Taki wynik może następnie zostać skopiowany/zapisany.
+Nie wykonywano wysyłki, kopiowania ani archiwizacji w teście.
+Błąd/powrót: brak alertu lub automatycznej ścieżki naprawy dla tej utraty
+w obecnym kontrakcie; użytkownik musiałby zauważyć ją sam.
+SAFETY_PRIVACY: potwierdzony nowy jawny element osoby na syntetyku,
+bez sztucznego konfliktu niezależnych danych. Nie realny dokument.
+UNAUTHORIZED: nie przypisuję takiej etykiety całej implementacji —
+kod realizuje warunek 2b briefu; problemem jest niedostrzeżony skutek
+i sprzeczność z warunkiem odbioru, a nie samowolny nowy moduł.
+
+Rekomendacja audytora:
+utrzymać brak nowych strat poza jawnie zaakceptowanym 2a i zwrócić CC
+do najmniejszej korekty reguły/kontraktu, zachowując ten reproduktor.
+Nie rozszerzać automatycznie kompromisu na białe listy, nie budować
+nowego arbitra ani nie wymuszać redesignu OSOBA.
+Alternatywa wymaga jawnego rozstrzygnięcia OWNERA po powyższym wyjaśnieniu.
+
+ZAKRES I POZYTYWNE DOWODY
+- Przeczytano wąski diff ownera, list i adaptera oraz DELIVERY.
+- test_osoba_not_person.py + test_ner_multiline.py: 42 PASS
+  (21 + 21), w tym prawdziwy spaCy i pion testów wielowierszowych.
+- Niezależne porównanie dokładnej TREŚCI starej listy przez AST:
+  wszystkie 216 wpisów identyczne z DICTIONARY_PATH_DENYLIST;
+  nie polegano wyłącznie na teście liczności CC.
+- Porównano portowane trzy zbiory z Mobile NameEngine.kt:
+  właściwa OSOBA_DENYLIST, WHITE_LIST_DOCUMENTS, WHITE_LIST_COMMON_WORDS
+  są zgodne. Pierwsza próba parsera mojego harnessu sięgała poza koniec
+  denylisty Kotlin (inny zapis zamknięcia); poprawiono parser, nie produkt.
+- 746 własnych sprawdzeń klas/boundaries nowego helpera:
+  wszystkie wpisy list z i bez potwierdzenia w słowniku,
+  mała litera, Bill/Maj/Maja i nazwiska zwierzęce,
+  wielowyrazowość, tabulator/nowa linia, pusty tekst.
+  Kod realizuje zapisaną regułę. To nie dowód bezpieczeństwa tej reguły.
+- 7 własnych dokumentów /preview PRZED/PO (14×HTTP200),
+  w tym syntetyczny doc_lvl3_faktura_zlecenie.txt oraz kontrola kolizji.
+  Następnie minimalne "Podpisał Bill." PRZED/PO (2×HTTP200).
+  Reproducer nie wymaga współwystępowania innych nazw.
+- Pusty izolowany profil, git archive każdego SHA, TestClient w procesie,
+  blokada prawdziwego portu 8765 i połączeń zewnętrznych.
+  Backend właściciela nie był używany ani restartowany. HerBERT OFF.
+
+INNE OBSERWACJE — NIE NOWE FINDINGI TEGO TASKU
+- Maj/Maja w moim syntetyku pozostają zamaskowane; kot także.
+  Pojedyncze Zając/Wróbel odpadają przez istniejące filtry już na bazie;
+  nowy helper ich nie odrzuca. Nie nazywam tego nową regresją tej zmiany.
+- "Anna Osoba i Jan Data podpisali umowę": przed i po identycznie —
+  Anna dostaje token, Osoba pozostaje jawne. To odziedziczona różnica
+  między wielowyrazowym kandydatem a tym, co faktycznie poda model.
+  Test _filter_institutions na całym kandydacie Anna Osoba nie dowodzi,
+  że model poda taki kandydat w dokumencie. Nie dopisuję naprawy tego
+  starego zachowania do zakresu nowego filtra.
+- doc_lvl3 w moim procesie również nie odtwarza pierwotnego FP zamieszkaly;
+  4 osoby pozostają zakryte PRZED/PO. Nie potwierdzono naprawy zgłoszenia
+  z żywego środowiska Pawła; sam helper odrzuca taki pojedynczy kandydat.
+
+ARTEFAKTY POMIARU CC — PRZELICZENIE, NIE POWTÓRZENIE
+raw_przed.json SHA 1f60c060e3ecd2beab215e34ad4f817a1aeb8e24,
+raw_po.json SHA 389830290bc6e28573da1c17f405960bf0cf0c75.
+568 sparowanych rekordów: znikają Data×8, Wydziatu×2, wystawienla×1;
+brak nowych wartości OSOBA, pozostałe typy bez różnic w porównanych
+niezablokowanych odpowiedziach.
+Jedna zmiana blocked True -> False w mobile/bramka_merge_silnik_14_07.txt;
+nie analizowano osobno jej przyczyny, nie twierdzę, że wszystkie blokady
+są identyczne. Ocena semantyczna tej zmiany PARTIAL.
+417 osób i klasyfikacja FP wg gold to pomocniczy wynik CC, nie własna
+ponowna certyfikacja gold. Nie obejmuje nowego kontrprzykładu Bill.
+
+ZACHOWANE DOWODY
+Minimalny odczyt ownera:
+tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/repro_bill_r3.py
+(commit a182ce0c479808831e824134be1255c6183dec0a).
+Uruchomienie: python repro_bill_r3.py <absolutna-sciezka-backend>
+na bazie oraz exact SHA; skrypt wypisuje obserwacje, nie zmienia produktu.
+Pełny pion i porównania:
+C:/Users/p_pie/AppData/Local/Temp/lynx-osoba-audit-r3/
+audit.py, before_bill.json, after_bill.json, before.json, after.json,
+matrix.json, evidence.py, cc_evidence.json.
+Nie publikować wygenerowanych profili/kluczy.
+
+STOP / NASTĘPNY ODBIORCA
+Paweł — rozstrzygnięcie nowej utraty z białych list (R1).
+Do tego czasu brak końcowego PASS/FAIL i brak merge.
+Pełna suita repo, ponowny benchmark obrazów i dalsze poszerzanie badań
+nie były potrzebne do wyjaśnienia tego konkretnego zachowania;
+wstrzymano je przy OWNER_EXPLANATION_GATE.
