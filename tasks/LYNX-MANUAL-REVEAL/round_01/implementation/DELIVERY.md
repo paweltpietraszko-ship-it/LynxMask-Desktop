@@ -36,3 +36,9 @@ Rozmiar: +119/−26 (`Pseudonimizuj.tsx` +30/−26 → 929→933 l.; `revealText
 ## Odstępstwo od briefu (za zgodą OWNERA 21.10)
 Dwa nowe pliki zamiast „bez nowego modułu”: `Pseudonimizuj.tsx` ma >600 l. i nie może rosnąć (zasada OWNERA) → logika w `revealText.ts`;
 front nie miał testów → `node --test`. S4/lock z gałęzi (Architekt, `e22866e`/`cc65fe5`) nietknięte przez CC.
+
+## Poprawka F1 (Codex r5 `86cf82d`) — HEAD `777af057bc177a33b0c927f499bfa5531e32caad`
+Klik odkryj/cofnij ustawia `saved=false` → po wcześniejszym zapisie znika „Zapisano”, wraca formularz zapisu i można zapisać
+aktualny `shownText`. Ponowny zapis tego samego PSE nadpisuje `MAPS_DIR/<PSE>.enc` atomowo (`/archive`, zapis przez .tmp) —
+bez zmian backendu. Gate (dosłownie): `STATUS: PASS`, `HEAD_SHA: 777af057bc177a33b0c927f499bfa5531e32caad`. `tsc` bez błędów, `node --test` 6 pass.
+Recheck Codexa: scenariusz zapis → odkryj/cofnij → stan → ponowny zapis (`ui_harness_r5.cjs`).
