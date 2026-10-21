@@ -73,6 +73,8 @@ _BIRTH_DATE_CTX_RE = re.compile(
 _DATE_PL_RE = re.compile(
     r"\b(?:0?[1-9]|[12]\d|3[01])[.,/\-](?:0?[1-9]|1[0-2])[.,/\-](?:19|20)\d{2}\b"
 )
+# [LYNX-FORMATS-PACK2] Data ISO RRRR-MM-DD — ten sam zakres lat co DD.MM.RRRR („ur. 1989-01-05”); bez fragmentu „1989-01-05-001”.
+_DATE_ISO_RE = re.compile(r"(?<![\d-])(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?!\d|-\d)")
 
 
 def _apply_patterns(
@@ -108,6 +110,7 @@ def apply_amount_layer(state: PipelineState) -> None:
         (TOKEN_KWOTA,  _AMOUNT_NOCUR_RE, _not_amount_nocur),
         (TOKEN_NUMER,  _BIRTH_DATE_CTX_RE),
         (TOKEN_NUMER,  _DATE_PL_RE),
+        (TOKEN_NUMER,  _DATE_ISO_RE),
     ])
 
 

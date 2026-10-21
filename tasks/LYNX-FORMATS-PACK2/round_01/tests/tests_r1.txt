@@ -1,0 +1,82 @@
+LYNX-FORMATS-PACK2 — BRIEF_ONLY / tests_r1
+Data: 2026-10-21
+Exact SHA briefu: acfeaf817d1f64317162ae15d1bac52c071a7ecc
+Branch: task/LYNX-FORMATS-PACK2
+Baza wskazana przez CC: 10e62d95ecfa3d408d6ac3413056854ff425aece
+Wynik: PASS PREIMPLEMENTATION.
+
+ZAKRES
+Aktualny wiersz BOARD i brief na exact SHA; punktowy odczyt istniejących
+ownerów: amount._DATE_PL_RE / apply_amount_layer, firma_context
+(_form_start/_name_start/legal_form_entities), ocr_normalizer
+(_UL_PREFIX_RE, krok 13 i następujący po nim _de_leet).
+Bez diffu implementacji, uruchamiania produktu, testów, sond, modeli,
+benchmarków lub reproduktorów. Nie odtwarzano prototypu pomocnika CC.
+Liczby i stan zbioru pl-pii są deklaracją CC, nie własną walidacją gold
+ani potwierdzeniem licencji/warunków publikacji.
+
+OCENA KONTRAKTU I REDUKCJA
+1. Daty ISO:
+SOURCE: Zakres 1 i Odbiór, analogia do istniejącej _DATE_PL_RE.
+NECESSITY: objąć ten sam zapis daty w kolejności rok-miesiąc-dzień
+bez zależności od kotwicy "ur.". Istniejący owner amount.py i kategoria
+NUMER wystarczają; bez osobnego detektora lub nowej kategorii.
+Zapis wyraźnie obejmuje wszystkie 19xx/20xx, nie wyłącznie daty z
+potwierdzonym znaczeniem urodzenia. Ograniczenia miesiąca, dnia i sąsiedztwa
+są testowalne; nie dopisuję pełnej walidacji kalendarza.
+2. Forma prawna niezależna od spaCy:
+SOURCE: Zakres 2, Gamma sp.j. bez kandydata spaCy.
+NECESSITY: dotychczasowi właściciele potrafią tylko rozszerzyć istniejącą
+encję, nie stworzą brakującego kandydata. Mały skan w firma_context
+jest minimalnym nowym źródłem kandydatów, korzystającym z istniejących
+reguł granic nazwy. Wpięcie w _firma_entities z podaną kolejnością
+nie wymaga nowej warstwy/arbitra. S.A./s.c. pozostają jawnie poza
+nowym skanem, bez zmiany wcześniejszej ścieżki NER.
+3. Normalizator:
+SOURCE: Zakres 3 i podane przykłady tablic/kodów.
+NECESSITY: zatrzymać zmianę cyfr w CAPS oraz U. wewnątrz kodu,
+zachowując wcześniejsze poprawianie nazw. Jest istniejący krok 15
+ze słownikiem imion/nazwisk; nie potrzeba osobnego klasyfikatora.
+Zmiana ogranicza ślepą normalizację, nie usuwa fail-closed/Guarda.
+TASK_SCOPE wskazuje odpowiednich właścicieli i celowany plik testów.
+Ograniczenia rozmiaru nie są zgodą na wycinanie innych zabezpieczeń.
+
+WAŻNE GRANICE JUŻ ZAPISANE W BRIEFIE
+- ISO 19xx/20xx w dowolnym kontekście jest jednoznacznym zakresem;
+  nie przedstawiać wyniku jako semantycznego rozpoznania urodzenia.
+  1989-01-05-001 nie może stać się fragmentowym tokenem daty.
+- Skan firmy wymaga właściwej formy prawnej z kropką po sp,
+  granicy nazwy i zachowania dokładnego fragmentu tekstu;
+  nie rozszerzać go na spj ani na dowolne inicjały.
+  Odbiór uwzględnia brak kandydata spaCy, negatywy, brak duplikatów,
+  zachowanie dotychczasowego Kowalski i Wspólnicy Sp. k.
+- Ograniczenie kroku 13 ma wpływ na inne słowa CAPS z cyfrą,
+  nie tylko na tablice. Zapisany kontrakt świadomie polega wtedy na
+  późniejszym kroku słownikowym dla znanych imion/nazwisk.
+  Próby PW YHU1N / RKFL9U. oraz Kowa1ski / KOWA1SKI sprawdzają
+  obie strony zmiany. Ich działanie nie zostało teraz odtworzone.
+- Przywróć 1:1 należy sprawdzić dla naprawianych dat, nowych firm
+  i zachowanych kodów. Nie jest to dowód, że stara normalizacja
+  wszystkich dokumentów zachowuje oryginalny zapis.
+  Kontrole naprawy nazw w samym normalizatorze nie zastępują kontroli
+  wartości mapy dla trzech zmienianych klas.
+- Pomiar pl-pii i ponowne porównanie Mobile wymagają oceny granic
+  tokenów i nowych trafień. Sam spadek liczby przecieków i
+  "0 tokenów bez gold" z prototypu nie dowodzą pełnej poprawności.
+  Próg >5 nowych nadmaskowań nie zezwala na wycieki poniżej progu.
+
+ZAMKNIĘTA LISTA BRAKÓW BLOKUJĄCYCH BRIEF: brak.
+Kontrakt określa zachowania, negatywy, ownerów i odbiór; implementacja
+może ruszyć w ramach opisanego zakresu bez projektowania za CC.
+
+GRANICE WERDYKTU
+PASS dotyczy kontraktu na wskazanym SHA i punktowo potwierdzonych szwów.
+Nie zatwierdza nieopublikowanego prototypu, wyniku 99,3%, pełności
+etykiet gold, liczby wycieków, bezpieczeństwa każdego nazwiska CAPS,
+mapy po OCR ani końcowej implementacji.
+Nie wykonywano pełnego odczytu datasetu ani oceny realnych dokumentów.
+Brak zmian wspólnych formatów tokenów, spaCy, Guarda lub API w briefie.
+
+Następny odbiorca: CC — implementacja, gate i pomiary z briefu,
+następnie niezależny audyt dokładnego SHA.
+Bez zmian kodu produktu/specyfikacji i bez merge przez Codexa.
