@@ -22,6 +22,12 @@ trafia w encje jednowyrazowe i te, których pierwsze słowo ma ≥8 znaków; „
    samej linii o „Sp.”/„S.” i nazwę: słowa z wielkiej litery / WIELKIE / z cyfrą oraz „i”, „&”, łącznik; stop na początku linii,
    dwukropku, słowie z małej litery. Etykieta → FIRMA, encje zawarte w rozszerzonym zakresie (np. `OSOBA "Kowalski"`) odrzucane. Brak
    nazwy → kandydat usuwany (bez samotnego tokenu). Jedna wartość mapy („ALFA Sp. z o.o.”), Przywróć 1:1.
+   **Dowód formy prawnej (korekta C1 Codexa r1 `2d0b13d`):** kandydat jest formą prawną tylko, gdy w tekście tworzy pełną formę:
+   wieloliterowe „z o.o.”, „S.K.A.”, „P.S.A.”, „s.c.” same w sobie, albo **jednoliterowy fragment („A.”, „k.”, „j.”, „p.”) tylko wtedy,
+   gdy bezpośrednio przed nim w tekście stoi „S.” / „Sp.”** (czyli „S.A.”, „Sp. k.”, „Sp. j.”, „Sp. p.”). Pojedyncza litera z kropką
+   bez takiego poprzednika to inicjał (np. „Jan A.”, „Anna K.”) — encja zostaje bez zmian (etykieta, granice, dotychczasowe filtry),
+   bez zamiany na FIRMA i bez usuwania. Macierz testów: „ALFA S.A.” (sama w linii i inline) → FIRMA „ALFA S.A.”; „Jan A.” → bez zmian;
+   samo „A.” bez poprzednika → bez zmian; „Kowalski i Wspólnicy Sp. k.” → jedna FIRMA; „Anna K. i Wspólnicy” → bez zmian.
 2. **Prefiks z kontekstem:** `_prefix_rejects` nie stosuje się do encji zawierającej formę prawną (`_LEGAL_SUFFIX_RE`) — zasada Pawła
    „jeśli w okolicy jest forma prawna, wykluczenie nie powinno być stosowane”.
 3. **Zawężenie źródła prefiksów** (`ner_blocklist.py`): prefiksy tylko ze słów, które Morfeusz zna **wyłącznie** jako nazwę własną
