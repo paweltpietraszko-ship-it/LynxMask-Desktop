@@ -52,3 +52,25 @@ będące osobą): 0.
 silniku 8765 (main) „zamieszkaly” → OSOBA odtwarzane przez CC (plik CRLF; także sama linia LF z wcięciem) — różnica środowiska
 nierozpoznana; reguła małej litery odrzuca każdą jednowyrazową OSOBA „zamieszkaly” niezależnie od kontekstu (test celowany).
 Kandydat na kolejny FP poza zakresem: „FAKTURAvVAT” (OCR) jako OSOBA przed i po — `LYNX-ENGINE-BACKLOG`.
+
+## r2 — korekta po Codex r3/r4 (`b5b6547`, `bccd204`)
+Białe listy odrzucały prawdziwe nazwiska spoza `_PERSON_FORMS` („Czerwiec”, „Styczeń”, „Bill” → jawne). Korekta w
+`osoba_not_person.py`: biała lista nie odrzuca słowa, które Morfeusz zna jako imię/nazwisko (`_morfeusz_name`); bez Morfeusza białe
+listy nieaktywne (OSOBA_DENYLIST i mała litera działają dalej). Z 247 słów białych list spoza `_PERSON_FORMS` i denylisty zostaje
+odrzucanych 194 (m.in. faktura, umowa, zamieszkały, adresem, październik, gdańsk); 53 z kwalifikatorem imię/nazwisko już nie są odrzucane
+(m.in. czerwiec, styczeń, bill, wtorek, warszawa). Sprawdzenie 194 odrzucanych ze słownikiem Mobile `surnames_extended.json`
+(311 387 form): jedyne trafienie „gdańsku” (forma z listy miast; Mobile też je pomija).
+Reproduktory Codexa na kodzie r2: `repro_polish_r4.py` → Czerwiec, Styczeń kept; `repro_bill_r3.py` → Bill kept.
+Testy: `tests/test_osoba_not_person.py` 25 passed (nowe: Czerwiec/Styczeń/Bill zostają; bez Morfeusza biała lista nieaktywna, denylista działa).
+Pomiar r1 bez zmian co do usuniętych FP (Data — denylista, Wydziatu — denylista, wystawienla — mała litera; żadne nie zależy od białych list).
+Rozmiar ponad 150 linii — zgoda Pawła 21.10.
+
+Bramka r2 (stdout dosłownie, `gate_r2.txt`):
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 62c72a2387d58dc405113e37b3325d82479b9b23
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 152/21 = 7.2:1 (threshold 5:1)
+  - TOTAL_LINES: 173 lines changed (threshold 150)
+```

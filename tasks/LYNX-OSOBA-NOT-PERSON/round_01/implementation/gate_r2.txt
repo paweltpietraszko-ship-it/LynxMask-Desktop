@@ -1,0 +1,35 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 62c72a2387d58dc405113e37b3325d82479b9b23
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 152/21 = 7.2:1 (threshold 5:1)
+  - TOTAL_LINES: 173 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\trace_layers.py
+  - backend\herbert_net.py
+  - backend\pipeline_new.py
+  - tasks\LYNX-OSOBA-NOT-PERSON\round_01\tests\repro_bill_r3.py
+  - tasks\LYNX-OSOBA-NOT-PERSON\round_01\tests\repro_polish_r4.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\implementation\firma_sweep.py
+  - backend\tests\test_addr_email_leaks.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_firma_context.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_map_fidelity.py
+  - backend\tests\test_pipeline_adversarial.py
+  - backend\tests\test_pipeline_v2.py
+  - backend\tests\test_pseudominizer.py
+  - backend\tests\test_token_re_spec.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-OSOBA-NOT-PERSON/brief.md
+  - tasks/LYNX-OSOBA-NOT-PERSON/repo_before.hash
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/implementation/gate_r1.txt
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/repro_bill_r3.py
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/repro_polish_r4.py
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r1.txt
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r2.txt
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r3.txt
+  - tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r4.txt
