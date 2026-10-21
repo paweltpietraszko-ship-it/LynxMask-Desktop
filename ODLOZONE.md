@@ -76,3 +76,7 @@ zależności tranzytywnych → `LYNX-INSTALLER`. Metoda: nowe `.venv`, porównan
 ## [2026-10-21] Narzędzie porównujące silnik Mobile i Desktop
 
 Silnik Mobile uruchamia się na komputerze Pawła jako test JVM, bez telefonu: JDK z Android Studio (`C:\Program Files\Android\Android Studio\jbr`), `gradlew.bat testDebugUnitTest --offline`, punkt wejścia `PseudonymEngine.pseudonymize` (`PseudonymEngine.kt:116`), słowniki przez `LookupTables.initializeFromClasspath()`; w kopii repo trzeba podmienić przestarzały root `build.gradle.kts`. Dowód pomocnika CC 21.10: 758/761 testów JVM przechodzi, jedno zdanie zamaskowane poprawnie (kopia i logi lokalnie `%TEMP%\lynx_cc_review\mobile_engine\`). Narzędzie: te same pliki .txt przez Mobile i Desktop `/preview`, lista różnic (~1–2 h pracy pomocnika). Odłożone przez Pawła 21.10; wrócić przy ogólnym teście skuteczności maskowania (BOARD → TERAZ pkt 3) albo przy kolejnym pytaniu „jak robi to Mobile”.
+
+## [2026-10-21] OSOBA krok 2 — „udowodnij, że jesteś OSOBA”
+
+Pojedyncze słowo zakrywane tylko z dowodem (imię obok, Pan/Pani, PESEL, nazwisko ze słownika); bez dowodu — lista do decyzji człowieka. Odłożone przez Pawła 21.10: dziś pojedyncze słowo ze spaCy jest zakrywane (bezpieczny kierunek, czasem nadmaskowanie np. „Kawa”), a celem są dokumenty biurowe, gdzie nadmaskowanie jest akceptowane. Wycieki niezłapanych słów rozwiązuje `LYNX-GUARD-RESIDUE` („pokaż resztę”). Wrócić tylko, jeśli nadmaskowanie zacznie przeszkadzać w praktyce. Kontekst: BOARD 21.10, pomiar KPWr (`%TEMP%\lynx_cc_review\kpwr\` lokalnie u CC).
