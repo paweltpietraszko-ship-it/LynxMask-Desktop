@@ -1,0 +1,75 @@
+LYNX-MANUAL-REVEAL — BRIEF_ONLY v5 / tests_r4
+Data: 2026-10-21
+Werdykt: PASS PREIMPLEMENTATION.
+Exact SHA briefu/spec/lock: dc36d38c6721994affc563c83dd2f76cae5a174e
+S4: e22866eaaaa6cbc12ddbdb9545c5d0832cd4c1bc
+Lock: cc65fe561903004dee437ddc587a8d0cb745c426
+CC review: 2b5a60f587c043fe8fe6d85ba62d1f932b1cdad2
+Źródło: v5 + aktualne S4 na gałęzi Tasku + bieżąca wypowiedź OWNERA.
+Historyczne r1–r3 nie są podstawą PASS v5 i pozostają niezmienione.
+
+GRANICA ODPOWIEDZIALNOŚCI — wyjaśniona i zaakceptowana w tej rozmowie
+Paweł: „Odmaskowanie to decyzja użytkownika, jeśli sie pomyli to na własna
+odpowiedzialność, mogę to kiedyś napisać w onboardingu.”
+Po wcześniejszej ocenie modeli przyjmujemy tę wypowiedź jako jawne
+rozstrzygnięcie granicy ręcznej korekty: użytkownik może świadomie ujawnić
+wartość; skorygowany tekst nie jest ponownie oceniany przez Guard.
+Nie wymaga się kolejnej zgody na ten sam kierunek ani ponownej walidacji.
+
+OWNER_CONFIRMED:
+- Najpierw prawidłowy, niezablokowany /preview i dotychczasowa kontrola.
+- Potem odkrycie całego wybranego wystąpienia, w tym pełnej wielowyrazowej
+  wartości, z jednoznacznym pokazaniem zakresu przed odkryciem.
+- Cofnięcie per wystąpienie; inne identyczne tokeny pozostają zakryte.
+- Odkrycia dotyczą tylko bieżącego wyniku; nowy /preview je resetuje.
+- Guard nie sprawdza ręcznych odkryć ponownie.
+
+Konsekwencja prywatności:
+odkryty przez użytkownika PESEL, e-mail, imię/nazwisko itd. może znaleźć się
+w kopiowanym i zapisanym tekście. To jawna zaakceptowana decyzja człowieka,
+nie automatyczne maskowanie ani niezależnie sprawdzony wynik po korekcie.
+Nie traktować samego takiego świadomego odkrycia jako defektu implementacji.
+Ujawnienie innego miejsca, bez czynności użytkownika, globalny replaceAll,
+odkrycie wyniku z pierwotną blokadą lub błąd doboru wartości nadal pozostają
+odrębnymi możliwymi defektami; nie są objęte tą akceptacją.
+
+SPÓJNOŚĆ I REDUKCJA
+V5 usuwa ciężar v4: nowe API, serwerowy kontekst/stan zgód, projekcję mapy,
+ponowne przebiegi Guarda, rewizje asynchronicznej zgody. Nie są potrzebne
+dla obecnie zaakceptowanej funkcji. Nie wracać do nich przy implementacji.
+Pozostaje jeden istniejący owner UI i mała lista bazowych pozycji odkrytych
+tokenów. Wcześniej punktowo potwierdzone HighlightedText/m.index i mapa
+z /preview wystarczają do wskazania istniejącego szwu; nie powtarzano kodu.
+Kontrakt nie wymaga nowego modułu produktu ani silnika homonimów/OSOBA.
+
+Jedno finalText dla widoku/kopii/archiwum, liczone z tekstu bazowego i mapy,
+eliminuje przesunięcia pozycji od kolejnych zamian. Oryginalna mapa zostaje.
+Szyfrowanie archiwum bez zmian; brak nowych zapisów PII i wysyłek do sieci.
+Przywróć oraz brak regresji domaskowania są objęte celowanym odbiorem.
+
+S3/S4
+Istniejąca blokada/błąd wyniku /preview nadal uniemożliwia odkrycie
+i nie jest unieważniana kliknięciem. Pierwotne HIGH/MEDIUM bez zmian.
+Wyjątek dotyczy granicy po świadomej korekcie, jawnie zapisanej w nowym S4;
+nie przedstawia się jej jako ponownie sprawdzonego wyniku.
+Spec i lock sprawdzono z dokładnego SHA w osobnym katalogu kontrolnym:
+guard.py check arch/spec.md
+STATUS: PASS
+SHA256: 367b9c6e03a01adadab21bd729b742f1d7c03f08ace8cce30ebb19a1528f8a0e
+To kontrola dokumentu, nie test produktu. Nie zmieniono spec na main.
+
+WYNIK I NASTĘPNY RUCH
+Brak braków kontraktu wymagających kolejnej rundy Architekta.
+CC: wąska recenzja i budżet wariantu UI, następnie implementacja według
+uzgodnionych limitów i niezależny audyt exact SHA. Historyczny koszt/zakres
+v4 nie jest kosztem v5. Nie dopisywać nowych kontroli „na wszelki wypadek”.
+Obecny plik UI jest duży; PASS nie zatwierdza dowolnego wzrostu ani merge.
+
+Wzmianka OWNERA o możliwym przyszłym onboardingu NIE jest nowym wymaganiem
+tego Tasku, obowiązkiem napisania regulaminu, nowym ekranem ani blockerem.
+Krótki tekst objaśniający zakres odkrycia już przewidziany w v5 wystarcza
+dla obecnego kontraktu; nie dokładać nowych dialogów.
+
+Zakres audytu: dokumenty, wcześniej potwierdzony szew, kontrola locka.
+Bez testów produktu, reproduktorów, modeli, benchmarków i implementacji.
+Bez subagentów, zmian produktu, merge i wznowienia odłożonych kierunków.
