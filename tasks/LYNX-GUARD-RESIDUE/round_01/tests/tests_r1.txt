@@ -1,0 +1,72 @@
+LYNX-GUARD-RESIDUE — BRIEF_ONLY r1, 2026-10-21
+Wynik: WYMAGA_DOPRECYZOWANIA / BLOCKER C1; brak PASS PREIMPLEMENTATION.
+Exact SHA briefu/propozycji S4 i odczytanych szwów: 89895446629ccbcd074e7f24208580c777ebbf65
+Baza wskazana przez Architekta: fae2ddca7a5c5c9e0aa4780bcbc0c0783c5abe68.
+Odbiorca: Architekt. Jedna zamknięta lista: C1–C2 poniżej.
+Bez testów, modeli, reproduktorów, diffu implementacji i zmian produktu. Tylko dokumenty i punktowy odczyt wskazanych ownerów.
+
+Ocena kierunku
+Kontrakt użytkowy odpowiada zapisanym ustaleniom 21.10: ostrzeganie bez automatycznego REDACT,
+indywidualne Zakryj/Zostaw, blokada kopii/biblioteki/eksportu do rozstrzygnięcia wszystkich ostrzeżeń,
+osobna nieakceptowalna awaria S3. Rewizja wyniku i ponowna ocena po odsłonięciu danych są zasadne.
+Nie otwieram ponownie zgody na kanoniczną postać przywróconego nazwiska.
+S4 jest PROPOZYCJĄ, frozen spec nie została zmieniona. PASS prechecku nie zastępowałby jej formalnego zatwierdzenia.
+
+C1 — BLOCKER kontraktu zapisu: status sesji nie potwierdza zawartości szyfrowanego blobu.
+Brief wymaga odrzucenia niespójnego ciphertext/status, także przez bezpośredni HTTP.
+Obecne szwy na exact SHA:
+- Pseudonimizuj.tsx:65–71: encryptToBase64 wywołuje Tauri encrypt_data;
+- :247–266: klient szyfruje {tokens, anonymized_preview: shownText}, wysyła enc_blob;
+- pseudominizer_api.py:479–511: /archive odbiera PSE i nieprzezroczysty blob;
+- :528–544: zapisuje blob przed odczytem client guard_blocked i zapisem statusu DB.
+Istniejący endpoint nie posiada dowodu, że blob zawiera ten sam tekst/mapę co oceniona rewizja.
+Samo dodanie pamięci PSE/revision/GOTOWE albo hasha blobu dostarczonego przez klienta tego nie dowodzi.
+Nie twierdzę, że mały nowy protokół jest niemożliwy; stwierdzam, że obecny kontrakt go nie określa,
+a żądanej gwarancji nie można wywieść z obecnego API.
+
+Do zamknięcia C1 Architekt ma określić minimalnego ownera i zaufane powiązanie oceny z zapisywaną treścią:
+co weryfikuje backend, skąd wie, że to ten wynik, oraz co odrzuca PRZED skutkami ubocznymi.
+Dotyczy również manual reveal, starej rewizji/obcego PSE i eksportu.
+pseudominizer_api.py:709–739 /export-pdf bierze dziś text z requestu, bez powiązania z sesją;
+samo zablokowanie /archive nie spełnia kontraktu wszystkich kontrolowanych wyjść.
+Najmniejszy bezpieczny następny krok: doprecyzować ten jeden szew preview/decyzje/zapis z istniejącymi API i szyfrowaniem Tauri,
+bez NER, trwałych receipts i frameworków; CC może dopiero oszacować konkretną propozycję.
+Jeżeli wymaga to zmiany granicy zaufania/szyfrowania, przedstawić ją Pawłowi jako ograniczoną zmianę kontraktu.
+Nie autoryzuję wariantu udającego kontrolę treści przez samo GOTOWE i nie obniżam wymagania do deklaracji klienta.
+
+C2 — brak zamkniętej definicji zakresu ostrzeżeń.
+Brief mówi jednocześnie o użyciu istniejących reguł oraz o nowych klasach resztek
+(Śludkowskiego, inicjał, rozbite cyfry, OCR, homonimy, wyjątki miast); próg i wyjątki pozostawia przyszłej ocenie.
+Nie określa jednoznacznie, które z tych klas są obowiązkiem pierwszego wdrożenia.
+Nie da się zatem ocenić kompletności listy i macierzy odbioru bez zaprojektowania reguł przez implementera/testera.
+Do zamknięcia: jednoznacznie wskazać zakres v1 (obecne rozpoznane trafienia czy także konkretne nowe klasy),
+reguły/wyjątki oraz małą macierz przykładów dodatnich i ujemnych z oczekiwanym ostrzeżeniem/wystąpieniem.
+Identyfikacja wystąpień i rewizji powinna wystarczyć do indywidualnego Zostaw; nie domaga się nowego modelu.
+Nie żądam pełnego benchmarku ani tezy o kontroli każdego słowa.
+
+Potwierdzone istniejące odpowiedzialności i minimalność
+- output_guard.py:208–219: GuardResult ma wartości/powody, lecz nie kompletny kontrakt ostrzeżeń per wystąpienie.
+  Ten owner może nadal odpowiadać za wykrywanie; brak potrzeby drugiego arbitra.
+- pipeline.py:323–373 rozdziela błędy S3 (error/force_block) i wynik Guarda; dziś używa REDACT i podmienia tekst.
+  To istniejący punkt zmiany trybu ostrzegania, bez ruszania ownerów OSOBA/FIRMA.
+- Pseudonimizuj.tsx:241–266, 887–917 potwierdza opisany zbiorowy bypass handleSave(true).
+  To statyczne potwierdzenie szwu, nie nowy odtworzony finding implementacji.
+- Rewizje/decyzje sesyjne: SOURCE = ustalenie OWNERA o aktualnym wyniku; NECESSITY = stara akceptacja nie może dopuścić nowej treści.
+  Serwerowy status ma sens, lecz nie zastępuje C1.
+- Trwały dziennik pozostaje osobnym etapem zgodnie z briefem; brak potrzeby receipts teraz.
+- Manual reveal: źródłem zmiany jest aktualne ustalenie o unieważnianiu dopuszczenia.
+  Przy formalnej aktualizacji S4 należy jawnie zastąpić także obecne zdanie spec:40
+  („Guard nie kontroluje ponownie”), żeby nie pozostawić dwóch sprzecznych zasad.
+- S5: API:832–851 i pipeline.py:337–345 zapisują/czytają allowlistę jawnym JSON-em.
+  W module anonymizer_crypto.py są istniejące helpery encrypt_map/decrypt_map i ochrona kluczy,
+  ale nie potwierdzono gotowego kontraktu bezpiecznej allowlisty tylko na ich podstawie.
+  Zwykłe Zostaw może pozostać sesyjne. Opcja „zapamiętaj” ma pozostać nieaktywna do zdefiniowania
+  chronionego zapisu/migracji w istniejącym profilu lub małym osobnym zadaniu, jak dopuszcza brief.
+  To nie wymaga rozbudowy całego pierwszego wdrożenia.
+
+Warunki dalszego kroku
+Architekt zamyka C1–C2 w jednym uzupełnieniu. Potem wąski recheck zmienionych punktów.
+Formalna zmiana S4 i zgoda na koszt pozostają odrębnymi bramkami wskazanymi już w briefie.
+Nie proszę teraz Pawła o rozstrzyganie technicznych szczegółów API ani o ponowne zatwierdzanie celu Guarda.
+Implementacja, zachowanie runtime i realna ochrona allowlisty: NOT_CHECKED (BRIEF_ONLY).
+Nie wydano FAIL produktu, nie uruchomiono żadnego testu ani kodu produkcyjnego.
