@@ -33,7 +33,7 @@ Porównanie (pomocnik CC, tylko odczyt + sondy w procesie na syntetykach):
       zamieszkania, sąd, urząd…) → odrzucone **zawsze**, także gdy jest w `_PERSON_FORMS` („Data” jako imię, „Osoba”/„Zapłata” jako
       nazwisko wg SGJP). **Jawny kompromis jak w Mobile:** samotne słowo z tej listy nie jest zakrywane nawet wtedy, gdy w danym tekście
       jest nazwiskiem; wielowyrazowa osoba („Anna Osoba”, „Jan Data”) nadal zakryta (reguła dotyczy tylko jednowyrazowej OSOBA).
-      Decyzja o kompromisie — Paweł (BOARD).
+      Kompromis przedstawiony Pawłowi 21.10 — zaakceptowany.
    b) słowo jest na **białych listach** (kalendarz, kraje, miasta z obecnej listy + port `WHITE_LIST_DOCUMENTS` /
       `WHITE_LIST_COMMON_WORDS`) → odrzucone **tylko gdy nie ma go w `_PERSON_FORMS`** (słowniki imion/nazwisk). Dzięki temu „Maja”,
       „Maj”, „Bill” itp. — jeśli są w słownikach osób — zostają OSOBA; „Faktura”, „Zamieszkały”, „Styczeń” odpadają.
