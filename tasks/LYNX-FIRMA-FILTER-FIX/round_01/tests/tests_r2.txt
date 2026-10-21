@@ -1,0 +1,42 @@
+LYNX-FIRMA-FILTER-FIX — BRIEF_ONLY / wąski recheck C1 / tests_r2
+Data: 2026-10-21
+Exact SHA: 3e2154fc492ff5f3b95b5f0d15f174848f7d1f80
+Branch: task/LYNX-FIRMA-FILTER-FIX
+Poprzedni brief: 8b5ce356c44dff2990b52ea9617b825adccf1869
+Poprzedni raport r1: 2d0b13d904e1c3b21525456552cf643d610c6a4d
+Wynik: PASS PREIMPLEMENTATION. C1 zamknięte na poziomie kontraktu.
+
+Zakres: aktualny wiersz BOARD + zmieniony fragment pkt 1 briefu.
+Wykorzystano wcześniejszy punktowy odczyt istniejącego ownera z r1.
+Bez uruchamiania testów, modeli, reproduktorów, benchmarków lub diffu
+implementacji. Nie edytowano kodu produktu ani briefu.
+
+SPRAWDZENIE C1
+Korekta odróżnia sam fragment jednoliterowy od pełnej formy prawnej:
+"A.", "k.", "j.", "p." mają znaczenie formy prawnej wyłącznie z
+bezpośrednio poprzedzającym "S."/"Sp." w oryginalnym tekście.
+Bez tego kontekstu zachowana jest dotychczasowa ścieżka encji
+(etykieta, granice, stare filtry), bez automatycznej zmiany na FIRMA
+i bez automatycznego usuwania przez nową regułę.
+Nie obiecuje to naprawy dotychczasowych filtrów inicjałów.
+
+Macierz kontraktu obejmuje:
+- ALFA S.A. sama w linii i inline -> jedna FIRMA z pełną nazwą;
+- Jan A. i samo A. -> bez ingerencji nowej reguły;
+- Kowalski i Wspólnicy Sp. k. -> jedna FIRMA;
+- Anna K. i Wspólnicy bez formy prawnej -> bez ingerencji nowej reguły.
+
+To zamyka dokładnie brak wskazany w r1; nie ma potrzeby kolejnego
+projektowania architektury ani rozszerzania zakresu w tym rechecku.
+Zamknięta lista braków briefu: brak.
+
+GRANICE WERDYKTU
+PASS dotyczy briefu na podanym SHA, nie istniejącej jeszcze poprawki.
+Implementacja, skuteczność maskowania firm, brak nowych wycieków OSOBA,
+roundtrip, koszt startu i pomiary odbiorowe pozostają NOT_CHECKED.
+Znane częściowe FIRMA nie są zamknięte samym zatwierdzeniem briefu.
+Nie zmienia to OFF dla HerBERT ani wymagania ponownego pomiaru po poprawce.
+
+Następny odbiorca: CC — implementacja i pomiar zgodnie z kontraktem
+oraz obowiązującym gate; potem niezależny audyt dokładnego SHA.
+Bez merge, bez zmian produktu, bez nowej zgody na odstępstwa budżetu.
