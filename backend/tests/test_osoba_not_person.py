@@ -55,7 +55,7 @@ def test_other_labels_untouched():
 
 def test_dictionary_path_list_unchanged():
     assert ner_adapter._OSOBA_DENYLIST is onp.DICTIONARY_PATH_DENYLIST
-    assert len(onp.DICTIONARY_PATH_DENYLIST) == 216
+    assert len(onp.DICTIONARY_PATH_DENYLIST) == 219   # 216 + „zawarta/zawarty/zawarte” (LYNX-NAMES-DICT-CLEAN)
     assert onp.OSOBA_DENYLIST <= onp.DICTIONARY_PATH_DENYLIST
     assert not (onp.DICTIONARY_PATH_DENYLIST & {"faktura", "bill", "zamieszkały"})
 

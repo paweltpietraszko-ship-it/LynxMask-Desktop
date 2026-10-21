@@ -1,0 +1,23 @@
+LYNX-NAMES-DICT-CLEAN — uzupełnienie audytu r2 po rozstrzygnięciu OWNERA, 2026-10-21
+Wynik: PASS sprawdzonego zakresu na ad8b0d7b99433f3bd1fd5903345225ccb2165ac9.
+Baza: 2297e3dfd40663c0580aa67b6701145a76343ced.
+Dowody techniczne: raport r1, commit 9e5e3ab24c3a88d6cb3c0aebff6a21049b52ae90.
+Bez zmiany kodu i bez ponawiania testów — zmieniła się kwalifikacja R1, nie implementacja.
+
+OWNER_CORRECTED / OWNER_ACCEPTED:
+Po przedstawieniu porównania przed/po i ryzyka R1 Paweł napisał:
+„Inna to nie imię w polskim, więc zachowanie jest poprawne”.
+Operacyjne rozstrzygnięcie: pozostawienie „Inną” jawnie w sprawdzonym przypadku jest zaakceptowane.
+R1 zamknięte jako zaakceptowane zachowanie; nie wymaga korekty CC i nie blokuje tej dostawy.
+Nie rozszerzam tego rozstrzygnięcia na wszystkie imiona obcego pochodzenia ani inne usunięte odmiany.
+Raport r1 i wyniki reproduktora pozostają niezmienione jako historia.
+
+Wykorzystane dowody r1:
+- czyszczenie odtwarza blob exact SHA bajt w bajt (20504 -> 18388 form, 2116 usuniętych, 166 kluczy);
+- 47 testów celowanych passed;
+- pięć niezależnych syntetyków /preview: ograniczenie fałszywych OSOBA, zachowanie sprawdzonych osób i mapy 1:1;
+- „Jan Zawarta” nadal jako cała OSOBA; „Kima” maskowane przed i po;
+- sprawdzone odmiany popularnych imion zachowane.
+Duże pomiary KPWr/pl-pii/dataset_clean pozostają dowodami CC, nie niezależnym pełnym rerunem Codexa.
+PASS jest ograniczony do sprawdzonego zakresu i wskazanego SHA; nie stanowi gwarancji wszystkich form imion.
+Brak nowych testów, produktu, merge i subagentów. Następny krok operacyjny należy do Pawła/CC.

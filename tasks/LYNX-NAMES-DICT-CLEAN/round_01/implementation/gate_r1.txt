@@ -1,0 +1,14 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: ad8b0d7b99433f3bd1fd5903345225ccb2165ac9
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 378 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - backend\ner_layer.py
+  - tasks\LYNX-OSOBA-NOT-PERSON\round_01\tests\repro_bill_r3.py
+  - tasks\LYNX-OSOBA-NOT-PERSON\round_01\tests\repro_polish_r4.py
+  - backend\layers\ner_adapter.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-NAMES-DICT-CLEAN/brief.md
+  - tasks/LYNX-NAMES-DICT-CLEAN/clean_names.py
+  - tasks/LYNX-NAMES-DICT-CLEAN/repo_before.hash

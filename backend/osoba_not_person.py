@@ -19,7 +19,8 @@ OSOBA_DENYLIST: frozenset[str] = frozenset((
     "danych nikach osoba osoby osobie osobę osobą osób osobom osobami osobach zapłata zapłaty zapłacie zapłatę zapłatą "
     "zapłat zapłatom zapłatami zapłatach łączna łącznej łączną łączny łączne łącznego łącznemu łącznym łącznych "
     "łącznymi działający działająca działające działającego działającej działającemu działającym działających "
-    "działającymi działając musi musisz musimy musicie muszę muszą").split())
+    "działającymi działając musi musisz musimy musicie muszę muszą "
+    "zawarta zawarty zawarte").split())  # [LYNX-NAMES-DICT-CLEAN] „Zawarta pomiędzy:” — spaCy persName, 444× w pl-pii
 
 # Białe listy Mobile: kalendarz, kraje, miasta (formy najczęstsze w dokumentach)
 _CALENDAR_GEO: frozenset[str] = frozenset((
