@@ -1,0 +1,81 @@
+LYNX-FIRMA-FILTER-FIX — wąski recheck F1 / tests_r4
+Data: 2026-10-21
+Exact SHA: 3927a86bf8a25f0a03056a12ea2c4b0d9b8fed9a
+Diff base (poprzednio audytowana implementacja):
+2e9d128b9e19aaf19cb3982d8dcdf42c049b2ebd
+DELIVERY poprawki: 7a260efd3b666b9cc5611d3e479453a84de1ed25
+Poprzedni raport r3: 194a636ca9c09f64502b977ec89adca9f50449be
+
+WYNIK: PASS poprawki F1 na podanym SHA. F1 zamknięte.
+Wynik nie zamyka wszystkich problemów FIRMA ani dziedziczonych aliasów.
+Nie uruchamiano ponownie całego pomiaru ani nie zmieniano produktu.
+Brak merge.
+
+ZAKRES
+Diff backendu od 2e9d128: jeden regex _FULL_FORM_RE i jego użycie
+przed dotychczasową obsługą fragmentów w _form_start (+3 linie).
+Reguła kontekstu inicjału z C1 zachowana.
+Wykorzystano poprzednie dowody ownera i punktów integracji z r3.
+
+NIEZALEŻNE WYKONANIE
+Dokładna kopia git archive 3927a86, izolowane profile poza repo,
+HerBERT OFF, socket fence odcina realny port 8765 i połączenia zewnętrzne.
+1. Oryginalny repro_f1_r3.py, bez zmiany asercji: 7 PASS.
+   Pełne Sp. z o.o., S.A., Sp. k. dołączają nazwę.
+   Sama forma bez nazwy znika.
+   Jan A., samo A., Anna K. i Wspólnicy pozostają bez zmian.
+2. Testy ownera test_firma_context.py: 14 PASS.
+   Razem 21 PASS.
+3. Pięć celowanych syntetyków przez rzeczywiste /preview:
+   - bez nazwy: "Forma prawna: Sp. z o.o." pozostaje tekstem;
+     żadnego tokenu FIRMA i żadnej mapy dla samej formy;
+   - BRZOZA Sp. z o.o. pod SPRZEDAWCA -> pełna firma w jednym tokenie;
+   - BRZOZA S.A. w linii -> pełna firma w jednym tokenie;
+   - dwie różne firmy, jedna powtórzona -> poprawna mapa i przywrócenie;
+   - dawny kontrolny wariant dwóch zapisów firmy i wspólnego nazwiska.
+   5/5 HTTP200, bez blokad. Pierwsze cztery: przywrócenie 1:1.
+   Pion F1 potwierdzony: dokument -> spaCy -> firma_context -> pipeline
+   -> Guard -> /preview; nie tylko atrapowy kandydat.
+
+OGRANICZENIE ZACHOWANE Z r3
+Kontrolny wariant:
+Nowakowski i Partnerzy Sp. z o.o. / Nowakowski i Partnerzy Sp.z o.o.
+oraz Adam Nowakowski nadal nie daje pełnego roundtrip.
+W tej wersji pierwszy zapis firmy ma pełny FIRMA_001, a drugi daje
+OSOBA_001 i Partnerzy Sp.z o.o.; OSOBA_001 oznacza Adam Nowakowski.
+Poprzednio błędne aliasowanie było już odtworzone na BEFORE i PO,
+a zapis Sp.z i jawne Partnerzy są opisanym ograniczeniem DELIVERY.
+Rozkład masek w tym wariancie zmienił się; nie opisuję go jako
+bajtowo niezmienionego ani naprawionego.
+To syntetyczna diagnostyka, bez dowodu zdarzenia z realnych dokumentów.
+Nie jest dowodem, że F1 nadal występuje; nie dopisuję osobnego FAIL
+bez nowego jednoznacznego kontraktu/ownership dla starego aliasowania.
+Stan pozostaje jawnie PARTIAL dla całej rodziny wariantów/aliasów.
+
+Pierwsza zbiorcza asercja mojego harnessu oczekiwała 1:1 także dla tego
+znanego, już wcześniej nieprzechodzącego aliasu i zakończyła proces kodem 1.
+Wyniki wszystkich pięciu żądań zostały zapisane. Po rozdzieleniu tej
+znanej diagnostyki od właściwych warunków F1 sprawdzono zapisane wyniki:
+wszystkie warunki F1 spełnione. Nie powtarzano zbędnie /preview.
+Nie modyfikowano zachowanego oryginalnego reproduktora F1.
+
+POZA RECHECKIEM
+Pomiar 561 dokumentów / OCR / benchmark.py, globalny gold, czas/RAM,
+całe repo, natywne GUI/instalator i HerBERT ON: NOT_CHECKED na nowym SHA.
+Wykorzystano odpowiednie dowody r3, bez rozszerzania ich na nowy pełny
+benchmark. Poprawka F1 nie stanowi ponownej kalibracji HerBERT.
+Stare ograniczenia: brak formy prawnej, zwarte warianty, aliasowanie —
+nie są zamknięte tym PASS.
+
+ZACHOWANE DOWODY
+Oryginalny zdalny repro:
+tasks/LYNX-FIRMA-FILTER-FIX/round_01/tests/repro_f1_r3.py (e339cf3).
+Własny harness i syntetyczne wyniki:
+C:/Users/p_pie/.codex/visualizations/2026/10/19/01a152b6-e997-7cb0-a9e3-752fdcfd00f0/firma-audit-r4/
+recheck.py, results.json, exact/backend (git archive).
+Nie publikować wygenerowanych profili i kluczy.
+
+NASTĘPNY ODBIORCA
+Paweł — decyzja merge poprawki; Codex niczego nie zmergował.
+Następnie CC — zapowiedziany ponowny pomiar HerBERT na wspólnej bazie.
+HerBERT pozostaje OFF do osobnej decyzji po pomiarze.

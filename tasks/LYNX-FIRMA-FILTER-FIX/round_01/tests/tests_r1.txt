@@ -1,0 +1,48 @@
+LYNX-FIRMA-FILTER-FIX — BRIEF_ONLY / tests_r1
+Data: 2026-10-21
+Exact SHA briefu: 8b5ce356c44dff2990b52ea9617b825adccf1869
+Branch: task/LYNX-FIRMA-FILTER-FIX
+Wynik: WYMAGA_DOPRECYZOWANIA — jedna zamknięta lista, nie FAIL implementacji.
+
+Zakres: brief + cc_proposal na exact SHA; punktowo istniejący owner
+ner_layer.py:237-248 (_LEGAL_FRAGMENT_RE / _firma_entities), 308-322
+(_prefix_rejects), źródło prefiksów w ner_blocklist.py.
+Bez testów, reproduktorów, modeli i diffu implementacji w tym Tasku.
+Dostawa jest briefem, nie gotową poprawką produktu.
+
+OCENA KIERUNKU
+Naprawa źródła samotnego "z o.o." i kontekstowego odrzucania firm
+ma pierwszeństwo przed oceną zysku końcowej siatki HerBERT.
+Nie wymaga dużego redesignu OSOBA ani powrotu do Architekta.
+Istnieją właściciele granic encji i wykluczeń; jeden mały helper to
+proporcjonalne wydzielenie przy ograniczeniu rozmiaru ner_layer.py.
+Prefiksy wyłącznie geograficzne, zachowanie exact blocklisty i osobnych
+reguł instytucji są rozdzielone w kontrakcie. Wyniki i koszt do pomiaru CC.
+
+ZAMKNIĘTA LISTA BRAKÓW: C1
+TRACE: zakres pkt 1 zmienia kandydata DOWOLNEJ etykiety, którego tekst
+pasuje do _LEGAL_FRAGMENT_RE, na FIRMA po rozszerzeniu o nazwę;
+ta sama reguła usuwa kandydata bez poprzedzającej nazwy.
+Istniejący regex (linia 237) rozpoznaje również "A.", "k.", "j.", "p.".
+Dotychczas był używany do usuwania fragmentu WEWNĄTRZ rozpoznanej firmy,
+a nie jako samodzielny dowód, że dowolna encja jest spółką.
+OWNERSHIP: nowy firma_context / _firma_entities ma właśnie rozstrzygać
+to rozszerzenie i zmianę etykiety.
+Brak kontraktowego rozróżnienia końcówki S.A. od inicjału osoby.
+Samo wielkie słowo po lewej nie rozstrzyga: kandydat OSOBA "A."
+po "Jan" nie stanowi dowodu spółki; analogicznie sam inicjał bez nazwy
+nie powinien automatycznie znikać tylko przez regex formy prawnej.
+To nie jest odtworzona usterka: w BRIEF_ONLY nie uruchamiano reproduktora.
+
+Korekta potrzebna w briefie CC:
+jednoznaczny warunek rzeczywistej formy prawnej w oryginalnym kontekście,
+z zachowaniem ścieżki osoby/inicjału, gdy tego warunku brak.
+Dodać do tej samej celowanej macierzy rozróżnienie "ALFA S.A."
+od inicjału osoby (np. "Jan A." oraz inicjał bez nazwy).
+Nie narzucam nowego klasyfikatora ani sposobu implementacji.
+Pozostały zakres może zostać; nie potrzeba kolejnej rundy architektury.
+
+Granica: żadnego stwierdzenia, że naprawa już leczy wyciek.
+Jej implementacja i pomiary są NOT_CHECKED.
+Następny odbiorca: CC — krótka korekta C1, następnie wąski recheck fragmentu.
+Bez merge i bez zmian produktu.

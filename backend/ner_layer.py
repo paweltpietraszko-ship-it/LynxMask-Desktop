@@ -126,6 +126,7 @@ import dataclasses
 import re
 import logging
 
+from firma_context import legal_form_entities
 from ner_blocklist import (
     _GEO_WORDS,
     _LEGAL_SUFFIXES_LOWER,
@@ -195,7 +196,7 @@ _INTERNAL_ORG_RE = re.compile(
 # (np. "Sp. z o.o. ZUS-Warszawa") — pomiń, to nie jest prywatna firma.
 # Ryzyko FP ("ZUS-IT Sp. z o.o.") minimalne — takich firm w Polsce nie ma.
 _INSTITUTION_IN_FIRMA_RE = re.compile(
-    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK)\b',
+    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK|Urz[ąa]d\w*|Starostw\w*|Prokuratur\w*|Ministerstw\w*|Inspektorat\w*|Kuratori\w*|Izb\w+ Skarbow\w*)\b',  # [LYNX-FIRMA-FILTER-FIX] urzędy
     re.IGNORECASE,
 )
 
@@ -241,7 +242,7 @@ _FORM_WORDS = frozenset("sp spółka z o s a k j c akcyjna jawna komandytowa par
 def _firma_entities(text: str, ner_results: list) -> list:
     """[LYNX-FIRMA-HYPHEN-SUFFIX] Granice FIRMA (_firma_bounds); fragment samej formy prawnej („z o.o.”, „A.”) leżący
     wewnątrz rozpoznanej firmy nie dostaje osobnego tokenu — rozbiłby jej maskowanie."""
-    out = [_firma_bounds(text, r) for r in ner_results]
+    out = legal_form_entities(text, [_firma_bounds(text, r) for r in ner_results])  # [LYNX-FIRMA-FILTER-FIX]
     firms = [(r.start, r.end) for r in out if r.label == "FIRMA"]
     return [r for r in out if not (_LEGAL_FRAGMENT_RE.fullmatch(r.text.strip())
                                    and any(a <= r.start and r.end <= b and (a, b) != (r.start, r.end) for a, b in firms))]
@@ -309,7 +310,7 @@ def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
     """Filtr prefiksów geo. Encja wielowyrazowa z imieniem/nazwiskiem (OSOBA: dowolne słowo,
     FIRMA: pierwsze — „Kowalski i Partnerzy”) go omija; „Samorządowego Kolegium…” nie.
     Bez Morfeusza nie odrzuca nierozstrzygniętej OSOBA (wolimy fałszywy alarm niż wyciek — S1/S3)."""
-    if name_lower[:8] not in _NER_BLOCKLIST_PREFIXES:
+    if name_lower[:8] not in _NER_BLOCKLIST_PREFIXES or _LEGAL_SUFFIX_RE.search(entity_text):  # [LYNX-FIRMA-FILTER-FIX]
         return False
     if label == "OSOBA" and _get_morfeusz() is None:
         return False
