@@ -519,8 +519,8 @@ def normalize_ocr(text: str) -> str:
     # Krok 12: safety net — l/O/I/o między cyframi → cyfra
     text = _DIGIT_IN_CONTEXT_RE.sub(lambda m: _fix_seg(m.group(0)), text)
 
-    # Krok 13: cyfra między literami → litera (K0walczyk → Kowalczyk); [LYNX-FORMATS-PACK2] tylko słowa z małą literą — kody/tablice CAPS zostają
-    text = re.sub(r'\b(?=\w*[a-ząćęłńóśźż])\w+\b', lambda w: _DIGIT_IN_WORD_RE.sub(lambda m: _DIGIT_TO_CHAR.get(m.group(1), m.group(1)), w.group(0)), text)
+    # Krok 13: cyfra między literami → litera (K0walczyk → Kowalczyk); [LYNX-FORMATS-PACK2] tylko słowa z małą literą albo ≥ 9 znaków (JAB1OWSKI) — krótkie kody/tablice CAPS zostają
+    text = re.sub(r'\b(?=\w*[a-ząćęłńóśźż]|\w{9})\w+\b', lambda w: _DIGIT_IN_WORD_RE.sub(lambda m: _DIGIT_TO_CHAR.get(m.group(1), m.group(1)), w.group(0)), text)
 
     # Krok 14: email TLD/SLD space
     text = _EMAIL_SLDSPACE.sub(lambda m: f"{m.group(1)}{m.group(2)}", text)

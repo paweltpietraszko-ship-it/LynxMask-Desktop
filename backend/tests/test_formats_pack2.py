@@ -59,6 +59,15 @@ def test_normalizer_still_fixes_names():
     assert "KoWALCZYK" in normalize_ocr("PAN JAN K0WALCZYK")   # krok 15 (słownik) jak przed zmianą
 
 
+def test_long_caps_word_normalized_as_before():   # pomiar r1: „BARTOSZ JAB1OWSKI” w testy/ — nazwisko jawne w pierwszej wersji
+    assert normalize_ocr("Podpisano: BARTOSZ JAB1OWSKI") == "Podpisano: BARTOSZ JABiOWSKI"
+
+
+@pytest.mark.parametrize("code", ["RNBPW0R4", "LD1M/00472094/0"])
+def test_short_caps_codes_kept(code):
+    assert code in normalize_ocr(f"Kod: {code} w rejestrze")
+
+
 def test_plate_masked_whole():
     out, rmap = _run("Pojazd nr rej. PW YHU1N, właściciel w aktach.")
     assert "YHU1N" not in out and any("YHU1N" in v for v in rmap.values())
