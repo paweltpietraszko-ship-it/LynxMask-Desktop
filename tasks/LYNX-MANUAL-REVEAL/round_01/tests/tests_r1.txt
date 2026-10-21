@@ -1,0 +1,74 @@
+LYNX-MANUAL-REVEAL — BRIEF_ONLY / tests_r1
+Data: 2026-10-20
+Exact SHA briefu: 7a7dd3af3ec6b63e03952ed7158fc7bf2fede22b
+Exact SHA punktowo czytanego kodu (baza briefu):
+4d232d75de676ad62c695debc3dc8cc0c14b30a2
+Status: OWNER_DECISION_NEEDED / uzupełnienie kontraktu C1.
+Nie jest to FAIL implementacji. Nie ma implementacji do audytu.
+
+Nowy kierunek został oceniony na podstawie nowego briefu.
+Nie wymagano redesignu OSOBA, słownika homonimów ani przebudowy Guarda.
+Ujawnienie jednego wystąpienia, bez globalnego replaceAll i zmian profilu,
+jest jednoznaczne i testowalne. Pozostałe powtórzenia tego samego tokenu
+mają pozostać zakryte; mapa sesji zostaje. Cofnięcie i reset opisane.
+Wielowyrazowe ujawnienie nie jest w tym etapie domyślnie autoryzowane.
+
+Punktowe potwierdzenie istniejącego ownera UI:
+frontend/src/screens/Pseudonimizuj.tsx:
+92–113 HighlightedText już zna m.index dla wystąpienia tokenu;
+147–162 selectionchange przechowuje dziś tekst, bez pozycji wystąpienia.
+Wystarczy to do potwierdzenia istniejącego miejsca zmiany, nie jest dowodem
+gotowej obsługi pozycji. Kopiowanie (573) i zapis (241–280) używają
+result.anonymized_preview; wymóg jednego docelowego tekstu jest zasadny.
+Nie tworzono implementacji helpera ani nowych zasad zaznaczania.
+
+ZAMKNIĘTA LISTA BRAKÓW KONTRAKTU — jeden punkt:
+
+C1. Brak autoryzowanego szwu ponownej kontroli ostatecznego tekstu.
+TRACE: brief, sekcja „Zasady bezpieczeństwa i zgodności”:
+„Zmodyfikowanego tekstu NIE wolno kopiować, zapisać ani eksportować
+bez ponownego, wiarygodnego przejścia warunków bezpieczeństwa”.
+Jednocześnie „Backend/API/schemat archiwum nie są autoryzowane w tym briefie”.
+Brief sam nakazuje zatrzymać etap w razie braku tego szwu.
+
+Potwierdzenie na bazowym exact SHA:
+backend/pseudominizer_api.py:
+- /preview, 361–475: przyjmuje dokument i w 424 uruchamia
+  pseudonymize_document(text, _app_state); nie sprawdza wyłącznie
+  skorygowanego wyniku z zachowaniem istniejącej mapy i pozycji odkrycia.
+  Podanie wyniku z tokenami do ponownego pełnego maskowania nie jest
+  równoważnym szwem (S3 obejmuje również wejście zawierające TOKEN_RE).
+- /archive, 479+, przyjmuje zaszyfrowany blob i deklarację guard_blocked;
+  nie stanowi kontroli poprawionego jawnego tekstu przez Guard.
+- /export-pdf, 709–744, generuje PDF z dostarczonego tekstu; nie jest
+  usługą ponownej kontroli przez Guard.
+- /profile/guard-allowlist, 854–891, zmienia trwałą listę fraz.
+  Nie jest dopuszczalnym zamiennikiem: brief zabrania globalnego wyjątku.
+Nie znaleziono endpointu ponownej walidacji finalnej treści.
+To punktowa kontrola API i jego wyjść, nie audyt bezpieczeństwa całego API.
+
+Konieczne uzupełnienie przez Architekta:
+wskazać autoryzowanego backendowego ownera/szew i minimalny zakres jego
+zmiany oraz kontrakt ponownego sprawdzenia dokładnie tego tekstu,
+który UI pokaże, skopiuje, zapisze lub wyeksportuje.
+Kontrakt musi określać wynik pozytywny, blokadę i błąd, a także co dzieje
+się z dopuszczeniem do udostępnienia po kolejnym odkryciu/cofnięciu/zmianie.
+Bez zmiany mapy/profilu i bez omijania zamrożonych S3/S4.
+Jeżeli zamiar wymaga innego zachowania S4, potrzebne jawne rozstrzygnięcie
+OWNERA i osobne potraktowanie spec, zamiast obejścia w UI.
+Nie narzucono nowego endpointu ani sposobu realizacji — to zadanie Architekta.
+
+Redukcja:
+istniejący ekran i renderowanie tokenów są właściwym miejscem korekty;
+nie potrzeba nowego NER, managera ani słownika homonimów.
+Jedyna wykazana dodatkowa odpowiedzialność wynika z samego wymagania briefu:
+sprawdzenie finalnego tekstu przez istniejącego właściciela Guarda.
+Nie wymaga to z góry przeprojektowania reguł Guarda.
+Budżet dużego pliku UI pozostaje do szacowania CC po zamknięciu C1.
+
+Zakres/exclusions:
+Tylko brief oraz punktowe odczyty UI/API na wskazanej bazie.
+Nie uruchamiano testów, modeli, benchmarków, reproduktorów ani aplikacji.
+Nie analizowano diffu implementacji i nie zmieniano kodu produktu.
+Nie wznowiono odłożonych OSOBA-REDESIGN ani OSOBA-HOMONYM-TEST.
+Następny odbiorca: Architekt — jedna korekta C1, potem wąski recheck.

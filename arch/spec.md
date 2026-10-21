@@ -37,6 +37,9 @@ zwróconym przez zewnętrzne AI. Żadne dane dokumentu nie opuszczają komputera
 - MEDIUM (suma wag ≥ 3 blokuje): REGON (1), TELEFON (1).
 - GuardAllowlist: użytkownik może oznaczyć konkretną wartość jako „to nie PII".
 
+- Po zakończonej, niezablokowanej kontroli OutputGuarda użytkownik może świadomie odkryć jedno wskazane wystąpienie tokenu w podglądzie; jest to ręczna korekta wyniku przez użytkownika, której Guard nie kontroluje ponownie. Nie tworzy ona trwałej allowlisty i nie unieważnia wcześniejszych blokad S3/S4.
+
+
 ## S5. Brak PII poza mapą
 
 - `AUDIT_MODE = False`; logi tylko konsola, bez FileHandler — PII nie trafia na dysk w logach.

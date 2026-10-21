@@ -24,7 +24,7 @@
 //   - [FIX-TOKEN-API] nagłówek X-Api-Token
 //   - [FIX-BUG-1] guardBlocked blokuje przycisk Zapisz
 //   - Cała logika: handleFile, handlePasteSubmit, handleSave, handleAddEntity
-//   - HighlightedText, guessEntityType, TOKEN_RE
+//   - HighlightedText (odkrywanie wystąpień: revealText.ts), guessEntityType
 //   - selectionchange handler na previewRef
 //   - Drag & drop pliku na dropzone + drag & drop tekstu na textarea
 //   - Plik ma pierwszeństwo nad wklejonym tekstem
@@ -33,6 +33,7 @@
 import { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
+import { segments, finalText, toggleReveal } from "./revealText";  // [LYNX-MANUAL-REVEAL]
 
 const API = "http://127.0.0.1:8765";
 
@@ -87,29 +88,22 @@ function guessEntityType(text: string): string {
 
 // ── Token highlight ───────────────────────────────────────────────────────────
 
-const TOKEN_RE = /\b[A-Z][A-Z_]+_\d{3}(?!\d)/g;  // S2: (?!\d) — LYNX-TOKEN-RE-SPEC
-
-function HighlightedText({ text }: { text: string }) {
-  const parts: React.ReactNode[] = [];
-  let last = 0;
-  let m: RegExpExecArray | null;
-  TOKEN_RE.lastIndex = 0;
-  while ((m = TOKEN_RE.exec(text)) !== null) {
-    if (m.index > last) parts.push(text.slice(last, m.index));
-    parts.push(
-      <span key={m.index} style={{
-        fontFamily: T.mono, fontSize: 14, letterSpacing: "0.06em",
-        background: T.blueBg, color: T.blueLight,
-        border: `1px solid ${T.borderActive}`,
-        padding: "1px 6px", borderRadius: 4,
+// [LYNX-MANUAL-REVEAL] klik w wystąpienie tokenu = odkryj/cofnij tylko to miejsce (onToggle brak → tokeny nieklikalne)
+function HighlightedText({ text, map = {}, revealed = new Set<number>(), onToggle }: { text: string;
+    map?: Record<string, string>; revealed?: ReadonlySet<number>; onToggle?: (at: number, token: string) => void }) {
+  return <>{segments(text, map, revealed).map((s, i) => s.token === undefined ? s.text : (
+    <span key={i} role={onToggle ? "button" : undefined} tabIndex={onToggle ? 0 : undefined}
+      title={!onToggle ? undefined : s.revealed ? "Cofnij odkrycie" : map[s.token] === undefined
+        ? "Brak wartości w mapie — tego miejsca nie można odkryć" : `Odkryj tutaj (całą wartość: ${map[s.token]})`}
+      onClick={() => onToggle?.(s.at!, s.token!)} onKeyDown={e => e.key === "Enter" && onToggle?.(s.at!, s.token!)}
+      style={{
+        fontFamily: s.revealed ? undefined : T.mono, fontSize: s.revealed ? undefined : 14, letterSpacing: "0.06em",
+        background: s.revealed ? "transparent" : T.blueBg, color: s.revealed ? T.red : T.blueLight,
+        border: `1px solid ${s.revealed ? T.red : T.borderActive}`, textDecoration: s.revealed ? "underline" : undefined,
+        padding: "1px 6px", borderRadius: 4, cursor: onToggle ? "pointer" : undefined,
       }}>
-        {m[0]}
-      </span>
-    );
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return <>{parts}</>;
+      {s.text}
+    </span>))}</>;
 }
 
 // ── Komponent główny ──────────────────────────────────────────────────────────
@@ -135,6 +129,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   const [pasteText,    setPasteText]    = useState("");
   const [dragOver,     setDragOver]     = useState(false);
   const [ocrWarning,   setOcrWarning]   = useState(false);
+  const [revealed,     setRevealed]     = useState<Set<number>>(new Set());  // [LYNX-MANUAL-REVEAL] tylko UI
   const [ocrRejected,  setOcrRejected]  = useState(false);  // [LYNX-PHOTO-CHAIN] odmowa zdjęcia → „Wklej tekst”
   const [copiedPse,    setCopiedPse]    = useState(false);  // [UI-PSE-05]
   const [copiedText,   setCopiedText]   = useState(false);  // [UI-PSE-06]
@@ -143,6 +138,11 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   const imgRef     = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const pasteRef   = useRef<HTMLTextAreaElement>(null);
+
+  // [LYNX-MANUAL-REVEAL] nowy wynik (nowy dokument, „Dodaj i zakryj”) czyści odkrycia; jeden tekst dla ekranu/kopii/zapisu
+  useEffect(() => setRevealed(new Set()), [result]);
+  const tokenMap: Record<string, string> = Object.fromEntries((result?.tokens ?? []).map(t => [t.token, t.original]));
+  const shownText = result ? finalText(result.anonymized_preview, tokenMap, guardBlocked ? new Set() : revealed) : "";
 
   // Śledź zaznaczenie w oknie podglądu przez selectionchange
   useEffect(() => {
@@ -246,7 +246,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
     try {
       const encBlob = await encryptToBase64(JSON.stringify({
         tokens: result.tokens,
-        anonymized_preview: result.anonymized_preview,
+        anonymized_preview: shownText,  // [LYNX-MANUAL-REVEAL] to samo co ekran i kopia
       }));
       const encDesc = await encryptToBase64(description.trim());
 
@@ -570,7 +570,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
                 disabled={guardBlocked}
                 onClick={async () => {
                   try {
-                    await navigator.clipboard.writeText(result.anonymized_preview);
+                    await navigator.clipboard.writeText(shownText);
                     setCopiedText(true);
                     setTimeout(() => setCopiedText(false), 2000);
                   } catch { /* brak clipboard */ }
@@ -628,7 +628,14 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
               flexShrink: 0,
             }}
           >
-            <HighlightedText text={result.anonymized_preview} />
+            {!guardBlocked && <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 6, userSelect: "none" }}>
+              Jeśli LynxMask zakrył coś niepotrzebnie, kliknij token, żeby odkryć tylko to miejsce. Odkryta wartość znajdzie się
+              także w kopiowanym i zapisanym tekście.</div>}
+            <HighlightedText text={result.anonymized_preview} map={tokenMap} revealed={revealed}
+              onToggle={guardBlocked ? undefined : (at, tok) => {
+                setRevealed(r => toggleReveal(r, at, tok, tokenMap));
+                setSaved(false);  // [LYNX-MANUAL-REVEAL F1] nowa treść = do zapisania (ten sam PSE nadpisuje archiwum)
+              }} />
           </div>
 
           {/* Tabela tokenów */}

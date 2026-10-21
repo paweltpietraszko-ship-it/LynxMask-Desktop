@@ -1,0 +1,54 @@
+LYNX-MANUAL-REVEAL — BRIEF_ONLY recheck C1 / tests_r2
+Data: 2026-10-20
+Werdykt: PASS PREIMPLEMENTATION w zakresie korekty C1.
+Exact SHA briefu v2: 306c597ca99fd02e4bdd4e18a0a8b409bf85f60a
+Poprzedni brief: 7a7dd3af3ec6b63e03952ed7158fc7bf2fede22b
+Raport bazowy r1: db43feedb2c1cc173696fa43e1858b05267f8e11
+Baza punktowego odczytu Guarda: 4d232d75de676ad62c695debc3dc8cc0c14b30a2
+
+C1 ZAMKNIĘTE KONTRAKTEM:
+- Autoryzowano minimalną operację w pseudominizer_api.py oraz krótkotrwały,
+  ograniczony kontekst wyniku /preview w pamięci, bez jawnej mapy na dysku.
+- Wiarygodna mapa i źródłowy wynik pochodzą z serwera; deklaracje klienta
+  nie zastępują kontekstu. Dopuszczalne różnice to ujawnienia kompletnych
+  wskazanych wystąpień, bez dowolnej edycji innych znaków i prefiksu PSE.
+- Istniejący guard_output_with_map sprawdza finalną treść bez re-maskowania.
+  APPROVED wymaga braku blokady, błędu i redakcji. BLOCKED/ERROR odmawiają,
+  ze wskazaną akcją naprawczą. Zablokowany /preview nie zyskuje zgody.
+- Każda zmiana unieważnia walidację. Opóźniona odpowiedź nie zatwierdza nowej
+  rewizji. Kopiowanie/zapis/eksport mają używać dokładnie zatwierdzonego
+  finalText; zaszyfrowane archiwum nie jest deklarowane jako sprawdzone
+  niezależnie przez backend.
+- S3/S4, reguły Guarda, format mapy/archiwum i trwałe allowlisty bez zmian.
+  Odmowa po MAP_LEAK jest jawnym możliwym wynikiem kontraktu.
+- Zakres dwóch istniejących ownerów jest jawny. Rozmiar/TTL i reprezentacja
+  API pozostają ograniczonym wyborem implementacyjnym do recenzji CC;
+  nie stanowią braku C1. Budżet dużych plików wymaga procedury z briefu.
+
+PUNKTOWE POTWIERDZENIE:
+backend/output_guard.py:341–347 istnieje guard_output_with_map(text, anon_map,
+mode=GuardMode.REDACT, known_plain, allowlist).
+348–405 opisuje i realizuje kontrolę znanych jawnych wartości, w tym
+GLOBALNY_PLAIN przy anon_map=None i known_plain; dopasowanie nazwy >=4 znaki
+w tekście tworzy naruszenie. 405–419: naruszenie skutkuje blocked=True.
+Wykorzystano wcześniejszy odczyt UI/API z r1; nie powtarzano przeglądu repo.
+
+OGRANICZENIE, NIE NOWY FINDING:
+Kontekst mapy zachowujący „Róża” i finalny tekst zawierający odkrytą „Róża”
+mogą kolidować z istniejącą kontrolą mapy. Odczyt kodu daje konkretną podstawę
+do oczekiwania takiej blokady; nie uruchamiano reproduktora w BRIEF_ONLY.
+V2 jawnie zachowuje tę blokadę, więc nie udajemy, że PASS prechecku dowodzi
+użytecznego eksportu po odkryciu. CC powinien najpierw ocenić tę kolizję
+w wymaganej recenzji przed kodem; nie budować obejścia ani globalnego wyjątku.
+Jeżeli potrzebna jest zmiana polityki dla świadomie odkrytego wystąpienia,
+to odrębne rozstrzygnięcie OWNERA, jak zapisano już w v2.
+Nie otwiera się przez to ponownie C1 i nie wymaga kolejnego redesignu.
+
+Wynik:
+Jedyna lista braków z r1 zamknięta. Brak nowych braków C1.
+Następny odbiorca: CC — recenzja wykonalności i budżetu, potem dalszy proces
+zgodnie z briefem. PASS nie jest zgodą na merge, przekroczenie budżetu,
+zmianę S4 lub wyciszanie MAP_LEAK.
+
+Bez testów, modeli, reproduktorów, implementacji i diffu produktu.
+Raport r1 pozostaje niezmieniony. Bez wznowienia OSOBA-REDESIGN/homonimów.
