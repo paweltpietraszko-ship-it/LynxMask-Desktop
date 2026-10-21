@@ -39,7 +39,7 @@ Zmergowane 20–21.10: `LYNX-PHOTO-CHAIN` `7dfe261` (PP-OCRv6 + prostowanie domy
    (na syntetykach po łańcuchu: PER praktycznie nic, ORG mało). CC + pomocnik.
 2. **`LYNX-SECURITY-REVIEW` F1–F3 — poprawki bez Architekta:** jawny `trie.pkl` z danymi profilu (F1), reset nie czyści trie i allowlisty (F2),
    nazwy plików / wartości w logach (F3). Realne ryzyko prywatności — wyżej niż jakość.
-3. **OSOBA — dwie małe poprawki zamiast redesignu:** (a) nagłówki WIELKIMI LITERAMI, nazwy typów tokenów i słowa techniczne nigdy nie są OSOBA
+3. **OSOBA — zasada Pawła 21.10 „udowodnij, że jesteś OSOBA” (jak Mobile):** pojedyncze słowo jest OSOBA tylko z dowodem (imię/inicjał obok, Pan/Pani, ur., PESEL, funkcja, wcześniejsze wystąpienie jako osoba, nazwisko niebędące zwykłym słowem — także bez ogonków); bez dowodu nie zakrywać (kompromis: samotne „Baran” bez kontekstu jawne); bez list słów. Dwie małe poprawki zamiast redesignu: (a) nagłówki WIELKIMI LITERAMI, nazwy typów tokenów i słowa techniczne nigdy nie są OSOBA
    i nie trafiają do profilu (źródło fałszywych MAP_LEAK); (b) odsiew śmieci OCR jako OSOBA (obrazy: ~25 jednowyrazowych FP na 48). Na syntetykach
    OSOBA: 477/477 osób zakrytych, 0 wycieków (21.10). `LYNX-OSOBA-REDESIGN` odłożony (porządek na dłuższą metę, nie pożar).
 4. **`LYNX-INSTALLER` (Architekt)** — warunek aktywacji u klientów (modele, `.venv`, ocena sprzętu, offline). Razem z `LYNX-OFFLINE-GUARANTEE`.
