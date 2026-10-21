@@ -1,0 +1,41 @@
+# LynxMask Desktop - zaleznosci silnika (backend, Python 3.14).
+# Plik sluzy do odtworzenia dokladnie tego samego srodowiska (.venv w katalogu glownym repo):
+#   py -3 -m venv .venv ; .venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+# Uzytkownik koncowy niczego nie instaluje - srodowisko tworzy instalator (LYNX-INSTALLER).
+# Wersje przypiete (==). Zmiana wersji = osobny Task z pomiarem. Zrodlo: LYNX-DEPS-UPDATE.
+
+# --- Serwer API ---
+fastapi==0.156.4
+starlette==1.9.0
+pydantic==2.12.5
+uvicorn==0.44.0
+python-multipart==0.0.32
+
+# --- Szyfrowanie archiwum / mapy ---
+cryptography==50.0.2
+
+# --- Obrazy, OCR, PDF, DOCX ---
+Pillow==13.0.0
+numpy==2.4.4
+opencv-python-headless==5.0.0.93
+onnxruntime==1.25.0
+rapidocr==3.10.0
+pytesseract==0.3.13
+PyMuPDF==1.27.2.2
+python-docx==1.2.0
+
+# --- Warstwy wykrywania ---
+phonenumbers==9.0.30
+python-stdnum==2.2
+postal-codes-tools==1.1.3
+pyahocorasick==2.3.1
+
+# --- Jezyk polski (NER, odmiana) ---
+spacy==3.8.13
+morfeusz2==1.99.12
+pl_core_news_lg @ https://github.com/explosion/spacy-models/releases/download/pl_core_news_lg-3.8.0/pl_core_news_lg-3.8.0-py3-none-any.whl
+
+# --- Tylko dla dewelopera (testy, narzedzia pomiarowe); instalator tego nie instaluje ---
+pytest==9.0.3
+requests==2.33.1
+urllib3==2.8.0

@@ -3,13 +3,15 @@
 ' Stałe rozwiązanie (aplikacja sama zarządza silnikiem): LYNX-APP-LAUNCHER.
 Option Explicit
 
-Dim sh, fso, repo, backendDir, exe, i
+Dim sh, fso, repo, backendDir, exe, i, py
 Set sh  = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
 repo       = fso.GetParentFolderName(WScript.ScriptFullName)
 backendDir = repo & "\backend"
 exe        = repo & "\frontend\src-tauri\target\release\pseudominizer.exe"
+py         = "py -3"                                          ' zapas: globalny Python
+If fso.FileExists(repo & "\.venv\Scripts\python.exe") Then py = """" & repo & "\.venv\Scripts\python.exe" & """"   ' wlasne srodowisko LynxMask
 
 If Not fso.FileExists(exe) Then
     MsgBox "Aplikacja nie jest zbudowana." & vbCrLf & "Uruchom build.bat w folderze:" & vbCrLf & repo, _
@@ -20,7 +22,7 @@ End If
 If Not EngineReady() Then
     sh.CurrentDirectory = backendDir
     On Error Resume Next
-    sh.Run "py -3 pseudominizer_api.py", 0, False      ' 0 = bez okna
+    sh.Run py & " pseudominizer_api.py", 0, False      ' 0 = bez okna
     If Err.Number <> 0 Then
         MsgBox "Nie znaleziono Pythona (polecenie py)." & vbCrLf & "Zainstaluj Python 3 z python.org.", _
                vbCritical, "LynxMask"
