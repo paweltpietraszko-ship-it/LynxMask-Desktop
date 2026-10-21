@@ -336,8 +336,8 @@ def _filter_institutions(ner_results: list) -> list:
         entity_text = ner.text.strip()
         name_lower  = entity_text.lower()
 
-        if _TOKEN_RE.search(entity_text):
-            logger.debug("[FILTER] pominięto token [len=%d]", len(entity_text))
+        if _TOKEN_RE.search(entity_text) or (ner.label == "OSOBA" and reject_single_osoba(entity_text, _PERSON_FORMS)):  # [LYNX-OSOBA-NOT-PERSON] przed T01
+            logger.debug("[FILTER] pominięto token / nie-osobę [len=%d]", len(entity_text))
             continue
         if _ORDER_CODE_RE.match(entity_text.strip()):
             logger.debug("[FILTER] pominięto kod zamówienia [len=%d]", len(entity_text))
@@ -352,8 +352,6 @@ def _filter_institutions(ner_results: list) -> list:
         # [FIX-NER-COURTS] Pomiń sądy i trybunały — instytucje publiczne, nie firmy
         if _COURT_PREFIX_RE.match(entity_text):
             logger.debug("[FILTER] pominięto sąd/trybunał [len=%d]", len(entity_text))
-            continue
-        if ner.label == "OSOBA" and reject_single_osoba(entity_text, _PERSON_FORMS):  # [LYNX-OSOBA-NOT-PERSON] przed T01
             continue
         # [LYNX-T01] Jednowyrazowa OSOBA potwierdzona słownikiem/Morfeuszem — bez filtrów prefiks/przymiotnik
         if ner.label == "OSOBA" and " " not in entity_text and (_street_person(ner.label, entity_text) or _is_person_word(entity_text)):

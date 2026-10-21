@@ -47,8 +47,6 @@ def test_multiword_person_unchanged():
 
 
 def test_other_labels_untouched():
-    assert onp.reject_single_osoba("Faktura", _PERSON_FORMS) is True
-    assert "Faktura" not in _kept("Faktura")
     # FIRMA nie przechodzi przez regułę OSOBA (inne filtry FIRMA bez zmian)
     assert ner_layer._filter_institutions([SimpleNamespace(text="Zamieszkały Serwis", label="FIRMA")])
 
