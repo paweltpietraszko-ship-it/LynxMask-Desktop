@@ -1,0 +1,71 @@
+LYNX-HERBERT-NET — BRIEF_ONLY v2 / tests_r1
+Data: 2026-10-21
+Audytor: Codex, niezależny precheck dokumentów.
+Wynik: PASS PREIMPLEMENTATION dla briefu v2.
+Exact SHA: f69bc026e7d50f11b887e6106597067e04688d53
+Branch: task/LYNX-HERBERT-NET
+Main odczytany przy prechecku: 36646331f439538291b393c39759fadc4cb6555b
+Nie ma audytowanej implementacji ani diff base implementacji.
+
+ZAKRES I WARSTWY
+Przeczytano brief v2, propozycję CC 91e096b i amendment 7be8f7a,
+aktualny wiersz BOARD i zamrożony arch/spec.md na exact SHA.
+Punktowy odczyt istniejących ownerów:
+backend/pipeline.py:311-377 (_apply_guard, obie ścieżki),
+backend/ner_layer.py:330-401 (_filter_institutions).
+Bez uruchamiania kodu, testów, modeli, benchmarków i reproduktorów.
+Bez edycji produktu, specyfikacji lub briefu.
+
+USTALENIA A–E
+A. PER -> OSOBA, ORG -> FIRMA zachowuje S2 i dotychczasową taksonomię.
+   LOC/ID poza zakresem. Nie wprowadzać ORG_NNN.
+B. Istniejący filtr jest osiągalną funkcją modułu ner_layer:
+   _filter_institutions(list) czyta atrybuty text/label kandydatów,
+   oddaje odfiltrowaną listę; nie alokuje tokenów i nie uruchamia detektora.
+   Użycie tego ownera nie wymaga kopiowania klasyfikatora ani przebudowy NER.
+   Wspólny _apply_guard jest właściwym istniejącym szwem obu pipeline;
+   zachować wcześniejszy powrót S3 force_block, następnie siatka, następnie Guard.
+C. Zakaz naiwnego współdzielenia starego tokenu jest słuszny:
+   gdy FIRMA_001 oznacza wyłącznie "z o.o.", dwukrotne użycie tokenu
+   nie odtworzy "ALFA Sp. z o.o.". To analiza kontraktu i podstawienia,
+   nie wykonany reproduktor. Brief dopuszcza jawnie PARTIAL_FIRMA_UNFIXED,
+   więc pilot nie wymaga rozwiązania częściowych nazw firm.
+   Nie zatwierdzono żadnego wyjątku ani nowej metody naprawy tych nazw.
+D. OFF bez ładowania modelu, ON fail-closed, ochrona istniejącej mapy,
+   jeden Guard po siatce i roundtrip są jednoznacznymi wymaganiami.
+   Zgodność wykonania pozostaje NOT_CHECKED do dostawy implementacji.
+   Domyślnie OFF to pilot; nie zatwierdzono domyślnego włączenia ani merge.
+E. Zakres ma minimalny nowy owner i istniejące szwy; nie wymaga
+   arbitra, redesignu OSOBA ani osobnego podsystemu FIRMA.
+   350 linii jest sufitem, nie potwierdzonym oszacowaniem wykonalności.
+   Dokładny koszt poda CC w review przed kodem, zgodnie z briefem.
+   Przekroczenie gate 150 wymaga wskazanej w briefie zgody na konkretny budżet.
+   Nie jest to wada kontraktu ani zgoda Codexa na odstępstwo.
+   Próg modelu ustalany na known, osobny holdout, cztery ustawienia jednej
+   siatki oraz oddzielne wyniki PER/ORG umożliwiają ocenę rzeczywistego zysku.
+   Wstępnych liczb CC i heurystycznego gold firm nie certyfikowano.
+
+OGRANICZENIA DO ZACHOWANIA W REVIEW I POMIARZE
+- Dotychczasowy filtr odrzuca m.in. krótkie nazwy ALL-CAPS i akronimy bez
+  formy prawnej (ner_layer.py:382-397). Sama nazwa ALFA może zostać
+  odrzucona również po wykryciu przez HerBERT. To znane ograniczenie
+  odziedziczonego odsiewu, nie obietnica naprawy wszystkich braków FIRMA.
+  Pomiar ma ujawnić takie przypadki; ten precheck nie zmienia filtrów.
+- Częściowe nazwy przecinające stare tokeny pozostają oddzielną,
+  jawną luką ochrony (SAFETY_PRIVACY / PARTIAL_FIRMA_UNFIXED), a nie sukcesem.
+  Nie odtwarzano tu nowego wycieku; wykorzystano jawnie opisane ograniczenie.
+- Dodawanie masek nie dowodzi braku regresji jakości: nadal mierzyć FP,
+  wierność mapy i koszt. Brak nowych wymagań jakościowych/procentów.
+- Kontrolowana odmowa długiego tekstu jest dopuszczona w briefie;
+  CC ma wskazać wybrany wariant i komunikat z alternatywą, bez cichego obcięcia.
+- Rewizja/checksumy modelu i tokenizera, przypięta zależność, kalibracja
+  i dostarczenie miarki należą do dostawy CC. Nie były zweryfikowane runtime.
+
+ZAMKNIĘTA LISTA BRAKÓW BLOKUJĄCYCH BRIEF: brak.
+PASS dotyczy testowalności i punktowo potwierdzonych szwów na podanym SHA,
+nie jakości modelu, faktycznego czasu/RAM, implementacji, instalatora ani wydania.
+
+NASTĘPNY ODBIORCA: CC — review wykonalności i konkretny budżet.
+Dalsza kolejność zgodnie z briefem: zgoda OWNERA na wymagane odstępstwo
+budżetu -> kod -> niezależny audyt exact SHA -> decyzja OWNERA merge/ON.
+COLOR-TRACE i duży OSOBA-REDESIGN pozostają odłożone.

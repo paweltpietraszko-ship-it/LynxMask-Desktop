@@ -308,7 +308,19 @@ USE_NEW_PIPELINE: bool = True
 
 # â”€â”€ Implementacja â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-def _apply_guard(
+def _apply_guard(text: str, reverse_map: dict, state: AppState, force_block: bool = False) -> PipelineResult:
+    # [LYNX-HERBERT-NET] kolejno: S3 wcześniejszych etapów → siatka HerBERT (LYNX_HERBERT=off: bez zmian) → Guard raz
+    if not force_block:
+        try:
+            from herbert_net import apply_net
+            text, reverse_map = apply_net(text, reverse_map, state.anon_map)
+        except Exception as e:  # siatka włączona, ale niedostępna → S3 fail-closed; S5: tylko typ wyjątku
+            logger.error("[PIPELINE] HerBERT: %s", type(e).__name__)
+            return _s3_failure("[HERBERT_ERROR] dodatkowa kontrola HerBERT niedostępna")
+    return _apply_output_guard(text, reverse_map, state, force_block)
+
+
+def _apply_output_guard(
     text: str,
     reverse_map: dict,
     state: AppState,

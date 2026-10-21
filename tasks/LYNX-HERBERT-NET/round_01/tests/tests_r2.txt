@@ -1,0 +1,118 @@
+LYNX-HERBERT-NET — independent exact-SHA audit / tests_r2
+Data: 2026-10-21
+Exact implementation SHA: 7401ec3471145d232f62fbbc5e1a41a1303ee019
+Diff base / BEFORE: 455d142b5a18d49a8acc6a87a1e9c3f73f835a54
+DELIVERY: c5e1067833ee4a3dd6f4dd3c1e517ef76a2445f9
+Brief v2: f69bc026e7d50f11b887e6106597067e04688d53
+Branch: task/LYNX-HERBERT-NET
+
+WYNIK:
+PASS sprawdzonej integracji w wariancie domyślnie OFF.
+PARTIAL oceny ON i przydatności jakościowej; NIE rekomenduję włączenia.
+Brak odtworzonego nowego blokera merge z OFF w sprawdzonym zakresie.
+Decyzja merge pozostaje u Pawła. Audyt niczego nie zmergował.
+Po poprawce firm potrzebny pomiar na wspólnej, końcowej wersji.
+Nie jest to certyfikacja całego produktu ani wszystkich twierdzeń DELIVERY.
+
+ZAKRES / WARSTWY
+Przeczytano diff produkcji i testów, DELIVERY, brief oraz skrypt pomiaru.
+Zmiany produktu: herbert_net.py, szew pipeline.py, startup_check.py,
+requirements.txt, atrybucja README. Dodatkowy skrypt pomiarowy w tasks/.
+Istniejąca treść Guarda przeniesiona do _apply_output_guard;
+kolejność: wcześniejszy force_block -> siatka -> jeden Guard.
+Brak zmian wspólnych kategorii i formatu słownika.
+Dokumenty wyłącznie syntetyczne; własne archiwa exact SHA poza repo.
+Backend właściciela i port 8765 nie były używane/restartowane.
+
+WŁASNE WYKONANIE
+1. Celowane testy CC uruchomione niezależnie:
+   test_herbert_net.py: 8 PASS, także rzeczywisty lokalny model;
+   test_startup_check.py: 17 PASS.
+   Pierwsza próba dała 23 PASS i 2 awarie mojego ogrodzenia sieci:
+   blokowało lokalny socketpair asyncio Windows. Po poprawieniu harnessu
+   powtórzono tylko te 2 testy: 2 PASS. To nie regresja produktu.
+   Jedną zawieszoną próbę w sandboxie przerwano; ponowienie poza ograniczeniem
+   lokalnego socketu zakończyło się poprawnie. Nie powtarzano całej suity.
+2. Prawdziwy model: lokalne pliki przeszły wbudowaną kontrolę 3 SHA256;
+   tokenizers==0.22.2 w izolowanym venv, bez pobierania modelu.
+   Nowy syntetyk z Katarzyną Zielińską i Bud-Expert Sp. z o.o.:
+   PER i ORG, właściwe OSOBA/FIRMA, przywrócenie 1:1.
+   Pion z tego wejścia siatki przez rzeczywisty Guard: jedno wywołanie,
+   wynik niezablokowany, poprawna mapa.
+3. Brak modelu przy PER,ORG -> S3: pusty wynik, pusta mapa, blokada.
+   OFF przy tym samym braku modelu -> brak ładowania, zwykła ścieżka.
+   Testy celowane obejmują też force_block przed siatką, rozdzielenie PER/ORG,
+   niski score, dwie firmy, powtórzenia, numerację ponad mapą profilu/dokumentu,
+   ochronę starego tokenu oraz długi tekst z >512 subtokenami w oknie.
+4. Własne 3 nowe dokumenty TXT przez pełne /preview:
+   osobne kopie backendu BEFORE i exact SHA, izolowane puste profile,
+   TestClient w procesie, blokada połączeń zewnętrznych i rzeczywistego 8765.
+   BEFORE OFF vs exact OFF: identyczne odpowiedzi w porównanych polach
+   (preview, tokeny, blokada, kod, błąd; dynamiczny PSE normalizowany).
+   6/6 HTTP200, bez blokady.
+   Te same 3 dokumenty exact PER,ORG: 3/3 HTTP200, bez blokady.
+   Nie jest to nowy benchmark jakości.
+5. Niezależne przeliczenie zachowanych surowych wyników CC:
+   raw_main_off.json vs raw_off.json — 503 wspólne rekordy
+   (499 tekstów + 4 dodatkowe próby), zero różnic po normalizacji PSE
+   w code/blocked/error/preview/tokens/orig.
+   To walidacja artefaktów CC, NIE własna powtórka 503 dokumentów.
+   Lokalny raport CC wskazuje kod dcc88e2 i main 252b4f0; nie utożsamiam
+   tego z pełnym niezależnym pomiarem końcowego SHA 7401ec3.
+   Kalibracji, 17 FP instytucji, p95/RAM i całego holdoutu nie odtwarzano.
+
+ZNANA LUKA / SAFETY_PRIVACY, NIE NOWY FAIL TEGO TASKU
+Własny /preview potwierdził znaną częściową FIRMA:
+"Sprzedawca: ALFA Sp. FIRMA_001."
+"Nabywca: Piekarnia Smaczek Sp. FIRMA_001."
+Przy ON ten dokument pozostał taki sam: nazwy jawne.
+Inny dokument z Bud-Expert również zachował częściową nazwę w OFF i ON.
+TRACE: brief v2 jawnie dopuszcza PARTIAL_FIRMA_UNFIXED, bez udawania naprawy.
+OWNERSHIP: źródło tego błędu jest w istniejącym NER/FIRMA;
+osobna poprawka LYNX-FIRMA-FILTER-FIX, nie obowiązek przebudowy siatki.
+To pozostają rzeczywiste, potwierdzone luki na syntetykach, a nie nowe
+naruszenie kontraktu herbert_net. Nie zamykać ich samym merge HerBERT.
+Potwierdza to sens kolejności proponowanej przez Pawła: najpierw FIRMA.
+
+DODATKOWE PRÓBY / GRANICE WNIOSKU
+Wstrzyknięcie do detect sztucznego spanu (-100,9999) nie jest odrzucane:
+Python slicing daje szeroką maskę. Nie wykazano, że zweryfikowany tokenizer
+i normalny _predict/detect mogą wytworzyć taki span. Brak potwierdzonej
+osiągalności/OWNERSHIP dla FAIL; nie zgłaszam tego jako blokera.
+Próba z pojedynczym rozpoznaniem "Róża" została odrzucona przez istniejący
+filtr i niczego nie dowodzi o jakości siatki ani propagacji.
+Nie poszerzano tych diagnostyk w projekt walidatora ani redesign.
+
+ODSTĘPSTWA I OGRANICZENIA
+- ON korzysta z istniejących filtrów; według CC nadmaskowuje instytucje
+  (17 przy 4 poprawnie dołożonych firmach w kontrolnym). To wystarczający
+  powód, by pozostawić OFF i ponownie zmierzyć po poprawkach.
+- Brak nowego dedykowanego komunikatu w UI: pozostaje istniejący kanał
+  S3 z alternatywą; dedykowany powód jest w PipelineResult.
+  Nie zmieniano API/frontend. Rzeczywistego natywnego GUI nie testowano.
+- Dokładnej rewizji upstream modelu nie potwierdzano niezależnie;
+  wykonanie sprawdziło dokładne pliki przez zapisane SHA256.
+- Zgoda na limit 350 jest przytoczona w DELIVERY/BOARD; 281 zmian
+  produktu i celowanych testów według gate CC. Nie wydaję nowej zgody
+  na odstępstwo gate RATIO ani na merge.
+- Pełna suita repo, obrazowy benchmark, natywny instalator,
+  całe sieciowe zachowanie bibliotek natywnych, ponowna kalibracja,
+  porównanie HerBERT vs spaCy i wydajność: NOT_CHECKED w tym audycie.
+  Pythonowe ogrodzenie socketów nie dowodzi braku telemetrii natywnej.
+  Nie rejestrowano uniwersalnej gwarancji "brak regresji z konstrukcji".
+
+ZACHOWANE NARZĘDZIA I DOWODY
+C:/Users/p_pie/.codex/visualizations/2026/10/19/01a152b6-e997-7cb0-a9e3-752fdcfd00f0/herbert-audit-r2/
+prepare.py — archiwa dokładnych SHA
+probe.py — celowane testy, syntetyczne próby i S3
+api_probe.py — izolowane /preview na bazie i implementacji
+compare.py — porównanie własne oraz przeliczenie artefaktów CC
+results.json, comparison.json, api-*.json — syntetyczne wyniki.
+Profile/klucze/mapy z tych prób pozostają poza repo, nie publikować ich.
+
+NASTĘPNY RUCH
+CC: krótka korekta briefu FIRMA według osobnego raportu r1, implementacja
+i audyt poprawki; następnie ponowny pomiar ORG/PER na nowej wspólnej bazie.
+Paweł: może osobno zdecydować o merge sprawdzonego SHA HerBERT z OFF.
+Nie włączać modelu na podstawie tego PASS i nie traktować oczekującego
+pomiaru jako wykonanej walidacji jakości.
