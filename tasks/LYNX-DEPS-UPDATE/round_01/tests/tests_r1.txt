@@ -1,0 +1,99 @@
+LYNX-DEPS-UPDATE — audyt etapu A / tests_r1
+Data: 2026-10-21
+Exact SHA: 0219ffd01bf3823a2ca7b57154541d8907608c6c
+Diff base / zakres: d6a416084da4f0399320b2b58d63be6ee7e7322a
+DELIVERY: d6fdfa48fc395de846d4457d84658d267d56cb94
+Wynik: PASS niezależnie sprawdzonej zgodności środowiska Python;
+PARTIAL pełnego odbioru etapu A (natywny build/launcher poniżej).
+Brak nowego defektu spełniającego TRACE + OWNERSHIP + REPRO.
+Bez zmian produktu i bez merge.
+
+ZAKRES
+Cztery pliki: backend/requirements.txt, LynxMask.vbs, .gitignore,
+frontend/src-tauri/Cargo.lock. Brak zmian algorytmów maskowania/Guarda,
+formatu tokenów, kryptografii i słownika Morfeusza.
+Nowe osobne środowisko odpowiada wyborowi OWNERA.
+LYNX-OSOBA-COLOR-TRACE zgłoszony przez Architekta: pozostawiony poza
+audytem na bezpośrednie polecenie Pawła. Etap B Morfeusza nie był audytowany.
+
+NIEZALEŻNIE ODTWORZONE
+1. Czyste venv w katalogu audytu, bez system-site-packages.
+   Instalacja dokładnie z backend/requirements.txt na exact SHA zakończona.
+   pip check: No broken requirements found.
+   Potwierdzone m.in. Pillow 13.0.0, cryptography 50.0.2, fastapi 0.156.4,
+   starlette 1.9.0, python-multipart 0.0.32, morfeusz2 1.99.12, model spaCy.
+   Nie aktualizowano globalnego Pythona ani środowiska aplikacji.
+
+2. Pełne zbieranie testów według repozytoryjnego pytest.ini — raz,
+   w nowym środowisku i osobnej kopii git archive:
+   129 passed, 40 skipped, 1 xfailed, 4 subtests passed.
+   Wynik zgodny z bazą bez serwera raportowaną przez CC.
+   Połączenia sieciowe do portu 8765 były celowo odcięte: testy HTTP
+   nie mogły wysyłać żądań do silnika OWNERA.
+   40 skipów nie jest dowodem niezależnego zaliczenia testów żywego HTTP.
+   Dodatkowych 32 testów OCR CC nie powtarzano; realny pion poniżej jest
+   własnym dowodem dla aktualizowanego środowiska.
+
+3. crypto_selftest: 22/22 na starym i 22/22 na nowym środowisku.
+   Własny crypto_probe_r1.py:
+   stary -> nowy oraz nowy -> stary odczyt rzeczywistego encrypt_map/decrypt_map,
+   identyczna mapa, polskie znaki i weryfikacja MAC poprawne.
+   Wyłącznie publiczne syntetyczne klucze i syntetyczna mapa, bez profilu.
+   Pierwszy wydruk starego selftestu przerwało kodowanie konsoli cp1250;
+   ponowienie z -X utf8 dało 22/22. To problem harnessu, nie kryptografii.
+
+4. Własny environment_probe_r1.py, dwie świeże kopie backendu z exact SHA:
+   stare zależności vs świeże venv, prawdziwy lifespan, /health i /preview
+   przez TestClient, prawdziwe modele OCR/silnik/Guard, izolowane profile.
+   50 obrazów dataset_20260627_095419 + 3 konwersje JPEG (70/85/95)
+   + 3 nowe teksty syntetyczne: 56/56 wyników identycznych.
+   Porównano tekst wyjściowy po usunięciu dynamicznego nagłówka PSE,
+   tokeny, blokady, status HTTP, metadane OCR; dla 50 również wynik
+   benchmark.analyze na tym samym gold. Bez potrzeby portu 8765.
+   To odtwarza strażnik zgodności na całych znanych 50, a nie tylko
+   na 10 obrazach CC. Nie uruchamiano generatora ani realnego datasetu.
+   /health ze wszystkimi wymaganymi komponentami OK w obu środowiskach.
+
+5. Dodatkowa próba uszkodzonego obrazu:
+   oba środowiska odmawiają HTTP 400, bez wyniku. Jedyna różnica to
+   losowy adres obiektu _io.BytesIO w istniejącym technicznym warning.
+   To nie zmiana treści/polityki ani nowa regresja aktualizacji.
+   Łącznie 57 prób na środowisko: 53 HTTP 200, 4 HTTP 400 w obu.
+   Surowe 56/57 rekordów identyczne; 57. różni wyłącznie ta zmienna
+   lokalna informacja procesu, nie zachowanie odmowy.
+   Pełne JSON/logi syntetyków wyłącznie poza repo.
+
+6. Rust:
+   diff Cargo.lock zmienia tylko anyhow 1.0.104, rustls 0.23.46,
+   rustls-webpki 0.103.16 (wersje i checksums).
+   cargo metadata --locked --offline --filter-platform
+   x86_64-pc-windows-msvc --format-version 1: exit 0.
+   SHA256 lokalnych .crate wszystkich trzech zgodne z lockiem.
+   Nie uruchamiano cargo update ani nie zmieniano cache/buildów produktu.
+
+GRANICE / OTWARTE ELEMENTY ODBIORU
+- Pełny build release i natywne uruchomienie przez LynxMask.vbs:
+  NOT_CHECKED. cargo check/build z DELIVERY jest dowodem CC;
+  nasz metadata nie zastępuje kompilacji.
+- Linie wyboru venv i poprawnego cytowania ścieżki w VBS odczytane.
+  Próba izolowanego WSH nie dała wiarygodnego przechwyconego stdout,
+  dlatego NIE jest zaliczonym testem launchera ani findingiem.
+  Nie uruchamiano właściwego launchera ani silnika OWNERA.
+- Requirements przypina bezpośrednie pakiety, nie pełne drzewo tranzytywne.
+  Świeża instalacja działa dziś; nie potwierdzamy identyczności dowolnej
+  przyszłej instalacji. Pełny lock pozostaje planem instalatora z DELIVERY.
+- Nie przeprowadzano nowego triage advisory/CVE i nie wydano certyfikatu
+  zamknięcia wszystkich zgłoszeń bezpieczeństwa. Ten audyt sprawdza zgodność
+  działania po aktualizacji, a nie exploity ani kompletność OSV.
+- Formalny GATE: RATIO 52/8 = 6,5:1, spowodowany głównie nowym plikiem
+  requirements. To jawne WYMAGA_DECYZJI z DELIVERY, nie usterka funkcjonalna
+  i nie podstawa do FAIL. Audyt nie udziela zgody za OWNERA na odstępstwo.
+- Profil, rejestr i archiwum wszystkich własnych prób przekierowane do
+  kopii audytu przed importem; token API tylko z kopii; socket guard
+  blokuje rzeczywisty port 8765. Żadnych realnych dokumentów i danych.
+  Nie deklaruje się dodatkowego pomiaru izolacji migawką katalogu OWNERA.
+
+Własne odtwarzalne artefakty: crypto_probe_r1.py, environment_probe_r1.py.
+Następny odbiorca: Paweł/CC — decyzja odbioru/merge etapu A z jawnymi
+ograniczeniami natywnego wydania i formalnym RATIO. Bez nowych findingów
+do naprawy i bez uruchamiania etapu B lub tematu Architekta.
