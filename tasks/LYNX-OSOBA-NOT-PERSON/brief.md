@@ -27,8 +27,18 @@ Porównanie (pomocnik CC, tylko odczyt + sondy w procesie na syntetykach):
    (bez zmian treści) + port 1:1 z Mobile `WHITE_LIST_DOCUMENTS` i `WHITE_LIST_COMMON_WORDS` (formy z `NameEngine.kt`, z komentarzem
    źródła i linii). Funkcja `not_person_word(word) -> bool`: wyraz (małe litery) na którejkolwiek z tych list.
    `ner_adapter._apply_dictionary_names` używa tego modułu zamiast własnej kopii (zachowanie bez zmian).
-2. **Kandydaci spaCy:** w `ner_layer._filter_institutions`, **przed** obejściem `[LYNX-T01]`: jednowyrazowa OSOBA, dla której
-   `not_person_word` = True → odrzucona (także gdy jest w `_PERSON_FORMS`, np. „Data”).
+2. **Kandydaci spaCy** (korekta C1 Codexa r1 `f645f3a` — kolizje z prawdziwymi imionami/nazwiskami): w `ner_layer._filter_institutions`,
+   **przed** obejściem `[LYNX-T01]`, jednowyrazowa OSOBA jest odrzucana w dwóch odrębnych przypadkach:
+   a) słowo jest na **`OSOBA_DENYLIST` właściwej** (pierwsza część obecnej listy: potwierdzone kolizje — data, dane, osoba, zapłata,
+      zamieszkania, sąd, urząd…) → odrzucone **zawsze**, także gdy jest w `_PERSON_FORMS` („Data” jako imię, „Osoba”/„Zapłata” jako
+      nazwisko wg SGJP). **Jawny kompromis jak w Mobile:** samotne słowo z tej listy nie jest zakrywane nawet wtedy, gdy w danym tekście
+      jest nazwiskiem; wielowyrazowa osoba („Anna Osoba”, „Jan Data”) nadal zakryta (reguła dotyczy tylko jednowyrazowej OSOBA).
+      Decyzja o kompromisie — Paweł (BOARD).
+   b) słowo jest na **białych listach** (kalendarz, kraje, miasta z obecnej listy + port `WHITE_LIST_DOCUMENTS` /
+      `WHITE_LIST_COMMON_WORDS`) → odrzucone **tylko gdy nie ma go w `_PERSON_FORMS`** (słowniki imion/nazwisk). Dzięki temu „Maja”,
+      „Maj”, „Bill” itp. — jeśli są w słownikach osób — zostają OSOBA; „Faktura”, „Zamieszkały”, „Styczeń” odpadają.
+   Moduł rozdziela te dwie listy (`OSOBA_DENYLIST` i `WHITE_LISTS`); `_apply_dictionary_names` dalej używa ich sumy jak dziś (bez zmian
+   zachowania).
 3. **Mała litera:** jednowyrazowa OSOBA zaczynająca się małą literą → odrzucona (jak regexy Mobile; „zamieszkaly”).
 - Bez nowych list układanych przez nas: listy to wyłącznie istniejące, potwierdzone kolizje z Mobile. Kolejne słowa dopisujemy tylko po
   potwierdzonym fałszywym alarmie (jak Mobile).
@@ -46,10 +56,11 @@ TASK_SCOPE:
 ## Odbiór (pomiar: pomocnik CC; Codex odtwarza)
 Testy celowane (`test_osoba_not_person.py`, na `_filter_institutions` z encjami OSOBA i przez `run_pipeline_new` z atrapą NER):
 „Data”, „Zapłata”, „Faktura”, „Osoba”, „Zamieszkały”, „zamieszkaly” jako jednowyrazowa OSOBA → odrzucone; „Nowak”, „Kowalczyka”,
-„Wroblewski” → bez zmian (zostają); „Jan Kowalski, zamieszkały w Krakowie” → OSOBA tylko „Jan Kowalski”; `_apply_dictionary_names`
+„Wroblewski”, „Zając”, „Wróbel”, „Kot” → bez zmian (zostają); kolizje z białą listą będące w `_PERSON_FORMS` („Maja”, „Maj” — test
+sprawdza najpierw obecność w `_PERSON_FORMS`) → zostają; „Anna Osoba” (wielowyrazowa) → zakryta; „Jan Kowalski, zamieszkały w Krakowie” → OSOBA tylko „Jan Kowalski”; `_apply_dictionary_names`
 zachowuje się jak przed zmianą. Plik Pawła `doc_lvl3_faktura_zlecenie.txt`: „zamieszkaly” jawne, 4 osoby nadal zakryte.
 Pomiar przed/po przez `/preview` w procesie (z `git archive`, pusty profil — NIE z katalogu Pawła, lifespan kasuje jego `api_token.txt`):
-`dataset_clean` (gold osób), testy Mobile, `Pliki testowe`, obrazy benchmarku `dataset_20260627_095419` — **OSOBA: 0 nowych wycieków**,
+`dataset_clean` (gold osób), testy Mobile, `Pliki testowe`, obrazy benchmarku `dataset_20260627_095419` — **OSOBA: 0 nowych wycieków** poza jawnym kompromisem 2a (samotne słowo z `OSOBA_DENYLIST` — każdy taki przypadek wypisany osobno),
 liczba jednowyrazowych OSOBA-FP przed/po. Szacunek: ~60 l. modułu (listy) + ~50 l. testów + ≤ 4 l. w `ner_layer.py`.
 
 ## Znalezione przy okazji (zgłoszone do `LYNX-ENGINE-BACKLOG`, nie w tym Tasku)
