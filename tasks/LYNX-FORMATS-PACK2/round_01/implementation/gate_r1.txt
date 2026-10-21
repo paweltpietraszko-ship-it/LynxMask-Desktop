@@ -1,0 +1,28 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: bde77c4ab7d5fd5a7447007a5eb1055fe29ff42f
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 91/5 = 18.2:1 (threshold 5:1)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - backend\herbert_net.py
+  - backend\pipeline_new.py
+  - backend\pseudominizer_api.py
+  - backend\smoke_test.py
+  - tasks\LYNX-OSOBA-NOT-PERSON\round_01\tests\repro_bill_r3.py
+  - tasks\LYNX-OSOBA-NOT-PERSON\round_01\tests\repro_polish_r4.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\implementation\firma_sweep.py
+  - tasks\LYNX-FIRMA-FILTER-FIX\round_01\tests\repro_f1_r3.py
+  - backend\layers\ner_adapter.py
+  - backend\tests\test_amounts_numbers.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_firma_context.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_osoba_not_person.py
+  - backend\tests\test_pseudominizer.py
+  - backend\tests\test_token_re_spec.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-FORMATS-PACK2/brief.md
+  - tasks/LYNX-FORMATS-PACK2/repo_before.hash
+  - tasks/LYNX-FORMATS-PACK2/round_01/tests/tests_r1.txt
