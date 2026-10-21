@@ -31,6 +31,29 @@ _AMOUNT_RE = re.compile(
     r"(?:zł|PLN|EUR|USD|GBP|CHF|DKK|NOK|CZK|HUF|RON)\b",
     re.IGNORECASE,
 )
+# [LYNX-AMOUNTS-NUMBERS] Waluta słowna po cyfrach („813 złotych”, „15 000 złotych”); pomijana, gdy przed liczbą
+# stoi liczebnik/mnożnik (także dla _AMOUNT_RE: „tysięcy 813 zł”) — wtedy całą kwotę bierze verbal_amounts.
+_AMOUNT_WORD_RE = re.compile(r"\b(?!00\s)\d{1,6}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?\s*z[łl]ot(?:ych|e|y)\b", re.IGNORECASE)
+# [LYNX-AMOUNTS-NUMBERS] Kwota bez waluty (Mobile A.9c): przecinek + 2 cyfry groszy („2 800,00”); nie procent, jednostka, wersja.
+_AMOUNT_NOCUR_RE = re.compile(
+    r"(?<![\d.,/\-])\d{1,3}(?:[  ]\d{3})*,\d{2}(?!\d|[.,]\d|/|-)"
+    r"(?!\s*%)(?!\s*(?:kg|g|m2|m²|m|km|l|szt|godz|h)\b)",
+    re.IGNORECASE,
+)
+_VERSION_BEFORE_RE = re.compile(r"(?i)(?:\bwersj\w*|\bwer\.|\bv\.?)\s*$")
+
+
+def _after_number_word(text: str, m: re.Match) -> bool:
+    from verbal_amounts import _PL_NUMBER_WORDS
+    prev = text[:m.start()].split()
+    word = prev[-1].strip(",:;()").lower() if prev else ""
+    return word != "i" and word in _PL_NUMBER_WORDS
+
+
+def _not_amount_nocur(text: str, m: re.Match) -> bool:
+    if _VERSION_BEFORE_RE.search(text[max(0, m.start() - 12):m.start()]):
+        return True
+    return any(a.start() <= m.start() < a.end() for a in _AMOUNT_RE.finditer(text, max(0, m.start() - 30), m.end() + 12))
 
 # ── Data urodzenia kontekstowa ─────────────────────────────────────────────────
 # Port z StructuralEngine.kt linia 223.
@@ -54,11 +77,13 @@ _DATE_PL_RE = re.compile(
 
 def _apply_patterns(
     state: PipelineState,
-    patterns: list[tuple[str, re.Pattern]],
+    patterns: list[tuple],
 ) -> None:
     hits: list[tuple[int, int, str, str]] = []
-    for token_type, pat in patterns:
+    for token_type, pat, *skip in patterns:
         for m in pat.finditer(state.text):
+            if skip and skip[0](state.text, m):
+                continue
             hits.append((m.start(), m.end(), m.group(0), token_type))
 
     hits.sort(key=lambda x: x[0], reverse=True)
@@ -78,7 +103,9 @@ def _apply_patterns(
 def apply_amount_layer(state: PipelineState) -> None:
     """Maskuje kwoty cyfrowe i daty urodzenia (kontekstowe + strukturalne DD.MM.YYYY)."""
     _apply_patterns(state, [
-        (TOKEN_KWOTA,  _AMOUNT_RE),
+        (TOKEN_KWOTA,  _AMOUNT_RE, _after_number_word),
+        (TOKEN_KWOTA,  _AMOUNT_WORD_RE, _after_number_word),
+        (TOKEN_KWOTA,  _AMOUNT_NOCUR_RE, _not_amount_nocur),
         (TOKEN_NUMER,  _BIRTH_DATE_CTX_RE),
         (TOKEN_NUMER,  _DATE_PL_RE),
     ])

@@ -1,0 +1,16 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: d3f96740d80d0d68454ee02de559ed726655f097
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 137/11 = 12.5:1 (threshold 5:1)
+IMPORTERS_FOR_REVIEW:
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - backend\layers\verbal_amount_layer.py
+  - backend\tests\test_pipeline_v2.py
+  - backend\tests\test_token_re_spec.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-AMOUNTS-NUMBERS/brief.md
+  - tasks/LYNX-AMOUNTS-NUMBERS/repo_before.hash
+  - tasks/LYNX-AMOUNTS-NUMBERS/round_01/implementation/gate_r1.txt
+  - tasks/LYNX-AMOUNTS-NUMBERS/round_01/tests/tests_r1.txt

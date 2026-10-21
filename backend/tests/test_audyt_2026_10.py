@@ -364,7 +364,7 @@ def test_wiernosc_tekstu_i_maskowanie(text, value):
     from pipeline_new import run_pipeline_new
     with patch.object(ner_mod, "process_ner", return_value=({}, {})):
         out, rev, _ = run_pipeline_new(text, anon_map={})
-    assert "12/2026. Kontakt" in out and ". Termin płatności 14 dni." in out, out
+    assert "Faktura nr NUMER_001. Kontakt" in out and ". Termin płatności 14 dni." in out, out  # LYNX-AMOUNTS-NUMBERS: nr faktury
     joined = "".join(rev.values()).lower()
     assert [v for v in rev.values() if value in v.replace(" ", "")] and "termin" not in joined and "dalej" not in joined, (out, rev)
     assert value not in out.replace(" ", ""), out

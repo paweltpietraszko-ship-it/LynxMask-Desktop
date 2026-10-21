@@ -1,0 +1,117 @@
+LYNX-AMOUNTS-NUMBERS — niezależny audyt dostawy / tests_r2
+Data: 2026-10-21
+Exact SHA: d3f96740d80d0d68454ee02de559ed726655f097
+Baza: cc70822d8356398a331799d6de4a30370476738f
+Brief bazowy: 204e14e278945a7a813ccb82b85c6ae5a630afcd
+Precheck: e17e59ffbd6496af3fd21bb52ae5e2e186c97869
+DELIVERY: 3f9ad31
+Branch: task/LYNX-AMOUNTS-NUMBERS
+
+WYNIK: PASS sprawdzonego kontraktu A/B/C/E i jego szwów na exact SHA.
+Duży pomiar i pełna regresja: dowody CC / PARTIAL niezależnego odtworzenia.
+Brak odtworzonego nowego blokera w sprawdzonym zakresie.
+Bez napraw produktu i bez merge przez Codexa.
+
+ZAKRES / OCENA ROZSZERZENIA CC
+Przeczytano diff verbal_amounts, amount, numeric, legal, credential_patterns,
+nowe testy oraz jedną zmienioną asercję starego testu, brief i DELIVERY.
+Rozszerzenie CC credential_patterns.json jest opisane w briefie:
+wcześniejsza warstwa credentials brała KM 8923 z całej sygnatury,
+uniemożliwiając legal zakrycie końcówki /2023.
+To ten sam zgłoszony problem E na jego wcześniejszym właścicielu,
+nie ukryta nowa architektura. Własny pion potwierdził pełną sygnaturę
+i utrzymanie maskowania zwykłej tablicy KR 4AB67.
+Zmiana test_audyt_2026_10.py jest zgodna z C: Faktura nr 12/2026
+przestaje być niezmiennym tłem testu e-maila, bo numer ma być maskowany.
+Nie uznano starego oczekiwania za oracle sprzeczny z nowym kontraktem.
+
+NIEZALEŻNE WYKONANIE NA EXACT SHA
+Dokładny git archive poza repo, puste izolowane profile w Temp,
+Python 3.14, lokalny spaCy / Morfeusz 1.99.15, HerBERT OFF.
+Realne połączenia do 8765 i na zewnątrz zablokowane. TestClient w procesie.
+Backendu i profilu właściciela nie używano ani nie restartowano.
+
+1. Testy celowane:
+   tests/test_amounts_numbers.py: 20 PASS.
+   Zmieniony test_wiernosc_tekstu_i_maskowanie: 5 PASS
+   (120 pozostałych testów pliku niewybranych).
+   Nie ograniczono się do interpretacji zielonych wyników CC.
+
+2. Własna macierz 59 przypadków, wszystkie PASS:
+   A: 12 kwot — cyfrowa i słowna waluta, mieszane wieloczłonowe liczebniki,
+      liczby z twardą spacją, pełne złotych/zł, fraza groszowa i 00/100.
+      Pełny run_pipeline_new; tylko NER poza badaną klasą zastąpiono
+      pustym wynikiem. Jedna wartość dla całej kwoty, Przywróć 1:1.
+   B: 5 dodatnich kształtów, od 0,05 po 999 999,99, w tym NBSP;
+      20 negatywnych: wszystkie 10 wskazanych jednostek,
+      %, wersja/wer./v, data, jedna lub trzy cyfry dziesiętne,
+      ukośnik/minus przy liczbie. Badano właściciela amount.
+   C: 3 numery dokumentów, 3 przypadki granicy 60 znaków
+      (sygnał w całości w oknie / poza oknem) i 4 negatywne
+      (brak słowa dokumentu, krótki numer, gotowe NUMER/OSOBA).
+      Sam nr/numer pozostaje jawny.
+   E: 12 kombinacji KM/KMP/KO/KMS, zwykłej i mieszanej wielkości liter,
+      przez pełny pipeline; całe sygnatury z rokiem i Przywróć 1:1.
+
+3. Własny pion przez rzeczywiste /preview: 8/8 HTTP200, blocked=false,
+   8/8 dokładne przywrócenie oryginalnego wejścia:
+   - 37 tysięcy 918 złotych w nawiasie -> jedna KWOTA;
+   - 915 złotych -> KWOTA;
+   - dwie komórki tabeli + powtórzenie 2 800,00 -> poprawna mapa;
+   - 12,50 kg / 23,50% / wersja 1,05 -> jawne, bez tokenów;
+   - umowa U-00726/2025 z osobą -> numer i osoba zakryte;
+   - faktura AB-432/2026 -> sam numer zakryty;
+   - KM 7341/2026 -> pełna sygnatura w jednym NUMER;
+   - zwykła tablica KR 4AB67 -> nadal NUMER.
+   Nie symulowano NER ani Guarda w tych ośmiu próbach.
+
+4. Odtworzona w testach ścieżka naprawy regresji CC:
+   gotowe Nr NUMER_005 / Numer klienta NUMER_006 / nr OSOBA_001
+   nie są brane przez nowy wzorzec dokumentu jako nowa wartość.
+   Własne 4 negatywy C także potwierdzają brak nowych alokacji.
+   Nie trzeba było ponawiać dawnego błędnego modelu r1 na 129 dokumentach.
+
+DOWODY CC — NIEZALEŻNE PRZELICZENIE ARTEFAKTÓW
+raw_desktop_przed.json SHA cc70822d8356398a331799d6de4a30370476738f,
+raw_desktop_po.json SHA d3f96740d80d0d68454ee02de559ed726655f097.
+Sprawdzono zgodność par ścieżek i 693 rekordy:
+- 0 różnic wielozbiorów wartości OSOBA;
+- nowe wartości: KWOTA 178, NUMER 23;
+- usunięte stare wartości: KWOTA 1, NUMER 5 (zmiany zakresów tokenów);
+- podgląd z [REDACTED]: 4 -> 5, nie 129;
+- jedna różnica code/blocked/error dla technicznego
+  testy__test_numer_dokumentu.txt, opisana przez CC jako przypadek
+  z literalnym tokenem w wejściu. Nie twierdzę, że wszystkie statusy
+  są identyczne ani że ten nietypowy dokument ma zwykły poprawny wynik.
+Jest to przeliczenie istniejących artefaktów CC, nie własny ponowny bieg
+693 dokumentów. Semantyczne etykietowanie wszystkich nowych kwot/numerów
+i wynik porównania z Mobile pozostają wspierającym dowodem CC.
+Nie zamieniam 0 różnic tokenów OSOBA w dowód pełnego recall osób
+dla dowolnego dokumentu lub niekompletnego gold.
+
+GRANICE I WYŁĄCZENIA
+- Pełna suita repo/gate i pełne ponowne porównanie Mobile: NOT_CHECKED
+  niezależnie. Gate CC wskazuje wyłącznie RATIO 137/11; <150 linii.
+  Nie jest to odtworzony defekt ani zgoda Codexa na odstępstwo.
+- Cztery stare porażki regresji opisane w DELIVERY nie były ponownie
+  rozpoznawane; brak twierdzenia o nowym pełnym PASS regresji.
+- OCR, wierność mapy przy już istniejącej normalizacji i przycinanie
+  numeru działki pozostają jawnie poza tym Taskiem.
+- Kwoty bez waluty są oceniane według jawnych granic kontraktu.
+  Nie wprowadzono nowego domysłu o dowolnym przecinku będącym pieniędzmi
+  ani wymogu obsługi wszystkich nieopisanych formatów wersji/jednostek.
+- Native GUI, instalator, wydajność i HerBERT ON: poza tym audytem.
+- Brak nowego findingu wymagającego FAIL / decyzji produktowej
+  w przeprowadzonych kontrolach.
+
+ZACHOWANE NARZĘDZIA I WYNIKI
+C:/Users/p_pie/AppData/Local/Temp/lynx-amounts-audit-r2/
+run.py (prepare/tests/regression/matrix/api),
+matrix.json, api.json, evidence.py, evidence.json, exact/backend.
+Dane wyłącznie syntetyczne; nie publikować wygenerowanych profili i kluczy.
+Własna macierz i pion stanowią niezależny dowód oprócz testów implementera.
+
+NASTĘPNY ODBIORCA
+Paweł — decyzja merge sprawdzonego SHA.
+Nie wykonano merge ani zmian produktu. PASS dotyczy tego commitu
+i opisanych warstw audytu; nie całej niezbadanej zaległości silnika.
