@@ -24,4 +24,7 @@ Odbiór (na `.venv`, porównanie z globalnym `py -3` na main): pełne testy back
 OK; **archiwum zaszyfrowane starą wersją odczytywalne nową** (syntetyk); benchmark-strażnik `dataset_20260627_095419` — wynik
 identyczny; obraz JPEG/PNG przez `/preview` działa; build aplikacji (Cargo.lock) OK. Bez danych realnych w repo.
 
-## Etap B (po A): nowy słownik Morfeusza — osobno w tym samym Tasku, z pomiarem przed/po.
+## Etap B: nowy słownik Morfeusza
+morfeusz2 1.99.12 (sgjp-2025.11.10) → 1.99.15 z PyPI (sgjp-2026.06.01) — jedna linia w `backend/requirements.txt`. Pomiar przed/po
+(pomocnik CC): 389 dokumentów (`dataset_clean` 300, testy Mobile 39, obrazy benchmarku 50) przez `/preview` — 0 różnic; 3169 słów —
+identyczne analizy. Najnowszy build SGJP 2026-10-18 jest tylko do ręcznego pobrania → `LYNX-INSTALLER` (bez ręcznych kroków).
