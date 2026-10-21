@@ -196,7 +196,7 @@ _INTERNAL_ORG_RE = re.compile(
 # (np. "Sp. z o.o. ZUS-Warszawa") — pomiń, to nie jest prywatna firma.
 # Ryzyko FP ("ZUS-IT Sp. z o.o.") minimalne — takich firm w Polsce nie ma.
 _INSTITUTION_IN_FIRMA_RE = re.compile(
-    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK)\b',
+    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK|Urz[ąa]d\w*|Starostw\w*|Prokuratur\w*|Ministerstw\w*|Inspektorat\w*|Kuratori\w*|Izb\w+ Skarbow\w*)\b',  # [LYNX-FIRMA-FILTER-FIX] urzędy
     re.IGNORECASE,
 )
 

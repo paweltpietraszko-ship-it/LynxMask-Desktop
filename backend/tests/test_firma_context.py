@@ -64,3 +64,10 @@ def test_prefix_rule_ignores_names_with_legal_form_and_common_words():
 @pytest.mark.parametrize("value", ["Sąd Rejonowy", "Urząd Skarbowy"])
 def test_public_institutions_still_rejected(value):
     assert ner_layer._filter_institutions([Ent(value, "FIRMA", 0, len(value))]) == []
+
+
+def test_name_stops_at_comma_and_offices_are_not_firms():   # regresje z pomiaru 21.10
+    text = "ur. 12.05.1990, Zakład Usługowy Baranowski Sp. z o.o."
+    assert run(text, ("z o.o.", "FIRMA")) == [("Zakład Usługowy Baranowski Sp. z o.o.", "FIRMA")]
+    for office in ("Powiatowy Urząd Pracy w Poznaniu", "Urząd Miejski w Krakowie", "Starostwo Powiatowe w Radomiu"):
+        assert ner_layer._filter_institutions([Ent(office, "FIRMA", 0, len(office))]) == []

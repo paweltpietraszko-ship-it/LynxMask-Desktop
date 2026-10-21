@@ -32,7 +32,7 @@ def _name_start(text: str, form_start: int) -> int | None:
     """Początek nazwy firmy przed formą prawną w tej samej linii: słowa z wielkiej litery / WIELKIE / z cyfrą oraz „i”, „&”,
     łącznik; stop na początku linii, dwukropku i słowie z małej litery. None — brak nazwy."""
     line_start = text.rfind("\n", 0, form_start) + 1
-    segment = text[line_start:form_start].split(":")[-1]
+    segment = re.split(r"[:,;]", text[line_start:form_start])[-1]   # dwukropek, przecinek, średnik kończą nazwę
     offset = form_start - len(segment)
     start = None
     for m in reversed(list(_WORD_RE.finditer(segment))):
