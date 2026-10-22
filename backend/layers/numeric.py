@@ -21,12 +21,17 @@ _NUM_UMOWY_RE = re.compile(r'\bUMW/\d{4}/\d{3,6}\b')
 # w 60 znakach wstecz jest słowo dokumentu. Maskowany sam numer, „nr” zostaje.
 _NUM_DOC_RE = re.compile(r'(?i)\b(?:nr|numer)\.?[ \t]*:?[ \t]*(?P<num>(?=[A-Za-z0-9/.\-]*\d)[A-Za-z0-9]+(?:[/\-.][A-Za-z0-9]+)*)(?![_\w])')
 _DOC_SIGNAL_RE = re.compile(r'(?i)\b(?:faktur|umow|umów|zlecen|zamówien|zamowien|aneks)')
+# [SILENT-PACK1] Numer rozbity spacjami OCR po etykiecie („numerklienta: K L 7017 O”): ≥3 krótkie człony WIELKIE/cyfry, ≥3 cyfry
+# z rzędu. Maskowany sam numer, etykieta zostaje.
+_NUM_SPACED_RE = re.compile(r'(?i:\b(?:nr|numer)\.?[ \t]*(?:klienta|polisy|umowy|faktury|zamówienia|zlecenia|sprawy)?[ \t]*:?[ \t]*)'
+                            r'(?P<num>(?=[A-Z0-9 ]*\d{3})[A-Z0-9]{1,4}(?: [A-Z0-9]{1,4}){2,7})(?![\w/\-])')
 
 _NUMERIC_PATTERNS: list[re.Pattern] = [
     _NUM_KLIENTA_RE,
     _NUM_FAKTURY_RE,
     _NUM_UMOWY_RE,
     _NUM_DOC_RE,
+    _NUM_SPACED_RE,
 ]
 
 
@@ -42,7 +47,7 @@ def apply_numeric_layer(state: PipelineState) -> None:
     hits: list[tuple[int, int, str]] = []
     for pat in _NUMERIC_PATTERNS:
         for m in pat.finditer(state.text):
-            span = _doc_number_span(state.text, m) if pat is _NUM_DOC_RE else m.span()
+            span = _doc_number_span(state.text, m) if pat is _NUM_DOC_RE else m.span("num" if "num" in pat.groupindex else 0)
             if span:
                 hits.append((span[0], span[1], state.text[span[0]:span[1]]))
 

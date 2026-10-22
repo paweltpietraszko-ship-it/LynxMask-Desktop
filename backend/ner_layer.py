@@ -126,7 +126,7 @@ import dataclasses
 import re
 import logging
 
-from firma_context import legal_form_entities, scan_legal_forms
+from firma_context import firma_core_variants, legal_form_entities, scan_legal_forms
 from osoba_not_person import drop_street_osoba, filter_single_osoba, reject_single_osoba  # [LYNX-OSOBA-PACK4]
 from ner_blocklist import (
     _GEO_WORDS,
@@ -445,7 +445,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
     """Wykrywa encje OSOBA i FIRMA przez SpaCy. NIE modyfikuje tekstu. [LYNX-FAILCLOSED-S3] Błąd nie jest „zerem
     encji”: propaguje się (adapter → state.ner_error → force_block, S3), bez treści wyjątku (S5)."""
     try:
-        return _process_ner(text, spacy_ner_mod)
+        return firma_core_variants(text, *_process_ner(text, spacy_ner_mod), _is_person_word)  # [SILENT-PACK1]
     except spacy_ner_mod.NERBlockError:  # [BUG-B] re-raise — NERBlockError dostępna przez moduł-argument
         raise
     except Exception as e:

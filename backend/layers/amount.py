@@ -41,6 +41,16 @@ _AMOUNT_NOCUR_RE = re.compile(
     re.IGNORECASE,
 )
 _VERSION_BEFORE_RE = re.compile(r"(?i)(?:\bwersj\w*|\bwer\.|\bv\.?)\s*$")
+# [SILENT-PACK1] Kwota bez waluty i bez spacji tysięcy („1049,63”, „12.345,67”) — tylko ze słowem kwotowym w tym samym zdaniu.
+_AMOUNT_NOCUR_CTX_RE = re.compile(
+    r"(?<![\d.,/\-])(?:\d{4,6}|\d{1,3}(?:\.\d{3})+),\d{2}(?!\d|[.,]\d|/|-)"
+    r"(?!\s*%)(?!\s*(?:kg|g|m2|m²|m|km|l|szt|godz|h)\b)",
+    re.IGNORECASE,
+)
+_AMOUNT_CTX_WORD_RE = re.compile(
+    r"(?i)\b(?:kwot|zwrot|zapłat|należno|sald|brutto|netto|wartoś|cen[aiyęą]\b|wynagrodze|opłat|kar[aąyęe]\b|koszt|"
+    r"złot|zł\b|pln\b|walut|grosz|zaliczk|odsetk|rat[aąyęe]\b|podatk|faktur|wpłat|wypłat|przelew)"
+)
 
 
 def _after_number_word(text: str, m: re.Match) -> bool:
@@ -54,6 +64,13 @@ def _not_amount_nocur(text: str, m: re.Match) -> bool:
     if _VERSION_BEFORE_RE.search(text[max(0, m.start() - 12):m.start()]):
         return True
     return any(a.start() <= m.start() < a.end() for a in _AMOUNT_RE.finditer(text, max(0, m.start() - 30), m.end() + 12))
+
+
+def _not_amount_ctx(text: str, m: re.Match) -> bool:
+    """[SILENT-PACK1] Brak słowa kwotowego w zdaniu (granica: „. ”, „! ”, „? ”, koniec wiersza) — to nie kwota (wersja, wynik pomiaru)."""
+    start = max(text.rfind(c, 0, m.start()) for c in (". ", "! ", "? ", "\n")) + 1
+    ends = [i for i in (text.find(c, m.end()) for c in (". ", "! ", "? ", "\n")) if i >= 0]
+    return _not_amount_nocur(text, m) or not _AMOUNT_CTX_WORD_RE.search(text[start:min(ends, default=len(text))])
 
 # ── Data urodzenia kontekstowa ─────────────────────────────────────────────────
 # Port z StructuralEngine.kt linia 223.
@@ -108,6 +125,7 @@ def apply_amount_layer(state: PipelineState) -> None:
         (TOKEN_KWOTA,  _AMOUNT_RE, _after_number_word),
         (TOKEN_KWOTA,  _AMOUNT_WORD_RE, _after_number_word),
         (TOKEN_KWOTA,  _AMOUNT_NOCUR_RE, _not_amount_nocur),
+        (TOKEN_KWOTA,  _AMOUNT_NOCUR_CTX_RE, _not_amount_ctx),
         (TOKEN_NUMER,  _BIRTH_DATE_CTX_RE),
         (TOKEN_NUMER,  _DATE_PL_RE),
         (TOKEN_NUMER,  _DATE_ISO_RE),
