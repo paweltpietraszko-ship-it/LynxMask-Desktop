@@ -44,3 +44,12 @@ Poprawka w `backend/guard_residue.py` `_r5` (`_SENTENCE_END_RE`); forma prawna z
 `test_guard_residue.py` 41 passed (+2), `test_failclosed.py` 23 passed, ruff czysto, pomiar `rerun_cc.py` bez zmian (25 / 150 dok.).
 Sonda po restarcie silnika: `Biuro Rachunkowe RACHMISTRZ` (R5), `Śludkowskiego` (R1), `128/7` (R4); pozycje zgodne z `anonymized_preview`.
 gate r3 (`round_01/gate_r3.txt`): `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
+
+## Runda 1b — Zakryj → słownik biura (OWNER 22.10), kod `58d2872`
+- Przełącznik „Zapamiętaj zakryte w słowniku biura” jest nad listą, domyślnie zaznaczony. Wyjaśnienie jest pod „?” (`title`).
+- Zakryj woła `/profile/add-entity` (typy OSOBA/FIRMA/NUMER/ADRES) tylko dla `rememberable`: słowa ≥3 litery albo identyfikatory ≥5 znaków z cyfrą, z wyjątkiem samego roku.
+- Gdy endpoint odmówi (np. słowo pospolite), pojawia się komunikat, a zakrycie w dokumencie zostaje.
+- Express: bez przełącznika.
+- Zostaw i Odkryj dotyczą tylko bieżącego dokumentu (S4). Trwałe „nie zakrywaj” to osobne zadanie z szyfrowaną allowlistą.
+- `node --test tests/revealText.test.mjs`: 14 pass. `tsc`: 0. `Pseudonimizuj.tsx`: 912 l. (baza 933).
+- gate r4: `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
