@@ -34,17 +34,19 @@ _AMOUNT_RE = re.compile(
 # [LYNX-AMOUNTS-NUMBERS] Waluta słowna po cyfrach („813 złotych”, „15 000 złotych”); pomijana, gdy przed liczbą
 # stoi liczebnik/mnożnik (także dla _AMOUNT_RE: „tysięcy 813 zł”) — wtedy całą kwotę bierze verbal_amounts.
 _AMOUNT_WORD_RE = re.compile(r"\b(?!00\s)\d{1,6}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?\s*z[łl]ot(?:ych|e|y)\b", re.IGNORECASE)
+# [SILENT-PACK1] Jednostka po liczbie — to nie kwota („1234,56 mm”, „575,63 cm”).
+_UNIT = r"(?:kg|g|mg|mm|cm|dm|m2|m²|m3|m³|m|km|ml|l|szt|godz|h|min|kWh|kW|MWh)\b"
 # [LYNX-AMOUNTS-NUMBERS] Kwota bez waluty (Mobile A.9c): przecinek + 2 cyfry groszy („2 800,00”); nie procent, jednostka, wersja.
 _AMOUNT_NOCUR_RE = re.compile(
     r"(?<![\d.,/\-])\d{1,3}(?:[  ]\d{3})*,\d{2}(?!\d|[.,]\d|/|-)"
-    r"(?!\s*%)(?!\s*(?:kg|g|m2|m²|m|km|l|szt|godz|h)\b)",
+    rf"(?!\s*%)(?!\s*{_UNIT})",
     re.IGNORECASE,
 )
 _VERSION_BEFORE_RE = re.compile(r"(?i)(?:\bwersj\w*|\bwer\.|\bv\.?)\s*$")
 # [SILENT-PACK1] Kwota bez waluty i bez spacji tysięcy („1049,63”, „12.345,67”) — tylko ze słowem kwotowym w tym samym zdaniu.
 _AMOUNT_NOCUR_CTX_RE = re.compile(
     r"(?<![\d.,/\-])(?:\d{4,6}|\d{1,3}(?:\.\d{3})+),\d{2}(?!\d|[.,]\d|/|-)"
-    r"(?!\s*%)(?!\s*(?:kg|g|m2|m²|m|km|l|szt|godz|h)\b)",
+    rf"(?!\s*%)(?!\s*{_UNIT})",
     re.IGNORECASE,
 )
 _AMOUNT_CTX_WORD_RE = re.compile(

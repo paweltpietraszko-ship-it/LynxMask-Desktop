@@ -74,3 +74,9 @@ Szacunek: kod ~80 l. + testy ~115 l. ≈ 200 l. (>150 — zgoda OWNERA przed kod
   - brak znaczenia pospolitego (nieznane albo tylko nazwa własna/geograficzna) → podmieniamy;
   - błąd Morfeusza (`None`) → nie podmieniamy;
   - rdzeń ≥2 słów z wielkiej litery — bez sprawdzania Morfeuszem (jak w briefie).
+
+## ROZSZERZENIE CC (po Codex r3 F1, `0979c83`)
+- Co: F1 — „Wartość pomiaru 1234,56 mm” → KWOTA (lista jednostek bez „mm”). Ta sama luka istnieje w starym `_AMOUNT_NOCUR_RE` na main („Wartość pomiaru 575,63 mm” → KWOTA) — ta sama klasa (wykluczenie jednostki w kwocie bez waluty).
+- Gdzie: `backend/layers/amount.py` — wspólna lista `_UNIT` dla obu wzorców: dodane mm, cm, dm, mg, m3/m³, ml, min, kWh, kW, MWh. Bez jednostek jednoliterowych mylących się z polskim słowem przy IGNORECASE („w”, „t”).
+- Reproduktor: `round_01/tests/repro_r3.py` (Codex) + w `test_silent_pack1.py` 5 nowych negatywnych (w tym „575,63 mm” i „2 450,00 cm”) i 1 pozytywny („Kwota 1234,56 w terminie” — „w” nie jest jednostką).
+- Pliki: już w TASK_SCOPE.

@@ -89,6 +89,7 @@ def _run(text):
     ("W kolumnie „do zwrotu” zapisano 1049,63; walutą rozliczenia jest złoty.", "1049,63"),
     ("Saldo końcowe: 12.345,67. Koniec.", "12.345,67"),
     ("Wynagrodzenie netto 5400,00 płatne do 10.", "5400,00"),
+    ("Kwota 1234,56 w terminie 14 dni.", "1234,56"),          # „w” to nie jednostka
 ])
 def test_k3_kwota(text, value):
     out, rev, _ = _run(text)
@@ -98,6 +99,9 @@ def test_k3_kwota(text, value):
 @pytest.mark.parametrize("text", [
     "Wersja 2026,01 programu.", "Wynik pomiaru 1234,56 mm.", "Udział 1234,50% w kapitale.",
     "Pozycja 1049,63 w tabeli nr 5.", "Kurs 4,3215 z dnia.",
+    # Codex r3 F1: jednostka przy słowie kwotowym; ROZSZERZENIE CC: ta sama luka w starym wzorcu („575,63 mm”)
+    "Wartość pomiaru 1234,56 mm.", "Wartość pomiaru 12.345,67 mm.", "Odczyt 1234,56 mm; wartość zmierzono ponownie.",
+    "Wartość pomiaru 575,63 mm.", "Koszt dostawy liczony od 2 450,00 cm bieżących.",
 ])
 def test_k3_nie_kwota(text):
     out, rev, _ = _run(text)
