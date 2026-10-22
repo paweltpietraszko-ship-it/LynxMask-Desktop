@@ -1,0 +1,69 @@
+LYNX-GUARD-RESIDUE — BRIEF_ONLY r3, 2026-10-22
+Exact SHA: 52d83580c4209fbf578f54e11a2dcd23cc27acdc (brief v2)
+Baza wskazana w dostawie: 19b112a9ce45bcf3a7d77864a5e8c3f5f593be6e
+Poprzednia ocena: r2 c403fd95fe1ce8bd73d43609922375c28851e1ad.
+Status: brak otwartych braków kontraktu do kolejnego zwrotu Architektowi; OWNER_DECISION_NEEDED przed wdrożeniem.
+Bez końcowego PASS/FAIL na tym etapie OWNER_EXPLANATION_GATE: v2 przedstawia zmienioną granicę odpowiedzialności (poniżej).
+Rekomendacja: zaakceptować kontrakt v2 i przejść do formalnej zmiany S4 oraz oszacowania CC. Nie otwierać nowej rundy projektowania.
+
+Zamknięcie poprzednich punktów
+C1: pozostaje wycofane. Brak poświadczania ciphertextu, odszyfrowywania archiwum lub nowego protokołu.
+C2: ZAMKNIĘTE przez zakres R1–R5, wyłączenia i przykłady oczekiwanych fragmentów.
+Nie żądam kompletnego katalogu każdego możliwego nazwiska/firmy ani gwarancji wykrycia wszystkich PII.
+Przykłady i jawnie ograniczony cel ostrzegania wystarczają do punktowego odbioru.
+
+Ocena wykonalności i małości — wyłącznie odczyt dokumentów/kodu
+- output_guard.py:208–219,239,341: istnieje owner wyników i wykrywania; konieczne wskazanie konkretnych wystąpień,
+  połączenie wielu powodów dla jednego wystąpienia oraz ochrona wnętrza tokenów. Nie wymaga drugiego modelu.
+- pipeline.py:323–373 (szew potwierdzony w r1): odrębne S3 i kontrola po silniku; zmiana normalnego REDACT na ostrzeżenia ma istniejącego ownera.
+- UI ma istniejący wynik, ręczne dodanie maskowania i Odkryj (revealText.ts:segments/finalText/toggleReveal).
+  Lista rozstrzygnięć i blokada zwykłych operacji mogą korzystać z tego wyniku/stanu; nie trzeba osobnego serwerowego nadzorcy.
+  Sposób unieważnienia stanu po zmianie wyniku to zwykły obowiązek implementacji, nie żądanie nowej infrastruktury rewizji.
+- R5: firma_context.py:34–68 ma granice nazwy i scan_legal_forms; ner_layer.py:243–250 ma istniejące rozpoznania FIRMA;
+  adapter korzysta z mapy i wariantów FIRMA. To rzeczywiste sygnały do wykorzystania.
+  Kontekst roli typu „Sprzedawca:” i ostrożne powtórzenia wymagają małej reguły ostrzegania w istniejącym ownerze.
+  Nie są gotową pełną funkcją obecnego Guarda, ale nie ma podstaw, by uznać, że przykłady wymagają nowego NER.
+  Wariant niejednoznaczny nie może stać się obietnicą pełnego rozpoznawania firm ani pretekstem do przebudowy FIRMA.
+  Runtime, trafność i faktyczny rozmiar kodu: NOT_CHECKED — będą ocenione po dostawie/szacunku CC.
+- Przykłady R1/R2/R3/R4 są konkretnymi obowiązkami odbioru, a nie dowodem, że obecne reguły już je realizują.
+- S5: zwykłe Zostaw sesyjne; trwałe zapamiętaj odłożone do chronionego przechowywania.
+  Nie dopisywać nowych fraz do jawnego guard_allowlist.json. Brak powodu do budowy pełnego dziennika teraz.
+- S3 pozostaje awarią bez możliwości Zostaw. Nie zastępować go zwykłym ostrzeżeniem.
+- Propozycja S4 jest spójna z ostrzeżeniami i bramką zwykłych operacji. Odniesienie do rewizji oznacza aktualny wynik,
+  nie narzucony nowy protokół. Przy formalnym przepisaniu frozen S4 zastąpić także stare zdanie wyłączające ponowną kontrolę po Odkryj.
+  Obecnego FROZEN nie edytowano.
+
+Wyjaśnienie nowego kontraktu dla OWNERA
+OWNER_CONFIRMED / istniejący kierunek:
+Guard pokazuje pozostałe jawne podejrzenia, każda pozycja wymaga Zakryj/Zostaw; brak zbiorowego bypassu.
+Po zamknięciu listy można zapisać/skopiować/wyeksportować. Po odsłonięciu danych nowy wynik podlega ocenie.
+Kanoniczna postać po przywróceniu zaakceptowana; bez przebudowy OSOBA/FIRMA.
+R5 jawne firmy dopisano według przekazania OWNERA w BOARD; nie traktuję tego jako zgody na każdy techniczny pomysł.
+
+OWNER_DECISION_NEEDED — granica v2 do zatwierdzenia wraz z kontraktem:
+V2 usuwa nie tylko dawne C1, ale też utrzymywaną w v1.1 serwerową kontrolę statusu PSE/rewizji.
+Guard ma blokować NORMALNE operacje aplikacji; ochrona przed CELOWYM obejściem lokalnego UI/API jest wyraźnie poza zakresem.
+To prostszy model zgodny z kierunkiem wyjaśnionym przez Pawła 21.10, ale nie należy nazywać go ochroną nieobchodliwego serwera.
+Nie wskrzeszam serwerowej bramki ani kryptograficznego C1 jako wymogu.
+R1–R5 i ta granica tworzą konkretny kontrakt v2 do zatwierdzenia; nie kieruję technicznych szczegółów z powrotem do OWNERA.
+
+Praktyczny efekt:
+Wyzwalacz: finalny wynik zawiera ostrzeżenia.
+UI: pokazuje fragment/powód; Zakryj aktualizuje maskowanie/mapę, Zostaw świadomie zostawia dany fragment.
+Zero nierozstrzygniętych -> zwykłe przyciski zapisu/kopii/eksportu dostępne.
+Dane: tekst, mapa, rozpoznania silnika i decyzje bieżącego dokumentu przetwarzane lokalnie;
+brak nowego zewnętrznego wysyłania i automatycznego trwałego zapamiętania.
+Biblioteka korzysta z obecnego szyfrowania klienta. Kopia/eksport następują na działanie użytkownika.
+S3: brak dopuszczenia, komunikat spróbuj ponownie/zgłoś błąd.
+Zmiana wyniku/Odkryj: odnowienie oceny; poprzedni stan nie dopuszcza nieocenionych danych.
+Po Zostaw możliwe jest świadome przekazanie fragmentu, który rzeczywiście jest PII — to istota decyzji użytkownika,
+nie powód do ponownego kwestionowania jej przez backend.
+TECHNICAL_ONLY: użycie istniejących ownerów i efemerycznego stanu, bez nowego frameworku.
+UNAUTHORIZED: nie stwierdzono ukrytej implementacji; dostawa jest propozycją kontraktu.
+SAFETY_PRIVACY: istotne jest uczciwe określenie powyższej granicy, nie ma nowego odtworzonego findingu produktu w BRIEF_ONLY.
+
+Następny krok
+Po wyraźnym zatwierdzeniu v2 i zmiany S4 przez Pawła można zamknąć gate OWNERA.
+Formalny commit frozen S4/lock oraz szacunek CC mają nastąpić zgodnie z briefem, przed implementacją.
+Nie wymagam kolejnej poprawki Architekta przy obecnym stanie kontraktu.
+Bez testów, modeli, benchmarków, reproduktorów, implementacji, subagentów i merge.
