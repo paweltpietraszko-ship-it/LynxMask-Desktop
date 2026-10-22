@@ -1,0 +1,76 @@
+LYNX-SILENT-PACK1 — niezależny recheck r4, 22.10.2026
+WERDYKT: PASS na exact SHA6fcab2176def42881ccb3ec0f730eac209c55daa.
+DELIVERY:4de8d16d17d050f0e232fb4c7c7a390b267b7cd9.
+Diff od poprzednio audytowanego753b7afcac0ab5d6b7185c6a376035dbd137a381.
+Baza Tasku:bb0abbc3f4367cfbc3b3f3f52f983e6e12dc3c88.
+Odbiorca: Paweł / CC. F1 z r3 ZAMKNIĘTY. Brak nowych findingów w zbadanym zakresie.
+PASS dotyczy dostawy w połączeniu z zachowanymi warstwami audytu r3 i ograniczeniami poniżej.
+Nie jest poleceniem merge.
+
+Odczyt:
+Wąski diff: jeden plik produkcyjny layers/amount.py (+4/-2), testy i jawne rozszerzenie briefu.
+Wspólna lista _UNIT dla starego i nowego wzorca KWOTA bez waluty.
+Rozszerzenie CC jest opisane w briefie: ten sam błąd wykluczania jednostek występował też w starym wzorcu.
+To korekta tej samej klasy w tym samym ownerze i TASK_SCOPE; nie wymaga nowego projektu ani nowej polityki produktu.
+Wyłączenie jednostek wynika z klasy3 briefu. Nie narzucono listy wszystkich możliwych jednostek.
+Bez zmian spec/lock i kodu firma_context/ner_layer/numeric/credential_patterns.
+
+F1 — niezależny REPRO na exact SHA, realny pipeline -> Guard:
+Zachowany bez zmian repro_r3.py:8/8, exit0.
+- „Wartość pomiaru 1234,56 mm.” pozostaje w całości jawne, brak KWOTA/ostrzeżeń/błędu.
+- Tak samo kwotaformat „12.345,67 mm” oraz słowo kontekstu po pomiarze.
+- Kontrole mm bez kontekstu, g, procent i wersja zachowane.
+- „Do zwrotu1049,63” (ze spacją we właściwym wejściu) nadal dostaje prawidłowy KWOTA.
+To zamyka wszystkie3 warianty F1 z r3.
+
+Niezależna macierz rozszerzenia tej samej klasy:
+49/49 w rzeczywistej apply_amount_layer, bez stubowania jej reguł.
+-11 dodanych jednostek: mm,cm,dm,mg,m3,m³,ml,min,kWh,kW,MWh;
+- każda przy4 formatach:575,63 /1234,56 /2 450,00 /12.345,67;
+-44 pomiary zachowane1:1, bez pozycji mapy;
+-4 analogiczne prawdziwe kwoty „Do zwrotu” nadal maskowane;
+-1 kontrola „Kwota1234,56 w terminie14 dni” (normalne spacje we właściwym wejściu):
+  „w” nie jest mylone z jednostką, kwota maskowana.
+To potwierdza stary i nowy wzorzec, nie tylko literalne3 przypadki z r3.
+Macierz warstwy nie jest nowym benchmarkiem dokumentów; pion pokrywa zachowany repro8/8.
+
+Celowane testy uruchomione osobiście, w osobnych procesach:
+test_silent_pack1.py:30 passed
+test_amounts_numbers.py:20 passed
+test_map_fidelity.py:29 passed
+Razem79 PASS.
+Obejmują też zachowane B1–B3 (rdzeń jednoznaczny, konflikt firm, słowa pospolite)
+i poprawne odtwarzanie map kwot/numerów.
+SyntaxWarning w istniejących docstringach nie jest nowym findingiem.
+
+Dowody wykorzystane z r3, bez mechanicznego ponawiania:
+-370 passed,3 porażki potwierdzone na bazie,2 xfail w wymaganej regresji na753b7af.
+  Nie twierdzę, że cały ten zestaw uruchomiono ponownie na6fcab21.
+- B1–B3 i macierz firm/numerów z r3, kod tych ownerów bez zmian.
+- Niezależny pomiar GOLD120 dokumentów (dev40/test80), baza vs753b7af:
+  ciche dev102->20, test217->52;
+  zbędne69/440 oraz152/880 bez zmian;
+  OSOBA/ADRES/EMAIL bez pogorszenia według użytej metryki.
+Nowego pomiaru GOLD na6fcab21 nie ponawiano: poprawka dotyczy wyłączenia jednostek,
+zachowane dowody + aktualny reproduktor + test ownera + macierz49 dają wystarczający wynik.
+Liczby GOLD na6fcab21 opisane w DELIVERY są dowodem CC, nie nowym niezależnym pomiarem tego rechecku.
+Nie traktować liczników słów/podciągów jako certyfikatu semantycznej poprawności wszystkich spanów.
+
+Gate:
+DELIVERY cytuje WYMAGA_DECYZJI: RATIO214/8=26,8:1, TOTAL_LINES222/150.
+To jawne progi mechaniczne, bez odtworzonego defektu produktu.
+Wcześniej odnotowano zgodę na szacowany zakres~200l; nie żądam kolejnej zgody za rutynowy
+opisany mikrofix tej samej klasy. Nie zmieniam wyniku gate i nie przypisuję nowej decyzji OWNERA.
+Rekomendacja techniczna: dopuścić wskazany zakres przy odbiorze.
+
+Granice:
+Bez nowego GOLD, pełnej suity repo, OCR, GUI, archiwum/eksportu.
+PASS tylko exact SHA i opisanych warstw wraz z zachowanymi dowodami, nie dowolnego dokumentu.
+Bez subagentów, zmian produktu, aktualizacji pamięci i merge.
+
+Izolacja / artefakty:
+C:/Users/p_pie/AppData/Local/Temp/lynx-silent-pack1-audit-r4-20261022/
+exact/,run_test.py,units.py,units.json.
+Zachowany reproduktor w exact/tasks/LYNX-SILENT-PACK1/round_01/tests/repro_r3.py.
+Własne profile/stany/klucze, HerBERT OFF; backend/profil/token Pawła nietknięte.
+Po wystarczających dowodach kończę. Następny krok: odbiór Pawła; scalenie tylko na jego polecenie.
