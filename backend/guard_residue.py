@@ -14,7 +14,7 @@ import os
 import re
 from pathlib import Path
 
-from osoba_not_person import OSOBA_DENYLIST, WHITE_LISTS
+from osoba_not_person import OSOBA_DENYLIST, WHITE_LISTS, in_city_name
 from output_guard import _LEAK_HIGH, _LEAK_MEDIUM, _TOKEN_RE
 
 _UP = "A-ZĄĆĘŁŃÓŚŹŻ"
@@ -48,6 +48,8 @@ _INITIAL_RE = re.compile(rf"\b(?:(OSOBA_\d{{3}})|([{_UP}][{_LO}]+))[ \t]+([{_UP}
 # R3: cyfry tuż przed/po tokenie NUMER/ADRES, kod pocztowy (+ miejscowość) po ADRES, litery doklejone do tokenu
 _DIGITS_BEFORE_RE = re.compile(r"(?<![\w/.-])(\d[\d \-]{0,10}?)[ \t]?$")
 _DIGITS_AFTER_RE = re.compile(r"[ \t]?(\d[\d\-]*(?:[ \t]\d+)?)(?![\w/])")
+# [LYNX-OSOBA-PACK4] miejscowość tuż po zakrytym adresie („ADRES_003, Ostrów Wielkopolski”) — część adresu, nie „samo miasto”
+_CITY_AFTER_RE = re.compile(rf",[ \t]+([{_UP}][{_LO}]+(?:[ \t-][{_UP}][{_LO}]+){{0,2}})(?![\w-])")
 _POSTAL_AFTER_RE = re.compile(rf",?[ \t]+(\d\d[ \t]?-[ \t]?\d(?:[ \t]?\d){{2}}(?:[ \t]+[{_UP}][\w-]+)?)")
 _GLUED_RE = re.compile(r"([A-Za-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ]{2,})")
 # R4: słowo-klucz + wartość z co najmniej dwiema cyframi
@@ -98,7 +100,7 @@ def _person_word(text: str, m: re.Match) -> bool:
         return True  # „Pan Rogalik” — tytuł to dowód osoby niezależnie od słownika
     before = text[max(0, m.start() - 80):m.start()]
     if low in OSOBA_DENYLIST or low in WHITE_LISTS or low in _OFFICE_TERMS or _sentence_start(text, m.start()) \
-            or _DEFINED_RE.search(before) or _in_institution(before):
+            or _DEFINED_RE.search(before) or _in_institution(before) or in_city_name(text, m.start(), m.end()):
         return False
     parts = [_morf_interps(w) for w in word.split("-")]
     if any(p is None for p in parts):
@@ -126,6 +128,13 @@ def _r1(text: str):
             yield m.start(), m.end(), "R1", "Możliwe imię lub nazwisko, którego silnik nie zakrył"
 
 
+def _released(text: str, words: list[str]):
+    """[LYNX-OSOBA-PACK4] Kandydaci OSOBA odrzuceni przez silnik z braku dowodu — każde wystąpienie, także na początku zdania."""
+    for w in dict.fromkeys(words):
+        for m in re.finditer(rf"(?<![\w-]){re.escape(w)}(?![\w-])", text):
+            yield m.start(), m.end(), "R1", "Możliwe nazwisko — silnik nie miał dowodu, że to osoba"
+
+
 def _r2(text: str):
     from ner_layer import _PERSON_FORMS
     for m in _INITIAL_RE.finditer(text):
@@ -147,10 +156,13 @@ def _r3(text: str):
                           or kind == "ADRES" and len(b.group(1).strip()) == 1):  # „4 ADRES_001” = OCR „ul.”
                 found.append(((lo + b.start(1), lo + b.end(1)), "Resztka numeru obok zakrytego fragmentu"))
             for rx, reason in ((_DIGITS_AFTER_RE, "Resztka numeru obok zakrytego fragmentu"),
-                               (_POSTAL_AFTER_RE, "Kod pocztowy obok zakrytego adresu")):
+                               (_POSTAL_AFTER_RE, "Kod pocztowy obok zakrytego adresu"),
+                               (_CITY_AFTER_RE, "Miejscowość obok zakrytego adresu")):
                 a = rx.match(text, t.end())
                 if a and (rx is _DIGITS_AFTER_RE or kind == "ADRES"):
                     found.append((a.span(1), reason))
+                    if rx is _POSTAL_AFTER_RE:
+                        break  # kod z miejscowością już wskazany — bez drugiej pozycji na samą miejscowość
         g = _GLUED_RE.match(text, t.end())
         if g:
             found.append((g.span(1), "Litery doklejone do zakrytego fragmentu"))
@@ -223,14 +235,16 @@ def load_allowlist() -> list[str]:
 _RED = ("HIGH", "MAP_LEAK")
 
 
-def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list[str] | None = None) -> list[dict]:
+def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list[str] | None = None,
+                     released_words: list[str] | None = None) -> list[dict]:
     """Ostrzeżenia dla finalnego tekstu: [{id, start, end, fragment, rule, level, reasons}], posortowane po pozycji.
     Fragmenty nachodzące na siebie → jedna pozycja (wszystkie powody); nic wewnątrz tokenów; allowlista wycisza fragment."""
     tokens = [m.span() for m in _TOKEN_RE.finditer(text)]
     masked = _TOKEN_RE.sub(lambda m: "#" * len(m.group(0)), text)
     allow = {a.strip().casefold() for a in allowlist or [] if isinstance(a, str) and a.strip()}
     hits = []
-    for src in (_patterns(masked), _map_leaks(masked, map_values or []), _r1(text), _r2(text), _r3(text), _r4(text), _r5(text)):
+    for src in (_patterns(masked), _map_leaks(masked, map_values or []), _r1(text), _released(text, released_words or []),
+                _r2(text), _r3(text), _r4(text), _r5(text)):
         for s, e, rule, reason in src:
             if s < e and not any(ts < e and s < te for ts, te in tokens) and text[s:e].strip().casefold() not in allow:
                 hits.append((s, e, rule, reason))

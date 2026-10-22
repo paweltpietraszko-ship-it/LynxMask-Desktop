@@ -164,6 +164,10 @@ def test_prawdziwy_spacy_span_z_nowa_linia(_full, text, hidden):
     with contextlib.redirect_stdout(io.StringIO()):
         ents = spacy_ner.detect_entities(text)
         res = run(text)
-    assert any("\n" in text[e.start:e.end] for e in ents), "model nie zwrócił spanu z \\n — syntetyk nie falsyfikuje"
+    # [LYNX-OSOBA-PACK4] Osoby nie są już sklejane przez koniec linii/przecinek (lista nazwisk = osobne tokeny), więc span
+    # z \n powstaje tylko z samego modelu. Warunek: model dał osoby (z \n albo osobno) — sprawdzamy wciąż, że żadne nazwisko
+    # nie zostaje jawne.
+    assert any("\n" in text[e.start:e.end] for e in ents) or sum(e.label == "OSOBA" for e in ents) >= 2, \
+        "model nie zwrócił osób — syntetyk nie falsyfikuje"
     assert not res.guard_blocked, res.guard_reasons
     _check(text, res.text, res.reverse_map, hidden)

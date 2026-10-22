@@ -269,6 +269,8 @@ def _merge_adjacent_entities(
             gap_text = text[current.end:nxt.start]
             if gap_text and not re.match(r'^[\s.,\-"]*$', gap_text):  # [BUG-3][BUG-D]
                 break
+            if current.label == TOKEN_OSOBA and not re.fullmatch(r"[ \t]*|-", gap_text):  # [LYNX-OSOBA-PACK4] 2: lista osób
+                break
             # Scalaj
             current = NERResult(
                 text=text[current.start:nxt.end].strip(),

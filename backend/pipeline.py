@@ -114,6 +114,7 @@ from typing import Any
 import ner_layer
 import verbal_amounts
 from ner_blocklist import _LEGAL_SUFFIXES_LOWER as _FIRMA_SUFFIXES
+from osoba_not_person import released, start_run  # [LYNX-OSOBA-PACK4] krok 2 → Guard
 
 logger = logging.getLogger("pseudominizer.pipeline")
 
@@ -259,6 +260,7 @@ def pseudonymize_document(text: str, state: AppState) -> PipelineResult:
     Fail-closed dla output_guard: blokada jest respektowana.
     """
     try:
+        start_run()  # [LYNX-OSOBA-PACK4] nowy dokument: pusty rejestr kandydatów bez dowodu
         return _run_pipeline(text, state)
     except Exception as e:  # [LYNX-FAILCLOSED-S3] F1b: awaria = wynik bez treści i mapy, bez treści wyjątku (S3/S5)
         logger.error("[PIPELINE] Nieoczekiwany błąd: %s", type(e).__name__)
@@ -351,7 +353,7 @@ def _apply_output_guard(
                 return _s3_failure("[GUARD_ERROR] awaria Guarda")
             guard_reasons, guard_values = guard_result.reasons, guard_result.values
             # [LYNX-GUARD-A] S4: bez automatycznego [REDACTED] i blokady — każde wykrycie to ostrzeżenie do decyzji
-            guard_warnings = collect_warnings(text, guard_values, _allowlist)
+            guard_warnings = collect_warnings(text, guard_values, _allowlist, released())  # [PACK4] + kandydaci bez dowodu
             if guard_warnings:
                 logger.warning("[PIPELINE] Guard: %d ostrzeżeń do decyzji", len(guard_warnings))
         except Exception as e:

@@ -92,3 +92,12 @@ def test_przesuniecie_o_naglowek_pse():
     text = "Świadek Śludkowskiego nie stawił się."
     w = shift_warnings(collect_warnings(text), 10)[0]
     assert ("x" * 10 + text)[w["start"]:w["end"]] == "Śludkowskiego"
+
+
+def test_czlon_miasta_wieloczlonowego_bez_pytania():  # [LYNX-OSOBA-PACK4] pomiar GOLD-SET: „Jelenia Góra”, „Tomaszów Mazowiecki”
+    assert collect_warnings("Kraków, 01.02.2026\nDoręczono do Jelenia Góra.\nOddział: NUMER_006, Tomaszów Mazowiecki") == []
+
+
+def test_miejscowosc_po_zakrytym_adresie_to_pytanie():  # [LYNX-OSOBA-PACK4] adres bez kodu: ulica zakryta, miasto jawne
+    assert _frags("Adres doręczeń: ADRES_003, Ostrów Wielkopolski") == {"Ostrów Wielkopolski": ["R3"]}
+    assert _frags("Data: NUMER_008, Jelenia Góra") == {}

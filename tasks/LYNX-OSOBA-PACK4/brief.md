@@ -62,6 +62,7 @@ TASK_SCOPE:
 - backend/tests/test_osoba_pack4.py
 - backend/tests/test_ner_multiline.py
 - backend/tests/test_guard_residue.py
+- backend/tests/test_audyt_2026_10.py
 - tasks/LYNX-OSOBA-PACK4/brief.md
 - tasks/LYNX-OSOBA-PACK4/repo_before.hash
 
@@ -82,3 +83,15 @@ Szacunek: kod ~200 l. + testy ~150 l. (>150 — zgoda OWNERA przed kodem).
 ## Korekta C1 (Codex BRIEF_ONLY r1 `3cdcb3c`)
 Punkt 4 i odbiór ujednolicone z S4: „Pani Róża Zielona” = jedna osoba = jeden token z wartością „Róża Zielona”. Alternatywa dwóch tokenów usunięta.
 Zgoda OWNERA na rozmiar (~350 l. z testami) udzielona 22.10 („Zgoda”).
+
+## ROZSZERZENIE CC (22.10, ta sama klasa — skutki kroku 2 widoczne w pomiarze LYNX-GOLD-SET)
+Wykryte pomiarem „widoku człowieka” na zbiorze GOLD (dev) po wdrożeniu kroku 2:
+1. **Człony miejscowości przestały być zakrywane jako OSOBA**, ale Guard R1 pytał o nie („Góra” w „Jelenia Góra” 14×, „Tomaszów” w „Tomaszów Mazowiecki” 10×).
+   - `osoba_not_person.in_city_name()` (baza SIMC `_CITY_FORMS`) to jedno miejsce. Używają go krok 2 (nie OSOBA, nie pytanie), ścieżka słownikowa i Guard R1.
+   - Słowo znane Morfeuszowi wyłącznie jako nazwa miejsca nie jest pytaniem (samo miasto jawne — polityka OWNERA).
+2. **Miasto tuż po zakrytym adresie** („ADRES_003, Ostrów Wielkopolski”) wcześniej przypadkiem pytane przez R1. Teraz jawna reguła R3 „Miejscowość obok zakrytego adresu”: to część adresu, nie „samo miasto”.
+3. **Kandydat OSOBA będący samą liczbą** („6658,63” z NER) zostaje zakryty jak dotąd. „Kont0” (OCR) ocenia krok 2.
+
+Testy:
+- `test_guard_residue.py` +2: człon miasta bez pytania; miejscowość po ADRES = pytanie.
+- `test_audyt_2026_10.py`: `test_kont0_nie_jest_osoba` przeszedł (XPASS) → marker zdjęty zgodnie z zasadą pliku.
