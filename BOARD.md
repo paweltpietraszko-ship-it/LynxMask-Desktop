@@ -102,7 +102,7 @@ Większe tematy idą do własnego wiersza tabeli albo do `LYNX-ENGINE-BACKLOG`.
 - **CC:** krok 1 zmergowany; kolejne kroki przejmuje świeża instancja CC (stan w pamięci CC i w tej sekcji). Po każdej zmianie strażnik regresji `benchmark.py` + porównanie z obecnym programem na tych samych danych.
 - **Nie podejmować:** `LYNX-POLIGON`, `LYNX-ARENA-SIGNALS-PILOT`, F0a `LYNX-ARCH-CANDIDATES` (w `ODLOZONE.md`); gałęzie `experiment/*` tylko historia/przyrząd.
 
-- **Codex:** 22.10 GUARD-B `ae9eceb` — PASS r3 `ab78429`, wszystkie F1–F3 zamknięte. Repro r1 7/7, r2 4/4, 18 testów Node i tsc PASS. Wygląd pozostaje zaakceptowany; brak nowych wymagań i merge. A+B wyłącznie na polecenie Pawła.
+- **Codex:** 22.10 przekazanie dla nowej sesji zaktualizowane: `CODEX_START_HERE.md` (`9c5131c`) i `CODEX_HANDOFF.md` (`9abaeff`). GUARD-A+B już zmergowane (`9465f96`), F1–F3 B zamknięte (PASS `ab78429`). Bieżące nowe sprawy: dostawa GUARD-FIX1 `cb81de7` czeka na audyt, GOLD-SET ma odrębne zlecenie 120 dokumentów; nie rozpoczęto ich przy aktualizacji przekazania. Audyty nadal wąskie, stare dowody/repro do wykorzystania, wycofanego C1 i zaakceptowanego wyglądu nie otwierać.
 
 | ID | Autor | Odbiorca | Branch | Exact SHA | Status | Wiadomość |
 |---|---|---|---|---|---|---|
