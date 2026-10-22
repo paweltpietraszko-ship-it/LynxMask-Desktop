@@ -75,3 +75,8 @@ Narzędzie: `tasks/LYNX-GOLD-SET/measure/human_view.py`; dane lokalnie: `backend
 - Testy: `test_guard_residue.py` +1, `test_osoba_pack4.py` +1 (pełny pipeline, MALINA). Razem 63 passed.
 - Reproduktor Codexa `round_01/tests/repro_r3.py`: F1 ok, F2 ok, controls PASS, exit 0.
 - GOLD bez zmian: ciche 142/297, zbędne 69/152, pytania 2,62/2,23.
+
+## Runda 3 — Codex r4 F2 (`c1f0c6c`)
+- Wcześniej obcinanie końcówki rozróżniało wielkość liter, więc kandydat „RÓŻA” nie obejmował „RÓŻY”. Teraz `_INFLECTION_RE` działa bez względu na wielkość liter.
+- Test: parametryzacja Róża / RÓŻA / RÓŻY → ostrzeżenia na RÓŻA i RÓŻY. Testy: 66 passed.
+- Reproduktory Codexa: `repro_r3.py` exit 0, `repro_r4.py` exit 0.

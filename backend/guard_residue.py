@@ -129,7 +129,7 @@ def _r1(text: str):
 
 
 _INFLECTIONS = "owie|ami|ach|ego|emu|owi|iem|ów|om|em|ej|ie|a|u|ą|ę|y|i|e"  # końcówki odmiany nazwisk/imion
-_INFLECTION_RE = re.compile(rf"(?:{_INFLECTIONS})$")
+_INFLECTION_RE = re.compile(rf"(?:{_INFLECTIONS})$", re.IGNORECASE)  # Codex r4 F2: „RÓŻA” → „RÓŻ” jak „Róża” → „Róż”
 
 
 def _released(text: str, words: list[str]):

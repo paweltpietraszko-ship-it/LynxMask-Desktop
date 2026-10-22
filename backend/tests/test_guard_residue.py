@@ -116,3 +116,9 @@ def test_kandydat_bez_dowodu_wersaliki_i_krotka_odmiana():  # [LYNX-OSOBA-PACK4]
     ws = collect_warnings("Róża złożyła wniosek. Róży dotyczy odpis.", released_words=["Róża"])
     assert {w["fragment"] for w in ws} >= {"Róża", "Róży"}, ws
     assert "Różowy" not in {w["fragment"] for w in collect_warnings("Różowy płot.", released_words=["Róża"])}
+
+
+@pytest.mark.parametrize("released", ["Róża", "RÓŻA", "RÓŻY"])
+def test_odmiana_kandydata_niezaleznie_od_wielkosci_liter(released):  # [LYNX-OSOBA-PACK4] Codex r4 F2
+    ws = collect_warnings("RÓŻA złożyła wniosek. RÓŻY dotyczy odpis.", released_words=[released])
+    assert {w["fragment"] for w in ws} >= {"RÓŻA", "RÓŻY"}, ws
