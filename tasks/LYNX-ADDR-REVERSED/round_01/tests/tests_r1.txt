@@ -1,0 +1,85 @@
+LYNX-ADDR-REVERSED — exact-SHA rozpoznanie i OWNER_EXPLANATION_GATE r1, 22.10.2026
+STATUS: OWNER_DECISION_NEEDED / PARTIAL. Wstrzymuję werdykt PASS/FAIL zgodnie z AGENTS.md.
+Exact SHA: 352975698a2a321709ecd39c113d8fdc8b26b074 (kod39c92397a9faeba4603274c064419098f17de2e7).
+Baza: 3ad472b. Odbiorca: Paweł; po rozstrzygnięciu CC.
+Źródła: frozen arch/spec.md S1/S2/S4, brief Tasku wraz z korektą dat, DELIVERY na exact SHA.
+Jedyny zmieniony owner produkcyjny: backend/layers/address.py, nowy helper _with_neighbours.
+
+OWNER_CONFIRMED — zakres wynikający z dotychczasowego kontraktu:
+Adres ma być zakryty z bezpośrednio sąsiadującym miastem (SIMC), także przy kolejności miasto->kod.
+Samo miasto bez adresu/kodu zostaje jawne. Dla dat po mieście właściwa jest korekta briefu:
+miasto jawne, brak ADRES, data może być dotychczasowym NUMER. Nie wymagano powrotu do pustej mapy dat.
+
+TECHNICAL_ONLY:
+Faza3 uzupełnia hity przed istniejącym wspólnym _apply_hits; brak nowego formatu tokenów, UI, eksportu lub usługi sieciowej.
+Nie oceniałem osobno próby Qwen, jej WIP ani historii procesu poza koniecznym odczytem briefu/DELIVERY.
+
+SAFETY_PRIVACY — T1, potwierdzony brak pokrycia wymaganego separatora:
+TRACE: brief, Rozszerzenie, Zasada: miasto jest częścią adresu przy bezpośrednim sąsiedztwie
+"(przecinek/spacja)" z ulicą z numerem albo kodem.
+OWNERSHIP: _with_neighbours używa _COMMA_RE do dołączenia miasta po ulicy, więc dopuszcza tylko przecinek.
+REPRO realnego pipeline->Guard na exact SHA, rzeczywiste spaCy/Morfeusz, bez stubów:
+"ul. Polna 5 Radom" -> "ADRES_001 Radom", mapa ADRES_001="ul. Polna 5", guard_warnings=[].
+Miasto stanowiące tu część adresu pozostaje jawne i bez ostrzeżenia. GUI/eksportu nie wykonywano.
+Kontrola "ul. Polna 5, Radom" -> jeden ADRES obejmujący całość.
+Ta sama klasa w warstwach: tabulator, Jelenia Góra po spacji oraz Wroclaw po spacji też zostają jawne.
+DELIVERY jawnie opisuje zawężenie do przecinka, ale brief dopuszcza również spację.
+Nie wydaję jeszcze końcowego FAIL dostawy, bo występuje równolegle poniższy trigger OWNER_EXPLANATION_GATE.
+
+OWNER_DECISION_NEEDED — T2: nazwisko wyglądające jak miasto zostaje częścią ADRES.
+Trigger: "Pan Jan Kalisz, ul. Polna 5".
+BAZA 3ad472b, rzeczywisty pipeline:
+"Pan OSOBA_001, ADRES_001"; mapa OSOBA_001="Jan Kalisz", ADRES_001="ul. Polna 5".
+DOSTAWA, ten sam rzeczywisty pipeline:
+"Pan OSOBA_001 ADRES_001"; mapa OSOBA_001="Jan", ADRES_001="Kalisz, ul. Polna 5".
+W obu przypadkach guard_warnings=[] i brak błędu.
+To zmiana już poprawnie rozpoznanej osoby: nazwisko wędruje z OSOBA do ADRES, osoba dzieli się na dwie kategorie.
+Nie jest to nowy wyciek — oba fragmenty są zakryte — ale nie wolno uznać jej automatycznie za akceptowalną.
+S4 mówi: jedna wiarygodnie ustalona osoba = jeden token; nie jest tu zlecana nowa architektura.
+
+Dane / UI / błąd i powrót dla T2:
+- Odczyt: tekst dokumentu oraz lokalna baza form miast SIMC.
+- Zmiana: przypisanie fragmentów do istniejącej mapy tokenów; w teście mapa w pamięci, własny lokalny profil/klucze.
+- Nic nie wysyłano do sieci; nie testowano zapisu/archiwum i nie deklaruję nowych zapisów na dysk w produkcie.
+- Wynik przekazany do UI ma dwa wskazane wyżej tokeny i nie ma ostrzeżenia o podziale osoby.
+  Samego GUI w tym reproduktorze nie oglądano.
+- Pipeline nie zgłasza awarii. Przywrócenie obu tokenów może odzyskać oryginał 1:1,
+  ale nie naprawia klasyfikacji osoby rozdzielonej między OSOBA i ADRES.
+- Rekomendacja: zachować już rozpoznaną osobę w jednym OSOBA, a właściwy adres w ADRES, zgodnie z dotychczasowym S4.
+
+UNAUTHORIZED — status twierdzenia o akceptacji, nie oskarżenie całej dostawy:
+DELIVERY, Granice, stwierdza, że wciągnięcie nazwiska Kalisz do ADRES jest "zgodne z polityką".
+Nie znaleziono jawnego rozstrzygnięcia OWNERA dopuszczającego ten konkretny wyjątek od S4.
+Zdanie implementatora nie zastępuje decyzji OWNERA. Nie zapisuję nowej akceptacji na podstawie samej dostawy.
+
+Co już sprawdzono:
+- Własna macierz20 przypadków w run_pipeline_new z wyłączonym NER:16 zgodnych,4 niezgodne (wyłącznie rodzina T1).
+  Obejmuje kierunek miasta przed/po, przecinek/spację/tab,1–2 słowa/ASCII, ucięty kod, ulicę bez prefiksu,
+  dwa adresy i kontrole samych miast/dat/niepoprawnego kodu. Odtworzenie tekstu1:1 w tych przypadkach zachowane.
+- Pion realnego silnika i Guarda: T1, kontrola przecinka, miasto przed ulicą, Jan Kalisz z/bez Pan.
+  Potwierdzono brak ostrzeżeń w T1 i rzeczywistą zmianę kategorii T2.
+- Osobna obserwacja bez nowego warunku werdyktu: _match_city może przejść po przecinku do następnego wiersza;
+  nie utożsamiam kodowego komentarza "ta sama linia" z niezależną decyzją produktową.
+- Testy dostawy uruchomione osobiście, osobne procesy:
+  test_addr_reversed.py15 passed; wymagany test_addr_email_leaks.py22 passed. Razem37.
+  Dla TestClient użyto własnego źródła/stanu, odcięto rzeczywiste połączenia z portem8765 i siecią zewnętrzną.
+- Implementatorowe PASS są dowodem pomocniczym; nie stanowią werdyktu.
+
+NOT_CHECKED / PARTIAL:
+Pomiar GOLD dev/test i szersza regresja wymagane kontraktem nie zostały jeszcze niezależnie wykonane.
+Liczby DELIVERY o ADRES120/120 i240/240 pozostają twierdzeniem CC na tym etapie.
+Nie uruchamiano pełnej suity, OCR, benchmarków ani nowych modeli przed wyjaśnieniem zachowania T2.
+Brak badania nie jest automatycznym FAIL.
+Gate CC: WYMAGA_DECYZJI tylko RATIO102/1=102:1,102 linie. To osobna mechaniczna informacja, nie powód wstrzymania właścicielskiego.
+
+Dalszy krok:
+Paweł potwierdza OWNER_CORRECTED (rekomendowane: osoba ma zostać jednym OSOBA, adres osobnym ADRES)
+albo jawnie OWNER_ACCEPTED dla wyjaśnionego wyjątku. Nie uznaję milczenia za akceptację.
+Dopiero potem końcowy werdykt wg zamrożonego kontraktu; zachować dowody T1/T2 i nie powtarzać ukończonych badań bez potrzeby.
+Jeżeli wybór jest korektą do istniejącego S4, techniczna poprawka wraca do CC, bez projektowania przez kolejne rundy ocen.
+
+Artefakty lokalne:
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/addr-reversed-audit-r1/
+audit.py, matrix.json, vertical.json, compare_person.py, base-person.json, run_test.py, exact/, base/.
+Przenośny reproduktor obserwacji: round_01/tests/repro_r1.py <izolowany-backend> <własny-stan>.
+Wszystkie przykłady są syntetyczne. Bez zmian produktu, merge i subagentów; profile Pawła nietknięte.
