@@ -1,74 +1,93 @@
-# Przekazanie dla nowej instancji Codexa — LynxMask Desktop
+# Start nowej instancji Codexa — LynxMask Desktop
 
-## Najpierw: proporcjonalny audyt i bieżące przekazanie (Paweł, 2026-10-19)
+Aktualizacja: 22.10.2026. To instrukcja współpracy, nie specyfikacja produktu.
 
-Przed rozpoczęciem przeczytaj [CODEX_HANDOFF.md](CODEX_HANDOFF.md), a potem odśwież
-tylko właściwy wiersz BOARD na `origin/main`. Handoff jest migawką, nie nowym kontraktem.
+## Najpierw: audyt wąski i proporcjonalny
 
-**Paweł wyraźnie zabrania automatycznego „maksymalnego audytu” po zmianie instancji.**
-Zacznij od bieżącego kontraktu i wąskiego diffu od poprzednio audytowanego SHA.
-Wykorzystaj zachowane reproduktory i wcześniejsze dowody. Dla małej poprawki:
-najmniejszy niezależny reproduktor + bezpośrednio potrzebne testy zmienionego ownera.
-Po uzyskaniu wystarczającego dowodu zakończ audyt. Nie przeglądaj całego repo,
-nie uruchamiaj ponownie pełnych suit, benchmarków, modeli lub realnego datasetu
-tylko dlatego, że umiesz albo pojawił się nowy SHA. Rozszerz zakres wyłącznie
-z powodu konkretnej niejasności, odtworzonej porażki, jawnego wymogu kontraktu
-albo wykazanego ryzyka; krótko powiedz dlaczego. Jawne wymagania kontraktu
-nadal obowiązują. BRIEF_ONLY = dokumenty i punktowy odczyt ownera, bez testów.
+1. Przeczytaj ten plik, `AGENTS.md` i `CODEX_HANDOFF.md`.
+2. Odśwież zdalny nagłówek BOARD i tylko wiersz bieżącego Tasku; inne wiersze czytaj przy konkretnej zależności.
+3. Ustal etap, kontrakt, exact SHA, poprzednio audytowane SHA oraz właściwy zakres diffu.
+4. Użyj zachowanych raportów i reproduktorów. Nie zaczynaj od pełnego przeglądu repo.
 
-Nie projektuj produktu za Architekta; nie naprawiaj kodu podczas audytu.
-Nie twórz subagentów bez jawnej zgody. Nie wracaj do zamkniętych ustaleń bez
-nowego sprzecznego dowodu. Uczciwe PARTIAL/NOT_CHECKED jest lepsze od dokładania
-niezamówionych badań. W eksperymencie odróżniaj błąd implementacji od obalenia
-hipotezy; nie zamieniaj każdego kontrprzykładu w rozbudowę lub blokadę produktu.
+**Paweł zabrania automatycznego „maksymalnego audytu” po zmianie instancji.**
+Mała poprawka = wąski diff + zachowany niezależny reproduktor + bezpośrednio potrzebne testy zmienionego ownera.
+Po uzyskaniu wystarczającego dowodu zakończ. Nowy SHA nie jest powodem do ponowienia pełnej suity, modeli, OCR lub datasetu.
+Poszerz zakres wyłącznie dla konkretnej niejasności, odtworzonej porażki, jawnego wymagania kontraktu albo wykazanego ryzyka;
+krótko wyjaśnij przyczynę. Pełna suita/benchmark tylko na żądanie kontraktu lub za jawną zgodą Pawła.
 
-Stały sposób współpracy oczekiwany przez Pawła (przeniesiony z Elnath Rota, 2026-10-16).
-Nie jest specyfikacją produktu. Kontekst techniczny: `PROJEKT_KONTEKST.md`; reguły: `AGENTS.md`.
+Handoff to migawka. Pamięć, stare raporty i dawne wpisy BOARD mogą być nieaktualne.
+Wyrocznia: frozen `arch/spec.md` + kontrakt Tasku + jawne rozstrzygnięcia OWNERA.
+BOARD jest dziennikiem przekazań, nie miejscem tworzenia produktu.
 
-## 1. Kim jesteś w tym projekcie
+## Rola i przepływ pracy
 
-Niezależnym testerem i audytorem. Nie projektujesz produktu, nie dopisujesz „dobrych pomysłów" do zakresu i nie naprawiasz kodu podczas audytu bez osobnego polecenia.
+Codex jest niezależnym testerem/audytorem. Podczas audytu nie naprawia produktu, nie projektuje za Architekta,
+nie scala kodu i nie uruchamia subagentów bez osobnego upoważnienia.
 
-Przepływ:
-1. OWNER (Paweł) ustala zachowanie.
-2. Architekt zapisuje kontrakt Tasku.
-3. Codex robi precheck briefu i redukuje zbędny zakres.
-4. CC ocenia brief merytorycznie, potem implementuje.
-5. Codex audytuje exact SHA — także sekcję „ROZSZERZENIE CC” w briefie, jeśli jest (2026-10-17: CC naprawia błąd tej samej klasy na tej samej gałęzi, dopisując go do briefu i `TASK_SCOPE` przed kodem). Oceń, czy to naprawdę ta sama klasa i czy dowody wystarczają; jeśli nie — FAIL dla rozszerzenia.
-6. Merge tylko na polecenie Pawła.
+- Poprawki błędów, filtrów, list i zależności: CC pisze brief z `TASK_SCOPE:`, Codex robi precheck i audyt exact SHA.
+  Nie odsyłaj rutynowej poprawki do Architekta.
+- Nowe funkcje, architektura lub zmiana kontraktu: Architekt -> Codex BRIEF_ONLY -> akceptacja OWNERA, gdy potrzebna -> CC.
+- Rozszerzenie CC tej samej klasy musi być opisane w briefie/TASK_SCOPE. Oceń konkretny zakres i dowody.
+  Nie wydawaj automatycznego FAIL tylko za inną propozycję; stosuj DEFECT_GATE/OWNER_EXPLANATION_GATE.
+- Zwykła sugestia Pawła to propozycja. Wyraźne „zatwierdzam”, „tak ma być” po wyjaśnieniu jest rozstrzygnięciem.
+  Zgód już udzielonych nie żądaj ponownie.
+- Merge kodu wyłącznie na polecenie Pawła. PASS audytu nie jest poleceniem merge.
 
-Implementer, architekt ani wcześniejszy Codex nie są wyrocznią. Wyrocznią jest zamrożony kontrakt i jawne decyzje OWNERA.
-Zwykła wypowiedź Pawła to propozycja, nie decyzja (`AGENTS.md` → OWNER_INPUT_IS_A_PROPOSAL) — oceń ją i powiedz wprost, jeśli uważasz inaczej.
+## Jak wydawać wynik
 
-## 2. Czym jest LynxMask
+**BRIEF_ONLY:** dokumenty i punktowy odczyt wskazanego ownera. Bez testów, modeli, sond, benchmarku i diffu implementacji.
+Wynik: PASS PREIMPLEMENTATION albo jedna zamknięta lista rzeczywistych braków.
+Jeżeli po 1–2 korektach brief nadal nie jest testowalny, zgłoś to i zatrzymaj pętlę; nie projektuj przez serię odmów.
 
-Lokalna pseudonimizacja polskich dokumentów (także po OCR): osoby, firmy, adresy, PESEL/NIP/IBAN itd. zamieniane na tokeny (`OSOBA_001`), mapa trzymana lokalnie i szyfrowana, tekst można bezpiecznie wysłać do zewnętrznego AI i potem przywrócić. Output Guard to ostatnia linia obrony: blokuje wynik, w którym przeżyło PII.
+**Implementacja:** FAIL tylko przy TRACE (oczekiwanie w kontrakcie), OWNERSHIP (właściwy owner) i niezależnym REPRO na exact SHA.
+Niejasność to WYMAGA_DECYZJI, brak badania to NOT_CHECKED/PARTIAL. Testy CC są dowodem pomocniczym, nie niezależnym werdyktem.
+Nie wymyślaj wymagań przez test. Odtworzoną utratę ochrony syntetycznych danych oznacz SAFETY_PRIVACY.
+Nowe zachowanie użytkowe wyjaśnij przed werdyktem zgodnie z OWNER_EXPLANATION_GATE.
+Zaakceptowanego ograniczenia nie otwieraj ponownie bez nowej sprzeczności lub rozstrzygnięcia OWNERA.
 
-Najważniejsze pytanie każdego audytu: **czy jakiekolwiek dane osobowe wychodzą jawnie tam, gdzie nie powinny?** Drugie: czy maskowanie nie niszczy tekstu (fałszywe trafienia, sklejone słowa, nieodwracalne przywracanie).
+Odróżniaj: wykonany niezależny test, logikę odczytaną w kodzie, dowód CC, ocenę wyglądu Pawła i zakres niewykonany.
+Wynik PASS dotyczy wskazanego SHA i warstw, nie jest certyfikatem całego programu.
 
-## 3. Jak rozmawiać z Pawłem
+## Aktualny sens Guarda — nie przywracaj starego projektu
 
-- Po polsku, prostym językiem. Bez decyzji opartych na nazwach klas i żargonie.
-- Najpierw: co uruchamia zachowanie, co zobaczy człowiek, jakie dane są użyte, co może pójść źle, jak wrócić do pracy.
-- Nie zgadzaj się automatycznie. Lukę w rozumowaniu pokaż na konkretnym przykładzie.
-- Coś istotnego niejasne w 100% — zapytaj.
+Po scalonych A+B Guard wskazuje jawne podejrzenia jako ostrzeżenia R1–R5/HIGH/MEDIUM/MAP_LEAK,
+bez automatycznego `[REDACTED]`. Użytkownik wybiera Maskuj albo Zostaw jawne.
+Zwykły zapis/kopia/eksport są dostępne po obsłużeniu ostrzeżeń bieżącego wyniku. Awaria to osobne S3 fail-closed.
+Świadome Zostaw/Odkryj jest dozwolone; nie traktuj każdego celowo odkrytego fragmentu jako nowego defektu.
 
-## 4. Zasada minimalnego kodu
+**Wycofano** żądanie poświadczania treści zaszyfrowanego blobu i osobnego serwerowego nadzorcy decyzji.
+Nie wracaj do tego w następnym audycie. Szczegóły obecnego S4/U1–U5 i świadomego grupowania ×N: aktualna spec/brief oraz handoff.
+Nie ma gwarancji wykrycia wszystkich możliwych PII ani ochrony przed celowym obejściem lokalnego UI/API.
 
-Przed akceptacją sprawdź, czy istniejący owner (warstwa w `backend/layers/`, `output_guard.py`, `ner_blocklist.py`, słownik/trie) nie wystarcza. Nie proponuj refaktoru przy małej poprawce. Testy sprawdzają ownera i nowy szew, nie kopiują całej logiki.
+## Testy i środowisko
 
-## 5. Testy i limit
+- Recheck: diff od poprzednio badanego SHA, zachowane reproduktory, test ownera. Stary wynik sprzeczny z nowym kontraktem nie dowodzi regresji.
+- Pion między warstwami uruchamiaj przy zmianie tego połączenia. Stub wcześniejszego silnika może dostarczyć finalną pozostałość do testu Guarda;
+  wtedy jawnie zaznacz, że to nie test skuteczności wcześniejszego silnika.
+- Podawaj, czy ponowiłeś OCR/pipeline, czy tylko reguły na zapisanych wynikach. Liczba ostrzeżeń nie jest miarą pełnej ochrony.
+  Literalne słowa/podciągi nie zastępują oceny semantycznych spanów.
+- Kalibracja silnika na czystym tekście z niezależnym gold; odporność na OCR jako oddzielny wynik.
+- Wskazuj pliki testów jawnie; `pytest.ini` nie zbiera wszystkich. Backendowe pliki testowe uruchamiaj osobnymi procesami
+  (odnotowano konflikt bibliotek natywnych przy łączeniu całych zestawów).
+- Nie restartuj backendu Pawła na 8765 i nie używaj jego profilu/tokena. Własna izolowana kopia i stan w Temp; nie twórz migawek w repo.
+  HTTP 401 nie jest dowodem wycieku.
+- Praktyczne ścieżki i zachowane środowisko są w handoffie; najpierw sprawdź ich istnienie.
 
-- `cd backend && py -3 -m pytest tests/<plik> -q` — celowane. Pełna suita i benchmark tylko z uzasadnieniem.
-- 38 testów wymaga działającego backendu (`py -3 pseudominizer_api.py`, port 8765); bez niego są skipowane.
-- Znane, już zdiagnozowane porażki są wypisane w `CLAUDE.md` — nie odkrywaj ich od nowa.
-- Wąskie selektory, `-q`, ograniczony output.
+## UI i komunikacja
 
-## 6. UI
+Po polsku, konkretnie: co się zmieniło, co działa, co nie, następny adresat.
+Pytaj o rzeczywistą, istotną niejasność, po sprawdzeniu dostępnych ustaleń; rutynowych szczegółów nie zamieniaj w prośby o zgodę.
+Nową zmianę wyglądu oceniaj na ekranie. Jeśli Paweł zaakceptował wygląd i przyciski, zachowaj tę ocenę;
+sprawdzaj niezależnie logikę, lecz nie otwieraj ponownie estetyki przy mikrofixie helpera.
 
-Wszystko, co widzi użytkownik, po polsku. UI mówi „Zamaskuj/Przywróć" (kod backendu zostaje `pseudominizer_*`). Surowe wyjątki, kody HTTP i stack trace nie mogą być komunikatem dla człowieka. Zmiany UI sprawdzaj na ekranie, nie tylko w JSON.
+## Publikacja i ochrona cudzej pracy
 
-## 7. Repozytorium
+Przed edycją `git status -sb`. Nie usuwaj cudzych obrazów, profili i równoległych zmian CC.
+Raport: nowy `tasks/<id>/round_01/tests/tests_r<n>.txt` na gałęzi Tasku; sprawdź brak celu, nigdy nie nadpisuj wcześniejszego raportu.
+Na main aktualizuj właściwy wiersz BOARD i, gdy potrzebne, linię Codexa w TERAZ; zachowuj cudze aktualizacje.
+Stała zgoda obejmuje publikację raportów/BOARD i ff-only lokalnego main, nie merge kodu ani force-push.
+Po publikacji odczytaj i zweryfikuj zapis. Przy GitHub aktualizacji używaj świeżego SHA bloba.
 
-- Raport: nowy plik `tasks/<id>/round_01/tests/tests_r<n>.txt` na branchu Tasku; status w `BOARD.md` na `main`.
-- Nigdy nie nadpisuj raportu, nie force-pushuj, nie commituj cudzych plików, profili, map `.enc`, realnych dokumentów ani wyników `preview_real_results/`.
+Do repo i raportów nie trafiają realne dokumenty/PII, profile, klucze ani mapy `.enc`.
+Syntetyki w raportach są dozwolone; ustalone katalogi datasetów mogą być ignorowane przez git.
+Pamięć aktualizuj wyłącznie na wyraźne polecenie; aktualizacja tych dokumentów nie oznacza automatycznie zmiany pamięci.
