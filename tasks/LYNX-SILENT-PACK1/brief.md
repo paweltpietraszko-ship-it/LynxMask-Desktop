@@ -61,3 +61,16 @@ Szacunek: kod ~80 l. + testy ~115 l. ≈ 200 l. (>150 — zgoda OWNERA przed kod
 - Pomiar „widok człowieka” GOLD (`tasks/LYNX-GOLD-SET/measure/human_view.py`, dev / test agregaty):
   - prototyp dev: ciche 102 → 20, zbędne 69/440 bez zmian, pytania 1,62 → 1,23;
   - wymagane: 0 nowych zbędnych zakryć, OSOBA/ADRES/EMAIL bez pogorszenia.
+
+## Doprecyzowanie po Codex BRIEF_ONLY r1 (`4a9262a`)
+- **B1 — decyzja OWNERA 22.10 („1, jeden token i pełna nazwa”):** gdy dokument zawiera pełną firmę z formą i później jej rdzeń bez formy, oba wystąpienia dostają ten sam `FIRMA_NNN`. Przywróć zwraca w obu miejscach pełną nazwę z formą („Filar Północy” → „Filar Północy sp. z o.o.”). Odbiór jawnie dopuszcza ten wynik. Bez nowej mapy wariantów.
+- **B2 — konflikt rdzeni:**
+  - dwie różne pełne firmy z tym samym rdzeniem („Filar Północy sp. z o.o.” i „Filar Północy S.A.”): rdzeń nie jest przypisywany do żadnej z nich, tylko dostaje własny token `FIRMA_MMM` z wartością rdzenia (zakryty, bez scalania podmiotów);
+  - OSOBA o wartości równej temu rdzeniowi → ten sam własny token rdzenia;
+  - rdzeń bez pełnej firmy w dokumencie → bez zmian względem main;
+  - test: dwie firmy + skrót → trzy różne tokeny FIRMA; żadna pełna wartość nie zawiera drugiej formy.
+- **B3 — rdzeń jednowyrazowy:** istniejący predykat `osoba_not_person._common_or_person(word)`:
+  - jakiekolwiek znaczenie pospolite (`common is True`) → nie podmieniamy („Most”, „Punkt”, „Jutrzenka” = świt);
+  - brak znaczenia pospolitego (nieznane albo tylko nazwa własna/geograficzna) → podmieniamy;
+  - błąd Morfeusza (`None`) → nie podmieniamy;
+  - rdzeń ≥2 słów z wielkiej litery — bez sprawdzania Morfeuszem (jak w briefie).
