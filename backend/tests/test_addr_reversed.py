@@ -65,3 +65,11 @@ def test_nazwisko_nie_trafia_do_adresu(text):  # Codex F2 r1 / S4: osoba = jeden
     out, rev, _ = _run(text)
     assert not any("Kalisz" in v for k, v in rev.items() if k.startswith("ADRES_")), rev
     assert "ul. Polna 5" in rev.values(), rev
+
+
+@pytest.mark.parametrize("text", ["Adres: 26-600 Radom, ul. Polna 5", "Adres: 26-600 Radom ul. Polna 5"])
+def test_nachodzace_trafienia_nie_gubia_kodu(text):  # Codex F4 r3
+    out, rev, _ = _run(text)
+    for word in ("26-600", "Radom", "Polna"):
+        assert word not in out, (out, rev)
+    assert _restore(out, rev) == text, (out, rev)

@@ -191,9 +191,11 @@ def _is_city(name: str) -> bool:
     return name in _CITY_FORMS or _ascii_fold(name) in _CITY_FORMS_ASCII
 
 
-def _city_before(text: str, pos: int, person_words: frozenset[str] = frozenset()) -> int | None:
+def _city_before(text: str, pos: int, persons: tuple[str, ...] = ()) -> int | None:
     """Początek miasta (1–2 słowa z SIMC) stojącego tuż przed pos (przecinek albo odstęp, ta sama linia).
-    Nie zabiera nazwiska rozpoznanej osoby ani słowa po imieniu / „Pan/Pani” („Jan Kalisz, ul. …” — Codex F2, S4)."""
+    Nie zabiera nazwiska osoby w TYM miejscu: tekst kończy się pełną rozpoznaną osobą („Jan Kalisz, ul. …” — Codex F2, S4)
+    albo słowo stoi po imieniu / „Pan/Pani”. To samo słowo jako miasto w innym miejscu („Kalisz, ul. …”) — zostaje
+    miastem (Codex F3)."""
     m = _CITY_BEFORE_RE.search(text[max(0, pos - 60):pos])
     if not m:
         return None
@@ -204,7 +206,8 @@ def _city_before(text: str, pos: int, person_words: frozenset[str] = frozenset()
         start, words = base + (m.start(2) if m.group(2) else m.start(1)), ((m.group(2) or m.group(1)),)
     else:
         return None
-    if any(w in person_words for w in words):
+    end = start + len(" ".join(words))
+    if any(text[max(0, end - len(v)):end] == v for v in persons):
         return None
     p = _PERSON_BEFORE_RE.search(text[max(0, start - 30):start])
     if p and (not p.group(1) or p.group(1).lower() in _first_names()):
@@ -220,24 +223,32 @@ def _first_names() -> frozenset[str]:
 def _with_neighbours(text: str, hits: list[tuple[int, int, str, str]], ner_results: dict | None = None) -> list[tuple[int, int, str, str]]:
     """Faza 3: dokłada do trafień adresu ucięty kod, miasto przed / po (przecinek albo odstęp), ulicę bez prefiksu po
     „kod + miasto” oraz „Miasto, NN-NNN” przy kodzie spoza trafień. Zwraca nową listę dla wspólnego _apply_hits.
-    `ner_results` (osoby rozpoznane przed warstwą adresu) — ich słowa nie są brane za miasto (S4: jedna osoba = jeden token)."""
-    person_words = frozenset(w for k, v in (ner_results or {}).items() if k.startswith("OSOBA_") for w in str(v).split())
+    `ner_results` (osoby rozpoznane przed warstwą adresu) — nazwisko w miejscu, gdzie stoi cała osoba, nie jest miastem (S4).
+    Trafienia nachodzące na siebie łączymy w jedno (Codex F4: „26-600 Radom, ul. Polna 5” — kod nie może wypaść)."""
+    persons = tuple(str(v) for k, v in (ner_results or {}).items() if k.startswith("OSOBA_") and " " in str(v))
     out = []
     for s, e, _v, tok in hits:
         if re.search(r"\d{2}$", text[s:e]) and _CUT_POSTAL_RE.match(text, e):
             e += 4  # kod pocztowy nigdy cięty w połowie („… 15 31” + „-001”)
         street = _BARE_STREET_RE.match(text, e) if _POSTAL_IN_MATCH_RE.match(text, s) else None  # „kod miasto, Twarda 18”
-        cs = _city_before(text, s, person_words)
+        cs = _city_before(text, s, persons)
         s = cs if cs is not None else s
         comma = _COMMA_RE.match(text, e)
         city = _match_city(text, comma.end()) if comma and not street else None
         e = street.end() if street else (city[0] if city else e)
         out.append((s, e, text[s:e], tok))
     for m in _POSTAL_ANCHOR_RE.finditer(text):
-        cs = None if any(s <= m.start() < e for s, e, _, _ in out) else _city_before(text, m.start(), person_words)
+        cs = None if any(s <= m.start() < e for s, e, _, _ in out) else _city_before(text, m.start(), persons)
         if cs is not None:
             out.append((cs, m.end(), text[cs:m.end()], "ADRES"))
-    return out
+    merged: list[tuple[int, int, str, str]] = []
+    for s, e, _v, tok in sorted(out):
+        if merged and s < merged[-1][1]:  # nachodzą — jedno trafienie obejmujące oba (żaden człon nie wypada)
+            ps, pe, _pv, ptok = merged[-1]
+            merged[-1] = (ps, max(pe, e), text[ps:max(pe, e)], ptok)
+        else:
+            merged.append((s, e, text[s:e], tok))
+    return merged
 
 
 def apply_address_layer(state: PipelineState) -> None:
