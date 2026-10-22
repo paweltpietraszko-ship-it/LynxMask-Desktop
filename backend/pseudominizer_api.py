@@ -167,7 +167,7 @@ from document_processor import _next_pse, _extract_text
 # ── Inicjalizacja modułów ─────────────────────────────────────────────────────
 
 from pipeline import AppState, pseudonymize_document, S3_FAILURE
-from guard_residue import shift_warnings  # [LYNX-GUARD-A]
+from guard_residue import shift_warnings  # noqa: E402  [LYNX-GUARD-A]
 
 _app_state = AppState()
 _GUARD_AVAILABLE = False
