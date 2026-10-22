@@ -1,0 +1,33 @@
+LYNX-GUARD-RESIDUE — BRIEF_ONLY r4 po zatwierdzeniu OWNERA, 2026-10-22
+Wynik: PASS PREIMPLEMENTATION.
+Zatwierdzony brief v2: 52d83580c4209fbf578f54e11a2dcd23cc27acdc
+Baza: 19b112a9ce45bcf3a7d77864a5e8c3f5f593be6e.
+Ocena techniczna i wyjaśnienie granicy: r3 d30e31500c286e9111e3078722b3d89ace759dbf.
+Powiązana propozycja S4: tasks/LYNX-GUARD-RESIDUE/s4_change_proposal.md na tym samym SHA briefu.
+
+OWNER_ACCEPTED / OWNER_DECISION 22.10.2026
+Po ocenie r3, wyjaśnieniu prostego przepływu i rekomendacji zatwierdzenia v2 oraz zmiany S4 Paweł odpowiedział: „Zatwierdzam”.
+Zatwierdzenie obejmuje przedstawiony kontrakt v2 R1–R5 i kierunek formalnej zmiany S4:
+- Guard ostrzega o jawnych podejrzeniach; osobne Zakryj/Zostaw dla każdej pozycji.
+- Do rozstrzygnięcia wszystkich ostrzeżeń brak zwykłego zapisu/kopii/eksportu w aplikacji.
+- Po rozstrzygnięciu wszystkich pozycji operacje są dostępne, także gdy świadomie wybrano Zostaw.
+- Zmiana wyniku mogąca odsłonić dane wymaga kontroli aktualnego wyniku; S3 pozostaje awarią bez obejścia.
+- Bez osobnego serwerowego nadzorcy, nowego protokołu PSE/rewizji, poświadczania ciphertextu
+  i ochrony przed celowym obchodzeniem lokalnego UI/API. Bez obietnicy zablokowania wysłania oryginału innym programem.
+- Istniejące maskowanie/mapa; bez nowego NER/przebudowy FIRMA/OSOBA.
+- Trwałe zapamiętaj dopiero z ochroną S5; trwały dziennik decyzji pozostaje osobnym etapem.
+
+C1 wycofane zgodnie z r2; C2 zamknięte w r3. Gate wyjaśnienia i akceptacji OWNERA jest teraz zamknięty.
+PASS PREIMPLEMENTATION dotyczy zatwierdzonego briefu na wskazanym SHA, nie jakości nieistniejącej implementacji.
+Dowody punktowego odczytu ownerów pozostają w r3. Nie powtarzano ich ani nie uruchamiano testów/modeli.
+
+Następny krok:
+1. Architekt/formalny właściciel aktualizuje S4 w osobnym commicie wraz z przeliczeniem FROZEN.lock
+   zgodnie z przyjętym kierunkiem (w tym zastąpieniem starego zdania o braku ponownej kontroli po Odkryj).
+2. CC przedstawia szacunek plików/linii i minimalnego wdrożenia zgodnie z briefem.
+3. Dopiero po spełnieniu tych warunków i akceptacji kosztu realizacja; potem niezależny audyt exact SHA.
+Nie potrzeba ponownie pytać o zatwierdzenie tego samego kontraktu ani kierunku S4.
+Nie traktować tej zgody jako zatwierdzenia jeszcze nieprzedstawionego kosztu lub merge.
+
+W tym kroku zapisano zatwierdzenie i wynik prechecku. Nie edytowano frozen spec/locka ani kodu produktu.
+Brak testów, benchmarków, subagentów i merge.
