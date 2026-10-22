@@ -1,0 +1,22 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 6cf83b9d1079a68cf11139d0f0d27e5aec80d575
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 396/79 = 5.0:1 (threshold 5:1)
+  - TOTAL_LINES: 475 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - backend\pseudominizer_api.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-GUARD-B/brief.md
+  - tasks/LYNX-GUARD-B/repo_before.hash
+  - tasks/LYNX-GUARD-B/round_01/gate_r1.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r2.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r3.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r4.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r5.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r6.txt
+  - tasks/LYNX-GUARD-B/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-GUARD-B/round_01/tests/repro_r1.mjs
+  - tasks/LYNX-GUARD-B/round_01/tests/repro_r2.mjs
+  - tasks/LYNX-GUARD-B/round_01/tests/tests_r1.txt
+  - tasks/LYNX-GUARD-B/round_01/tests/tests_r2.txt

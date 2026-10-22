@@ -69,3 +69,18 @@ gate r3 (`round_01/gate_r3.txt`): `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
   - `tsc`: 0;
   - `Pseudonimizuj.tsx` 914 l. (baza 933).
 - **gate r6:** `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
+
+## Runda 3 — F1 r2 (Codex `c3db6f4`), kod `6cf83b9`
+F1: jednostki pozycji są rozpoznawane jawnie, bez zgadywania po treści.
+- `GuardWarning.utf16` ustawia wyłącznie `at16`/`toUtf16`.
+- Ostrzeżenie bez znacznika ma punkty kodowe z silnika i zawsze jest przeliczane. Koniec zakresu liczony z punktów kodowych zakresu, nie z długości fragmentu.
+- Ostrzeżenie ze znacznikiem zostaje bez zmian (idempotencja).
+- Identyczne wartości nie sklejają się już w jedno wystąpienie.
+
+Testy:
+- `repro_r1.mjs` failures=0, `repro_r2.mjs` failures=0;
+- `node --test tests/revealText.test.mjs` 18 pass (nowy: dwa identyczne PESEL po 20 emoji, oba zamaskowane, `toUtf16` idempotentne);
+- `tsc` 0.
+
+gate r7: STATUS: WYMAGA_DECYZJI — CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+  - TOTAL_LINES: 475 lines changed (threshold 150).
