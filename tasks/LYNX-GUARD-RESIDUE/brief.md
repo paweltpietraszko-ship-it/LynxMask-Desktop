@@ -1,6 +1,6 @@
 # LYNX-GUARD-RESIDUE — brief v2, do oceny Codexa (BRIEF_ONLY)
 
-22.10.2026. Zastępuje sporny brief v1.2. Jest propozycją kontraktu, nie zgodą na implementację ani zmianą zamrożonego S4. S4_change_proposal.md pozostaje propozycją; S3 fail-closed bez zmian.
+22.10.2026. Zastępuje sporny brief v1.2. Jest propozycją kontraktu, nie zgodą na implementację ani zmianą zamrożonego S4. s4_change_proposal.md pozostaje propozycją; S3 fail-closed bez zmian.
 
 ## Cel i wzorzec
 
