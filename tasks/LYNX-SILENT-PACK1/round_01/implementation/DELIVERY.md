@@ -53,3 +53,27 @@ PROFILE_DIR=<pusty> <repo>/.venv/Scripts/python.exe -m pytest tests/test_silent_
 <repo>/.venv/Scripts/python.exe <repo-z-task/LYNX-GOLD-SET>/tasks/LYNX-GOLD-SET/measure/human_view.py <wt>/backend <repo>/backend/dataset_gold_20261022 all <out>
 ```
 Baza do porównania: ten sam pomiar z `bb0abbc` (`git worktree add <wt0> bb0abbc`).
+
+---
+# ROUND r2 — poprawka F1 z Codex r3 (`0979c83`)
+Implementacja: `6fcab2176def42881ccb3ec0f730eac209c55daa` (diff względem r1 `753b7af`: `layers/amount.py` +4/−2, `test_silent_pack1.py` +4).
+
+## ROZSZERZENIE CC (opis w briefie, sekcja „ROZSZERZENIE CC”)
+- Wspólna lista `_UNIT` dla `_AMOUNT_NOCUR_RE` (main) i `_AMOUNT_NOCUR_CTX_RE` (SP1): dodane mm, cm, dm, mg, m3/m³, ml, min, kWh, kW, MWh. Bez jednostek jednoliterowych mylących się z polskim słowem przy IGNORECASE („w”, „t”).
+- Ta sama luka na main: „Wartość pomiaru 575,63 mm.” → KWOTA (stary wzorzec) — naprawiona tą samą listą.
+
+## Dowody
+- `repro_r3.py` (Codex) na `6fcab21`: exit 0 (8/8 ok).
+- `test_silent_pack1.py`: 30 passed. Z `amount.py` z r1 (`753b7af`): 5 failed / 25 passed — nowe negatywne łapią błąd (3 przypadki Codexa, „575,63 mm”, „2 450,00 cm”). Pozytywny „Kwota 1234,56 w terminie 14 dni.” przechodzi.
+- Regresja: `test_amounts_numbers` 20 passed, `test_formats_pack2` 20 passed, `test_map_fidelity` 29 passed, `test_layers` 2 failed / 119 passed (te same 2 znane).
+- GOLD all na `6fcab21`: dev ciche 20, zbędne 69/440; test ciche 52, zbędne 152/880; KWOTA 120/120 i 240/240 zakryte — bez zmian względem r1.
+
+## Gate (stdout dosłownie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 6fcab2176def42881ccb3ec0f730eac209c55daa
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 214/8 = 26.8:1 (threshold 5:1)
+  - TOTAL_LINES: 222 lines changed (threshold 150)
+```
