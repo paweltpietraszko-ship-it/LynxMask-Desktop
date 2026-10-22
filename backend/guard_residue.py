@@ -35,6 +35,9 @@ _INSTITUTION_RE = re.compile(
     r"|Kolegi\w*|Inspektorat\w*|Dyrekcj\w*|Agencj\w*|Fundusz\w*|Rzecznik\w*|Zarząd\w*|Departament\w*|Ośrod\w*|Centrum"
     r"|Instytut\w*|Uniwersytet\w*|Politechnik\w*|Szpital\w*|Przychodni\w*|Przedszkol\w*|Regionaln\w*|Kas\w+)\b")
 # słowo w ciągu nazwy instytucji: „Urząd Marszałkowski Województwa Mazowieckiego”, „Urząd Gminy Warszawa-Wola”
+_PUBLIC_RE = re.compile(  # R5: tylko urzędy/sądy/samorząd/organy — nie „Centrum”, „Instytut”, „Fundusz” (bywają firmami)
+    r"\b(?:Sąd\w*|Urz[ąę]d\w*|Gmin\w*|Powiat\w*|Starostw\w*|Województw\w*|Skarb\w* Państwa|Prokuratur\w*|Policj\w*"
+    r"|Ministerstw\w*|Komornik\w*|Rad\w* Miasta|Izb\w* Skarbow\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK)\b")
 _IN_INSTITUTION_RE = re.compile(rf"(?:[ \t\-]+(?:[{_UP}][\w\-]*|w|we|przy|dla|ds\.|i|do|spraw))*[ \t\-]*")
 # R2: imię albo token osoby + jedna wielka litera z kropką (bez „S.A.”)
 _INITIAL_RE = re.compile(rf"\b(?:(OSOBA_\d{{3}})|([{_UP}][{_LO}]+))[ \t]+([{_UP}])\.(?![ \t]?[A-Za-z]\.)")
@@ -160,7 +163,11 @@ def _r4(text: str):
 
 
 def _firm_ok(frag: str) -> bool:
-    return bool(re.search(rf"[{_UP}]", frag)) and not _INSTITUTION_RE.search(frag)
+    """R5: forma prawna = firma zawsze (Codex F1: „Centrum Projektowe MODRZEW sp. z o.o.”); bez niej wyłączone tylko
+    urzędy publiczne — szersza lista `_INSTITUTION_RE` („Centrum”, „Instytut”, „Fundusz”…) służy wyłącznie R1."""
+    if not re.search(rf"[{_UP}]", frag):
+        return False
+    return bool(re.search(_FORM + r"(?!\w)", frag)) or not _PUBLIC_RE.search(frag)
 
 
 def _r5(text: str):

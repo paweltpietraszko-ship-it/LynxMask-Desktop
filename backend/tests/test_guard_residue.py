@@ -21,6 +21,11 @@ def _frags(text, **kw):
     ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ", "Biuro Rachunkowe RACHMISTRZ", "R5"),
     ("Nabywca: ALFA sp. z o.o.", "ALFA sp. z o.o.", "R5"),
     ("Umowę zawarto z BETA S.A. w dniu podpisania.", "BETA S.A.", "R5"),
+    # Codex F1 r1: słowa z szerokiej listy instytucji R1 nie wyłączają firmy z formą prawną ani z roli kontrahenta
+    ("Kontrahent: Centrum Projektowe MODRZEW sp. z o.o.", "Centrum Projektowe MODRZEW sp. z o.o.", "R5"),
+    ("Kontrahent: Instytut Projektowy MODRZEW sp. z o.o.", "Instytut Projektowy MODRZEW sp. z o.o.", "R5"),
+    ("Kontrahent: MODRZEW sp. z o.o.", "MODRZEW sp. z o.o.", "R5"),
+    ("Zleceniodawca: Fundusz Inwestycyjny ORZEŁ", "Fundusz Inwestycyjny ORZEŁ", "R5"),
 ])
 def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     found = _frags(text)
@@ -35,6 +40,8 @@ def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     "Spotkanie odbyło się w Kaliszu oraz w Warszawie.",
     "Zgodnie z art. 5 ust. 2 Dz.U. nr 12 poz. 45 Strony postanawiają.",
     "Nabywca: Gmina Kraków",
+    "Odbiorca: Urząd Skarbowy w Radomiu",
+    "Płatnik: ZUS Oddział w Warszawie",
     "Dostawca: FIRMA_002 ul. Długa",
     "Sygn. akt I C 123/24. Rozprawa odbędzie się w Sądzie.",
     # pomiar 22.10 (150 dok. OCR): największe źródła fałszywych R1
