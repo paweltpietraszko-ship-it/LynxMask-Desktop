@@ -1,0 +1,105 @@
+{
+ "dev": {
+  "docs": 40,
+  "pozycje": {
+   "pii:zakryte": 933,
+   "pii:cichy_wyciek": 164,
+   "pii:wyciek_z_ostrzezeniem": 55,
+   "not_pii:zbedne_zakrycie": 93,
+   "not_pii:ok": 347
+  },
+  "wg_typu": {
+   "ADRES:rodo": {
+    "zakryte": 40,
+    "cichy_wyciek": 62,
+    "wyciek_z_ostrzezeniem": 18
+   },
+   "EMAIL:nierodo": {
+    "zakryte": 40
+   },
+   "EMAIL:rodo": {
+    "zakryte": 40
+   },
+   "FIRMA:nierodo": {
+    "zakryte": 39,
+    "cichy_wyciek": 33,
+    "wyciek_z_ostrzezeniem": 8
+   },
+   "FIRMA:rodo": {
+    "zakryte": 56,
+    "wyciek_z_ostrzezeniem": 10,
+    "cichy_wyciek": 14
+   },
+   "KWOTA:rodo": {
+    "zakryte": 84,
+    "cichy_wyciek": 36
+   },
+   "NUMER:rodo": {
+    "zakryte": 309,
+    "wyciek_z_ostrzezeniem": 10,
+    "cichy_wyciek": 18
+   },
+   "OSOBA:rodo": {
+    "zakryte": 325,
+    "wyciek_z_ostrzezeniem": 9,
+    "cichy_wyciek": 1
+   }
+  },
+  "ostrzezenia_na_dok": {
+   "sr": 3.27,
+   "mediana": 3,
+   "max": 8
+  }
+ },
+ "test": {
+  "docs": 80,
+  "pozycje": {
+   "pii:zakryte": 1864,
+   "pii:cichy_wyciek": 335,
+   "pii:wyciek_z_ostrzezeniem": 102,
+   "not_pii:zbedne_zakrycie": 201,
+   "not_pii:ok": 679
+  },
+  "wg_typu": {
+   "ADRES:rodo": {
+    "zakryte": 80,
+    "wyciek_z_ostrzezeniem": 42,
+    "cichy_wyciek": 118
+   },
+   "EMAIL:nierodo": {
+    "zakryte": 80
+   },
+   "EMAIL:rodo": {
+    "zakryte": 80
+   },
+   "FIRMA:nierodo": {
+    "zakryte": 78,
+    "cichy_wyciek": 70,
+    "wyciek_z_ostrzezeniem": 12
+   },
+   "FIRMA:rodo": {
+    "cichy_wyciek": 40,
+    "wyciek_z_ostrzezeniem": 16,
+    "zakryte": 104
+   },
+   "KWOTA:rodo": {
+    "zakryte": 169,
+    "cichy_wyciek": 71
+   },
+   "NUMER:rodo": {
+    "zakryte": 616,
+    "wyciek_z_ostrzezeniem": 19,
+    "cichy_wyciek": 36
+   },
+   "OSOBA:rodo": {
+    "zakryte": 657,
+    "wyciek_z_ostrzezeniem": 13
+   }
+  },
+  "ostrzezenia_na_dok": {
+   "sr": 3.17,
+   "mediana": 3,
+   "max": 8
+  }
+ }
+}
