@@ -127,7 +127,7 @@ import re
 import logging
 
 from firma_context import legal_form_entities, scan_legal_forms
-from osoba_not_person import filter_single_osoba, inside_street_name, reject_single_osoba  # [LYNX-OSOBA-PACK4]
+from osoba_not_person import drop_street_osoba, filter_single_osoba, reject_single_osoba  # [LYNX-OSOBA-PACK4]
 from ner_blocklist import (
     _GEO_WORDS,
     _LEGAL_SUFFIXES_LOWER,
@@ -456,8 +456,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
 
 def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
     ner_results = _split_lines(text, _firma_entities(text, spacy_ner_mod.detect_entities(text)))
-    ner_results = _filter_institutions([r for r in ner_results if not (r.label == "OSOBA" and inside_street_name(text, r.start))])
-    ner_results = filter_single_osoba(text, ner_results, _PERSON_FORMS)  # [LYNX-OSOBA-PACK4] 3 + krok 2
+    ner_results = filter_single_osoba(text, _filter_institutions(drop_street_osoba(text, ner_results)), _PERSON_FORMS)  # [PACK4]
 
     reverse_map:          dict[str, str] = {}
     all_variants:         dict[str, str] = {}

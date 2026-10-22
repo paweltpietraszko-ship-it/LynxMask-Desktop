@@ -96,6 +96,11 @@ _STREET_CTX_RE = re.compile(r"(?:^|[\s(,;:])(?:ul|al|pl|os|aleja|ulica|plac|osie
                             r"(?:\d{1,2}[ \t]+)?(?:[A-ZŁŚŹĆŃĄĘÓŻ][\w-]*\.?[ \t]+){0,3}$", re.IGNORECASE)
 
 
+def drop_street_osoba(text: str, ner_results: list) -> list:
+    """Encje OSOBA zaczynające się w nazwie ulicy (spaCy zwraca „Władysława Stanisława” bez „ul.”) — odrzucone."""
+    return [r for r in ner_results if not (r.label == "OSOBA" and inside_street_name(text, r.start))]
+
+
 def inside_street_name(text: str, start: int) -> bool:
     """Słowo zaczyna się w nazwie ulicy („ul. Władysława Stanisława Reymonta”, „ul. Jana Pawła II”) — to adres, nie osoba."""
     return bool(_STREET_CTX_RE.search(text[text.rfind("\n", 0, start) + 1:start]))
