@@ -139,3 +139,18 @@ test("F3: Maskuj „Kawa” nie rusza „Kawałek”", () => {
   const t = "Pan Kawa. Kawałek chleba.";
   assert.equal(applyCovers(t, coverWarning(t, w(t, "Kawa", "R1"), {}, [])), "Pan OSOBA_001. Kawałek chleba.");
 });
+
+test("F1 r2: dwa identyczne numery po emoji — każdy Maskuj trafia w swoje miejsce; toUtf16 idempotentne", async () => {
+  const { toUtf16 } = await import("../src/screens/guardDecisions.ts");
+  const t = "📄".repeat(20) + " PESEL: 44051401359; PESEL: 44051401359.";
+  const cpIdx = [...t].map((_, i) => i).filter(i => [...t].slice(i, i + 11).join("") === "44051401359");
+  const raw = cpIdx.map((s, i) => ({ id: `W00${i + 1}`, start: s, end: s + 11, fragment: "44051401359", rule: "HIGH PESEL",
+    level: "RED", reasons: [] }));
+  const ws = toUtf16(t, raw);
+  assert.deepEqual(ws.map(x => t.slice(x.start, x.end)), ["44051401359", "44051401359"]);
+  assert.notEqual(ws[0].start, ws[1].start);
+  assert.deepEqual(toUtf16(t, ws), ws);
+  const covers = ws.reduce((cs, x) => coverWarning(t, x, {}, cs), []);
+  assert.ok(!applyCovers(t, covers).includes("44051401359"));
+  assert.equal(pendingWarnings(t, ws, new Set(), covers).length, 0);
+});

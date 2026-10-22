@@ -6,6 +6,7 @@ import { TOKEN_RE } from "./revealText.ts";  // rozszerzenie: testy node --test 
 
 export interface GuardWarning {
   id: string; start: number; end: number; fragment: string; rule: string; level: string; reasons: string[];
+  utf16?: true;  // pozycje już w jednostkach JS — ustawia wyłącznie at16/toUtf16 (bez znacznika = punkty kodowe z silnika)
 }
 export interface Cover { start: number; end: number; token: string; original: string }
 
@@ -94,16 +95,17 @@ export function pendingWarnings(base: string, ws: readonly GuardWarning[], kept:
   return ws.filter(w => !kept.has(warningKey(base, w)) && !covered(w));
 }
 
-/** Pozycje z silnika (punkty kodowe Pythona) → indeksy JS (UTF-16), żeby znaki spoza BMP (np. emoji) nie przesuwały
+/** Pozycje z silnika (punkty kodowe Pythona) → indeksy JS (UTF-16) ze znacznikiem `utf16`, żeby znaki spoza BMP (np. emoji) nie przesuwały
  *  maskowania (Codex F1). Format tokenów i API bez zmian — przeliczenie raz, po stronie okna. */
 export function toUtf16(base: string, ws: readonly GuardWarning[]): GuardWarning[] {
   return ws.map(w => at16(base, w));
 }
 
-/** Jedno ostrzeżenie: pozycja już wskazuje fragment → bez zmian (idempotentne); inaczej przeliczenie punktów kodowych. */
+/** Jedno ostrzeżenie: jednostki rozpoznawane po znaczniku `utf16`, nie po treści (Codex F1 r2: identyczne wartości —
+ *  pozycja z silnika mogła trafić w inne wystąpienie). Bez znacznika = punkty kodowe → przeliczenie; ze znacznikiem bez zmian. */
 function at16(base: string, w: GuardWarning): GuardWarning {
-  if (base.slice(w.start, w.end) === w.fragment) return w;
-  const pre = [...base].slice(0, w.start).join("").length;
-  const moved = { ...w, start: pre, end: pre + w.fragment.length };
-  return base.slice(moved.start, moved.end) === w.fragment ? moved : w;
+  if (w.utf16) return w;
+  const cps = [...base];
+  const start = cps.slice(0, w.start).join("").length;
+  return { ...w, start, end: start + cps.slice(w.start, w.end).join("").length, utf16: true };
 }
