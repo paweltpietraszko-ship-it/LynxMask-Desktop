@@ -58,6 +58,7 @@ _ROLE_RE = re.compile(
     r"|Odbiorc\w*|Zamawiając\w*|Najemc\w*|Wynajmując\w*|Pracodawc\w*|Ubezpieczyciel\w*|Płatnik\w*|Firma)[ \t]*:[ \t]*"
     r"([^\n,;]{2,80})")
 _FORM = r"(?i:sp\.[ \t]*z[ \t]*o\.[ \t]*o\.?|sp\.[ \t]*k\.[ \t]*a\.?|sp\.[ \t]*[jkp]\.?|s\.[ \t]*a\.|s\.[ \t]*c\.|p\.[ \t]*s\.[ \t]*a\.?)"
+_SENTENCE_END_RE = re.compile(rf"\.[ \t]+(?=[{_UP}][{_LO}])")
 _FORM_NAME_RE = re.compile(
     rf"(?<![\w„\"])[{_UP}0-9„\"][\w„\"&.\-]*(?:[ \t]+[{_UP}0-9„\"&][\w„\"&.\-]*){{0,4}}[ \t]+{_FORM}(?!\w)")
 
@@ -174,7 +175,11 @@ def _r5(text: str):
     for m in _ROLE_RE.finditer(text):
         s, frag = m.start(1), m.group(1)
         cut = _TOKEN_RE.search(frag)
-        frag = (frag[:cut.start()] if cut else frag).rstrip(" \t.-–(")
+        frag = frag[:cut.start()] if cut else frag
+        end = _SENTENCE_END_RE.search(frag)  # „RACHMISTRZ. Wczoraj…” → bez następnego zdania; „S.A.” zostaje
+        if end:
+            frag = frag[:end.start() + 1]
+        frag = frag if re.search(_FORM + r"$", frag) else frag.rstrip(" \t.-–(")
         if len(frag) >= 3 and frag[0] not in _LO and _firm_ok(frag):
             yield s, s + len(frag), "R5", "Możliwa nazwa firmy, której silnik nie zakrył"
     for m in _FORM_NAME_RE.finditer(text):

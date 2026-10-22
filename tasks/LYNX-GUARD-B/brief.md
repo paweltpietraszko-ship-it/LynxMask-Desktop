@@ -32,8 +32,17 @@ TASK_SCOPE:
 - frontend/tests/revealText.test.mjs
 - tasks/LYNX-GUARD-B/brief.md
 - tasks/LYNX-GUARD-B/repo_before.hash
+- backend/guard_residue.py
+- backend/tests/test_guard_residue.py
 
 Wzrost powyżej 150 linii: zgoda OWNERA na koszt etapu B (~200–250 l. + testy) udzielona 22.10 (BOARD).
+
+## ROZSZERZENIE CC (22.10, ta sama klasa — zakres ostrzeżenia R5 z etapu A)
+Co: R5 z roli kontrahenta brał też początek następnego zdania. Wykryte sondą `/preview` silnika z gałęzi przed oglądem OWNERA.
+Gdzie: `backend/guard_residue.py` `_r5` (`_SENTENCE_END_RE`).
+Reproduktor: „Sprzedawca: Biuro Rachunkowe RACHMISTRZ. Wczoraj …” → fragment „Biuro Rachunkowe RACHMISTRZ. Wczoraj”.
+Poprawka: cięcie na końcu zdania (kropka + słowo z wielkiej litery), forma prawna z kropką („S.A.”) zostaje.
+Testy: 2 przypadki w `backend/tests/test_guard_residue.py`.
 
 ## Odbiór
 - `node --test tests/revealText.test.mjs` (testy decyzji dopisane do istniejącego pliku — limit nowych plików gate) (Node 24): blokada do decyzji przy każdej pozycji, Zostaw tylko wskazanego

@@ -26,6 +26,9 @@ def _frags(text, **kw):
     ("Kontrahent: Instytut Projektowy MODRZEW sp. z o.o.", "Instytut Projektowy MODRZEW sp. z o.o.", "R5"),
     ("Kontrahent: MODRZEW sp. z o.o.", "MODRZEW sp. z o.o.", "R5"),
     ("Zleceniodawca: Fundusz Inwestycyjny ORZEŁ", "Fundusz Inwestycyjny ORZEŁ", "R5"),
+    # [LYNX-GUARD-B ROZSZERZENIE CC] nazwa z roli kończy się na końcu zdania
+    ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ. Wczoraj przyszła faktura.", "Biuro Rachunkowe RACHMISTRZ", "R5"),
+    ("Nabywca: GAMMA S.A. Termin płatności 14 dni.", "GAMMA S.A.", "R5"),
 ])
 def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     found = _frags(text)
