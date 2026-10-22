@@ -1,0 +1,90 @@
+LYNX-PDF-CRASH — Codex, audyt niezależny r1, 22.10.2026
+WERDYKT: PASS na exact SHA61f6e82efa3c10b5d10de5dcbf30b384a621f16a.
+Kod:133cefd3426cd29e9aed65d4e9e3c0bc892092fb.
+Baza/diff:70fa6bead3655e9304ddcfa33d659a265b430330..61f6e82.
+Odbiorca: Paweł / CC. Brak nowych findingów blokujących w zbadanym zakresie.
+PASS dotyczy naprawy kolizji PyMuPDF/Morfeusz i wskazanych ścieżek, nie całej skuteczności pseudonimizacji.
+
+Precheck briefu i odczyt:
+Brief i kod są jedną dostawą krytycznej poprawki, co brief jawnie dopuszcza.
+Zachowanie odczytu/eksportu PDF pozostaje istniejącą odpowiedzialnością document_processor i API.
+Nowy pdf_worker to minimalny szew izolacji natywnych bibliotek, nie nowa funkcja produktu ani nowa walidacja.
+Źródło/konieczność: istniejąca obsługa PDF + frozen S1/S3/S5 + odtworzona śmierć procesu.
+Precheck kontraktu: PASS PREIMPLEMENTATION w ramach tej łączonej dostawy.
+Frozen spec/lock bez zmian. Odczytano cały diff3 plików produkcyjnych, test, brief, DELIVERY i gate.
+_pdf_page_text i _PDF_COMB przeniesiono; logika funkcji pozostaje taka sama (lokalny import re zastąpiony importem modułowym).
+Proces silnika importuje jedynie wrapper; fitz i export_pdf.generate_pdf są ładowane w dziecku.
+Dane przekazywane stdin/stdout; w odczytanej ścieżce PDF brak zapisu treści do pliku tymczasowego.
+Brak nowego user-visible kontraktu wymagającego OWNER_EXPLANATION_GATE.
+
+Awaria — odtworzenie:
+Na izolowanej bazie70fa6be, zachowany repro_pdf_crash.py implementatora uruchomiony osobiście:
+dataset_layout/filled/zawiadomienie_syn.pdf, jedno powtórzenie.
+Ekstrakcja4153 znaków, następnie „Windows fatal exception: access violation”.
+Stos: pymupdf/mupdf.py:99 __next__ -> morfeusz2.py:179 analyse -> guard_residue._morf_interps/_r1 -> pipeline.
+Proces zakończony niepowodzeniem. Nie jest to zwykły wyjątek/force_block; pada natywnie.
+Nie powtarzano awarii bazy na całym zbiorze.
+
+Niezależny pion na dostawie:
+Własny probe.py (utrwalony jako repro_codex_r1.py), rzeczywiste spaCy/Morfeusz, HerBERT OFF:
+- 13 syntetycznych plików dataset_layout/filled, każdy2 razy =26 pełnych przebiegów
+  _extract_text -> pseudonymize_document -> Guard w jednym procesie silnika.
+- Wszystkie26: niepusty odczyt, brak błędu pipeline, bez śmierci procesu.
+- Po każdym przebiegu brak fitz/pymupdf w sys.modules procesu silnika.
+- To jawnie wymagany briefem test13x2, nie nowy benchmark/OCR ani pomiar rozpoznania PII.
+- Nazwy: pelnomocnictwo_syn, sad_oswiadczenie_majatkowe_syn, sad_pozew_syn, sad_sprzeciw_syn,
+  us_pcc3_syn, us_pcc3a_syn, us_pcc4_syn, zawiadomienie_syn, zlecenie_syn,
+  zus_emp_syn, zus_erp7_syn, zus_z15b_syn, zus_z3_syn (wszystkie.pdf).
+
+Eksport i błędy — osobny zakończony przebieg probe --api-only:
+- Rzeczywisty in-process TestClient /export-pdf na własnym AppState i tokenie testowym:
+  HTTP200, application/pdf, poprawna sygnatura PDF; ponowny odczyt eksportu zwraca oba oczekiwane tokeny.
+- Metadane sprawdzone w osobnym procesie: author="", creator=""; fitz nie importowany do silnika.
+- Dalszy prawdziwy pipeline po eksporcie działa, nadal brak fitz/pymupdf w procesie.
+- Pusty tekst eksportu ->400.
+- Wymuszony RuntimeError generatora ->500 z ogólnym komunikatem, bez syntetycznego sekretu.
+- Rzeczywisty niepoprawny PDF -> pusty tekst + „Błąd odczytu PDF”, bez syntetycznego sekretu.
+- TimeoutExpired zasymulowany na granicy subprocess.run -> ten sam kontrolowany błąd odczytu,
+  bez sekretu. Nie czekano120 sekund i nie testowano rzeczywistego zawieszenia.
+- W pierwszym harnessie26 przebiegów zakończyło się poprawnie, potem API zwróciło401,
+  ponieważ harness nie uruchomił lifespan i nie ustawił własnego tokena.
+  Poprawiono tylko harness; dokończono samą część API, bez powtarzania26 przebiegów.
+  401 nie jest findingiem produktu ani dowodem wycieku.
+
+Testy celowane, wykonane osobiście, pliki w oddzielnych procesach:
+- test_pdf_worker.py:2 passed.
+- test_disk_pii.py:6 passed.
+- test_engine_quality_layout.py:15 passed.
+Razem23 passed.
+Testy layout pokrywają m.in. PESEL/NIP w comb, powtórzone pola, prefiks PESEL/NIP, zwykłe pole,
+odrębne cyfry bez fuzji i maskowanie identyfikatorów jednym tokenem.
+Pierwszy run layout:7 failed/8 passed wyłącznie ModuleNotFoundError pypdf/reportlab jak w DELIVERY.
+Nie uznano tego za regresję. Dostępne lokalnie biblioteki dołączono z pakietu narzędzi do końca sys.path.
+Próba umieszczenia całego pakietu na początku PYTHONPATH kolidowała z natywnymi PIL/lxml;
+był to błąd konfiguracji audytora, nie produktu. Po właściwym dołączeniu bibliotek15/15.
+Nic nie instalowano i nie zmieniano zależności produktu.
+test_pdf_worker zgłosił ostrzeżenie dekodowania stderr w wątku testu;
+nie wystąpiła porażka asercji, a niezależny pion z binarnym transportem potwierdził działanie.
+Pozostałe SyntaxWarning/deprecacje nie stanowią findingów.
+
+Gate:
+gate_r1.txt implementatora: WYMAGA_DECYZJI — TOTAL_LINES156/150.
+Bieżący BOARD odnotowuje zgodę OWNERA22.10: „zgadzam się na przekroczenie”.
+Nie żądam jej ponownie i nie zmieniam mechanicznego wyniku gate.
+Nie uruchamiano ponownie gate ani pełnej suity — kontrakt tego nie wymagał, wystarczają dowody celowane.
+
+Granice:
+Bez OCR, realnych dokumentów, BIP, GOLD, pełnej regresji repo, oglądu GUI ani testu spakowanej instalacji.
+Testy nie certyfikują jakości spanów ani dowolnego uszkodzonego PDF.
+Nie deklaruję uniwersalnego testu każdego komunikatu natywnego parsera; sprawdzono konkretny zły PDF,
+timeout i awarię generatora. Metadane/odczyt eksportu zbadano technicznie, bez oceny wyglądu stron.
+
+Izolacja:
+C:/Users/p_pie/AppData/Local/Temp/lynx-pdf-crash-audit-r1-20261022/
+base/, exact/, run_test.py, probe.py, probe-api-state/summary.json.
+Własne profile/klucze/stany w Temp; odczytywane wyłącznie syntetyki.
+TestClient i własny probe blokują rzeczywiste połączenia do portu8765 i sieci zewnętrznej.
+Nie odczytano tokena/profilu aktywnego backendu Pawła i nie restartowano go.
+Bez zmian kodu produktu, merge i subagentów.
+
+Dalszy krok: odbiór Pawła. PASS nie jest poleceniem scalenia.
