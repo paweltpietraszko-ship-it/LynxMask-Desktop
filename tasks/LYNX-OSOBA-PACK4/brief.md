@@ -95,3 +95,4 @@ Wykryte pomiarem „widoku człowieka” na zbiorze GOLD (dev) po wdrożeniu kro
 Testy:
 - `test_guard_residue.py` +2: człon miasta bez pytania; miejscowość po ADRES = pytanie.
 - `test_audyt_2026_10.py`: `test_kont0_nie_jest_osoba` przeszedł (XPASS) → marker zdjęty zgodnie z zasadą pliku.
+4. **Odmiany słowa odrzuconego przez krok 2** (pomiar KPWr: „Maciolus” pytane, „Maciolusa” ciche): Guard pyta także o formy z typową końcówką odmiany (`_INFLECTIONS`). „Kawałek” nie jest odmianą „Kawa”. Test w `test_guard_residue.py`.

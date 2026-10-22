@@ -101,3 +101,10 @@ def test_czlon_miasta_wieloczlonowego_bez_pytania():  # [LYNX-OSOBA-PACK4] pomia
 def test_miejscowosc_po_zakrytym_adresie_to_pytanie():  # [LYNX-OSOBA-PACK4] adres bez kodu: ulica zakryta, miasto jawne
     assert _frags("Adres doręczeń: ADRES_003, Ostrów Wielkopolski") == {"Ostrów Wielkopolski": ["R3"]}
     assert _frags("Data: NUMER_008, Jelenia Góra") == {}
+
+
+def test_kandydat_bez_dowodu_takze_w_odmianie():  # [LYNX-OSOBA-PACK4] pomiar KPWr: „Maciolus” / „Maciolusa”
+    ws = collect_warnings("Model Maciolus działał. Model Maciolusa zasilano pakietem.", released_words=["Maciolus"])
+    assert {w["fragment"] for w in ws} >= {"Maciolus", "Maciolusa"}, ws
+    ws = collect_warnings("Kawa zlecił paczkę. Kawałek chleba.", released_words=["Kawa"])
+    assert "Kawałek" not in {w["fragment"] for w in ws}, ws

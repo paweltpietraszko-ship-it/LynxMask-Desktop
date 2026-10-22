@@ -128,10 +128,15 @@ def _r1(text: str):
             yield m.start(), m.end(), "R1", "Możliwe imię lub nazwisko, którego silnik nie zakrył"
 
 
+_INFLECTIONS = "owie|ami|ach|ego|emu|owi|iem|ów|om|em|ej|ie|a|u|ą|ę|y|i|e"  # końcówki odmiany nazwisk/imion
+_INFLECTION_RE = re.compile(rf"(?:{_INFLECTIONS})$")
+
+
 def _released(text: str, words: list[str]):
     """[LYNX-OSOBA-PACK4] Kandydaci OSOBA odrzuceni przez silnik z braku dowodu — każde wystąpienie, także na początku zdania."""
     for w in dict.fromkeys(words):
-        for m in re.finditer(rf"(?<![\w-]){re.escape(w)}(?![\w-])", text):
+        stem = _INFLECTION_RE.sub("", w) if len(w) >= 6 else w  # „Maciolusa” → „Maciolus”; odmiany innych wystąpień też (pomiar)
+        for m in re.finditer(rf"(?<![\w-]){re.escape(stem)}(?:{_INFLECTIONS})?(?![\w-])", text):
             yield m.start(), m.end(), "R1", "Możliwe nazwisko — silnik nie miał dowodu, że to osoba"
 
 
