@@ -177,6 +177,53 @@ def _apply_hits(
     return text
 
 
+# [LYNX-ADDR-REVERSED] Elementy adresu tuż obok rozpoznanego adresu (polityka OWNERA: adres w całości z miastem; samo
+# miasto bez sąsiedztwa ulicy z numerem / kodu pocztowego zostaje jawne). Miasto zawsze z bazy SIMC, w tej samej linii.
+_CITY_W = r"[A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+(?:-[A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+)*"
+_CITY_BEFORE_RE = re.compile(rf"(?<![\w-])({_CITY_W})(?:[ \t]+({_CITY_W}))?(?:[ \t]*,[ \t]*|[ \t]+)$")
+_COMMA_RE = re.compile(r"[ \t]*,[ \t]*")
+_BARE_STREET_RE = re.compile(rf"[ \t]*,[ \t]*{_CITY_W}(?:[ \t]+{_CITY_W}){{0,2}}[ \t]+\d+[a-zA-Z]?(?:/\d+[a-zA-Z]?)?(?![\w/])")
+_CUT_POSTAL_RE = re.compile(r"-\d{3}(?!\d)")
+
+
+def _is_city(name: str) -> bool:
+    return name in _CITY_FORMS or _ascii_fold(name) in _CITY_FORMS_ASCII
+
+
+def _city_before(text: str, pos: int) -> int | None:
+    """Początek miasta (1–2 słowa z SIMC) stojącego tuż przed pos (przecinek albo odstęp, ta sama linia)."""
+    m = _CITY_BEFORE_RE.search(text[max(0, pos - 60):pos])
+    if not m:
+        return None
+    base = max(0, pos - 60)
+    if m.group(2) and _is_city(f"{m.group(1)} {m.group(2)}"):
+        return base + m.start(1)
+    if _is_city(m.group(2) or m.group(1)):
+        return base + (m.start(2) if m.group(2) else m.start(1))
+    return None
+
+
+def _with_neighbours(text: str, hits: list[tuple[int, int, str, str]]) -> list[tuple[int, int, str, str]]:
+    """Faza 3: dokłada do trafień adresu ucięty kod, miasto przed / po (po przecinku), ulicę bez prefiksu po
+    „kod + miasto” oraz „Miasto, NN-NNN” przy kodzie spoza trafień. Zwraca nową listę dla wspólnego _apply_hits."""
+    out = []
+    for s, e, _v, tok in hits:
+        if re.search(r"\d{2}$", text[s:e]) and _CUT_POSTAL_RE.match(text, e):
+            e += 4  # kod pocztowy nigdy cięty w połowie („… 15 31” + „-001”)
+        street = _BARE_STREET_RE.match(text, e) if _POSTAL_IN_MATCH_RE.match(text, s) else None  # „kod miasto, Twarda 18”
+        cs = _city_before(text, s)
+        s = cs if cs is not None else s
+        comma = _COMMA_RE.match(text, e)
+        city = _match_city(text, comma.end()) if comma and not street else None
+        e = street.end() if street else (city[0] if city else e)
+        out.append((s, e, text[s:e], tok))
+    for m in _POSTAL_ANCHOR_RE.finditer(text):
+        cs = None if any(s <= m.start() < e for s, e, _, _ in out) else _city_before(text, m.start())
+        if cs is not None:
+            out.append((cs, m.end(), text[cs:m.end()], "ADRES"))
+    return out
+
+
 def apply_address_layer(state: PipelineState) -> None:
     """Stosuje wzorce adresów i kodów pocztowych na state.text.
 
@@ -232,7 +279,7 @@ def apply_address_layer(state: PipelineState) -> None:
             city_end, _ = city_r
             all_hits.append((m.start(), city_end, text[m.start():city_end], "ADRES"))
 
-    state.text = _apply_hits(text, all_hits, state.allocator)
+    state.text = _apply_hits(text, _with_neighbours(text, all_hits), state.allocator)  # [LYNX-ADDR-REVERSED] faza 3
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -88,3 +88,8 @@ Pierwsza próba odbyła się na płytkim klonie z 18.10 (`6cbd0ab`), bez dostęp
 
 Commity z tamtej próby (`29016e6`, `75aac50` na bazie `6cbd0ab`) porzucić — nie są potrzebne, przypadki z ich diagnozy są już w tym briefie.
 Rola: **implementacja** według tego briefu (nie Architekt, nie pisz nowego briefu ani wierszy BOARD).
+
+## Korekta odbioru i wykonawca (CC, 22.10, po zakończeniu próby Qwen decyzją OWNERA)
+- Wykonawca: **CC**, od main (WIP Qwena nie jest bazą).
+- Daty po mieście („Wrocław, 21.10.2026”, „Kraków, 12.05.2026”, „Opole, dnia 22.10.2026 r.”) są już na main zakrywane jako NUMER (polityka dat).
+  Odbiór „bez zmian, pusta mapa” był błędem briefu. Właściwe kryterium: **miasto jawne i brak tokenu ADRES**.
