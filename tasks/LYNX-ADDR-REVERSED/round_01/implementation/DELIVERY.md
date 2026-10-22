@@ -56,3 +56,13 @@ Samo miasto bez sąsiedztwa adresu zostaje jawne.
   - reproduktor Codexa `repro_r1.py`: space → ADRES całość, person → OSOBA=Jan Kalisz + ADRES=ul. Polna 5.
 - GOLD bez zmian względem r1: ADRES 120/120 · 240/240, ciche 102 · 217, pytania 1,62 · 1,23, OSOBA jak main.
 - gate r2: STATUS: WYMAGA_DECYZJI —   - RATIO: 131/1 = 131.0:1 (threshold 5:1) 
+
+## Runda 3 — Codex r3 F3–F4 (`85197dc`), kod `de4185e`
+- **F3 (regresja r2):** ochrona nazwiska działała globalnie (słowa osób z całego dokumentu). Teraz `_city_before` pomija miasto tylko wtedy, gdy tekst w TYM miejscu kończy się pełną rozpoznaną osobą („Jan Kalisz”), albo słowo stoi po imieniu / „Pan/Pani”. „Podpis: Jan Kalisz. Adres doręczenia: Kalisz, ul. Polna 5.” → „Podpis: OSOBA_001. Adres doręczenia: ADRES_001.”
+- **F4 (wcześniejszy, ta sama klasa):** nachodzące trafienia adresu („26-600 Radom” i „Radom, ul. Polna 5”) łączymy w jedno w `_with_neighbours`. Wcześniej `_apply_hits` odrzucał mniejsze i kod zostawał jawny. „Adres: 26-600 Radom, ul. Polna 5” → „Adres: ADRES_001”.
+- Testy:
+  - `test_addr_reversed.py` 23 passed (+2 F4);
+  - reproduktor Codexa `repro_r3.py`: F1, F2, city-control, F3, F4 ok, exit 0;
+  - regresja bez zmian: addr_email 22, map_fidelity 29, pipeline_v2 41, osoba_pack4 12, failclosed 23, formats_pack2 20.
+- GOLD bez zmian: ADRES 120/120 · 240/240, ciche 102 · 217, pytania 1,62 · 1,23.
+- gate r3: STATUS: WYMAGA_DECYZJI 
