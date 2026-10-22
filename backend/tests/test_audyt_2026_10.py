@@ -390,8 +390,7 @@ def test_firma_z_fragmentem_skrotu_nie_odrzucona(name):
     assert _filter_institutions([_NER(name, "FIRMA", 0.9, 0, len(name))])
 
 
-@needs_spacy
-@pytest.mark.xfail(strict=True, reason="BUG-NER-FP: 'Kont0' (OCR z 'Konto:') rozpoznany jako OSOBA")
+@needs_spacy  # BUG-NER-FP: naprawione w LYNX-OSOBA-PACK4 (krok 2: „Kont0” bez dowodu osoby → nie OSOBA, pytanie Guarda)
 def test_kont0_nie_jest_osoba():
     from pipeline import pseudonymize_document
     st = _fresh_state(with_ner=True)

@@ -1,0 +1,96 @@
+LYNX-OSOBA-PACK4 — audyt implementacji r3, 22.10.2026
+Wynik: FAIL — F1 (SAFETY_PRIVACY, P1) oraz F2 (P2).
+Exact SHA: f980c6e62253b6b607a8d0e810ebf553e94e62be, kod 3edcab5a8321bee69443b7ae35363193b66f15f7.
+Baza diffu implementacji i porównania F1: fa1c375.
+Precheck: PASS na 9ae8d36, raport r2 f3da31a; korekta C1 pozostaje zamknięta.
+Etap: implementacja; odbiorca: CC. Bez merge i bez zmian produktu.
+
+Oracle i zakres:
+Frozen arch/spec.md S2/S3/S4/S5, Task brief na badanym SHA (w tym ROZSZERZENIE CC 1–4).
+SHA256 spec: b67e184f75d23b5ae8d9d5a659360dc829aa25a9ba91868b200fa448e7545b9d, zgodny z lockiem.
+Zbadano diff siedmiu ownerów produkcyjnych; rozszerzenia są opisane w briefie i dotyczą tej samej klasy.
+Nie przywracam starego projektu Guarda ani nie tworzę gwarancji rozpoznania dowolnego PII.
+
+F1 — P1 / SAFETY_PRIVACY: znika ochrona drugiego wystąpienia w WERSALIKACH.
+TRACE: brief, Guard: każdy kandydat odrzucony z braku dowodu trafia do ostrzeżeń w KAŻDYM wystąpieniu,
+także na początku zdania i WERSALIKAMI; straty kroku2 nie mają tworzyć nowych cichych wycieków.
+OWNERSHIP: guard_residue._released, linie135–140; dopasowanie re.finditer jest zależne od wielkości liter.
+REPRO na exact SHA przez prawdziwy pipeline, Morfeusz, spaCy, mapę i Guard, bez stubów:
+"Dokument przekazał wczoraj Malina. W notatce zapisano MALINA."
+Wynik tekstowy bez zakryć, mapa={}, released=["Malina"]; jedyne ostrzeżenie na pierwsze "Malina".
+"MALINA" pozostaje jawne bez ostrzeżenia. Zgodność ostrzeżeń z wycinkami tekstu sprawdzona.
+Baza fa1c375, ten sam rzeczywisty pipeline: pierwsze wystąpienie zakryte, drugie "MALINA" ma RED MAP_LEAK.
+To odtworzona regresja: po zwolnieniu nazwiska z maskowania znika mapa, a nowy kanał R1 nie zastępuje
+dotychczasowego ostrzeżenia dla wersalików.
+Dwa dodatkowe syntetyki z osobą Malina dają ten sam wynik (łącznie3/3).
+Nie badano eksportu przez GUI; to jawna pozostałość bez ostrzeżenia na końcu realnego pipeline.
+
+F2 — P2: odmiana krótkiego kandydata nie jest wskazywana przez nową funkcję Guarda.
+TRACE: ROZSZERZENIE CC4: Guard pyta także o formy słowa odrzuconego przez krok2 z typową końcówką odmiany.
+OWNERSHIP: ta sama _released, linia138: dla len(w)<6 pozostaje pełne słowo jako stem.
+REPRO exact SHA:
+collect_warnings("Róża złożyła wniosek. Róży dotyczy odpis.", released_words=["Róża"], allowlist=[])
+-> tylko ostrzeżenie na "Róża"; brak ostrzeżenia na "Róży".
+"a" i "y" są końcówkami z dostarczonej _INFLECTIONS, ale dla krótkiego słowa nie wymienia się końcówki.
+To podstawowa para odmiany objęta zapisaną klasą, nie żądanie pełnego nowego lematyzatora.
+WARSTWA DOWODU: rzeczywisty collect_warnings na finalnym tekście. Nie twierdzę, że pełny pipeline zawsze
+przepuszcza Róży: inne źródło może osobno zarejestrować tę formę. F2 jest luką obiecanej obsługi listy kandydatów.
+Kontrole Maciolus/Maciolusa i Kawa/Kawałek przechodzą.
+
+Zachowany przenośny reproduktor F1/F2: round_01/tests/repro_r3.py.
+Użycie: python -B -X utf8 repro_r3.py <izolowany-backend-exact-SHA> <własny-katalog-stanu>.
+Na dostawie: F1 FAIL, F2 FAIL, controls PASS; exit1.
+
+Pozostałe niezależne dowody:
+- Własna macierz realnego pipeline: 14/15 PASS; porażka to wariant F1.
+  CAPS-etykieta i KOWALSKI, lista5 nazwisk/5 tokenów, nazwisko dwuczłonowe, patron ulicy i Jelenia Góra,
+  Róża Zielona (jeden token), jej powtórzenie/odmiana, dwie różne osoby, wszystkie3 słowa pospolite z briefu,
+  dowody Pan/Pani/pełne imię/rola, nieznany kandydat na początku i reset rejestru między dokumentami.
+- Osobno potwierdzono przekazanie do Guarda z NER (Kont0), ścieżki słownikowej oraz adaptera HerBERT
+  (w tym ostatnim stub TYLKO detektora; realne apply_net, rejestr i Guard, bez modelu ONNX).
+- Wymuszony wyjątek collect_warnings w realnym pipeline: blocked=true, tekst pusty, mapa pusta, error=true (S3).
+- Niedostępny Morfeusz w single_osoba_evidence: zachowanie zakrywania=True (fail-safe), bez zwolnienia kandydata.
+- Testy plikami w osobnych procesach: test_osoba_pack4.py11 PASS, test_guard_residue.py50 PASS,
+  test_ner_multiline.py21 PASS, test_osoba_not_person.py25 PASS, test_herbert_net.py7 PASS
+  (test real_model świadomie wyłączony), test_audyt_2026_10.py::test_kont0_nie_jest_osoba1 PASS.
+  Razem115 PASS; to nie zastępuje powyższych niezależnych reproduktorów.
+
+Pomiary wymagane kontraktem — ponowione na exact SHA:
+1. GOLD dev40/test80, rzeczywisty silnik+Guard:
+   zakryte933/1864; ciche142/297; jawne z ostrzeżeniem77/140;
+   zbędne zakrycia not_pii69/440 oraz152/880; pytania/dok2,62/2,23.
+   OSOBA: dev325 zakrytych,9 z ostrzeżeniem,1 cichy; test657/13/0.
+   Odtworzono liczby CC narzędziem human_view.py, blob0360ba55bd672b6eaf1f085aa11cdee7e8518263.
+   To klasyfikacja narzędzia CC: odtwarza mapowanie znaków przez wyszukiwanie/difflib i próg jawnych odcinków.
+   Nie nazywam tego niezależną semantyczną walidacją każdego spanu ani dowodem pełnej ochrony.
+2. Pomiar słów osób na zapisanym OCR fresh+0627 (150 dok.) i tekście KPWr (52 dok. z osobami):
+   fresh+0627:355 zakrytych/2 z ostrzeżeniem/8 cichych, pytania0,56/dok;
+   KPWr:370/47/11, pytania3,8654/dok.
+   Porównanie ze ZACHOWANYM cache CC main.json:0 nowych cichych rekordów słów;35 wcześniej zakrytych -> z ostrzeżeniem.
+   DELIVERY mówi36; to36 wzrostu liczby ostrzeganych rekordów, w tym1 poprawiony wcześniej cichy.
+   Różnica opisowa nie stanowi oddzielnego defektu produktu.
+   Metryka scala wystąpienia słowa i uznaje je za ostrzeżone, jeśli jakiekolwiek ma ostrzeżenie.
+   Dlatego nie wykrywa F1, gdzie pierwsze Malina ma ostrzeżenie, a drugie MALINA go nie ma.
+   Własna kopia skryptu zmienia tylko ścieżki izolacji i zapisuje hashe słów bez kontekstów; agregacja pozostaje CC.
+   Baseline korpusów pochodzi z cache CC, nie z ponownego pełnego uruchomienia bazy.
+Nie ponawiano OCR ani benchmarku poza wskazanymi wymaganiami kontraktu.
+
+Gate/ograniczenia:
+Gate CC r3: WYMAGA_DECYZJI (RATIO328/16=20,5:1; TOTAL_LINES344).
+Zgoda na ~350l. odnotowana w briefie; mechanicznego gate nie nazywam PASS. FAIL wynika z F1/F2, nie rozmiaru.
+NOT_CHECKED/PARTIAL: pełny API/GUI/archiwum/schowek, realny HerBERT ON, pełna suita,
+pośredni pomiar samych poprawek1–4 przed krokiem2.
+test_failclosed.py nie dał kompletnego wyniku: pierwszy start miał błąd zapisu tymczasowego keystore sandboxa;
+po izolacji TMP/TEMP proces TestClient nie zakończył się i został przerwany. Nie kwalifikuję tego jako defekt produktu.
+Inne początkowe błędy Temp zostały usunięte ustawieniem własnego TMP/TEMP; powyższe115 testów przeszło.
+Własna początkowa sonda NER dla Malina odpadała w filtrze kroku1; zastąpiono ją poprawnym Kont0, bez findingu.
+
+Środowisko/dowody:
+Izolowane źródła exact i baza, własne profile/klucze, Python3.14, rzeczywisty spaCy i Morfeusz. HerBERT domyślnie OFF.
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/pack4-audit-r3/
+vertical.py/json, focused.py/json, paths.py/json, direct.json, compare_base.py/baseline.json,
+repro_r3.py, gold-results/summary.json, words-summary.json, exact/, base/.
+Do repo nie trafiają dokumenty GOLD/test ani treści KPWr, profile, klucze i konteksty korpusów.
+Bez zmian produktu, merge i subagentów.
+Następny krok CC: jedna poprawka kompletności przekazania kandydatów (F1/F2), potem wąski diff + zachowany repro
+i testy zmienionego ownera. Nie powtarzać pełnych korpusów/OCR bez konkretnego powodu.

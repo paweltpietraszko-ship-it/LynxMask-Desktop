@@ -1,0 +1,43 @@
+LYNX-OSOBA-PACK4 — BRIEF_ONLY r1, 22.10.2026
+Wynik: WYMAGA KOREKTY BRIEFU — jedna zamknięta uwaga C1.
+Nie wydaję PASS PREIMPLEMENTATION ani werdyktu o implementacji, której nie audytowano.
+Exact SHA briefu: f5dbd715f691843cbe6eba6a424f69c5bb0b1d08.
+Kontrakt: tasks/LYNX-OSOBA-PACK4/brief.md na tym SHA + frozen arch/spec.md S2/S3/S4/S5.
+Odbiorca: CC, bez potrzeby angażowania Architekta do tej korekty dokumentu.
+
+C1 — jeden rozpoznany człowiek, jeden token: sprzeczność kryterium odbioru z S4.
+TRACE: arch/spec.md S4:
+"jedna wiarygodnie ustalona osoba = jeden token także przy odmianach; w przywracaniu dopuszczalny mianownik, ale nie wolno scalać różnych osób."
+Brief, Odbiór, dopuszcza:
+"Pani Róża Zielona" -> "jedna osoba lub dwa tokeny OSOBA, bez jawnego Zielona".
+To zdanie opisuje jedną osobę. Alternatywa dwóch tokenów nie rozstrzyga, czy ma powstać jedna tożsamość/mapa,
+czy osobny token imienia i osobny nazwiska. Tak zapisany odbiór może zaakceptować zachowanie sprzeczne z S4.
+Wystarczająca korekta: ujednolicić punkt 4 oraz odbiór z istniejącym S4 dla jednej wiarygodnie ustalonej osoby.
+Jeżeli CC chce odrębnej produktowej wyjątku z dwoma tokenami, nie wolno traktować samej propozycji w briefie
+jako zatwierdzonej decyzji OWNERA; wymagałby osobnego wyjaśnienia i rozstrzygnięcia przed zamrożeniem.
+Nie nakazuję nowego algorytmu, ownera ani przebudowy tokenizacji w tym raporcie.
+
+Pozostała ocena dokumentu:
+- Poprawki CAPS, granic listy i kontekstu patrona/miejscowości mają konkretne przykłady i wskazanych istniejących ownerów.
+- Krok2 ma jedno miejsce decyzji single_osoba_evidence w osoba_not_person.py, wspólne dla NER, słownika i włączonego HerBERT.
+  To minimalny nowy helper w istniejącym ownerze; nie ma uzasadnienia do duplikowania oceny w każdym źródle.
+- Przekazanie kandydatów odrzuconych z braku dowodu do istniejącego pipeline/collect_warnings wykorzystuje istniejącego Guarda.
+  Źródło odpowiedzialności: zachowanie opisane w briefie, w ramach modelu S4 ostrzeżenie -> decyzja człowieka.
+- Rozróżniono brak dowodu od wyłączeń kroku1; błąd Morfeusza ma zachować dotychczasowe zakrywanie.
+- "0 cichych wycieków" jest zapisanym kryterium Tasku/pomiaru; nie stanowi nowej ogólnej gwarancji wykrycia dowolnych PII.
+  W audycie implementacji trzeba oddzielić rzeczywiste pomiary od supporting evidence/prototypów CC i wcześniejszych baz.
+- Obowiązuje zależność: implementacja po scaleniu FIX1/rebase oraz zgoda OWNERA na deklarowane ~350 linii przed kodem.
+  Nie proszę teraz o zgodę na implementację, skoro brief wymaga korekty.
+- Gold jest już lokalnie gotowy: pomiar dev/test wynika z briefu; część test pozostaje tylko wejściem skryptu pomiarowego,
+  bez oglądu/strojenia CC zgodnie z osobnym kontraktem GOLD-SET.
+
+Warstwy i granice BRIEF_ONLY:
+Przeczytano brief i właściwy wiersz świeżego origin/main BOARD.
+Wykonano jedno celowane wyszukanie deklaracji/wywołań oraz punktowe odczyty wymienionych ownerów na SHA briefu:
+reject_single_osoba, _filter_institutions/_process_ner, _apply_first_names/_apply_dictionary_names,
+_merge_adjacent_entities, wywołanie collect_warnings w pipeline i filtr HerBERT.
+Potwierdzono, że wskazane istniejące miejsca są realne; nowy helper nie jest przedstawiany jako już istniejący.
+Bez analizy diffu implementacji PACK4, testów, reproduktorów, sond, modeli, benchmarku, oglądu prototypów CC ani subagentów.
+Testy FIX1 opisane w osobnym raporcie dotyczą wyłącznie tamtego zadania.
+Nie zmieniono kodu produktu ani briefu.
+Następny ruch: CC koryguje wyłącznie C1 w briefie, następnie wąski precheck zmienionego fragmentu.

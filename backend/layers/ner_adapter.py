@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
 from osoba_not_person import DICTIONARY_PATH_DENYLIST as _OSOBA_DENYLIST  # [LYNX-OSOBA-NOT-PERSON] listy w jednym miejscu
+from osoba_not_person import inside_street_name, person_words_of, single_osoba_evidence  # [LYNX-OSOBA-PACK4]
 from pipeline_core import PipelineState, TokenAllocator
 
 # ── Słownik form fleksyjnych nazwisk (port: LookupTables.surnamesForms) ─────
@@ -213,7 +214,13 @@ def _apply_first_names(text: str, allocator: TokenAllocator) -> str:
     wartością. Propagacja nie rozsyła imion (cudza osoba w Przywróć), a gołe imię przy nazwisku zostawałoby jawne."""
     def name(m: re.Match, i: int) -> str:
         return allocator.assign("OSOBA", m.group(i)) if m.group(i).lower() in _FIRST_NAMES else m.group(i)
-    text = _NAME_AFTER_RE.sub(lambda m: m.group(1) + m.group(2) + name(m, 3), text)
+
+    def after(m: re.Match) -> str:  # [LYNX-OSOBA-PACK4] 4: „OSOBA_n(=Róża) Zielona” → jedna osoba, jeden token (S4)
+        prev, w = allocator.reverse_map.get(m.group(1), ""), m.group(3)
+        if " " not in prev and prev.lower() in _FIRST_NAMES and w.lower() not in _FIRST_NAMES and w.lower() not in _OSOBA_DENYLIST:
+            return allocator.assign("OSOBA", f"{prev} {w}")
+        return m.group(1) + m.group(2) + name(m, 3)
+    text = _NAME_AFTER_RE.sub(after, text)
     return _NAME_BEFORE_RE.sub(lambda m: name(m, 1) + m.group(2) + m.group(3), text)
 
 
@@ -227,11 +234,13 @@ _STANDALONE_RE = re.compile(r"(?<![\wŁŚŹĆŃĄĘÓŻ])([A-ZŁŚŹĆŃĄĘÓŻ
 def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
     """Imię obok osoby (_apply_first_names), potem samotne nazwisko, potem samotne imię ze słownika (kolejność Mobile)."""
     text = _apply_first_names(text, allocator)
-
+    pw = person_words_of([v for k, v in allocator.reverse_map.items() if k.startswith("OSOBA_")])
     def standalone(words: frozenset[str], min_len: int):
         def repl(m: re.Match) -> str:
             w = m.group(1)
-            if len(w) < min_len or w.lower() not in words or w.lower() in _OSOBA_DENYLIST:
+            if len(w) < min_len or w.lower() not in words or w.lower() in _OSOBA_DENYLIST \
+                    or inside_street_name(m.string, m.start(1)) \
+                    or not single_osoba_evidence(m.string, m.start(1), m.end(1), pw, words):  # [PACK4] krok 2
                 return w
             return allocator.assign("OSOBA", w)
         return repl

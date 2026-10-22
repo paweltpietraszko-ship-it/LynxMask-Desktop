@@ -267,8 +267,8 @@ def _merge_adjacent_entities(
                 break
             # Sprawdź czy przerwa to tylko spacje, kropki, przecinki, myślniki, cudzysłowy
             gap_text = text[current.end:nxt.start]
-            if gap_text and not re.match(r'^[\s.,\-"]*$', gap_text):  # [BUG-3][BUG-D]
-                break
+            if gap_text and not re.match(r'^[\s.,\-"]*$', gap_text) or current.label == TOKEN_OSOBA and not re.fullmatch(r"[ \t]*|-", gap_text):
+                break  # [BUG-3][BUG-D]; [LYNX-OSOBA-PACK4] 2: osoby łączymy tylko przez spację/łącznik (lista nazwisk = osobne)
             # Scalaj
             current = NERResult(
                 text=text[current.start:nxt.end].strip(),

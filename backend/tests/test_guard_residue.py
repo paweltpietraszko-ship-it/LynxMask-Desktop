@@ -92,3 +92,33 @@ def test_przesuniecie_o_naglowek_pse():
     text = "Świadek Śludkowskiego nie stawił się."
     w = shift_warnings(collect_warnings(text), 10)[0]
     assert ("x" * 10 + text)[w["start"]:w["end"]] == "Śludkowskiego"
+
+
+def test_czlon_miasta_wieloczlonowego_bez_pytania():  # [LYNX-OSOBA-PACK4] pomiar GOLD-SET: „Jelenia Góra”, „Tomaszów Mazowiecki”
+    assert collect_warnings("Kraków, 01.02.2026\nDoręczono do Jelenia Góra.\nOddział: NUMER_006, Tomaszów Mazowiecki") == []
+
+
+def test_miejscowosc_po_zakrytym_adresie_to_pytanie():  # [LYNX-OSOBA-PACK4] adres bez kodu: ulica zakryta, miasto jawne
+    assert _frags("Adres doręczeń: ADRES_003, Ostrów Wielkopolski") == {"Ostrów Wielkopolski": ["R3"]}
+    assert _frags("Data: NUMER_008, Jelenia Góra") == {}
+
+
+def test_kandydat_bez_dowodu_takze_w_odmianie():  # [LYNX-OSOBA-PACK4] pomiar KPWr: „Maciolus” / „Maciolusa”
+    ws = collect_warnings("Model Maciolus działał. Model Maciolusa zasilano pakietem.", released_words=["Maciolus"])
+    assert {w["fragment"] for w in ws} >= {"Maciolus", "Maciolusa"}, ws
+    ws = collect_warnings("Kawa zlecił paczkę. Kawałek chleba.", released_words=["Kawa"])
+    assert "Kawałek" not in {w["fragment"] for w in ws}, ws
+
+
+def test_kandydat_bez_dowodu_wersaliki_i_krotka_odmiana():  # [LYNX-OSOBA-PACK4] Codex r3 F1/F2
+    ws = collect_warnings("Dokument przekazał wczoraj Malina. W notatce zapisano MALINA.", released_words=["Malina"])
+    assert {w["fragment"] for w in ws} >= {"Malina", "MALINA"}, ws
+    ws = collect_warnings("Róża złożyła wniosek. Róży dotyczy odpis.", released_words=["Róża"])
+    assert {w["fragment"] for w in ws} >= {"Róża", "Róży"}, ws
+    assert "Różowy" not in {w["fragment"] for w in collect_warnings("Różowy płot.", released_words=["Róża"])}
+
+
+@pytest.mark.parametrize("released", ["Róża", "RÓŻA", "RÓŻY"])
+def test_odmiana_kandydata_niezaleznie_od_wielkosci_liter(released):  # [LYNX-OSOBA-PACK4] Codex r4 F2
+    ws = collect_warnings("RÓŻA złożyła wniosek. RÓŻY dotyczy odpis.", released_words=[released])
+    assert {w["fragment"] for w in ws} >= {"RÓŻA", "RÓŻY"}, ws

@@ -117,6 +117,7 @@ def apply_net(text: str, reverse_map: dict, anon_map=None) -> tuple[str, dict]:
     if not kinds:
         return text, reverse_map
     from ner_layer import _filter_institutions
+    from osoba_not_person import single_osoba_evidence
     tokens = [m.span() for m in _TOKEN_RE.finditer(text)]
     values, partial = {}, 0
     for s, e, kind, score in detect(text):
@@ -126,6 +127,9 @@ def apply_net(text: str, reverse_map: dict, anon_map=None) -> tuple[str, dict]:
         if any(a < e and s < b for a, b in tokens):   # przecina istniejący token — nie zmieniamy starych decyzji
             partial += 1
             continue
+        at = text.find(value, s)
+        if kind == "PER" and " " not in value and at >= 0 and not single_osoba_evidence(text, at, at + len(value)):
+            continue  # [LYNX-OSOBA-PACK4] krok 2: pojedyncze słowo bez dowodu → nie zakrywamy, trafia do Guarda
         if _filter_institutions([SimpleNamespace(text=value, label=TYPES[kind])]):
             values.setdefault(value, TYPES[kind])
     assigned: dict[str, str] = {}
