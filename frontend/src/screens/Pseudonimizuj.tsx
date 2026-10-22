@@ -889,7 +889,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
 
       {/* [LYNX-GUARD-B] ostrzeżenia Guarda: decyzja przy każdej pozycji, bez zbiorczego „zapisz mimo to” (S4) */}
       {result && !ocrWarning && <GuardPanel base={result.anonymized_preview} warnings={warnings} pending={pending}
-        kept={kept} onCover={handleCover} remember={remember} onRemember={expressMode ? undefined : setRemember}
+        kept={kept} onCover={handleCover} remember={remember} onRemember={expressMode ? undefined : setRemember} allowToken={expressMode ? undefined : apiToken || undefined}
         onKeep={(keys, keep) => setKept(s => { const n = new Set(s); keys.forEach(k => keep ? n.add(k) : n.delete(k)); return n; })} />}
       {guardBlocked && result && (
         <div style={{ background: T.redBg, border: `1px solid ${T.redBorder}`, borderRadius: 8, padding: "12px 16px",

@@ -16,6 +16,7 @@
 import { useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
+import { AllowEntry, clearAllow, listAllow, removeAllow, ruleLabel } from "./guardAllowlist";
 
 const API = "http://127.0.0.1:8765";
 
@@ -546,77 +547,72 @@ function DictSection({ apiToken }: { apiToken: string }) {
   );
 }
 
-// ── Sekcja: Wyjątki Guard (allowlist) ────────────────────────────────────────
+// ── Sekcja: Wyjątki Guard („Zawsze jawne”, LYNX-GUARD-ALLOWLIST-S5) ─────────────
 
 function GuardAllowlistSection({ apiToken }: { apiToken: string }) {
-  const [entries,  setEntries]  = useState<string[] | null>(null);
+  const [entries,  setEntries]  = useState<AllowEntry[] | null>(null);
+  const [damaged,  setDamaged]  = useState(false);
+  const [confirm,  setConfirm]  = useState(false);
   const [loading,  setLoading]  = useState(false);
-  const [removing, setRemoving] = useState<string | null>(null);
   const [status,   setStatus]   = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  async function load() {
+  async function run(action: () => Promise<unknown>) {
     setLoading(true);
+    setStatus(null);
     try {
-      const res = await apiFetch("/profile/guard-allowlist", { method: "GET" }, apiToken);
-      const data = await res.json();
+      await action();
+      const data = await listAllow(apiToken);
       setEntries(data.entries ?? []);
-    } catch {
-      setStatus({ type: "error", msg: "Nie można pobrać listy wyjątków." });
+      setDamaged(!!data.damaged);
+    } catch (e) {
+      setStatus({ type: "error", msg: (e as Error).message || "Nie można pobrać listy wyjątków." });
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function removeEntry(phrase: string) {
-    setRemoving(phrase);
-    try {
-      const res = await apiFetch(
-        `/profile/guard-allowlist/${encodeURIComponent(phrase)}`,
-        { method: "DELETE" }, apiToken
-      );
-      if (res.ok) {
-        setEntries(prev => prev?.filter(e => e !== phrase) ?? null);
-      } else {
-        setStatus({ type: "error", msg: "Błąd usuwania wpisu." });
-      }
-    } catch {
-      setStatus({ type: "error", msg: "Błąd połączenia." });
-    } finally {
-      setRemoving(null);
+      setConfirm(false);
     }
   }
 
   return (
     <Section title="Wyjątki Guard">
       <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
-        Frazy oznaczone jako „to nie PII" — Guard nie blokuje zapisu gdy je wykryje w odpowiedzi AI.
+        Fragmenty, przy których wybrano „Zawsze jawne” — Guard nie pyta o nie w kolejnych dokumentach (tylko ostrzeżenia
+        żółte). Lista jest zaszyfrowana na tym komputerze.
       </div>
-      <Btn onClick={loading ? undefined : load} disabled={loading}>
+      <Btn onClick={loading ? undefined : () => run(async () => {})} disabled={loading}>
         {loading ? "▸ Ładuję..." : entries ? "Odśwież" : "Pokaż wyjątki"}
       </Btn>
-      {entries !== null && (
+      {damaged && (
+        <Alert type="error">
+          Lista wyjątków jest uszkodzona — Guard pyta o wszystko.{" "}
+          <Btn onClick={() => confirm ? run(() => clearAllow(apiToken)) : setConfirm(true)} disabled={loading}>
+            {confirm ? "Na pewno? Usuń tylko listę wyjątków" : "Wyczyść uszkodzoną listę wyjątków"}
+          </Btn>
+        </Alert>
+      )}
+      {entries !== null && !damaged && (
         <div style={{
           border: `1px solid ${T.border}`, borderRadius: 6,
           maxHeight: 200, overflowY: "auto",
         }}>
           {entries.length === 0 ? (
             <div style={{ padding: "16px", textAlign: "center", color: T.textMuted, fontSize: 13 }}>
-              Brak wyjątków — Guard blokuje wszystkie wykrycia
+              Brak wyjątków — Guard pyta o każde ostrzeżenie.
             </div>
-          ) : entries.map(phrase => (
-            <div key={phrase} style={{
+          ) : entries.map(e => (
+            <div key={`${e.value}|${e.rule}`} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "7px 12px", borderBottom: `1px solid ${T.border}`,
             }}>
-              <span style={{ flex: 1, fontSize: 13, color: T.textPrimary }}>{phrase}</span>
+              <span style={{ flex: 1, fontSize: 13, color: T.textPrimary }}>
+                {e.value} <span style={{ color: T.textMuted }}>· {ruleLabel(e.rule)}</span>
+              </span>
               <button
-                onClick={() => removeEntry(phrase)}
-                disabled={removing === phrase}
+                onClick={() => run(() => removeAllow(apiToken, e))}
+                disabled={loading}
                 style={{
                   background: "none", border: "none",
                   color: T.textMuted, cursor: "pointer",
                   fontSize: 16, lineHeight: 1, padding: "2px 4px",
-                  opacity: removing === phrase ? 0.4 : 1,
                 }}
                 title="Usuń wyjątek"
               >✕</button>
@@ -683,7 +679,7 @@ function ResetSection({ apiToken }: { apiToken: string }) {
             Czy na pewno chcesz usunąć wszystkie dane profilu?
           </div>
           <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14, lineHeight: 1.5 }}>
-            Zostanie usunięty słownik biura, wyjątki „to nie PII”, całe archiwum dokumentów,
+            Zostanie usunięty słownik biura, wyjątki Guarda („Zawsze jawne”), całe archiwum dokumentów,
             dziennik zdarzeń i plik logu silnika.
             Operacja jest nieodwracalna.
           </div>

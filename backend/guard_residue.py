@@ -9,11 +9,10 @@ Wartości fragmentów trafiają tylko do odpowiedzi dla UI, nigdy do logów (S5)
 """
 from __future__ import annotations
 
-import json
-import os
 import re
-from pathlib import Path
 
+from guard_allowlist import ANY_YELLOW, silenced
+from guard_allowlist import load as load_allowlist  # noqa: F401  [S5] zaszyfrowana lista (pipeline)
 from osoba_not_person import OSOBA_DENYLIST, WHITE_LISTS, in_city_name
 from output_guard import _LEAK_HIGH, _LEAK_MEDIUM, _TOKEN_RE
 
@@ -230,30 +229,21 @@ def _map_leaks(text: str, values: list[str]):
             yield m.start(), m.end(), "MAP_LEAK", "Ta wartość jest zakryta w innym miejscu dokumentu"
 
 
-def load_allowlist() -> list[str]:
-    """Istniejąca allowlista profilu (tylko odczyt; brief v2: nie poszerzamy jawnego pliku)."""
-    path = Path(os.environ.get("PROFILE_DIR", str(Path.home() / ".pseudominizer" / "profile"))) / "guard_allowlist.json"
-    try:
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
-    except Exception:
-        return []
-
-
 _RED = ("HIGH", "MAP_LEAK")
 
 
-def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list[str] | None = None,
+def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list | None = None,
                      released_words: list[str] | None = None) -> list[dict]:
     """Ostrzeżenia dla finalnego tekstu: [{id, start, end, fragment, rule, level, reasons}], posortowane po pozycji.
-    Fragmenty nachodzące na siebie → jedna pozycja (wszystkie powody); nic wewnątrz tokenów; allowlista wycisza fragment."""
+    Fragmenty nachodzące na siebie → jedna pozycja (wszystkie powody); nic wewnątrz tokenów; allowlista (fragment, reguła) wycisza tylko żółte (S5)."""
     tokens = [m.span() for m in _TOKEN_RE.finditer(text)]
     masked = _TOKEN_RE.sub(lambda m: "#" * len(m.group(0)), text)
-    allow = {a.strip().casefold() for a in allowlist or [] if isinstance(a, str) and a.strip()}
+    allow = [(a, ANY_YELLOW) if isinstance(a, str) else tuple(a) for a in allowlist or []]
     hits = []
     for src in (_patterns(masked), _map_leaks(masked, map_values or []), _r1(text), _released(text, released_words or []),
                 _r2(text), _r3(text), _r4(text), _r5(text)):
         for s, e, rule, reason in src:
-            if s < e and not any(ts < e and s < te for ts, te in tokens) and text[s:e].strip().casefold() not in allow:
+            if s < e and not any(ts < e and s < te for ts, te in tokens) and not silenced(text[s:e], rule, allow):
                 hits.append((s, e, rule, reason))
     out: list[dict] = []
     for s, e, rule, reason in sorted(hits):
