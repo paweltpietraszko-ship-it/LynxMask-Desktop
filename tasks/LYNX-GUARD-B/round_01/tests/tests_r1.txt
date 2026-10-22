@@ -1,0 +1,100 @@
+LYNX-GUARD-B — niezależny audyt r1, 2026-10-22
+Wynik: FAIL F1–F3. Do CC zamknięta lista poprawek logiki, bez nowej architektury.
+Exact SHA: b16be398803f298680c600f02bb68518ea297d94 (kod panelu d3bc33f3d717b9e3a3fb1c066da680e6a817a521).
+Diff od etapu A z raportem: f47fdb93fbd6d03c2dcb6210a5c2f00eeef60a91.
+Odbiorca: CC. Brak merge.
+Zgłoszenie OWNERA: „optycznie jest poprawnie, przyciski działają poprawnie”.
+Przyjmuję ocenę wyglądu i podstawowych przycisków; nie otwieram na nowo wyglądu panelu, przewijania ani stylistyki.
+
+Wyrocznia: frozen S4 + zatwierdzony GUARD-RESIDUE v2/U1–U5 + aktualny brief GUARD-B, w tym odnotowane rozszerzenia OWNERA:
+zapamiętywanie Maskuj w profilu i grupowanie tego samego słowa ×N. Nie dodaję serwerowego nadzorcy ani kryptograficznego C1.
+Zgoda na rozmiar A/B jest odnotowana w BOARD, nie otwierano jej ponownie.
+
+Metoda wspólna reproduktorów:
+Izolowana kopia git archive exact SHA; własny profil/archiwum, HerBERT OFF, sieć zewnętrzna odcięta.
+Realny /preview -> pipeline._apply_output_guard -> guard_residue -> shift_warnings + rzeczywisty nagłówek PSE.
+Wyłącznie wcześniejszy silnik podmieniony na dostawcę syntetycznego FINALNEGO tekstu z pozostałością.
+To wymagane wejście badanego Guarda, nie teza o tym, że pełny silnik zwykle przepuszcza PESEL.
+JSON z API następnie przekazano bez korekt do realnych coverWarning/applyCovers/pendingWarnings w Node 24.15.
+Wszystkie źródła backendu i frontendu pochodzą z exact SHA.
+Pseudonimizuj.tsx:150–159 korzysta z tych funkcji i ustala locked = guardBlocked || pending.length > 0;
+:257 i :597 używają shownText do zapisu/kopii.
+Nie klikano zautomatyzowanego GUI i nie wykonywano prawdziwego schowka/archiwizacji przez Tauri:
+odtworzono dane, funkcje transformujące i wynik, a podłączenie do ekranu/zapisu odczytano w kodzie.
+
+F1 — SAFETY_PRIVACY: przesunięcie pozycji Python -> JavaScript może pozostawić wskazany numer jawny po Maskuj.
+TRACE: brief B pkt 1: numer/resztka maskowany we wskazanym miejscu; S4 Zakryj aktualizuje właściwy fragment
+i nie pozwala uznać nieobsłużonego ostrzeżenia za zakończone.
+OWNERSHIP: guardDecisions.ts:54–73 coverWarning używa start/end z API do indeksowania JS;
+API/Guard podają pozycje liczone w punktach kodowych Pythona, JS indeksuje jednostki UTF-16.
+B jest pierwszym konsumentem używającym tych pozycji do zakrywania.
+REPRO:
+    finalny tekst = "📄".repeat(12) + " PESEL: 44051401359."
+API: ostrzeżenie RED/HIGH PESEL z fragmentem pełnego syntetycznego numeru.
+Wybrano Maskuj tej pozycji.
+Wynik końcowej linii:
+    📄📄📄📄📄📄📄📄📄📄NUMER_001 44051401359.
+pending=[]; guardBlocked=false -> locked=false.
+Cały syntetyczny PESEL pozostaje jawny mimo Maskuj i zakończenia listy.
+Wariant z jednym emoji:
+    📄 PESEL:NUMER_0019.
+Maskowane jest inne miejsce, cyfra zostaje za tokenem; mapa wskazuje pełny numer, więc Przywróć nie odtworzy źródła.
+Kontrole: bez emoji oraz emoji dopiero ZA numerem -> "PESEL: NUMER_001." prawidłowo.
+Do poprawy kontrakt współrzędnych na istniejącym szwie backend/frontend; bez wyszukiwania przypadkowego duplikatu po wartości
+i bez rozbudowy systemu. Nie zmieniać wspólnego formatu tokenów.
+
+F2 — SAFETY_PRIVACY: częściowe pokrycie usuwa ostrzeżenie na całej nazwie firmy.
+TRACE: S4 każda pozycja wymaga rozstrzygnięcia; B „ostrzeżenie bez decyzji = niezostawione i niezakryte”.
+OWNERSHIP: guardDecisions.ts:78–80 pendingWarnings usuwa ostrzeżenie przy JAKIMKOLWIEK przecięciu z zakryciem.
+Globalne zakrycie słowa w coverWarning może obejmować tylko część innego ostrzeżenia.
+REPRO:
+    "Pan Rogalik podpisał. Sprzedawca: Rogalik i KOWALCZYK sp. k."
+API daje dwie różne pozycje: R1 "Rogalik" oraz R5 pełna nazwa "Rogalik i KOWALCZYK sp. k.".
+Wybrano Maskuj wyłącznie pozycji R1 (to osobny wiersz panelu; nie wybierano Zostaw/Maskuj wiersza R5).
+Po globalnym zakryciu Rogalik:
+    "Pan OSOBA_001 podpisał. Sprzedawca: OSOBA_001 i KOWALCZYK sp. k."
+pending=[] -> odblokowanie mimo nadal jawnej identyfikującej części nazwy i braku decyzji dla R5.
+Zachowany pierwszy wariant "Rogalik i Wspólnicy sp. k." odtwarza ten sam błąd.
+To nie jest spór z zatwierdzonym grupowaniem ×N: obie pozycje mają inne fragmenty i inny rodzaj.
+Nie wystarczy samo przecinanie zakresów do uznania całego ostrzeżenia za rozstrzygnięte.
+
+F3 — maskowanie fragmentu polskiego dłuższego słowa zamiast całych słów.
+TRACE: brief B pkt 1: słowo/nazwa maskowane we wszystkich wystąpieniach, CAŁE SŁOWA.
+OWNERSHIP: guardDecisions.ts:70 używa JS /\w/, które nie obejmuje polskich liter, np. ł.
+REPRO:
+    "Pan Kawa. Kawałek chleba."
+API: jedno R1 "Kawa". Maskuj ->
+    "Pan OSOBA_001. OSOBA_001łek chleba."
+Oczekiwane: "Kawałek" pozostaje w całości.
+To błąd granicy wyrazu, nie zaakceptowane przywracanie kanonicznej postaci nazwiska i nie kwestia wyglądu UI.
+
+Wykonane kontrole i ograniczenia
+- Pełny diff Tasku od audytowanego A, aktualne brief/DELIVERY i stan BOARD.
+- node --test tests/revealText.test.mjs: 14 passed.
+- TypeScript tsc --noEmit: exit 0 na izolowanej kopii exact SHA z istniejącymi zależnościami (bez instalacji).
+- backend/tests/test_guard_residue.py: 41 passed, w tym dwa przypadki poszerzenia CC końca zdania R5.
+  Rozszerzenie w briefie/TASK_SCOPE dotyczy tej samej klasy granic R5; brak potrzeby nowego Architekta.
+- Niezależny pion API -> JSON -> JS: 7 syntetyków:
+  2 warianty F1, 2 warianty F2, 1 F3, 2 kontrole poprawnego numeru.
+  Wszystkie nazwane porażki są odtworzone na exact SHA, nie są wnioskiem tylko z kodu.
+- Dotychczasowe testy sprawdzają m.in. rozstrzyganie pozycji, zachowanie mapy, pojedyncze odkrycie,
+  numery lokalnie, granice ASCII, klucz Zostaw odporny na przenumerowanie i rememberable.
+  Nie pokrywają powyższych trzech klas.
+- Usunięcie zbiorczego bypassu i zapisu jawnej allowlisty z okna: potwierdzone w diffie.
+  Nie proponuję przywracania ani dodawania dodatkowej kontroli decyzji użytkownika.
+- Ochrona profilu ma istniejący owner /profile/add-entity; nowe wywołanie i obsługę odmowy odczytano.
+  Pełny zapis/odczyt słownika przez GUI, wszystkie scenariusze async/przeprzetworzenia, tryb Express i desktopowy eksport:
+  NOT_CHECKED w tym audycie po uzyskaniu wystarczającego dowodu F1–F3; nie wydaję dla nich automatycznego FAIL.
+- Wygląd/przyciski: pozytywna relacja OWNERA, bez niezależnego powtórzenia wizualnego.
+- Nie powtarzano pełnych suit, pomiarów 150/KPWr, OCR i testów niezmienionego S3 z A.
+- Cudze nieśledzone obrazy w głównym repo pozostawiono nietknięte.
+- Brak zmian produktu, merge, restartu backendu Pawła i subagentów.
+
+Reproduktor opublikowany: tasks/LYNX-GUARD-B/round_01/tests/repro_r1.mjs (commit 07d583e9f60f9484d314a650c9cc125b2ef100d4).
+Zawiera rzeczywiste syntetyczne JSON-y API z pozycjami; Node 24 na checkoutcie Tasku:
+    node tasks/LYNX-GUARD-B/round_01/tests/repro_r1.mjs
+Na badanym SHA: 5 niepowodzeń (warianty trzech klas), 2 kontrole prawidłowe.
+Dane/helpery lokalne: %TEMP%\lynx-guard-b-audit-r1\api_fixtures.py, fixtures.json, probe.mjs, probe.json, run.py, exact/.
+
+Do CC: wąska korekta F1–F3, zachować reproduktory. Kolejny audyt: diff od b16be398 + te przypadki
+i bezpośrednio potrzebne kontrole helpera; nie wracać do projektowania panelu.

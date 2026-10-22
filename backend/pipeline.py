@@ -247,6 +247,7 @@ class PipelineResult:
     guard_reasons: list = field(default_factory=list)
     error:         str | None = None
     guard_values:  list = field(default_factory=list)  # [LYNX-FAILCLOSED-S3] wartości naruszeń tylko dla UI
+    guard_warnings: list = field(default_factory=list)  # [LYNX-GUARD-A] ostrzeżenia do decyzji Zakryj/Zostaw (S4)
 
 
 # â”€â”€ API publiczne â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -330,19 +331,12 @@ def _apply_output_guard(
     # force_block=True: blokada prewencyjna gdy wczesniejszy etap zglosil blad (MED-1).
     if force_block:  # [LYNX-FAILCLOSED-S3] awaria wcześniejszego etapu (NER, warstwa) — bez treści i mapy w wyniku
         return _s3_failure("[FORCE_BLOCK] awaria wcześniejszego etapu")
-    guard_blocked, guard_reasons, guard_values = False, [], []
+    guard_reasons, guard_values, guard_warnings = [], [], []
 
     if _GUARD_AVAILABLE:
         try:
-            try:
-                import pathlib as _alp, os as _alo, json as _alj
-                _alfile = _alp.Path(_alo.environ.get(
-                    "PROFILE_DIR",
-                    str(_alp.Path.home() / ".pseudominizer" / "profile")
-                )) / "guard_allowlist.json"
-                _allowlist = _alj.loads(_alfile.read_text(encoding="utf-8")) if _alfile.exists() else []
-            except Exception:
-                _allowlist = []
+            from guard_residue import collect_warnings, load_allowlist
+            _allowlist = load_allowlist()
             guard_result = guard_output_with_map(
                 text,
                 state.anon_map,
@@ -355,18 +349,11 @@ def _apply_output_guard(
             )
             if guard_result.error:  # [LYNX-FAILCLOSED-S3] F2: awaria wewnątrz Guarda → odmowa bez wyniku i mapy
                 return _s3_failure("[GUARD_ERROR] awaria Guarda")
-            guard_blocked = guard_result.blocked
             guard_reasons, guard_values = guard_result.reasons, guard_result.values
-            if guard_blocked:
-                logger.error("[PIPELINE] Guard zablokował eksport: %s", guard_reasons)
-                # [IBAN-OCR] Przy blokadzie HIGH tekst też zamieniamy na redacted_text
-                # — anonymized_preview pokazuje [REDACTED] zamiast surowych danych.
-                # Guard zawsze wypełnia redacted_text (pattern.sub dla każdego HIGH),
-                # niezależnie od blocked/redacted flag.
-                text = guard_result.redacted_text
-            elif guard_result.redacted:
-                logger.warning("[PIPELINE] Guard zamazał fragmenty: %s", guard_reasons)
-                text = guard_result.redacted_text
+            # [LYNX-GUARD-A] S4: bez automatycznego [REDACTED] i blokady — każde wykrycie to ostrzeżenie do decyzji
+            guard_warnings = collect_warnings(text, guard_values, _allowlist)
+            if guard_warnings:
+                logger.warning("[PIPELINE] Guard: %d ostrzeżeń do decyzji", len(guard_warnings))
         except Exception as e:
             # [MED-1] Wyjatek guarda -> blokada prewencyjna zamiast przepuszczenia. [LYNX-FAILCLOSED-S3] bez treści (S3/S5)
             logger.error("[PIPELINE] output_guard wyjatek -- BLOKADA prewencyjna: %s", type(e).__name__)
@@ -375,10 +362,10 @@ def _apply_output_guard(
     return PipelineResult(
         text=text,
         reverse_map=reverse_map,
-        guard_blocked=guard_blocked,
         guard_reasons=guard_reasons,
         error=None,
         guard_values=guard_values,
+        guard_warnings=guard_warnings,
     )
 
 

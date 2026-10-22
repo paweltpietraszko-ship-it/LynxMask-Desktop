@@ -1,0 +1,43 @@
+LYNX-GUARD-B — wąski recheck F1 r3, 2026-10-22
+Wynik: PASS poprawki F1 / sprawdzonego zakresu B. Wszystkie F1–F3 zamknięte.
+Exact SHA: ae9eceb26c0bb2beaedf1bae5788e8d19c9f95dc (kod 6cf83b9d1079a68cf11139d0f0d27e5aec80d575).
+Diff od: 43dafa4e97e0674e6048677f3d0a4ec05be7f290.
+Poprzedni raport r2: c3db6f493cdff9abb2dc62708dc564785b1369d2.
+Odbiorca: Paweł / CC. Bez merge.
+
+Zmiana:
+Jednostki pozycji są jawnie rozróżnione znacznikiem utf16. Brak zgadywania jednostki przez równość fragmentu.
+Ostrzeżenie z backendu bez znacznika jest przeliczane z punktów kodowych do UTF-16;
+wynik konwersji ma znacznik, dzięki czemu kolejne helpery nie przeliczają go ponownie.
+Diff produkcyjny: wyłącznie guardDecisions.ts; dodatkowo test regresyjny.
+Nie zmieniono kontraktu zachowania, API, modelu, wyglądu panelu ani serwerowej odpowiedzialności.
+
+Dowody niezależne na exact SHA:
+- Zachowany repro_r1.mjs: 7/7 PASS, failures=0.
+  Pierwotne emoji/numery, częściowe zakrycie firmy i granice polskich słów pozostają poprawione.
+- Zachowany repro_r2.mjs: 4/4 PASS, failures=0.
+  Dwa identyczne numery przy 0/1/20/21 emoji są maskowane w swoich miejscach.
+  Wariant kolizji 20 emoji:
+    start Python [135,155] -> UTF-16 [155,175], zamiast błędnych [155,155].
+    wynik: [20 emoji] PESEL: NUMER_001; PESEL: NUMER_002.
+  Żadne pełne jawne wystąpienie syntetycznego numeru nie zostaje w wyniku.
+- node --test tests/revealText.test.mjs: 18 passed.
+  Obejmuje jawne sprawdzenie idempotencji toUtf16 oraz rozdzielności identycznych wystąpień.
+- tsc --noEmit: exit 0 na izolowanej kopii exact SHA z istniejącymi zależnościami, bez instalacji.
+- Odczyt pełnego wąskiego diffu potwierdza usunięcie heurystyki zgadywania po treści.
+  Nie otwierano F2/F3 ani zaakceptowanego przez OWNERA wyglądu.
+
+Warstwy i granice:
+Wykorzystano utrwalone rzeczywiste JSON-y izolowanego /preview z r1/r2 oraz realne funkcje frontendowe nowego SHA.
+JSON-y pochodzą z rzeczywistego Guarda/API; wcześniejszy silnik w tamtych próbach dostarczał syntetyczny finalny tekst (stub),
+co jawnie opisano w r1/r2. Backend obecnie niezmieniony, więc nie powtarzano API, OCR, pomiarów 150/KPWr ani backendowych suit.
+To zamknięcie nazwanych findingów i odbiór poprawki helpera, nie nowy pełny audyt aplikacji ani certyfikat wykrywania wszystkich PII.
+Ograniczenia wcześniejszego audytu w zakresie pełnego GUI/schowka/zapisu Tauri i scenariuszy niewykonanych pozostają jawne.
+Pozytywna ocena wyglądu i podstawowych przycisków OWNERA zachowana.
+
+Etap A ma wcześniejszy PASS r2 f47fdb9. B nie ma obecnie otwartych findingów F1–F3.
+Nie scalać A osobno bez B; ewentualne połączenie A+B wyłącznie na polecenie Pawła.
+Nie uruchamiano dodatkowych badań po uzyskaniu wystarczających dowodów.
+Brak nowych wymagań, zmian produktu, merge, restartu backendu Pawła i subagentów.
+Cudze obrazy w repo pozostawiono nietknięte.
+Lokalne źródła i reproduktory: %TEMP%\lynx-guard-b-audit-r3\exact/; raporty/repro r1/r2 w repo pozostają niezmienione.

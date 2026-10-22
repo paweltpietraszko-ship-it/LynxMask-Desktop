@@ -96,14 +96,15 @@ def test_map_leak_podglad_i_powody_bez_wartosci(caplog):
 
 
 def test_map_leak_w_sciezce_pipeline_bez_surowej_wartosci(client):
-    """Wspólna ścieżka Guarda, z której API bierze podgląd: wartość z mapy jawna w wyniku → MAP_LEAK, blokada,
-    tekst podglądu i powody bez surowej wartości (wcześniej redacted_text=text)."""
+    """Wspólna ścieżka Guarda: wartość z mapy jawna w wyniku → MAP_LEAK. [LYNX-GUARD-A] S4 22.10: bez blokady i bez
+    [REDACTED] — tekst bez zmian, każde wykrycie jako ostrzeżenie RED do decyzji; powody bez surowej wartości (S5)."""
     import pipeline
     import pseudominizer_api as api
     out = f"Pozew złożył OSOBA_001. W nagłówku ponownie: Zenobiusz Audytowy, PESEL {PESEL}."
     res = pipeline._apply_guard(out, {"OSOBA_001": "Zenobiusz Audytowy"}, api._app_state)
-    assert res.guard_blocked and not res.error, res
-    assert "Zenobiusz" not in res.text and PESEL not in res.text and "OSOBA_001" in res.text, res.text
+    assert not res.guard_blocked and not res.error and res.text == out, res
+    frags = {w["fragment"]: w["level"] for w in res.guard_warnings}
+    assert frags == {"Zenobiusz Audytowy": "RED", PESEL: "RED"}, res.guard_warnings
     assert "Zenobiusz" not in json.dumps(res.guard_reasons, ensure_ascii=False), res.guard_reasons
     assert res.guard_values == ["Zenobiusz Audytowy"], res.guard_values   # decyzja Pawła: ostrzeżenie → allowlista w UI
 

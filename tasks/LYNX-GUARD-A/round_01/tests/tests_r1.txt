@@ -1,0 +1,86 @@
+LYNX-GUARD-A — niezależny audyt etapu A r1, 2026-10-22
+Wynik: FAIL F1 — zbyt szerokie wyłączenie instytucji usuwa ostrzeżenia R5 dla firm prywatnych.
+Exact SHA: 2ebe01d594aee84be216f33fdc4c3bbd64927427.
+Baza: 94a795424715aebb997f7528be8d3affeb31a99e (formalny S4).
+Odbiorca: CC. Nie scalać etapu A bez B (warunek dostawy, nie nowy wymóg audytora).
+C1 kryptograficzne i serwerowy nadzorca pozostają poza zakresem; nie otwierano ich ponownie.
+
+F1 — filtr instytucji tłumi prywatną spółkę z jednoznacznym kontekstem i formą prawną.
+TRACE:
+- frozen arch/spec.md S4: jawne firmy R5, wiarygodne podejrzenia zgodnie z zatwierdzonym briefem;
+- LYNX-GUARD-A brief, Zakres A pkt 1: R5 rola kontrahenta + nazwa oraz nazwa z formą prawną, bez urzędów/sądów/gmin;
+- zatwierdzony brief v2: wyłączenie INSTYTUCJI PUBLICZNYCH, dodatni przykład nazwy z „sp. z o.o.”.
+Nie żądam wykrycia każdej dowolnej nazwy; kontrprzykład spełnia dwa jawne sygnały wymagane przez R5.
+OWNERSHIP:
+backend/guard_residue.py:32–37 _INSTITUTION_RE i :162–163 _firm_ok;
+:166–176 obie ścieżki R5 (rola i forma prawna) używają tego samego wyłączenia.
+Samo wystąpienie „Centrum” lub „Instytut” w nazwie odrzuca firmę jako instytucję niezależnie od „sp. z o.o.”.
+
+REPRO exact SHA (teksty syntetyczne; wejście jest FINALNYM tekstem, który ma sprawdzać Guard):
+    from guard_residue import collect_warnings
+    collect_warnings("Kontrahent: Centrum Projektowe MODRZEW sp. z o.o.") == []
+    collect_warnings("Kontrahent: Instytut Projektowy MODRZEW sp. z o.o.") == []
+Kontrola:
+    collect_warnings("Kontrahent: MODRZEW sp. z o.o.")
+zwraca jedną pozycję R5 na pełnej nazwie.
+Negatywne „Sąd Rejonowy w Poznaniu” / „Nabywca: Gmina Kraków” pozostają bez alarmów.
+
+Pion zmienionego ownera:
+- realny pipeline._apply_output_guard -> brak błędu, tekst bez zmian, blocked=false, warnings=[] dla Centrum;
+- realny /preview z podmienionym TYLKO wcześniejszym silnikiem, który dostarcza ten syntetyczny finalny tekst:
+  HTTP 200, blocked=false, guard_warnings=[], nazwa jawna w anonymized_preview.
+  Kontrole PESEL i MODRZEW bez prefiksu prawidłowo niosą ostrzeżenia i przesunięte pozycje.
+Stub jest świadomy: badamy obowiązek Guarda na pozostałości PO silniku, nie twierdzimy,
+że pełny silnik na takim wejściu sam zawsze zostawia tę firmę jawną.
+To dowód braku ostrzeżenia R5 przy określonej pozostałości; nie dowód wycieku realnego dokumentu.
+Ryzyko prywatności: przy takiej pozostałości użytkownik nie dostanie pytania od Guarda.
+Do CC: wąsko zawęzić wyłączenie instytucji, zachowując brak zalewu i faktyczne urzędy/sądy/gminy.
+Nie potrzeba drugiego NER, nowego protokołu ani ponownej rundy architektonicznej.
+
+Pozostałe warstwy audytu
+1. Przeczytane brief A, DELIVERY, zatwierdzony v2/U1–U5 z BOARD, frozen S4 i pełny diff zmienionych ownerów.
+   Hash bloba arch/spec.md odpowiada SHA256 w arch/FROZEN.lock.
+   Rozmiar/RATIO: zgoda na koszt i podział A/B odnotowana w przekazaniu; nie otwierano ponownie.
+2. test_guard_residue.py: 33 passed.
+   test_failclosed.py: 23 passed w osobnym procesie. Razem 56 passed.
+   Pierwszy mój harness wyłączał logowanie i sztucznie psuł dwa testy sprawdzające typ wyjątku w logu;
+   po poprawieniu WYŁĄCZNIE harnessu plik przeszedł. To nie regresja produktu.
+3. Własna macierz 16 przypadków: 14 PASS / 2 warianty F1.
+   HIGH PESEL/EMAIL, MEDIUM telefon/REGON, R1 nazwisko, R2 inicjał przy tokenie,
+   R3 cyfra przed tokenem, R4 identyfikator, R5 prosta spółka, MAP_LEAK i negatywne miasto/urząd/tokeny.
+   Wartości start/end odpowiadają literalnym fragmentom. Dwa wystąpienia MAP_LEAK pozostają odrębne.
+   HIGH + R4 tego samego numeru daje jedną pozycję RED z oboma powodami.
+4. API: trzy sondy finalnych pozostałości ze stubem silnika i prawdziwym Guardem/API/nagłówkiem PSE:
+   PESEL, spółka kontrolna, F1. Sprawdzone pozycje względem anonymized_preview.
+   Dodatkowo niezależnie wymuszony wyjątek collect_warnings -> HTTP 500, blocked=true,
+   bez tekstu i mapy (S3). To nowy helper, nie tylko powtórzenie starego testu awarii Guarda.
+
+Pomiary — rzeczywiście sprawdzone wyniki, z ograniczeniami
+A. 150 zapisanych wyników OCR/silnika CC:
+   Ponownie obliczono collect_warnings z EXACT SHA na każdym tekście.
+   Odtworzono 25 ostrzeżeń, średnia 0,1667, mediana 0, maks 3, 130 dokumentów bez pytań.
+   Liczniki przyczyn: R1=14, R3=9, R4=10 (sumują się do 33, ponieważ jedna pozycja może mieć kilka powodów).
+   SHA256 lokalnego cache results.json:
+   baedd9cbaf9622b52ee20f194e6d5d950247185c1a00432e6c69a161eca1e5a5.
+   To niezależny rerun REGUŁ na zapisanych wynikach, nie powtórzony OCR.
+   Nie zweryfikowano niezależnie ręcznej klasyfikacji trafności wszystkich ostrzeżeń CC ani poprawności źródłowego OCR.
+B. KPWr: ponownie uruchomiono bieżący silnik + Guard na 75 tekstach z lokalnego gold, z osobnymi pustymi profilami.
+   Wynik zgodny z CC: 141 ostrzeżeń, 1,88/dokument; jawne słowa nazw osób=33, wskazane=17; awarie=0.
+   Odtworzono METRYKĘ CC: sprawdzanie literalnych słów i substringów.
+   Nie jest to pomiar semantycznych spanów, liczby niezależnych osób ani pełne precision/recall.
+   Nie użyto tych liczb jako dowodu pełnej ochrony lub jako przyczyny FAIL.
+   R2/R5 nie mają pokrycia w 150 obrazach — ten pomiar nie zastępuje ich prób celowanych, czego przykładem jest F1.
+
+Zakres/ograniczenia
+- Etap B: indywidualne decyzje, usunięcie zbiorczego bypassu, przewijanie i ostateczna bramka UI — NOT_CHECKED/poza etapem A.
+  Stary zbiorczy bypass jest jawnie pozostawiony do B; nie dodaję go jako nowego findingu A.
+- UI kompatybilności obejrzane w diffie; rzeczywisty ekran aplikacji nie był uruchamiany. Nie wydaję odbioru końcowego UX.
+- Bez pełnej suity regresji, ponownego OCR, HerBERT ON, Mobile lub realnych dokumentów Pawła.
+- Izolowane źródła git archive exact SHA, profile i archiwum wyłącznie moje w Temp.
+  Brak kontaktu z backendem Pawła 8765 i siecią zewnętrzną.
+- Tylko syntetyczne treści w raporcie; z KPWr zapisano tu wyłącznie agregaty.
+- Brak zmian produktu, merge i subagentów. Stop po uzyskaniu wystarczającego dowodu jednej klasy błędu.
+
+Zachowane lokalne dowody:
+%TEMP%\lynx-guard-a-audit-r1\audit.py, run.py, matrix.json, vertical.json, api.json, measure.json, kpwr.json, exact/.
+Następny recheck: diff od 2ebe01d + te same dwa reproduktory F1, kontrola instytucji i bezpośrednio potrzebne testy ownera.

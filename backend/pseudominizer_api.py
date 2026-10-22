@@ -167,6 +167,7 @@ from document_processor import _next_pse, _extract_text
 # ── Inicjalizacja modułów ─────────────────────────────────────────────────────
 
 from pipeline import AppState, pseudonymize_document, S3_FAILURE
+from guard_residue import shift_warnings  # noqa: E402  [LYNX-GUARD-A]
 
 _app_state = AppState()
 _GUARD_AVAILABLE = False
@@ -426,9 +427,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
         return JSONResponse(S3_FAILURE, status_code=500)
     anon_text     = result.text
     reverse_map   = result.reverse_map
-    pseudo_err    = result.error
-    guard_blocked = result.guard_blocked
-    guard_reasons = result.guard_reasons
+    guard_blocked, guard_reasons = result.guard_blocked, result.guard_reasons
 
     tokens = []
     for token, original in reverse_map.items():
@@ -448,7 +447,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
         tokens        = tokens,
         guard_blocked = guard_blocked,
         guard_reasons = guard_reasons,
-        error         = pseudo_err,
+        error         = result.error,
     )
 
     # [PSE-HEADER] Dodaj PSE kod jako pierwszy wiersz wyjscia —
@@ -461,9 +460,10 @@ async def preview(request: Request, file: UploadFile = File(...)):
 
     return {
         "blocked":            guard_blocked,
-        "error":              pseudo_err,
+        "error":              result.error,
         "guard_reasons":      guard_reasons,
         "guard_values":       result.guard_values,  # [LYNX-FAILCLOSED-S3] ostrzeżenie → allowlista (UI)
+        "guard_warnings":     shift_warnings(result.guard_warnings, len(anon_text_with_pse) - len(anon_text)),  # [LYNX-GUARD-A]
         "tokens":             tokens,
         "total":              len(tokens),
         "has_sensitive":      len(tokens) > 0,

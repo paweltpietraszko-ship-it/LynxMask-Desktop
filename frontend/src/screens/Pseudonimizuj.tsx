@@ -34,6 +34,9 @@ import { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
 import { segments, finalText, toggleReveal } from "./revealText";  // [LYNX-MANUAL-REVEAL]
+import GuardPanel from "./GuardPanel";  // [LYNX-GUARD-B]
+import { GuardWarning, Cover, applyCovers, coverWarning, coverTypeFor, pendingWarnings, rememberable, toUtf16, warningKey }
+  from "./guardDecisions";
 
 const API = "http://127.0.0.1:8765";
 
@@ -54,6 +57,7 @@ interface PreviewResult {
   blocked:            boolean;
   guard_reasons:      string[];
   guard_values?:      string[];   // [LYNX-FAILCLOSED-S3] wartości naruszeń (powody są bez wartości)
+  guard_warnings?:    GuardWarning[];  // [LYNX-GUARD-A] pozycje względem anonymized_preview
   error:              string | null;
   anonymizer_active:  boolean;
   original_text:      string;
@@ -124,8 +128,10 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   const [missedType,   setMissedType]   = useState("OSOBA");
   const [addingEntity, setAddingEntity] = useState(false);
   const [addedToken,   setAddedToken]   = useState("");
-  const [guardBlocked,   setGuardBlocked]   = useState(false);
-  const [addingAllowlist, setAddingAllowlist] = useState(false);
+  const [guardBlocked,   setGuardBlocked]   = useState(false);  // twarda blokada z silnika (nie ostrzeżenia)
+  const [kept,         setKept]         = useState<Set<string>>(new Set());  // [LYNX-GUARD-B] Zostaw (tylko pamięć)
+  const [covered,      setCovered]      = useState<Set<string>>(new Set());  // [LYNX-GUARD-B] Zakryj (klucze, tylko pamięć)
+  const [remember,     setRemember]     = useState(true);  // [LYNX-GUARD-B] Zakryj → słownik biura (Paweł 22.10)
   const [pasteText,    setPasteText]    = useState("");
   const [dragOver,     setDragOver]     = useState(false);
   const [ocrWarning,   setOcrWarning]   = useState(false);
@@ -140,9 +146,18 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   const pasteRef   = useRef<HTMLTextAreaElement>(null);
 
   // [LYNX-MANUAL-REVEAL] nowy wynik (nowy dokument, „Dodaj i zakryj”) czyści odkrycia; jeden tekst dla ekranu/kopii/zapisu
-  useEffect(() => setRevealed(new Set()), [result]);
-  const tokenMap: Record<string, string> = Object.fromEntries((result?.tokens ?? []).map(t => [t.token, t.original]));
-  const shownText = result ? finalText(result.anonymized_preview, tokenMap, guardBlocked ? new Set() : revealed) : "";
+  useEffect(() => setRevealed(new Set()), [result, covered]);
+  const resultMap: Record<string, string> = Object.fromEntries((result?.tokens ?? []).map(t => [t.token, t.original]));
+  const warnings = result ? toUtf16(result.anonymized_preview, result.guard_warnings ?? []) : [];  // Codex F1: UTF-16
+  const covers = result ? warnings.filter(w => covered.has(warningKey(result.anonymized_preview, w)))
+    .reduce<Cover[]>((cs, w) => coverWarning(result.anonymized_preview, w, resultMap, cs), []) : [];
+  const coverTokens = covers.filter((c, i) => !(c.token in resultMap) && covers.findIndex(d => d.token === c.token) === i);
+  const tokenMap: Record<string, string> = { ...resultMap, ...Object.fromEntries(coverTokens.map(c => [c.token, c.original])) };
+  // [LYNX-GUARD-B] ostrzeżenia na niezmiennym anonymized_preview; ekran/kopia/zapis z zakryciami i odkryciami
+  const pending = result ? pendingWarnings(result.anonymized_preview, warnings, kept, covers) : [];
+  const locked = guardBlocked || pending.length > 0;  // S4: zapis/kopia/eksport dopiero po decyzji przy każdym ostrzeżeniu
+  const base = result ? applyCovers(result.anonymized_preview, covers) : "";
+  const shownText = result ? finalText(base, tokenMap, guardBlocked ? new Set() : revealed) : "";
 
   // Śledź zaznaczenie w oknie podglądu przez selectionchange
   useEffect(() => {
@@ -170,7 +185,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
     setSaved(false);
     setDescription("");
     setAddedToken("");
-    setGuardBlocked(false);
+    setGuardBlocked(false); setKept(new Set()); setCovered(new Set());
     setOcrWarning(false);
     setOcrRejected(false);
     setPendingFile(null);
@@ -203,12 +218,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
 
       const data: PreviewResult = await res.json();
 
-      // [FIX-GUARD-UX]
-      if (data.blocked) {
-        setGuardBlocked(true);
-      } else {
-        setGuardBlocked(false);
-      }
+      setGuardBlocked(data.blocked);  // [LYNX-GUARD-B] ostrzeżenia blokują przez `locked`, nie tutaj
 
       // [OCR-WARN]
       if (data.ocr?.quality === "warn") {
@@ -238,14 +248,13 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
 
   // ── Zapis do biblioteki ─────────────────────────────────────
 
-  async function handleSave(forceBypassGuard = false) {
-    if (!result || !description.trim() || saving) return;
-    if (guardBlocked && !forceBypassGuard) return;
+  async function handleSave() {
+    if (!result || !description.trim() || saving || locked) return;  // [LYNX-GUARD-B] bez zbiorczego obejścia
     setSaving(true);
     setError("");
     try {
       const encBlob = await encryptToBase64(JSON.stringify({
-        tokens: result.tokens,
+        tokens: [...result.tokens, ...coverTokens.map(c => ({ token: c.token, original: c.original }))],  // Przywróć zakryte
         anonymized_preview: shownText,  // [LYNX-MANUAL-REVEAL] to samo co ekran i kopia
       }));
       const encDesc = await encryptToBase64(description.trim());
@@ -279,6 +288,22 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
     } finally {
       setSaving(false);
     }
+  }
+
+  // [LYNX-GUARD-B] Zakryj z panelu: w tym dokumencie zawsze; do słownika biura gdy zaznaczone i wartość się nadaje
+  async function handleCover(ws: GuardWarning[]) {  // wiersz panelu = te same słowo (×N) — wszystkie wskazane wystąpienia
+    if (!result || ws.length === 0) return;
+    const w = ws[0];
+    setCovered(s => { const n = new Set(s); ws.forEach(x => n.add(warningKey(result.anonymized_preview, x))); return n; });
+    setSaved(false);
+    const type = coverTypeFor(w, resultMap);  // słownik biura przyjmuje OSOBA/FIRMA/NUMER/ADRES
+    if (expressMode || !remember || !rememberable(w.fragment) || !["OSOBA", "FIRMA", "NUMER", "ADRES"].includes(type)) return;
+    try {
+      const res = await fetch(`${API}/profile/add-entity`, { method: "POST", headers: { "Content-Type": "application/json",
+        ...(apiToken ? { "X-Api-Token": apiToken } : {}) }, body: JSON.stringify({ text: w.fragment.trim(), token_type: type }) });
+      const data = await res.json();
+      if (!data.ok) setError(`Zakryto w tym dokumencie; słownik biura: ${data.error ?? "nie udało się zapisać"}.`);
+    } catch { setError("Zakryto w tym dokumencie, ale nie udało się zapisać w słowniku biura."); }
   }
 
   // ── Dodaj encję i od razu ponów pseudonimizację ────────────
@@ -321,8 +346,8 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
       const res2 = await fetch(`${API}/preview`, { method: "POST", body: form, headers, signal: ctrlRe.signal });
       clearTimeout(tidRe);
       const data2: PreviewResult = await res2.json();
-      if (!data2.blocked) {
-        setSaved(false);
+      if (!data2.blocked) {  // nowy wynik: Zakryj/Zostaw pamiętane po fragmencie+otoczeniu (U2)
+        setSaved(false); setGuardBlocked(false);
         setResult(data2);
       }
     } catch {
@@ -567,7 +592,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
               </button>
               {/* [UI-PSE-06] Kopiuj tekst — [LYNX-FAILCLOSED-S3] niedostępne przy blokadzie Guarda */}
               <button
-                disabled={guardBlocked}
+                disabled={locked}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(shownText);
@@ -580,8 +605,8 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
                   background: copiedText ? T.blueBg : T.surface,
                   border: `1px solid ${copiedText ? T.borderActive : T.border}`,
                   borderRadius: 4,
-                  color: copiedText ? T.blueLight : T.textMuted, opacity: guardBlocked ? 0.4 : 1,
-                  cursor: guardBlocked ? "not-allowed" : "pointer", fontFamily: T.mono,
+                  color: copiedText ? T.blueLight : T.textMuted, opacity: locked ? 0.4 : 1,
+                  cursor: locked ? "not-allowed" : "pointer", fontFamily: T.mono,
                   transition: "all 0.15s",
                 }}
               >
@@ -631,7 +656,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
             {!guardBlocked && <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 6, userSelect: "none" }}>
               Jeśli LynxMask zakrył coś niepotrzebnie, kliknij token, żeby odkryć tylko to miejsce. Odkryta wartość znajdzie się
               także w kopiowanym i zapisanym tekście.</div>}
-            <HighlightedText text={result.anonymized_preview} map={tokenMap} revealed={revealed}
+            <HighlightedText text={base} map={tokenMap} revealed={revealed}
               onToggle={guardBlocked ? undefined : (at, tok) => {
                 setRevealed(r => toggleReveal(r, at, tok, tokenMap));
                 setSaved(false);  // [LYNX-MANUAL-REVEAL F1] nowa treść = do zapisania (ten sam PSE nadpisuje archiwum)
@@ -796,15 +821,15 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
               {/* [UI-PSE-03] Spójny styl przycisku Zapisz */}
               <button
                 onClick={() => handleSave()}
-                disabled={!description.trim() || saving || guardBlocked}
+                disabled={!description.trim() || saving || locked}
                 style={{
                   padding: "8px 20px",
-                  background: description.trim() && !guardBlocked ? T.blue : T.surface,
-                  border: `1px solid ${description.trim() && !guardBlocked ? T.blue : T.border}`,
+                  background: description.trim() && !locked ? T.blue : T.surface,
+                  border: `1px solid ${description.trim() && !locked ? T.blue : T.border}`,
                   borderRadius: 6,
-                  color: description.trim() && !guardBlocked ? "#fff" : T.textMuted,
+                  color: description.trim() && !locked ? "#fff" : T.textMuted,
                   fontSize: 15, fontWeight: 500,
-                  cursor: description.trim() && !saving && !guardBlocked ? "pointer" : "not-allowed",
+                  cursor: description.trim() && !saving && !locked ? "pointer" : "not-allowed",
                   whiteSpace: "nowrap", transition: "background 0.15s",
                 }}
               >
@@ -862,61 +887,14 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
         </div>
       )}
 
-      {/* Guard blocked — panel z powodem i instrukcją */}
-      {/* [FIX-GUARD-UX] Czytelny komunikat zamiast ślepej ściany */}
+      {/* [LYNX-GUARD-B] ostrzeżenia Guarda: decyzja przy każdej pozycji, bez zbiorczego „zapisz mimo to” (S4) */}
+      {result && !ocrWarning && <GuardPanel base={result.anonymized_preview} warnings={warnings} pending={pending}
+        kept={kept} onCover={handleCover} remember={remember} onRemember={expressMode ? undefined : setRemember}
+        onKeep={(keys, keep) => setKept(s => { const n = new Set(s); keys.forEach(k => keep ? n.add(k) : n.delete(k)); return n; })} />}
       {guardBlocked && result && (
-        <div style={{
-          background: T.redBg, border: `1px solid ${T.redBorder}`,
-          borderRadius: 8, padding: "12px 16px", marginTop: 12,
-          fontSize: 15, color: T.red, lineHeight: 1.6, flexShrink: 0,
-        }}>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>
-            ⛔ Zapis zablokowany — wykryto niezamaskowane dane
-          </div>
-          {result.guard_reasons && result.guard_reasons.length > 0 && (
-            <ul style={{ margin: "4px 0 8px 16px", padding: 0 }}>
-              {result.guard_reasons.map((r, i) => <li key={i} style={{ marginBottom: 2 }}>{r}</li>)}
-              {(result.guard_values ?? []).map((v, i) => <li key={`v${i}`} style={{ marginBottom: 2 }}>Wyciek: „{v}”</li>)}
-            </ul>
-          )}
-          <div style={{ color: T.textMuted, fontSize: 12, marginBottom: 10 }}>
-            {expressMode
-              ? "Dodanie wartości do profilu biura i „to nie PII” są dostępne po zalogowaniu."
-              : "Zaznacz nierozpoznaną wartość w podglądzie → dodaj do profilu biura → prześlij dokument ponownie."}
-          </div>
-          {!expressMode && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              onClick={async () => {
-                if (!result?.guard_reasons?.length || addingAllowlist) return;
-                setAddingAllowlist(true);
-                try {
-                  const phrases = result.guard_values ?? [];  // [LYNX-FAILCLOSED-S3] dokładne wartości z Guarda
-                  for (const phrase of phrases) {
-                    await fetch(`${API}/profile/guard-allowlist`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        ...(apiToken ? { "X-Api-Token": apiToken } : {}),
-                      },
-                      body: JSON.stringify({ phrase }),
-                    });
-                  }
-                  setGuardBlocked(false);
-                  await handleSave(true);
-                } catch { /* ignoruj błąd sieciowy */ }
-                finally { setAddingAllowlist(false); }
-              }}
-              disabled={addingAllowlist}
-              style={{
-                background: T.surface, border: `1px solid ${T.redBorder}`,
-                borderRadius: 5, padding: "6px 12px",
-                color: T.red, fontSize: 12, cursor: "pointer",
-                opacity: addingAllowlist ? 0.6 : 1,
-              }}
-            >
-              {addingAllowlist ? "Zapisuję..." : "To nie PII — zapisz mimo to"}
-            </button>
-          </div>}
+        <div style={{ background: T.redBg, border: `1px solid ${T.redBorder}`, borderRadius: 8, padding: "12px 16px",
+          marginTop: 12, fontSize: 15, color: T.red, flexShrink: 0 }}>
+          ⛔ Nie udało się sprawdzić dokumentu. Spróbuj ponownie; jeśli problem się powtarza, zgłoś błąd.
         </div>
       )}
 
