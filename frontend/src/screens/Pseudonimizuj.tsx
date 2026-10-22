@@ -35,7 +35,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
 import { segments, finalText, toggleReveal } from "./revealText";  // [LYNX-MANUAL-REVEAL]
 import GuardPanel from "./GuardPanel";  // [LYNX-GUARD-B]
-import { GuardWarning, Cover, applyCovers, coverWarning, coverTypeFor, pendingWarnings, rememberable, warningKey }
+import { GuardWarning, Cover, applyCovers, coverWarning, coverTypeFor, pendingWarnings, rememberable, toUtf16, warningKey }
   from "./guardDecisions";
 
 const API = "http://127.0.0.1:8765";
@@ -148,12 +148,13 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   // [LYNX-MANUAL-REVEAL] nowy wynik (nowy dokument, „Dodaj i zakryj”) czyści odkrycia; jeden tekst dla ekranu/kopii/zapisu
   useEffect(() => setRevealed(new Set()), [result, covered]);
   const resultMap: Record<string, string> = Object.fromEntries((result?.tokens ?? []).map(t => [t.token, t.original]));
-  const covers = result ? (result.guard_warnings ?? []).filter(w => covered.has(warningKey(result.anonymized_preview, w)))
+  const warnings = result ? toUtf16(result.anonymized_preview, result.guard_warnings ?? []) : [];  // Codex F1: UTF-16
+  const covers = result ? warnings.filter(w => covered.has(warningKey(result.anonymized_preview, w)))
     .reduce<Cover[]>((cs, w) => coverWarning(result.anonymized_preview, w, resultMap, cs), []) : [];
   const coverTokens = covers.filter((c, i) => !(c.token in resultMap) && covers.findIndex(d => d.token === c.token) === i);
   const tokenMap: Record<string, string> = { ...resultMap, ...Object.fromEntries(coverTokens.map(c => [c.token, c.original])) };
   // [LYNX-GUARD-B] ostrzeżenia na niezmiennym anonymized_preview; ekran/kopia/zapis z zakryciami i odkryciami
-  const pending = result ? pendingWarnings(result.anonymized_preview, result.guard_warnings ?? [], kept, covers) : [];
+  const pending = result ? pendingWarnings(result.anonymized_preview, warnings, kept, covers) : [];
   const locked = guardBlocked || pending.length > 0;  // S4: zapis/kopia/eksport dopiero po decyzji przy każdym ostrzeżeniu
   const base = result ? applyCovers(result.anonymized_preview, covers) : "";
   const shownText = result ? finalText(base, tokenMap, guardBlocked ? new Set() : revealed) : "";
@@ -887,7 +888,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
       )}
 
       {/* [LYNX-GUARD-B] ostrzeżenia Guarda: decyzja przy każdej pozycji, bez zbiorczego „zapisz mimo to” (S4) */}
-      {result && !ocrWarning && <GuardPanel base={result.anonymized_preview} warnings={result.guard_warnings ?? []} pending={pending}
+      {result && !ocrWarning && <GuardPanel base={result.anonymized_preview} warnings={warnings} pending={pending}
         kept={kept} onCover={handleCover} remember={remember} onRemember={expressMode ? undefined : setRemember}
         onKeep={(keys, keep) => setKept(s => { const n = new Set(s); keys.forEach(k => keep ? n.add(k) : n.delete(k)); return n; })} />}
       {guardBlocked && result && (

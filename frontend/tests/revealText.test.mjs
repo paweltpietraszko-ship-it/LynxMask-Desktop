@@ -111,3 +111,31 @@ test("słownik biura: słowa i dłuższe identyfikatory tak; cyfra, inicjał, ro
   for (const f of ["Śludkowskiego", "Biuro Rachunkowe RACHMISTRZ", "AB/123/45"]) assert.equal(rememberable(f), true, f);
   for (const f of ["7", "S.", "2019", "128/7"]) assert.equal(rememberable(f), false, f);
 });
+
+// ── Codex r1 GUARD-B: F1 pozycje Python→JS, F2 częściowe zakrycie, F3 polskie litery na granicy słowa ──
+test("F1: emoji przed numerem — po przeliczeniu toUtf16 Maskuj trafia w numer", async () => {
+  const { toUtf16 } = await import("../src/screens/guardDecisions.ts");
+  const t = "📄".repeat(12) + " PESEL: 44051401359.";
+  const cp = [...t].length - "44051401359.".length;  // pozycja w punktach kodowych (jak Python)
+  const [w] = toUtf16(t, [{ id: "W001", start: cp, end: cp + 11, fragment: "44051401359", rule: "HIGH PESEL", level: "RED", reasons: [] }]);
+  assert.equal(t.slice(w.start, w.end), "44051401359");
+  const covers = coverWarning(t, w, {}, []);
+  assert.equal(applyCovers(t, covers), "📄".repeat(12) + " PESEL: NUMER_001.");
+  assert.equal(pendingWarnings(t, [w], new Set(), covers).length, 0);
+});
+
+test("F2: zakrycie samego słowa nie rozstrzyga ostrzeżenia o całej firmie; Maskuj firmy zakrywa całość", () => {
+  const t = "Pan Rogalik podpisał. Sprzedawca: Rogalik i KOWALCZYK sp. k.";
+  const r1 = w(t, "Rogalik", "R1");
+  const r5 = { ...w(t, "Rogalik i KOWALCZYK sp. k.", "R5"), id: "W002" };
+  let covers = coverWarning(t, r1, {}, []);
+  assert.deepEqual(pendingWarnings(t, [r1, r5], new Set(), covers).map(x => x.id), ["W002"]);
+  covers = coverWarning(t, r5, {}, covers);
+  assert.equal(applyCovers(t, covers), "Pan OSOBA_001 podpisał. Sprzedawca: FIRMA_001");
+  assert.equal(pendingWarnings(t, [r1, r5], new Set(), covers).length, 0);
+});
+
+test("F3: Maskuj „Kawa” nie rusza „Kawałek”", () => {
+  const t = "Pan Kawa. Kawałek chleba.";
+  assert.equal(applyCovers(t, coverWarning(t, w(t, "Kawa", "R1"), {}, [])), "Pan OSOBA_001. Kawałek chleba.");
+});
