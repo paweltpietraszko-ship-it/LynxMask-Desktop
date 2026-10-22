@@ -19,7 +19,10 @@ Teksty przykładów syntetyczne (`Pliki testowe/`, repo Mobile `testy/`).
    - Przyczyna: span spaCy bez „ul.” omija filtr ulic w `ner_layer`; ścieżka słownikowa w `ner_adapter` zakrywa imię bez kontekstu; „Góra” jest w słowniku nazwisk.
    - Poprawka: `inside_street_name()` wołane także dla spanów spaCy i w ścieżce słownikowej; pomijać słowo, które z sąsiadem tworzy miejscowość z `_CITY_FORMS`.
 4. **„Pani Róża Zielona” → zakryta tylko „Róża”.**
-   - Poprawka: w `_apply_first_names` słowo z wielkiej litery tuż za tokenem zawierającym samo imię dostaje token OSOBA.
+   - Poprawka (S4: jedna wiarygodnie ustalona osoba = jeden token): w `_apply_first_names` słowo z wielkiej litery tuż za samym imieniem
+     należy do tej samej osoby. Zakres encji rozszerzamy na „Róża Zielona”: jeden token OSOBA, w mapie wartość „Róża Zielona”.
+     Nie dostaje osobnego tokenu. Kolejne wystąpienia tej osoby (odmiany, samo nazwisko) dostają ten sam token według dotychczasowej
+     logiki mapy. Nie scalamy różnych osób.
 
 ## Krok 2 — pojedyncze słowo jest OSOBA tylko z dowodem
 Jedno miejsce decyzji: `osoba_not_person.single_osoba_evidence(text, start, end, …)`. Wołają je oba źródła pojedynczych OSOBA:
@@ -69,9 +72,13 @@ Szacunek: kod ~200 l. + testy ~150 l. (>150 — zgoda OWNERA przed kodem).
   - „W ogrodzie rosła Malina i Róża, a płot był Zielony.” → bez OSOBA, 3 ostrzeżenia Guarda;
   - „Pani Malina przyniosła dokumenty.”, „Anna Malina”, „Nabywca: Malina” → OSOBA;
   - lista „Kowalski, Nowak, Pietraszko, Wiśniewski, Kot” → 5 tokenów;
-  - „OCZEKIWANE:” jawne; „Jelenia Góra” bez OSOBA; „Pani Róża Zielona” → jedna osoba lub dwa tokeny OSOBA, bez jawnego „Zielona”.
+  - „OCZEKIWANE:” jawne; „Jelenia Góra” bez OSOBA; „Pani Róża Zielona podpisała umowę.” → „Pani OSOBA_n podpisała umowę.”, jeden token, mapa `OSOBA_n = "Róża Zielona"`, bez jawnego „Zielona” (S4).
 - Pomiar (pomocnik CC, skrypty z diagnozy):
   - osoby gold zakryte: fresh 127/127 i KPWr 328/358 dla błędów 1–4;
   - krok 2: straty wyłącznie jako ostrzeżenia Guarda — **0 cichych wycieków osób gold**;
   - liczba ostrzeżeń na dokument fresh przed i po.
 - Gdy gotowy będzie `LYNX-GOLD-SET`: pomiar także na części dev/test (ciche wycieki, zbędne zakrycia).
+
+## Korekta C1 (Codex BRIEF_ONLY r1 `3cdcb3c`)
+Punkt 4 i odbiór ujednolicone z S4: „Pani Róża Zielona” = jedna osoba = jeden token z wartością „Róża Zielona”. Alternatywa dwóch tokenów usunięta.
+Zgoda OWNERA na rozmiar (~350 l. z testami) udzielona 22.10 („Zgoda”).
