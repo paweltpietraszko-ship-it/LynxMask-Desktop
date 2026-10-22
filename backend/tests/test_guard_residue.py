@@ -29,6 +29,10 @@ def _frags(text, **kw):
     # [LYNX-GUARD-B ROZSZERZENIE CC] nazwa z roli kończy się na końcu zdania
     ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ. Wczoraj przyszła faktura.", "Biuro Rachunkowe RACHMISTRZ", "R5"),
     ("Nabywca: GAMMA S.A. Termin płatności 14 dni.", "GAMMA S.A.", "R5"),
+    # [LYNX-GUARD-FIX1 r2] Codex F1: nazwiska o prefiksie słowa instytucji nadal wskazywane
+    ("Protokół podpisał Kasprzak w obecności świadka.", "Kasprzak", "R1"),
+    ("Protokół podpisał Kasprowicz w obecności świadka.", "Kasprowicz", "R1"),
+    ("Protokół podpisał Sądowski w obecności świadka.", "Sądowski", "R1"),
     # [LYNX-GUARD-FIX1] kolumny: nazwa z lewej kolumny bez prawej, bez znaku końca linii
     ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ          Nabywca: OSOBA_001\r\n", "Biuro Rachunkowe RACHMISTRZ", "R5"),
 ])

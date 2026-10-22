@@ -28,3 +28,9 @@ TASK_SCOPE:
   - R5 tylko lewej kolumny: „Biuro Rachunkowe RACHMISTRZ”.
 - Pomiar zalewu `%TEMP%\lynx_cc_review\guard_a\rerun_cc.py <wt>\backend`: bez zmian (25 / 150 dok.).
 - Dokument OWNERA: na main 5 ostrzeżeń (w tym „Nabywca:\r”, „Przychodnia”), po poprawce 3: „7” przy NIP, „ING Bank Slaski S.A.”, „32-5 00 Chrzanow”.
+
+## Runda 2 — Codex F1 r1 (`854f393`)
+- Problem: `_INSTITUTION_RE.fullmatch(word)` łapał nazwiska o prefiksie słowa instytucji (Kas\w+ → Kasprzak, Kasprowicz; Sąd\w* → Sądowski).
+- Poprawka: R1 pomija słowo tylko wtedy, gdy jego **lemat Morfeusza** jest na krótkiej liście rzeczowników-głów nazw instytucji (`_INSTITUTION_LEMMAS`: przychodnia, szpital, urząd, sąd, gmina…). Bez „kasa”, bo to też nazwisko.
+- Testy: reproduktor Codexa `round_01/tests/repro_r1.py` 4/4 PASS. `test_guard_residue.py` 47 passed (+3 nazwiska Codexa).
+- Bez zmian: zalew 25/150, dokument OWNERA 3 ostrzeżenia.

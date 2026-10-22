@@ -34,6 +34,10 @@ _INSTITUTION_RE = re.compile(
     r"|Ministerstw\w*|Szkoł\w*|Komornik\w*|Rad\w* Miasta|Izb\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK|Wydział\w*|Oddział\w*"
     r"|Kolegi\w*|Inspektorat\w*|Dyrekcj\w*|Agencj\w*|Fundusz\w*|Rzecznik\w*|Zarząd\w*|Departament\w*|Ośrod\w*|Centrum"
     r"|Instytut\w*|Uniwersytet\w*|Politechnik\w*|Szpital\w*|Przychodni\w*|Przedszkol\w*|Regionaln\w*|Kas\w+)\b")
+_INSTITUTION_LEMMAS = frozenset((  # rzeczowniki-głowy nazw instytucji (lemat Morfeusza, małe litery)
+    "sąd", "urząd", "gmina", "powiat", "starostwo", "województwo", "prokuratura", "policja", "ministerstwo", "szkoła", "komornik",
+    "izba", "wydział", "oddział", "kolegium", "inspektorat", "dyrekcja", "agencja", "fundusz", "rzecznik", "zarząd", "departament",
+    "ośrodek", "centrum", "instytut", "uniwersytet", "politechnika", "szpital", "przychodnia", "poradnia", "przedszkole"))
 # słowo w ciągu nazwy instytucji: „Urząd Marszałkowski Województwa Mazowieckiego”, „Urząd Gminy Warszawa-Wola”
 _PUBLIC_RE = re.compile(  # R5: tylko urzędy/sądy/samorząd/organy — nie „Centrum”, „Instytut”, „Fundusz” (bywają firmami)
     r"\b(?:Sąd\w*|Urz[ąę]d\w*|Gmin\w*|Powiat\w*|Starostw\w*|Województw\w*|Skarb\w* Państwa|Prokuratur\w*|Policj\w*"
@@ -94,11 +98,13 @@ def _person_word(text: str, m: re.Match) -> bool:
         return True  # „Pan Rogalik” — tytuł to dowód osoby niezależnie od słownika
     before = text[max(0, m.start() - 80):m.start()]
     if low in OSOBA_DENYLIST or low in WHITE_LISTS or low in _OFFICE_TERMS or _sentence_start(text, m.start()) \
-            or _DEFINED_RE.search(before) or _in_institution(before) or _INSTITUTION_RE.fullmatch(word):  # FIX1: „Przychodnia”
+            or _DEFINED_RE.search(before) or _in_institution(before):
         return False
     parts = [_morf_interps(w) for w in word.split("-")]
     if any(p is None for p in parts):
         return True
+    if any(i[2][1].lower() in _INSTITUTION_LEMMAS for i in parts[0]):
+        return False  # FIX1: samo słowo nazwy instytucji („Przychodnia”) wg lematu — nie prefiks (Codex F1: Kasprzak, Sądowski)
     quals = [{q.split("_(")[0] for i in p for q in i[2][3]} for p in parts]
     if len(parts) > 1 and any("nazwa_geograficzna" in q for q in quals):
         return False  # „Kraków-Śródmieście”
