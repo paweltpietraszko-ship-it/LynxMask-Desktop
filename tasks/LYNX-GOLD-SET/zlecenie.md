@@ -56,6 +56,34 @@ NIE dane (`not_pii`, oznaczać jawnie, bo sprawdzamy zbędne zakrycia):
 umowy 25 · faktury i rachunki 20 · pisma i decyzje urzędowe 20 · wezwania i monity 15 · protokoły i notatki 15 · pełnomocnictwa i oświadczenia 10 · korespondencja e-mail biurowa 15.
 Długość: zwykle 150–600 słów; kilka dłuższych (do 1500).
 
+## ILOŚĆ DANYCH — minimum obowiązkowe (OWNER 22.10: „agent napisze najmniejszą ilość, którą uzna za wystarczającą”)
+Liczby to **minimum**, nie cel. Liczymy wystąpienia (pozycje `pii`), a w nawiasie unikalne wartości. Weryfikator liczy je skryptem; każdy niedobór oznacza, że zbiór nie jest odebrany.
+
+| Typ (token) | Cały zbiór: wystąpienia (unikalne) | Szczegóły |
+|---|---|---|
+| OSOBA | ≥ 700 (≥ 320 osób) | ≥ 150 wystąpień w odmianie (dopełniacz/celownik/narzędnik…); ≥ 60 samo nazwisko bez imienia; ≥ 40 z formą „Pan/Pani …”; ≥ 25 nazwisk-zwykłych-słów (każde ≥ 1 raz także w znaczeniu pospolitym jako `not_pii`); ≥ 20 inicjałów („Marek T.”); ≥ 15 nazwisk dwuczłonowych; ≥ 15 obcych |
+| FIRMA | ≥ 250 (≥ 140 firm) | ≥ 120 z formą prawną (różne: sp. z o.o., S.A., sp.j., sp.k., s.c., P.S.A.); ≥ 60 bez formy po roli („Wykonawca: …”); ≥ 30 powtórzeń skrótem po pełnej nazwie w tym samym dokumencie |
+| ADRES | ≥ 260 (≥ 180 adresów) | ≥ 120 pełnych (ulica+nr+kod+miasto); ≥ 40 bez kodu; ≥ 20 w odwróconej kolejności („Wrocław, 50-001 …”); ≥ 20 z patronem ulicy; ≥ 15 w miastach wieloczłonowych; ≥ 15 z nr lokalu („12/4”) |
+| NUMER | ≥ 620 | PESEL ≥ 90, NIP ≥ 90, REGON ≥ 40, KRS ≥ 30, dowód ≥ 40, paszport ≥ 15, IBAN/nr konta ≥ 70, telefon ≥ 90, nr działki ≥ 20, KW ≥ 20, nr umowy/faktury/klienta/polisy ≥ 90, sygnatura akt ≥ 30, data urodzenia ≥ 40 (≥ 15 bez „ur.”); ≥ 20% numerów z innym zapisem (spacje, myślniki, kropki, bez separatorów) |
+| EMAIL | ≥ 90 (≥ 90) | ≥ 30 z nazwiskiem w adresie (jan.malinowski@…) |
+| KWOTA | ≥ 180 | ≥ 40 słownie, ≥ 40 bez „zł/PLN” w kontekście kwoty |
+| `not_pii` | ≥ 350 | ≥ 120 etykiet/ról z dwukropkiem; ≥ 60 zwykłych słów z wielkiej litery mogących wyglądać na nazwisko; ≥ 60 nazw urzędów/sądów/instytucji; ≥ 40 samych miast; ≥ 30 dat pisma |
+
+**Minimum na dokument:**
+- ≥ 8 pozycji `pii` z ≥ 3 różnych typów;
+- średnio w zbiorze ≥ 16 pozycji `pii` na dokument;
+- ≥ 2 pozycje `not_pii`;
+- dokument „korespondencja e-mail” ≥ 6 pozycji `pii`.
+
+**Trudne przypadki (liczbowo):**
+- dwie kolumny: ≥ 12 dokumentów;
+- listy nazwisk po przecinkach: ≥ 10 dokumentów;
+- etykiety WIELKIMI literami z dwukropkiem: ≥ 15 dokumentów;
+- zniekształcenia OCR: ≥ 24 dokumenty;
+- ta sama osoba ≥ 3 razy w odmianie w jednym dokumencie: ≥ 30 dokumentów.
+
+Podział dev/test zachowuje proporcje (±10%) każdego typu i każdego trudnego przypadku.
+
 ## Format i miejsce (lokalnie; `backend/dataset_*` jest w `.gitignore`)
 - `backend/dataset_gold_20261022/dev/` (40 dok.) i `backend/dataset_gold_20261022/test/` (80 dok.). Podział losowy, proporcjonalny do rodzajów.
 - Każdy dokument: `doc_NNN.txt` (UTF-8) + `doc_NNN.json`:
@@ -70,6 +98,7 @@ Długość: zwykle 150–600 słów; kilka dłuższych (do 1500).
 ## Odbiór
 Zbiór uznajemy za gotowy, gdy:
 - weryfikator ma 0 powtórzeń między dokumentami;
+- wszystkie minima z sekcji „ILOŚĆ DANYCH” są spełnione; skrypt wypisuje tabelę: typ / wymagane / jest, dla całości oraz osobno dla dev i test;
 - każda pozycja ma poprawne start/end;
 - każdy trudny przypadek z listy występuje co najmniej w 3 dokumentach;
 - raport weryfikatora jest w repo.
