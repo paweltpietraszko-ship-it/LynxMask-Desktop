@@ -52,3 +52,16 @@ def test_adres_w_calosci(text, plain):
 def test_samo_miasto_jawne(text, city):
     out, rev, _ = _run(text)
     assert city in out and not any(k.startswith("ADRES_") for k in rev), (out, rev)
+
+
+@pytest.mark.parametrize("text", ["ul. Polna 5 Radom", "ul. Polna 5\tRadom", "ul. Polna 5 Zielona Góra", "ul. Polna 5 Zielona Gora"])
+def test_miasto_po_ulicy_po_odstepie(text):  # Codex F1 r1: separator spacja/tab, miasto dwuwyrazowe, ASCII
+    out, rev, _ = _run(text)
+    assert out == "ADRES_001", (out, rev)
+
+
+@pytest.mark.parametrize("text", ["Pan Jan Kalisz, ul. Polna 5", "Jan Kalisz, ul. Polna 5"])
+def test_nazwisko_nie_trafia_do_adresu(text):  # Codex F2 r1 / S4: osoba = jeden token OSOBA, adres osobno
+    out, rev, _ = _run(text)
+    assert not any("Kalisz" in v for k, v in rev.items() if k.startswith("ADRES_")), rev
+    assert "ul. Polna 5" in rev.values(), rev
