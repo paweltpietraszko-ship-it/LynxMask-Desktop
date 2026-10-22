@@ -29,14 +29,14 @@ TASK_SCOPE:
 - frontend/src/screens/guardDecisions.ts
 - frontend/src/screens/GuardPanel.tsx
 - frontend/src/screens/Pseudonimizuj.tsx
-- frontend/tests/guardDecisions.test.mjs
+- frontend/tests/revealText.test.mjs
 - tasks/LYNX-GUARD-B/brief.md
 - tasks/LYNX-GUARD-B/repo_before.hash
 
 Wzrost powyżej 150 linii: zgoda OWNERA na koszt etapu B (~200–250 l. + testy) udzielona 22.10 (BOARD).
 
 ## Odbiór
-- `node --test tests/guardDecisions.test.mjs tests/revealText.test.mjs` (Node 24): blokada do decyzji przy każdej pozycji, Zostaw tylko wskazanego
+- `node --test tests/revealText.test.mjs` (testy decyzji dopisane do istniejącego pliku — limit nowych plików gate) (Node 24): blokada do decyzji przy każdej pozycji, Zostaw tylko wskazanego
   wystąpienia, Zakryj wszystkich wystąpień słowa jednym tokenem, MAP_LEAK → token z mapy i Przywróć, resztka numeru tylko w miejscu, klucz
   Zostaw odporny na przenumerowanie tokenów.
 - `tsc --noEmit` czysto.
