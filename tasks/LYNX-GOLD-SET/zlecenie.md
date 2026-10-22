@@ -24,15 +24,19 @@ Dokumenty piszą i oznaczają agenci Codexa. CC nie pisze dokumentów ani ground
 - **Wewnątrz jednego dokumentu** ta sama osoba lub firma może wystąpić kilka razy, także w odmianie („Pani Malinowska… Malinowskiej…”). To sprawdza spójność tokenu i jest pożądane. Każde wystąpienie jest osobną pozycją listy z tym samym `entity_id`.
 - **Weryfikator uruchamia skrypt unikalności:** normalizacja do małych liter i bez spacji/myślników, porównanie wartości między dokumentami. Każde powtórzenie między dokumentami to błąd do poprawki.
 
-## Zasady oznaczania (propozycja CC z ustaleń OWNERA; OWNER zatwierdza przed startem)
+## Zasady oznaczania (z ustaleń OWNERA; banki/kancelarie sprawdzone 22.10: motyw 14 RODO, JDG = osoba fizyczna)
 Dane do zakrycia (`pii`):
 - **OSOBA:** imię i/lub nazwisko osoby fizycznej w każdej odmianie, pseudonim osoby, inicjał przy imieniu („Marek T.”).
   - Imię i nazwisko razem = jedna pozycja.
   - Patron w nazwie ulicy albo instytucji („ul. Jana Pawła II”, „Szpital im. Jana Pawła II”) to NIE osoba, tylko część adresu albo nazwy instytucji.
-- **FIRMA:** nazwa przedsiębiorstwa prywatnego z formą prawną albo bez, w tym banki i kancelarie. Urzędy, sądy, gminy, ZUS, KRUS, NFZ, szkoły publiczne to NIE firma.
+- **FIRMA:** nazwa przedsiębiorstwa prywatnego z formą prawną albo bez, w tym banki i kancelarie. LynxMask zakrywa firmy jako tajemnicę biura, nie tylko z powodu RODO. Urzędy, sądy, gminy, ZUS, KRUS, NFZ i szkoły publiczne to NIE firma.
+  Każda pozycja FIRMA ma pole `rodo` (zweryfikowane 22.10):
+  - `rodo: false`: osoba prawna (sp. z o.o., S.A., bank, fundacja). Motyw 14 RODO: nazwa, forma i dane kontaktowe osoby prawnej nie są danymi osobowymi.
+  - `rodo: true`: nazwa zawiera imię i/lub nazwisko osoby fizycznej, np. jednoosobowa działalność („Usługi Remontowe Jan Wrona”), kancelaria imienna („Kancelaria Adwokacka adw. Marek Malinowski”), spółka cywilna lub jawna z nazwiskami wspólników. Działalność osoby fizycznej podlega RODO.
+  - Wymagane minimum: ≥ 50 pozycji `rodo: true`.
+- **EMAIL:** pole `rodo`: `true` dla adresu imiennego (marek.malinowski@…), `false` dla ogólnego (biuro@…, faktury@…). Stanowisko PUODO za Komisją Europejską.
 - **ADRES:** ulica z numerem, kod pocztowy z miejscowością, albo całość. **Samo miasto bez ulicy i kodu NIE jest daną.**
 - **NUMER:** PESEL, NIP, REGON, KRS, dowód, paszport, IBAN/konto, telefon, numer działki, KW, numer klienta, umowy, faktury, polisy, sygnatura akt, data urodzenia (także bez „ur.”).
-- **EMAIL:** adres e-mail.
 - **KWOTA:** kwota pieniężna (cyfrowo albo słownie).
 
 NIE dane (`not_pii`, oznaczać jawnie, bo sprawdzamy zbędne zakrycia):
@@ -89,7 +93,8 @@ Podział dev/test zachowuje proporcje (±10%) każdego typu i każdego trudnego 
 - Każdy dokument: `doc_NNN.txt` (UTF-8) + `doc_NNN.json`:
   ```json
   {"doc_type": "umowa", "ocr_noise": false, "layout": "zwykły|dwie_kolumny",
-   "pii": [{"entity_id": "E1", "type": "OSOBA", "text": "Marka Malinowskiego", "start": 120, "end": 139}],
+   "pii": [{"entity_id": "E1", "type": "OSOBA", "text": "Marka Malinowskiego", "start": 120, "end": 139},
+           {"entity_id": "E2", "type": "FIRMA", "rodo": true, "text": "Usługi Remontowe Jan Wrona", "start": 200, "end": 226}],
    "not_pii": [{"text": "Malina", "start": 300, "end": 306, "why": "owoc"}]}
   ```
   Pozycje start/end w punktach kodowych (Python `len`), `text == plik[start:end]`.
