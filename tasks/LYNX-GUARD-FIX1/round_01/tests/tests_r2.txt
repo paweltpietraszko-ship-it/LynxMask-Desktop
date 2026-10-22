@@ -1,0 +1,44 @@
+LYNX-GUARD-FIX1 — wąski recheck F1 r2, 22.10.2026
+Wynik: PASS poprawki F1 i sprawdzonego zakresu technicznego.
+Exact SHA: 6204666decfae9d1332c69fd67a283dc2719404f (kod d4e295cab17db0bc336d87058a8b5eb313a6c6a9).
+Diff od poprzednio audytowanego SHA: cb81de7cc3842d7d04855e7583bf9eb09bfc033f.
+Pierwotna baza Tasku: 75be0ff. Poprzedni raport: 854f393376e8754ab6f35328ab45fee4f21d0379.
+Etap: implementacja / recheck. Odbiorca: Paweł / CC.
+To nie jest polecenie merge ani stwierdzenie PASS mechanicznego gate.
+
+Zmiana:
+Zamiast prefiksowego _INSTITUTION_RE.fullmatch(word) filtr używa lematów Morfeusza i krótkiej listy głów instytucji.
+Jedyny zmieniony owner produkcyjny: backend/guard_residue.py. S2/S4/API/UI i połączenie warstw bez zmian.
+Kontrakt: frozen arch/spec.md S4 + brief FIX1 na exact SHA, sekcja Runda 2.
+Korzystam z zachowanych dowodów A/B i r1; nie rozpoczynam ponownego audytu całości.
+
+Niezależne wyniki na exact SHA:
+1. Zachowany reproduktor round_01/tests/repro_r1.py: 4/4 PASS.
+   Kasprzak, Kasprowicz, Sądowski otrzymują R1; kontrola Pan Kasprzak również.
+   F1 r1 zamknięte.
+2. Oryginalna macierz r1: 17/17 PASS (wcześniej 14/17).
+   Nadal brak fałszywych Nabywca/Przychodnia w dwóch kolumnach, LF i CRLF.
+   Lewa kolumna R5 bez prawej etykiety; instytucja z formą prawną zachowuje R5.
+3. tests/test_guard_residue.py: 47 passed, osobny izolowany proces.
+4. Wymagany pomiar z briefu na tym samym zapisanym cache: 150 dokumentów / 25 ostrzeżeń,
+   130 bez pytań, max3; R1=14/R3=9/R4=10. Powody mogą się nakładać.
+   Cache SHA256 baedd9cbaf9622b52ee20f194e6d5d950247185c1a00432e6c69a161eca1e5a5.
+   Ponowiono wyłącznie reguły Guarda na zapisanych tekstach, NIE OCR ani silnik.
+5. Małe rozszerzenie tej samej klasy: Kasprowiczowi i Sądowskiego dają R1.
+   Próba "Wezwano Kasprzaka do złożenia zeznań." nie daje R1, ale identycznie jest na bazie 75be0ff.
+   Hipoteza nowej regresji dla tej próby została sfalsyfikowana. Nie jest to niezależny dowód wycieku pełnego pipeline;
+   nie rozszerzam tego rechecku na przebudowę pokrycia fleksji.
+
+Gate i granice:
+- Dostarczony gate_r2: STATUS WYMAGA_DECYZJI, wyłącznie RATIO: 20/2 = 10.0:1 (threshold 5:1).
+- To oddzielna formalna kwestia rozmiaru diffu, nie odtworzony defekt produktu. Nie zmieniam wyniku gate ani nie zapisuję zgody OWNERA.
+- Nie wystawiam gate PASS; powyższy PASS dotyczy poprawki i niezależnie sprawdzonych warstw.
+- NOT_CHECKED: pełny dokument 5->3 przez ponowiony pipeline/OCR, pion API, GUI/schowek/archiwum, pełna suita.
+  Zmieniony jest sam owner reguły, więc ponowny pion nie był potrzebny do zamknięcia F1.
+- Nie ponawiano zamkniętych F1-F3 GUARD-B, ocen estetyki ani skuteczności modelu.
+- Brak zmian produktu, merge i subagentów; izolowane źródła i stan, backend Pawła nietknięty.
+
+Dowody lokalne:
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/fix1-recheck-r2/
+repro_r1.py, matrix.json, measure.json, variants.py/json, compare_variant.py, exact/.
+Następny krok: przekazanie wyniku Pawłowi/CC, z zachowaniem jawnego statusu gate RATIO; merge wyłącznie na polecenie Pawła.
