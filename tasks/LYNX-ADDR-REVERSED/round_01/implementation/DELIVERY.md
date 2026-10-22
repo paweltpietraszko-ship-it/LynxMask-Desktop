@@ -42,7 +42,7 @@ Samo miasto bez sąsiedztwa adresu zostaje jawne.
 | pytania Guarda / dok. | 2,62 · 2,23 | **1,62 · 1,23** |
 
 ## Granice
-- Miasto po adresie wymaga przecinka, żeby nie wciągać słów z SIMC bez separatora.
+- Miasto po adresie: przecinek albo odstęp (r2), zawsze potwierdzone w SIMC, ta sama linia.
 
 ## Runda 2 — Codex r1/r2 F1–F2 (`0826de1`), kod `249c72f`
 - **F1:** miasto po ulicy także po samym odstępie (spacja/tab), dwuwyrazowe i ASCII: „ul. Polna 5 Radom” → jeden ADRES.
