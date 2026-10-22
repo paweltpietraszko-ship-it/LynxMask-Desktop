@@ -347,7 +347,6 @@ def _apply_output_guard(
                     v for v in reverse_map.values()
                     if len(re.sub(r'[\s\"\'“”„‟]+', '', v)) >= 5
                 ],
-                allowlist=_allowlist,
             )
             if guard_result.error:  # [LYNX-FAILCLOSED-S3] F2: awaria wewnątrz Guarda → odmowa bez wyniku i mapy
                 return _s3_failure("[GUARD_ERROR] awaria Guarda")

@@ -1,0 +1,106 @@
+LYNX-GUARD-ALLOWLIST-S5 — niezależny audyt implementacji r2,22.10.2026
+STATUS: OWNER_DECISION_NEEDED / PARTIAL. Bez końcowego PASS/FAIL do rozstrzygnięcia O1.
+Exact SHA:a7c31d93ed5eedcfd2772d2cbb1131778a92c8de.
+DELIVERY:ca06c71a9b6da5407e2af744087288621ceef65f.
+Baza/diff:35b3ad1ccf8ca3ae6f46c106767cad4e2252152a..a7c31d9.
+Odbiorca: Paweł (O1); następnie CC.
+Wyrocznia: brief Architekta5c40789 + uzupełnienie CC287d3c8 + frozen S4/S5.
+Ochrona słownika przed dostępem na wspólnym koncie Windows pozostaje osobnym LYNX-DICT-ACCESS-PROTECTION.
+Nie otwieram ponownie zaakceptowanej granicy tego Tasku.
+
+O1 — OWNER_EXPLANATION_GATE: „Zawsze jawne” nie usuwa wszystkich pytań dla scalonej pozycji.
+DELIVERY jawnie opisuje ograniczenie: utrwalany jest scalony fragment,
+a trafienie z krótszym zakresem może ponownie wywołać pytanie.
+Nie ma tu śladu jawnej akceptacji tego ograniczenia przez OWNERA.
+Reguły są zapisywane zgodnie z literalnym opisem par, dlatego nie nazywam tego automatycznie FAIL kodu.
+Jednocześnie użytkownik dostaje obietnicę „Program nie będzie pytał o ten fragment w następnych dokumentach”.
+Wymaga to uzgodnienia rzeczywistego zachowania przed końcowym werdyktem, zgodnie z AGENTS.md.
+
+Dokładny niezależny REPRO na exact SHA:
+wejście do prawdziwego Guarda: „Firma: Jan Kawa”.
+przed: jedno żółte ostrzeżenie:
+  fragment „Jan Kawa”, zakres7–15, reguły[R5,R1].
+Zapis przez prawdziwy POST /profile/guard-allowlist, status200:
+  („Jan Kawa”,R5), („Jan Kawa”,R1) w zaszyfrowanej liście.
+Ponowny przebieg:
+  nadal żółte pytanie o „Kawa”, zakres11–15, regułaR1.
+Powód techniczny: collect_warnings wycisza surowe trafienia przed scaleniem.
+Pierwotne R1 obejmowało „Kawa”, ale UI zapamiętało „Jan Kawa” z listą obu reguł.
+Stąd para „Kawa”,R1 nie pasuje do zapisanej pary „Jan Kawa”,R1.
+Odtworzone zarówno w collect_warnings bez stubów, jak w rzeczywistej _apply_output_guard + API + magazyn.
+To pion końcowej pozostałości do Guarda; nie twierdzę, że pełny wcześniejszy NER pozostawia tę osobę jawną.
+W osobnym pełnym teście /preview wcześniejszy silnik był rzeczywisty, użyto innego przypadku pojedynczegoR1.
+
+Wyjaśnienie dla OWNERA:
+- Trigger: jedna żółta pozycja łączy trafienia o różnych zakresach.
+- Skutek: po „Zawsze jawne” część pytania może wrócić w kolejnym dokumencie.
+- Dane: scalony tekst i wszystkie jego reguły w lokalnej zaszyfrowanej liście; wartość w body API, bez frazy w URL.
+- UI: bieżąca pozycja staje się zaakceptowana i panel może pokazać gotowość zapisu.
+  Następny przebieg może wymagać osobnej decyzji dla krótszej pozostałości.
+- Brak utraty ochrony/wycieku w tym przypadku: pytanie wraca, zamiast zniknąć.
+- Cofnij działa dla rzeczywiście zapisanych par i przywraca decyzję w bieżącym panelu.
+- Rekomendacja: poprawić efekt zapamiętywania całego ostrzeżenia tak, aby odpowiadał obietnicy użytkowej.
+  Nie narzucam formatu danych, algorytmu ani nowej architektury.
+- Alternatywa do jawnej akceptacji: dopuścić dodatkowe pytanie dla węższego fragmentu i wyraźnie opisać to w kontrakcie/UI.
+Nie traktować stwierdzenia implementatora „więcej pytań, nie wyciek” jako automatycznej decyzji OWNERA.
+
+Niezależnie potwierdzone warstwy bezpieczeństwa / API:
+- Rzeczywisty /preview -> POST add -> /preview bez zapisanego pojedynczegoR1 -> remove -> /preview z pytaniem.
+  Własny realny AppState, spaCy/Morfeusz; TestClient in-process, bez żywego silnika Pawła.
+- Token Express i brak tokena:401 dla GET/add/remove/clear profilu.
+- Migracja jawnego JSON: zapis AES-GCM, odszyfrowanie sprawdzone istniejącym kluczem;
+  wartości nie ma jako UTF8/UTF16 w pliku; stary JSON usunięty po sukcesie.
+- Wymuszony błąd os.replace: dawny JSON pozostaje nietknięty. Próba późniejsza migruje poprawnie.
+  To kontrolowane wstrzyknięcie awarii I/O, nie rzeczywisty błąd dysku.
+- Stary wildcard nie wycisza rzeczywistych HIGH ani MAP_LEAK.
+- Rzeczywisty _apply_output_guard z wartością mapy i wildcardem nadal zgłasza MAP_LEAK.
+- Uszkodzone .enc: GET damaged=true; add/remove409; bajty pliku bez zmian.
+  clear usuwa listę, GET ponownie[],damaged=false; keystore identyczny.
+- Reset API na własnym syntetycznym profilu:200, stare i nowe pliki listy usunięte.
+- Wartość testowa nie pojawia się w przechwyconych logach modułu.
+  Frontend wysyła ją w body, nie w adresie żądania. Nie stawiam uniwersalnej gwarancji braku każdej telemetrii.
+Pierwsza własna kontrola MAP_LEAK użyła za krótkiej4-literowej wartości.
+Poprawiono wyłącznie harness do wartości9-literowej spełniającej istniejący próg ownera;
+nie dodaję wymagania podwójnej walidacji ani nowego findingu.
+
+UI — rzeczywiste komponenty na exact SHA, izolowany harness z kontrolowanym fetch w pamięci:
+QA: dodanie/2 reguły, cofnięcie obu, RED, Express, awaria zapisu, uszkodzony plik/clear.
+Sprawdzono interakcje i widok:
+- jeden klik zapisuje obie reguły; cofnięcie wysyła oba remove i ponownie pokazuje decyzję;
+- RED/Express bez „Zawsze jawne”;
+- po symulacji odmowy zapisu komunikat, nadal1 nierozstrzygnięta pozycja;
+- Ustawienia pokazują damaged i realny przycisk czyszczenia z drugim potwierdzeniem;
+  po wykonaniu pusta, zdrowa lista.
+To nie pełny test spakowanego Tauri ani wspólna sesja UI z żywym backendem.
+Dane/odpowiedzi fetch były kontrolowane; backend został niezależnie zbadany wyżej.
+Screenshot:
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/allowlist-s5-panel-r2.png
+Użyto CUA przeglądarki; nie zastosowano workflow playwright-interactive wymagającego innego trybu sandboxa.
+
+Testy uruchomione osobiście, oddzielne procesy:
+test_guard_allowlist_s5:13 passed
+test_guard_residue:54 passed
+test_output_guard_adversarial:31 passed
+test_map_fidelity:29 passed
+test_layers:119 passed/2 failed
+test_audyt_2026_10:122 passed/1 failed/2 xfailed
+Razem368 passed/3 znane failed/2 xfailed.
+Porażki to uprzednio udokumentowane:
+TestFirmaBounds.test_osoba_i_fragment_formy, Przywróć S.A., Komornik Sądowy'-FIRMA.
+Nie są podstawą nowego FAIL; nie powtarzano całych historycznych baz.
+tsc --noEmit:0; vite build:OK.
+Nie uruchamiano GOLD/OCR/pełnej suity poza listą kontraktową.
+
+Gate: WYMAGA_DECYZJI,538 l. Bieżący BOARD odnotowuje zgodę OWNERA na538,
+choć DELIVERY zachowało starsze „CC pyta Pawła”. Nie żądam zgody ponownie.
+Własny backend/profil/token Pawła nietknięte; próby CC na żywym profilu są dowodem CC, nie moim.
+Własne kopie/klucze/stany:
+C:/Users/p_pie/AppData/Local/Temp/lynx-allowlist-audit-r2-20261022/
+exact/,merged.py,merged.json,independent.py,independent.json,reset_probe.py,
+exact/frontend/audit.tsx,audit.html (harness),run_test.py.
+Nowy trwały repro:repro_codex_r2.py <izolowany-backend> <własny-stan>.
+Wszystkie przykłady syntetyczne; bez zmian produktu/merge/subagentów/pamięci.
+
+Dalszy krok:
+Paweł: OWNER_ACCEPTED dla opisanego ograniczenia albo OWNER_CORRECTED (rekomendowana poprawa efektu).
+Do tego momentu bez końcowego PASS/FAIL. Zachować zakończone dowody, nie ponawiać całości bez potrzeby.
