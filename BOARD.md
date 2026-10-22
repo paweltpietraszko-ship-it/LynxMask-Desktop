@@ -76,6 +76,7 @@ Większe tematy idą do własnego wiersza tabeli albo do `LYNX-ENGINE-BACKLOG`.
   - „Wrocław, 001-00” dodane jako OSOBA zamiast ADRES.
   - Usunąć wpis można dziś tylko w Zabezpieczenia → lista encji słownika (trudno to znaleźć). Zmiany typu brak.
   - Rozważyć: link „Popraw w słowniku” przy zakryciu oraz wybór typu przy „Dodaj i zakryj” / Maskuj z panelu Guarda (dziś typ automatyczny).
+  - 22.10 (OWNER + sonda CC na silniku main): przyczyna usunięta — „Wrocław, 001-00” nie jest już zakrywane jako OSOBA (bez ulicy zostaje jawne, pełny adres → ADRES). Zostaje tylko pomysł UI poprawy wpisu/typu — to nowa funkcja, nie drobna poprawka.
 - ~~**[22.10 OWNER] Adres z odwróconą kolejnością.**~~ → zrobione w `LYNX-ADDR-REVERSED` (`f8a7403`).
   - „50-001 Wrocław” → ADRES, ale „Wrocław, 50-001” nie jest ADRES (sonda CC: OSOBA).
   - Niespójnie także „001-00 Wrocław” vs „Wrocław, 001-00”.
