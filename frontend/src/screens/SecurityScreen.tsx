@@ -16,7 +16,7 @@
 import { useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
-import { AllowEntry, clearAllow, listAllow, removeAllow, ruleLabel } from "./guardAllowlist";
+import { AllowEntry, clearAllow, listAllow, removeAllow, ruleLabel } from "./GuardPanel";
 
 const API = "http://127.0.0.1:8765";
 
