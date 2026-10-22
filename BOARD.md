@@ -66,6 +66,28 @@ Bezpieczeństwo F1–F3 (`LYNX-SECURITY-REVIEW`) naprawione wcześniej w `LYNX-S
 
 **Kolejność:** Architekt przygotowuje minimalny brief `LYNX-GUARD-RESIDUE` zgodnie z tą decyzją + osobny kontrakt `LYNX-SPEC-S4-GUARD-WARN` do zatwierdzenia przez OWNERA i Codex BRIEF_ONLY; CC implementuje tylko po prechecku; Codex audytuje exact SHA. Rejestr końcowy `LYNX-GUARD-DECISION-LOG` później. **Na razie zapis decyzji w BOARD, bez zmian produktu, bez modyfikacji frozen spec.**
 
+### DROBNE UWAGI (zbiorcze — OWNER 22.10)
+
+Tu trafiają drobne uwagi z oglądu OWNERA i z pracy agentów: jedna linia na sprawę, z datą i źródłem.
+CC zbiera je w paczki `LYNX-DROBNE-<n>`: brief CC, potem Codex, bez Architekta (poprawki).
+Paczka startuje, gdy uzbiera się kilka pozycji albo któraś blokuje pracę. Po scaleniu pozycje znikają (historia w git).
+Większe tematy idą do własnego wiersza tabeli albo do `LYNX-ENGINE-BACKLOG`.
+
+- **[22.10 OWNER] Słownik biura — poprawa błędnego wpisu.**
+  - „Wrocław, 001-00” dodane jako OSOBA zamiast ADRES.
+  - Usunąć wpis można dziś tylko w Zabezpieczenia → lista encji słownika (trudno to znaleźć). Zmiany typu brak.
+  - Rozważyć: link „Popraw w słowniku” przy zakryciu oraz wybór typu przy „Dodaj i zakryj” / Maskuj z panelu Guarda (dziś typ automatyczny).
+- **[22.10 OWNER] Adres z odwróconą kolejnością.**
+  - „50-001 Wrocław” → ADRES, ale „Wrocław, 50-001” nie jest ADRES (sonda CC: OSOBA).
+  - Niespójnie także „001-00 Wrocław” vs „Wrocław, 001-00”.
+  - „001-00” to zniekształcony kod pocztowy (prawidłowo NN-NNN): sprawdzić tolerancję OCR w obu kolejnościach.
+- **[22.10 CC] Etykieta na początku linii jako FIRMA.** „Biuro: Wrocław, 50-001.” → „Biuro” = FIRMA_007 (słowo pospolite przed dwukropkiem).
+- **[22.10 CC] Biblioteka — mylący komunikat.** „Błąd połączenia z backendem” pokazuje się także przy błędzie odszyfrowania opisu albo przy odmowie tokenu (401).
+- **[22.10 CC] Token przy uruchomieniu spoza instalacji.**
+  - Aplikacja szuka `api_token.txt` najpierw obok exe, więc stary plik w Pobranych powoduje odmowę każdego zapytania.
+  - Rozważyć jasny komunikat przy 401 („Nieaktualny token — uruchom aplikację ze skrótu LynxMask”).
+- **[22.10 CC] Testy `test_engine_quality_layout.py`: 7 failed na bazie** (`94a7954`, także przed Guardem). Do diagnozy razem z 4 znanymi z `LYNX-ENGINE-BACKLOG`.
+
 ### Kierunki zastosowania LynxMask (propozycje OWNERA, poza kolejką TERAZ — 20.10.2026)
 
 **Wspólny produkt:** LynxMask jako lokalna warstwa ochrony danych *przed ich przekazaniem dalej*, nie tylko osobna aplikacja do maskowania. Dwa logiczne rozwinięcia tego samego silnika i jego reguł prywatności; **pomysły na przyszłość, nie zlecenie implementacji ani zatwierdzony kontrakt**:
