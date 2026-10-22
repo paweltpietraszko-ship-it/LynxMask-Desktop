@@ -47,7 +47,7 @@ na zapisanych tekstach; `kpwr_guard.py <wt>/backend` — KPWr).
 - MAP_LEAK nadal korzysta z istniejącej allowlisty (tylko odczyt); nowy kod jej nie zapisuje (S5).
 - Wartości fragmentów są w odpowiedzi `/preview` (dla UI), nie w logach — log tylko liczba ostrzeżeń.
 
-## Runda 2 — poprawka F1 (Codex r1 `a06e9de`), HEAD `93cd35b`
+## Runda 2 — poprawka F1 (Codex r1 `a06e9de`), kod `4a4f660` (po rebase na raport Codexa; gate r4 liczony na `93cd35b` przed rebase, gate r5 na HEAD)
 F1: wyłączenie instytucji w R5 używało szerokiej listy R1 („Centrum”, „Instytut”…) i tłumiło prywatne spółki. Poprawka (`guard_residue.py`):
 R5 wyłącza tylko organy publiczne (`_PUBLIC_RE`: sąd, urząd, gmina, powiat, starostwo, województwo, Skarb Państwa, prokuratura, policja,
 ministerstwo, komornik, rada miasta, izba skarbowa, ZUS/NFZ/KRUS/GUS/NIK/UODO/KNF/UOKiK); fragment z formą prawną jest firmą zawsze.
