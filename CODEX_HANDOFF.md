@@ -1,111 +1,195 @@
-# Stan po kompaktowaniu — LynxMask, 2026-10-19
+# CODEX_HANDOFF — LynxMask Desktop
 
-## STAN 21.10.2026 — czytaj najpierw (sekcje niżej z datami wcześniejszymi to historia; bieżąca kolejka: `BOARD.md` → TERAZ)
-- **Zmergowane:** zdjęcia — PP-OCRv6 z prostowaniem (`PP-LCNet_x1_0_doc_ori`) **domyślnie**, Tesseract tylko zapas (`LYNX-PHOTO-CHAIN`
-  `7dfe261`); odkrywanie pojedynczego tokenu w UI jak Mobile (`LYNX-MANUAL-REVEAL` v5 `c426211`); własne środowisko `.venv` +
-  `backend/requirements.txt`, aktualizacje bezpieczeństwa, Morfeusz 1.99.15 (`LYNX-DEPS-UPDATE`); siatka HerBERT przed Guardem
-  `LYNX_HERBERT=off|PER|ORG|PER,ORG`, **domyślnie off** do decyzji po pomiarze (`LYNX-HERBERT-NET` `dcaa3e1`); FIRMA — forma prawna
-  nigdy sama, lista prefiksów tylko ze słów wyłącznie własnych, urzędy nigdy FIRMA (`LYNX-FIRMA-FILTER-FIX` `325b031`).
-- **Proces (Paweł 21.10):** poprawki (błędy, filtry, listy, zależności) idą **bez Architekta** — CC pisze `brief.md`, Codex precheck
-  i audyt; Architekt projektuje zmiany programu (nowe funkcje, architektura, kontrakt). Pomiary robi pomocnik CC; miarka = wycieki
-  i fałszywe alarmy na końcu łańcucha, wiele zbiorów naraz.
-- **Uruchamianie:** `LynxMask.vbs` startuje silnik z `.venv` (zapas: `py -3`); modele w `backend/models/{ocr,herbert}` (poza git,
-  SHA w kodzie; na komputery klientów dostarczy `LYNX-INSTALLER`).
+Aktualizacja: **22.10.2026, po audycie GUARD-B r3 i odświeżeniu BOARD**.
+Zamówienie Pawła: sprawdzić i uaktualnić dokumenty przed przejściem do nowej sesji.
+To migawka przekazania, nie nowy kontrakt ani polecenie rozpoczęcia wszystkich zadań.
+Czytaj też `CODEX_START_HERE.md` i `AGENTS.md`; aktualny wiersz Tasku odśwież zdalnie.
 
+## 1. Gdzie naprawdę jesteśmy
 
-Przeczytaj także początek CODEX_START_HERE.md. To przekazanie pracy, nie specyfikacja.
-Najpierw odśwież właściwy wiersz BOARD z origin/main; nie uruchamiaj audytów historycznych.
+**GUARD A+B są już na main**: merge `9465f96517902e385213d263651c9bbb75260cf6`.
+Potwierdzone w historii origin/main i aktualnym BOARD podczas tego przekazania.
+Nie wracaj do starego „czekamy na polecenie scalenia A+B” — było aktualne przy audycie, ale potem CC wykonał merge.
+Ostatni odczyt origin/main przed zmianą tych dokumentów: `0482610f7d225d435c79a321fec140a43d406db1`.
 
-## Najważniejszy sposób pracy
+Ostatni zakończony audyt Codexa:
+- **GUARD-A:** PASS r2 na `8b69fd65e5f490bd2c61a6438e6516e67d267826`;
+  raport `f47fdb93fbd6d03c2dcb6210a5c2f00eeef60a91`,
+  `tasks/LYNX-GUARD-A/round_01/tests/tests_r2.txt`.
+- **GUARD-B:** PASS poprawki/sprawdzonego zakresu r3 na `ae9eceb26c0bb2beaedf1bae5788e8d19c9f95dc`;
+  raport `ab7842928593b4c46fe6d270902a35f8be52246e`,
+  `tasks/LYNX-GUARD-B/round_01/tests/tests_r3.txt`.
+  Wszystkie zgłoszone F1–F3 zamknięte. Repro r1 7/7, repro r2 4/4, 18 testów Node i tsc PASS.
+- Paweł potwierdził: **„optycznie jest poprawnie, przyciski działają poprawnie”**.
+  Zachowaj tę ocenę; nie otwieraj estetyki przy poprawce logiki.
+- PASS jest ograniczony do opisanych warstw/SHA. Nie oznacza pełnego odbioru wszystkich scenariuszy GUI, schowka,
+  archiwum Tauri, słownika, Express i skuteczności na dowolnych dokumentach; granice są w raportach.
 
-- Paweł oszczędza limit. Audyty WĄSKIE I PROPORCJONALNE, nie pokaz możliwości.
-- Rola: niezależny tester; bez zmian produktu, projektowania za Architekta i subagentów.
-- Mała poprawka: aktualny wiersz BOARD + zmieniony fragment kontraktu + diff od
-  poprzedniego badanego SHA + zachowany reproduktor + potrzebny test ownera. STOP przy dowodzie.
-- BRIEF_ONLY: żadnych testów, modeli, benchmarków, reproduktorów ani diffu implementacji.
-  Kod tylko punktowo, aby potwierdzić istniejący szew. Jedna zamknięta lista braków.
-- Nie ponawiaj pełnych suit i 178 dokumentów przy mikrofixie. Poszerzenie musi mieć
-  konkretny powód lub wynikać z kontraktu. Podaj ten powód przed poszerzeniem.
-- FAIL tylko TRACE + OWNERSHIP + niezależny REPRO exact SHA. Niejasność ≠ FAIL.
-- Mechanika eksperymentu może mieć PASS, a jego hipoteza być nietrafna. Nie poprawiaj
-  gold pod wynik; nie dopisuj wyjątków pod kolejne ataki; nie udawaj certyfikacji produktu.
-- Raporty nowe, nigdy nadpisywane: tasks/<id>/round_01/tests/tests_r<n>.txt.
-  Publikacja na gałęzi Tasku, tylko jego wiersz BOARD na main. Jest stała zgoda na
-  publikację raportów/BOARD i ff-only main; merge kodu wyłącznie na polecenie Pawła.
-- Zachowuj równoległą pracę CC. Bez force-push i przepisywania main. W razie konfliktu
-  publikacji zachowaj obie notatki; nie scalaj przy okazji kodu zadania.
-- Zgoda na rozmiar jednego etapu nie jest automatycznie zgodą na każdy następny.
-  GATE raportuj proporcjonalnie, nie myl z defektem i nie blokuj samego odczytu/audytu.
+## 2. Najbliższa praca — NIE rozpoczęta w tym przekazaniu
 
-## Bieżące zadanie i następny ruch
+### LYNX-GUARD-FIX1 — nowa dostawa CC oczekuje na audyt
 
-LYNX-ARENA-SIGNALS-PILOT: BRIEF_ONLY zakończony PASS PREIMPLEMENTATION.
-Brief/source: 2ebdf1e2e871945022fafcebad08be6ba2ce6f73.
-Raport: 4c75236, tasks/LYNX-ARENA-SIGNALS-PILOT/round_01/tests/tests_r1.txt.
-Gałąź: task/LYNX-ARENA-SIGNALS-PILOT. BOARD wpis audytu: 90202d3.
-Następny ruch CC: review, szacunek i implementacja według GATE. Nie ma jeszcze
-opublikowanej implementacji w sprawdzonej zdalnej gałęzi. Po dostawie nowy audyt r2+;
-nie powtarzać prechecku. Kod lokalnego worktree CC nie jest automatycznie dostawą.
+W aktualnym BOARD: READY_FOR_CODEX.
+Gałąź `task/LYNX-GUARD-FIX1`, HEAD `cb81de7cc3842d7d04855e7583bf9eb09bfc033f`
+(kod `e9eb78a`), baza `75be0ff`.
+Brief: `tasks/LYNX-GUARD-FIX1/brief.md`.
+Dotyczy fałszywych ostrzeżeń w dwóch kolumnach: R5 bierze etykietę Nabywca/kolejną kolumnę,
+R1 pyta o Przychodnia. Wskazany syntetyk:
+`Pliki testowe/doc_stresstest_silnik_guard_lvl0_3.txt`, okolice 112–113.
+CC zgłasza 44 testy, gate PASS i bez zmiany 25/150 — **to przekazanie CC, jeszcze nie niezależny audyt Codexa**.
+Następca po zleceniu audytu ma zacząć od briefu, wąskiego diffu i tych przypadków, nie od powtarzania całego A/B.
+Wiersz BOARD bywa rozbity literalnymi nowymi liniami w cytacie — odczytaj cały wpis, nie tylko pierwszy wiersz.
 
-Pilot: 10–12 syntetycznych czystych tekstów, rzeczywiste identity/contact/address
-i spacy_ner.detect_entities, ten sam candidate set do zamrożonych R1/R2; tylko dwa
-nowe pliki arena_signal_probe.py i tests/test_arena_signal_probe.py. Bez OCR, profilu,
-API, nowych arbitrów, generatora i 178 dokumentów. Po dostawie własne 3 nowe syntetyki.
+### LYNX-GOLD-SET — odrębne zlecenie zbioru, gotowe według BOARD
 
-Punktowo potwierdzone ograniczenia szwu (nie odkrywaj od nowa):
-- allocate widzi udane przydziały po wewnętrznej selekcji warstwy, nie wszystkie hity regex;
-- allocate.value bywa kanoniczne; raw literal to original[start:end], bez szukania po wartości;
-- SPACY_DIRECT to wrapper: deduplikuje wartości; przy wielowierszowej OSOBA skraca text,
-  ale pozostawia ent.end_char. Rozbieżność text/wycinek ma być MAPPING_ERROR lub
-  ADAPTER_UNSUPPORTED, a nie zero trafień / zgadywanie offsetów. Nie naprawiać wrappera
-  w pilocie. Model niedostępny lub błąd nie może udawać sukcesu.
-- Pilot nie mierzy całej jakości obecnej aplikacji, wszystkich detektorów ani udziału OCR.
+Źródło: `tasks/LYNX-GOLD-SET/zlecenie.md` na gałęzi `task/LYNX-GOLD-SET`.
+Aktualny odczyt zawiera wymagania ilościowe oraz pola `rodo`; przed rozpoczęciem czytaj go w całości.
+**Nie realizuj wcześniejszego pomysłu 20 dokumentów i gold pisanych przez CC** — został zastąpiony:
+- 120 dokumentów biurowych: dev 40 / test 80.
+- Agent-autor tworzy dokument i gold razem; świeży inny agent-weryfikator sprawdza kompletność, spany i unikalność.
+  CC nie jest autorem ani annotatorem; tylko mierzy, nie ogląda części test i nie stroi na niej.
+- Docelowy lokalny katalog: `backend/dataset_gold_20261022/{dev,test}/` (ignorowany przez git);
+  raport weryfikatora w `tasks/LYNX-GOLD-SET/round_01/tests/`, bez treści dokumentów.
+- Start/end w punktach kodowych Pythona, literalny wycinek musi równać się `text`.
+- Zakaz powtarzania wartości/nazwisk między dokumentami i nazw-wzorców; sprawdzanie skryptem również względem
+  istniejących zbiorów. Powtórzenia/odmiany w jednym dokumencie mają wspólny entity_id.
+- Minima ze zlecenia są obowiązkowe, nie opcjonalne: OSOBA ≥700 wystąpień/≥320 osób, FIRMA ≥250,
+  ADRES ≥260, NUMER ≥620 z rozbiciem, EMAIL ≥90, KWOTA ≥180, not_pii ≥350; dalsze podlimity i proporcje w zleceniu.
+  Nie zastępuj całej tabeli tym skrótem.
+- Wymagane trudne przypadki, w tym dwie kolumny, homonimy, inicjały, patroni ulic, odwrócone adresy i OCR
+  w ≥24 dokumentach; oddzielaj wyniki clean/OCR w interpretacji.
+- Politykę FIRMA/EMAIL i `rodo` weź ze zlecenia jako regułę tego zbioru, nie wywód prawny od nowa.
+  Wszystkie firmy nadal maskowane; urząd/samo miasto nie stają się automatycznie PII.
+- Po podjęciu tego osobnego zadania autor/weryfikator mają dostać wyłącznie potrzebny kontrakt danych;
+  świeży agent bez historii silnika (`fork_turns="none"`), bez kodu i wcześniejszych wyników.
+  To nie jest zgoda na delegowanie zwykłych audytów.
+W tym przekazaniu **nie uruchomiono agentów, nie wygenerowano dokumentów i nie dokonano odbioru zlecenia**.
+Kolejność podjęcia FIX1/GOLD potwierdź z bieżącym poleceniem Pawła i aktualnym BOARD, nie zgaduj z historii.
 
-## Pytanie Pawła: silnik czy OCR?
+### Dalsza kolejka, nie automatyczne zlecenie
 
-Kalibracja silnika na CZYSTYM TEKŚCIE z niezależnym gold. Odporność na OCR osobno,
-docelowo na tych samych dokumentach przed/po OCR, z oddzielnymi wynikami. Nie mieszać
-błędów OCR do oceny wykrywania na czystym wejściu. Wiemy z wcześniejszych bezpośrednich
-syntetyków, że nie wszystkie błędy pochodziły z OCR; nie znamy proporcji dla całej aplikacji.
-Detektor proponuje typ i zakres; arbiter rozstrzyga między propozycjami. „Niezależny
-detektor potwierdzi cały zakres” jest celem, nie gotowym mechanizmem ani dowodem.
+- `LYNX-GUARD-ALLOWLIST-S5`: trwałe „nie zakrywaj w przyszłości” po wyraźnym wyborze, szyfrowanie/migracja
+  starego jawnego `guard_allowlist.json`, mały brief CC. Obecne okno już nie dopisuje tam Zostaw.
+- `LYNX-GUARD-DECISION-LOG`: dopiero na końcu; bez importu Elnath Memory Engine i bez fikcyjnej historii receipts.
+- HerBERT jest na main, **domyślnie OFF**. ON/usunięcie po pomiarze i rozstrzygnięciu; nie włączaj przy audycie.
+- Duży OSOBA-REDESIGN, kolory i stary SIGNALS-PILOT są odłożone; nie przywracaj ich z pamięci.
+  Pozostałe priorytety/uwagi OWNERA czytaj w aktualnym BOARD tylko przy zależności.
 
-## Zamknięte etapy — dowody do wykorzystania, nie powtarzania
+## 3. Zamrożony kierunek Guarda i świadome granice
 
-- LYNX-ARCH-ARENA v0.1.2: F1 zamknięte na 897351c (kod dc149cd), raport r6 b03dfed;
-  40 testów, zachowany repro Unicode M 7/7 STOP. Nie otwierać F1 ponownie bez nowego dowodu.
-- V02: kod 6dae87d, testy 08c7a5b, kontrakt/snapshot f3e547a. MECHANICS_PASS;
-  raport r1 43d4bf7 + repro, 45 passed. 35 wcześniejszych prób: STOP 9→5,
-  poprawne RENDERED 14→18. Własny H1/O2 ujawnia FP/połknięcie osoby i prozy
-  przez szeroką FIRMA z końcówką Sp. z o.o. To obalenie hipotezy, nie błąd implementacji.
-- Architekt uznał H1 w 069dfcf. Opinia Codexa r2 c48c846: nie stroić kolejnego arbitra
-  przed pomiarem rzeczywistych sygnałów. Stąd bieżący SIGNALS-PILOT.
-- LYNX-ADDR-EMAIL-LEAKS: PASS zakresu na c9f1b54, kod 6ee688a; raport/repro r2 5843f01.
-  Niezależny RED L1–L5, GREEN 12 pipeline/roundtrip +15 wzorców EMAIL +5 clean;
-  22 testy i373 regresje/3 xfail. Pełne stare HTTP PARTIAL przez 401/token, nie nowy wyciek.
-  178 dokumentów = pomocnicze agregaty CC, nie niezależna powtórka Codexa.
-- LYNX-ONE-LAUNCHER: PASS techniczny/PARTIAL rzeczywisty GUI na c822c2b, kod335420b;
-  raport/harness r1 4e78234. 6 prób WSH z atrapami +6 disk_pii. Native start to dowód CC.
+OWNER zatwierdził brief v2 `52d83580c4209fbf578f54e11a2dcd23cc27acdc` oraz kierunek S4 22.10;
+PASS PREIMPLEMENTATION r4 `93c656cc037d9ca1a05bfa61f1bf53874cfa4e99`.
+Formalny S4+lock: `94a795424715aebb997f7528be8d3affeb31a99e`, następnie weszły na bazę A i merge A+B.
 
-## Najnowsza dodatkowa propozycja — nie kontrakt
+- Guard wskazuje jawne podejrzenia, nie maskuje ich automatycznie `[REDACTED]`.
+- R1 osoby/pseudonimy, R2 inicjały, R3 resztki przy tokenach/OCR, R4 identyfikatory w kontekście, R5 firmy.
+  HIGH/MEDIUM/MAP_LEAK nie znikają; jedna pozycja może mieć kilka powodów.
+- Każdy wiersz Maskuj/Zostaw jawne; to samo słowo tego samego rodzaju/poziomu może być grupą ×N,
+  a decyzja dotyczy wskazanych wystąpień. To zatwierdzone rozszerzenie, nie zbiorcze Zostaw wszystko.
+- Nierozstrzygnięte ostrzeżenia wstrzymują zwykły zapis/kopię/eksport z aplikacji. S3 jest osobną awarią bez Zostaw.
+- Odkryj jest świadomą decyzją dla tego miejsca; nie zgłaszaj tego samego miejsca na nowo jako MAP_LEAK.
+  Reszta wyniku nadal kontrolowana. Zostaw i Odkryj nie tworzą trwałej allowlisty.
+- Maskuj może budować szyfrowany słownik biura przez istniejące `/profile/add-entity`;
+  przełącznik domyślnie włączony, Express bez profilu, krótkie cyfry/inicjały/lata tylko lokalnie.
+  Odmowa zapisu słownika ma komunikat, maskowanie dokumentu zostaje.
+- Zostaw/zakrycia przeżywają przeliczenie tylko dla tego samego rozpoznawalnego fragmentu i kontekstu (U2),
+  nie automatycznie dla innego podobnego miejsca.
+- Jedna wiarygodnie ustalona osoba może mieć wspólny token przy odmianach; przy Przywróć dopuszczony mianownik.
+  Nie wymagaj nowej mapy odmian/wielkości liter. Nie wolno sklejać różnych osób.
+- **Wycofane C1:** poświadczenie zawartości klientowskiego ciphertextu, odszyfrowywanie go przez backend,
+  osobny serwerowy nadzorca PSE/rewizji i ochrona przed celowym obchodzeniem lokalnego UI/API.
+  Poprzedni Codex nadmiernie rozszerzył ten wymóg; Paweł go zakwestionował i zakres poprawiono.
+  Nie wskrzeszaj go jako nowego findingu ani warunku PASS.
+- Nie obiecujemy wykrycia wszystkich PII ani blokowania wysłania oryginału inną aplikacją.
 
-main 4e715c2 dodał LYNX-ARCH-HYBRID od CC do Architekta. To propozycja łączenia obecnych
-detektorów z arbitrem i jedną podmianą, później dodatkowych modeli/słowników i widoku OCR.
-Nie audytowano jej ani nie przyjęto jako produktu. Szczególnie twierdzenia o zachowaniu
-Guarda są propozycją do sprawdzenia ze spec/OWNER, nie nową PRODUCT_TRUTH. Nie wdrażaj
-hybrydy podczas audytu pilota i nie uruchamiaj wszystkich klocków naraz.
+## 4. Zachowane findingi i dowody — użyj, nie odkrywaj ponownie
 
-## Środowisko i bezpieczeństwo
+**A:** filtr instytucji usuwał prywatne Centrum/Instytut z formą prawną. Naprawione i zamknięte r2.
+39 testów ownera + macierz 16/16, pion Guard/API; samo R5 nie dowodzi, że wcześniejszy silnik przepuszcza taką firmę.
 
-Repo: C:\Users\p_pie\Desktop\LynxMask-Desktop.
-Własny czysty worktree Codexa: C:\Users\p_pie\AppData\Local\Temp\lynx-codex-audit-20261019,
-ostatnio detached na 4c75236. Używaj tego worktree; nie twórz migawek wewnątrz repo.
-Przed przełączeniem zawsze git status -sb. Pozostałe worktree Temp/claude należą do CC.
-Python: C:\Users\p_pie\AppData\Local\Python\pythoncore-3.14-64\python.exe.
-pytest.ini ogranicza zbierane pliki; test ownera trzeba wskazać jawnie.
-Nie restartuj i nie podmieniaj backendu Pawła na 8765. Token zmienia się przy restarcie;
-nie wypisuj go ani nie commituj. HTTP 401 nie jest dowodem wycieku. Własny serwer tylko
-oddzielnie i gdy potrzebny; nie ma obecnie serwera uruchomionego przeze mnie.
-Żadnych realnych danych, profili, surowych wyników lub nazw klientów w repo/raportach.
-W pamięci wolno zapisywać tylko na wyraźne polecenie; to przekazanie zostało zamówione
-przez Pawła przed kompaktowaniem, 2026-10-19.
+**B:** zamknięte F1–F3:
+1. Python code points vs JS UTF-16 — przy emoji Maskuj trafiał obok numeru.
+   Pierwsza poprawka zgadywała jednostkę po zgodności fragmentu; przy dwóch identycznych numerach przypisywała oba do pierwszego.
+   Ostateczna poprawka używa jawnego znacznika `utf16`, bez zgadywania po tekście.
+2. Częściowe zakrycie słowa zamykało całe ostrzeżenie firmy, pozostawiając drugie nazwisko jawne.
+   Teraz częściowe pokrycie nie rozstrzyga całości; późniejsze Maskuj całości zastępuje wewnętrzne zakrycia.
+3. JS `\w` nie obejmowało polskich liter: Kawa psuła Kawałek. Granice poprawiono na Unicode.
+
+Reprodukcje w repo:
+- `tasks/LYNX-GUARD-B/round_01/tests/repro_r1.mjs` — 7 syntetyków, 7/7 PASS na ostatnim SHA.
+- `tasks/LYNX-GUARD-B/round_01/tests/repro_r2.mjs` — 0/1/20/21 emoji i dwa identyczne numery, 4/4 PASS.
+- Node 24: `node --test tests/revealText.test.mjs` w frontend, 18 PASS; `tsc --noEmit` PASS.
+Te JSON-y pochodzą z realnego izolowanego API, ale **stub wcześniejszego silnika dostarczał finalną pozostałość**;
+realne były Guard/API/przesunięcie PSE i funkcje JS. Nie nazywaj tego pełnym testem skuteczności wcześniejszego silnika
+ani automatycznym oglądem aplikacji.
+
+Pomiary sprawdzone w audycie A r1:
+- 150 zapisanych wyników CC: ponowiono reguły na exact SHA, NIE OCR.
+  25 ostrzeżeń, śr. 0,1667, mediana 0, max 3, 130 bez ostrzeżeń.
+  R1=14/R3=9/R4=10 sumują się do 33 powodów, nie 33 pozycji.
+- KPWr 75: ponowiono silnik+Guard, 141 ostrzeżeń, 1,88/dok.; 17 z 33 jawnych słów osób wskazane.
+  Odtworzono metrykę CC opartą na słowach/podciągach, NIE semantyczne precision/recall.
+- Cache CC: `%TEMP%/lynx_cc_review/guard_a/results.json`;
+  SHA256 `baedd9cbaf9622b52ee20f194e6d5d950247185c1a00432e6c69a161eca1e5a5`.
+- R2/R5 nie miały trafień w tych obrazach. Mała liczba pytań nie dowodzi pełnej ochrony.
+Nie powtarzaj tych pomiarów przy małym fixie, chyba że konkretny kontrakt/ryzyko tego wymaga.
+Gdy CC wprost prosi o sprawdzenie wyników, można odtworzyć metrykę/cache w izolacji, jasno podając ograniczenia.
+
+Inne zamknięte dostawy:
+- FORMATS-PACK2: ISO/forma prawna/krótkie kody, ostatni PASS r3 `e9dce21`, kod `369abc7`.
+- NAMES-DICT-CLEAN: kod `ad8b0d7`, PASS r2 `039d432`.
+  R1 o pozostawieniu Inną jawnie OWNER zaakceptował jako poprawne zachowanie.
+  Akceptacja dotyczyła tego przypadku — nie dorabiaj globalnego wyłączenia wszystkich imion obcych.
+- AMOUNTS-NUMBERS: PASS r2 `00e39dd`, kod `d3f9674`.
+Są już na main według bieżącego BOARD; starsze raporty zachowują swoje exact SHA i granice.
+Stare znane niepowodzenia testów są w raportach/CLAUDE.md/ENGINE-BACKLOG; nie traktuj ich bez TRACE/REPRO jako nowej regresji.
+
+## 5. W praktyce współpracy
+
+- Wąski audyt, zamknięta lista rzeczywistych błędów, STOP po dowodzie. Nie dodawaj kolejnego projektu bezpieczeństwa do małego zadania.
+- Korekty logiki tej samej klasy idą do CC. Zamknięte F2/F3 lub estetyka nie wracają przy kolejnym fixie F1.
+- Jeśli zachowany repro przechodzi, a wąski diff wprowadza konkretną niejednoznaczność tej samej klasy,
+  sprawdź minimalny wariant; nie rozszerzaj mechanicznie na całe repo.
+- Rozróżniaj akceptację produktu, techniczny PASS, supporting evidence CC i NOT_CHECKED.
+- Raporty niezmienne, kolejne r<n>; raport na gałęzi Tasku, BOARD na main. Publikację zweryfikuj świeżym odczytem.
+- Zgody odnotowane w aktualnym briefie/BOARD (np. koszt A/B, U1–U5) nie są pretekstem do ponownego pytania;
+  nie rozszerzaj ich na nowy jeszcze nieprzedstawiony koszt.
+- Żadnych zmian kodu, merge ani subagentów przy zwykłym „sprawdź dostawę”.
+- Poprawka tych dokumentów została zamówiona; nie jest poleceniem aktualizacji pamięci ani rozpoczęcia nowego Tasku.
+
+## 6. Środowisko i ochrona równoległej pracy
+
+Repo: `C:/Users/p_pie/Desktop/LynxMask-Desktop`.
+Podczas przekazania trzy cudze nieśledzone pliki: `8298.jpg`, `8299.jpg`, `Zrzut ekranu (657).png`.
+Nie usuwać, nie otwierać bez potrzeby, nie stage'ować. Przed każdą edycją `git status -sb`.
+
+Stary worktree `%TEMP%/lynx-codex-audit-20261019` jest czysty, detached na
+`7401ec3471145d232f62fbbc5e1a41a1303ee019` (sprawdzone teraz); **nie** na dawnym `4c75236`.
+Nie jest aktualną bazą Guarda. Nie przełączaj katalogu CC/Pawła na badaną gałąź.
+
+Do ostatnich audytów używano własnych kopii `git archive <exact SHA>` w Temp:
+`lynx-guard-a-audit-r1/r2`, `lynx-guard-b-audit-r1/r2/r3`.
+Najnowsze źródła: `%TEMP%/lynx-guard-b-audit-r3/exact/`.
+W katalogach r1/r2 zachowane helpery API, JSON-y i wyniki; repo zawiera trwałe raporty/repro.
+Temp nie jest gwarantowanym magazynem między komputerami — sprawdź istnienie.
+
+Własny Python (sprawdzony jako istniejący):
+`C:/Users/p_pie/.codex/visualizations/2026/10/19/01a152b6-e997-7cb0-a9e3-752fdcfd00f0/deps-audit-A/venv/Scripts/python.exe`.
+Używano `-B -X utf8`, Python 3.14, Morfeusz 1.99.15, rzeczywisty `pl_core_news_lg`; Node 24.15.
+Frontendowe zależności istnieją w `frontend/node_modules`; do typechecku kopii w Temp używano własnego junction,
+bez instalacji i bez zmian produktu. W razie odmowy dostępu skorzystaj ze zwykłej ścieżki uprawnień, nie omijaj jej.
+
+Przed importem backendu ustaw izolowane ścieżki:
+`ANONYMIZER_PROFILE_DIR`, `PROFILE_DIR`, `PSE_REGISTRY`, `ARCHIVE_DIR`, `HARDWARE_PROFILE`.
+Testowe mapy/token API nie mogą lądować w repo. `API_TOKEN_PATH` jest zależne od pliku źródłowego,
+dlatego samo przestawienie profilu nie zastępuje izolowanej kopii źródeł.
+Nie czytaj/nie wypisuj tokena działającego backendu Pawła i nie restartuj portu 8765.
+Własny TestClient na URL 127.0.0.1:8765 działał w procesie, nie łączył się z backendem Pawła;
+odcinano połączenia zewnętrzne i realne połączenie z 8765. Windows może wymagać uprawnienia na lokalny socket testu.
+
+Nie uruchamiaj wszystkich backendowych plików testów w jednym procesie — odnotowano segfault bibliotek natywnych.
+W jednym podejściu harness audytora wyłączał logowanie i sztucznie psuł dwa testy S3; naprawiono harness, nie produkt.
+Rozróżniaj własny błąd środowiska od findingu.
+
+Raporty w repo nie zawierają realnych danych. Nie publikuj `dataset_real`, `preview_real_results`, profili,
+kluczy, map ani surowych wyników dokumentów Pawła. Nie zapisano nowej pamięci w ramach tego przekazania.
