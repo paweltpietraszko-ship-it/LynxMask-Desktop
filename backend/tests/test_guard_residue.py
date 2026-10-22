@@ -108,3 +108,11 @@ def test_kandydat_bez_dowodu_takze_w_odmianie():  # [LYNX-OSOBA-PACK4] pomiar KP
     assert {w["fragment"] for w in ws} >= {"Maciolus", "Maciolusa"}, ws
     ws = collect_warnings("Kawa zlecił paczkę. Kawałek chleba.", released_words=["Kawa"])
     assert "Kawałek" not in {w["fragment"] for w in ws}, ws
+
+
+def test_kandydat_bez_dowodu_wersaliki_i_krotka_odmiana():  # [LYNX-OSOBA-PACK4] Codex r3 F1/F2
+    ws = collect_warnings("Dokument przekazał wczoraj Malina. W notatce zapisano MALINA.", released_words=["Malina"])
+    assert {w["fragment"] for w in ws} >= {"Malina", "MALINA"}, ws
+    ws = collect_warnings("Róża złożyła wniosek. Róży dotyczy odpis.", released_words=["Róża"])
+    assert {w["fragment"] for w in ws} >= {"Róża", "Róży"}, ws
+    assert "Różowy" not in {w["fragment"] for w in collect_warnings("Różowy płot.", released_words=["Róża"])}

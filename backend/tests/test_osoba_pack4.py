@@ -82,3 +82,8 @@ def test_krok2_z_dowodem_zakryte(text, word):
 def test_krok2_nazwisko_bez_znaczenia_pospolitego_zakryte_bez_kontekstu():
     r = run("Dokumenty przyniósł wczoraj Grzelak osobiście.")
     assert "Grzelak" not in r.text, r.text
+
+
+def test_krok2_drugie_wystapienie_wersalikami_ma_pytanie():  # Codex r3 F1 — pełny pipeline
+    r = run("Dokument przekazał wczoraj Malina. W notatce zapisano MALINA.")
+    assert "MALINA" not in r.text or warned(r, "MALINA"), (r.text, r.guard_warnings)

@@ -68,3 +68,10 @@ Narzędzie: `tasks/LYNX-GOLD-SET/measure/human_view.py`; dane lokalnie: `backend
 ## Uwagi
 - Na prozie Guard pyta częściej. To skutek decyzji OWNERA: kandydat bez dowodu nie jest zakrywany, tylko pokazywany człowiekowi.
 - Na pismach biurowych (GOLD) pytań jest mniej niż na main.
+
+## Runda 2 — Codex r3 F1/F2 (`bf754d1`)
+- **F1:** `guard_residue._released` porównuje bez wielkości liter („MALINA” po zwolnionym „Malina” jest pytaniem).
+- **F2:** końcówkę odmiany obcinamy także w krótkich słowach, o ile rdzeń ma ≥3 litery („Róża” → „Róż” + końcówka: „Róży”, „Różę”). „Różowy” i „Kawałek” bez pytania.
+- Testy: `test_guard_residue.py` +1, `test_osoba_pack4.py` +1 (pełny pipeline, MALINA). Razem 63 passed.
+- Reproduktor Codexa `round_01/tests/repro_r3.py`: F1 ok, F2 ok, controls PASS, exit 0.
+- GOLD bez zmian: ciche 142/297, zbędne 69/152, pytania 2,62/2,23.

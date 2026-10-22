@@ -135,8 +135,10 @@ _INFLECTION_RE = re.compile(rf"(?:{_INFLECTIONS})$")
 def _released(text: str, words: list[str]):
     """[LYNX-OSOBA-PACK4] Kandydaci OSOBA odrzuceni przez silnik z braku dowodu — każde wystąpienie, także na początku zdania."""
     for w in dict.fromkeys(words):
-        stem = _INFLECTION_RE.sub("", w) if len(w) >= 6 else w  # „Maciolusa” → „Maciolus”; odmiany innych wystąpień też (pomiar)
-        for m in re.finditer(rf"(?<![\w-]){re.escape(stem)}(?:{_INFLECTIONS})?(?![\w-])", text):
+        cut = _INFLECTION_RE.sub("", w)
+        stem = cut if len(cut) >= 3 else w  # „Maciolusa” → „Maciolus”, „Róża” → „Róż” (Codex F2: „Róży”); rdzeń ≥3 litery
+        # Codex F1: bez względu na wielkość liter — „MALINA” w nagłówku to ta sama niezakryta wartość
+        for m in re.finditer(rf"(?<![\w-]){re.escape(stem)}(?:{_INFLECTIONS})?(?![\w-])", text, re.IGNORECASE):
             yield m.start(), m.end(), "R1", "Możliwe nazwisko — silnik nie miał dowodu, że to osoba"
 
 
