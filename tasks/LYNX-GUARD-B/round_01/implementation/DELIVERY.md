@@ -37,3 +37,10 @@ Rozmiar zatwierdzony przez OWNERA 22.10 (BOARD). r1: FAIL NEW_FILES 3 > 2 — te
 - Zakryj działa tylko w bieżącym dokumencie i nie dopisuje do słownika biura. Do tego służy istniejące „Dodaj i zakryj”. Ewentualne automatyczne dopisywanie to decyzja OWNERA na później.
 - Zostaw nie trafia na dysk ani do allowlisty (S5).
 - Endpointy `/profile/guard-allowlist` w backendzie zostają (poza zakresem B). Okno ich już nie wywołuje.
+
+## ROZSZERZENIE CC (kod `f7f4e03`)
+Sonda `/preview` silnika z gałęzi przed oglądem OWNERA: R5 z roli brał początek następnego zdania („Biuro Rachunkowe RACHMISTRZ. Wczoraj”).
+Poprawka w `backend/guard_residue.py` `_r5` (`_SENTENCE_END_RE`); forma prawna z kropką („GAMMA S.A.”) zostaje. Sekcja w briefie + TASK_SCOPE.
+`test_guard_residue.py` 41 passed (+2), `test_failclosed.py` 23 passed, ruff czysto, pomiar `rerun_cc.py` bez zmian (25 / 150 dok.).
+Sonda po restarcie silnika: `Biuro Rachunkowe RACHMISTRZ` (R5), `Śludkowskiego` (R1), `128/7` (R4); pozycje zgodne z `anonymized_preview`.
+gate r3 (`round_01/gate_r3.txt`): `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
