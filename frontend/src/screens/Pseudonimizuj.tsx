@@ -54,6 +54,7 @@ interface PreviewResult {
   blocked:            boolean;
   guard_reasons:      string[];
   guard_values?:      string[];   // [LYNX-FAILCLOSED-S3] wartości naruszeń (powody są bez wartości)
+  guard_warnings?:    { id: string; start: number; end: number; fragment: string; rule: string; level: string; reasons: string[] }[];
   error:              string | null;
   anonymizer_active:  boolean;
   original_text:      string;
@@ -203,12 +204,8 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
 
       const data: PreviewResult = await res.json();
 
-      // [FIX-GUARD-UX]
-      if (data.blocked) {
-        setGuardBlocked(true);
-      } else {
-        setGuardBlocked(false);
-      }
+      // [FIX-GUARD-UX] [LYNX-GUARD-A] do czasu panelu decyzji (etap B) ostrzeżenia blokują zapis i kopię jak dotąd
+      setGuardBlocked(data.blocked || (data.guard_warnings?.length ?? 0) > 0);
 
       // [OCR-WARN]
       if (data.ocr?.quality === "warn") {
@@ -873,10 +870,10 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
           <div style={{ fontWeight: 600, marginBottom: 6 }}>
             ⛔ Zapis zablokowany — wykryto niezamaskowane dane
           </div>
-          {result.guard_reasons && result.guard_reasons.length > 0 && (
+          {(result.guard_warnings?.length ?? 0) > 0 && (
             <ul style={{ margin: "4px 0 8px 16px", padding: 0 }}>
               {result.guard_reasons.map((r, i) => <li key={i} style={{ marginBottom: 2 }}>{r}</li>)}
-              {(result.guard_values ?? []).map((v, i) => <li key={`v${i}`} style={{ marginBottom: 2 }}>Wyciek: „{v}”</li>)}
+              {(result.guard_warnings ?? []).map(w => <li key={w.id} style={{ marginBottom: 2 }}>{w.reasons[0]}: „{w.fragment}”</li>)}
             </ul>
           )}
           <div style={{ color: T.textMuted, fontSize: 12, marginBottom: 10 }}>
@@ -887,7 +884,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
           {!expressMode && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
               onClick={async () => {
-                if (!result?.guard_reasons?.length || addingAllowlist) return;
+                if (!result?.guard_warnings?.length || addingAllowlist) return;
                 setAddingAllowlist(true);
                 try {
                   const phrases = result.guard_values ?? [];  // [LYNX-FAILCLOSED-S3] dokładne wartości z Guarda
