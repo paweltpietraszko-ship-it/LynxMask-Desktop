@@ -34,6 +34,10 @@ _INSTITUTION_RE = re.compile(
     r"|Ministerstw\w*|Szkoł\w*|Komornik\w*|Rad\w* Miasta|Izb\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK|Wydział\w*|Oddział\w*"
     r"|Kolegi\w*|Inspektorat\w*|Dyrekcj\w*|Agencj\w*|Fundusz\w*|Rzecznik\w*|Zarząd\w*|Departament\w*|Ośrod\w*|Centrum"
     r"|Instytut\w*|Uniwersytet\w*|Politechnik\w*|Szpital\w*|Przychodni\w*|Przedszkol\w*|Regionaln\w*|Kas\w+)\b")
+_INSTITUTION_LEMMAS = frozenset((  # rzeczowniki-głowy nazw instytucji (lemat Morfeusza, małe litery)
+    "sąd", "urząd", "gmina", "powiat", "starostwo", "województwo", "prokuratura", "policja", "ministerstwo", "szkoła", "komornik",
+    "izba", "wydział", "oddział", "kolegium", "inspektorat", "dyrekcja", "agencja", "fundusz", "rzecznik", "zarząd", "departament",
+    "ośrodek", "centrum", "instytut", "uniwersytet", "politechnika", "szpital", "przychodnia", "poradnia", "przedszkole"))
 # słowo w ciągu nazwy instytucji: „Urząd Marszałkowski Województwa Mazowieckiego”, „Urząd Gminy Warszawa-Wola”
 _PUBLIC_RE = re.compile(  # R5: tylko urzędy/sądy/samorząd/organy — nie „Centrum”, „Instytut”, „Fundusz” (bywają firmami)
     r"\b(?:Sąd\w*|Urz[ąę]d\w*|Gmin\w*|Powiat\w*|Starostw\w*|Województw\w*|Skarb\w* Państwa|Prokuratur\w*|Policj\w*"
@@ -56,8 +60,9 @@ _DZU_RE = re.compile(r"Dz\.\s?U|poz\.|art\.|ust\.|§", re.IGNORECASE)
 _ROLE_RE = re.compile(
     r"\b(?:Sprzedawc\w*|Nabywc\w*|Kontrahent\w*|Usługodawc\w*|Zleceniobiorc\w*|Zleceniodawc\w*|Wykonawc\w*|Dostawc\w*"
     r"|Odbiorc\w*|Zamawiając\w*|Najemc\w*|Wynajmując\w*|Pracodawc\w*|Ubezpieczyciel\w*|Płatnik\w*|Firma)[ \t]*:[ \t]*"
-    r"([^\n,;]{2,80})")
+    r"([^\r\n,;]{2,80})")
 _FORM = r"(?i:sp\.[ \t]*z[ \t]*o\.[ \t]*o\.?|sp\.[ \t]*k\.[ \t]*a\.?|sp\.[ \t]*[jkp]\.?|s\.[ \t]*a\.|s\.[ \t]*c\.|p\.[ \t]*s\.[ \t]*a\.?)"
+_LABEL_RE = re.compile(r"[^\W\d_][\w ]{0,30}:")  # etykieta pola: „Nabywca:”, „Dane kontaktowe:”
 _SENTENCE_END_RE = re.compile(rf"\.[ \t]+(?=[{_UP}][{_LO}])")
 _FORM_NAME_RE = re.compile(
     rf"(?<![\w„\"])[{_UP}0-9„\"][\w„\"&.\-]*(?:[ \t]+[{_UP}0-9„\"&][\w„\"&.\-]*){{0,4}}[ \t]+{_FORM}(?!\w)")
@@ -98,6 +103,8 @@ def _person_word(text: str, m: re.Match) -> bool:
     parts = [_morf_interps(w) for w in word.split("-")]
     if any(p is None for p in parts):
         return True
+    if any(i[2][1].lower() in _INSTITUTION_LEMMAS for i in parts[0]):
+        return False  # FIX1: samo słowo nazwy instytucji („Przychodnia”) wg lematu — nie prefiks (Codex F1: Kasprzak, Sądowski)
     quals = [{q.split("_(")[0] for i in p for q in i[2][3]} for p in parts]
     if len(parts) > 1 and any("nazwa_geograficzna" in q for q in quals):
         return False  # „Kraków-Śródmieście”
@@ -173,7 +180,9 @@ def _firm_ok(frag: str) -> bool:
 
 def _r5(text: str):
     for m in _ROLE_RE.finditer(text):
-        s, frag = m.start(1), m.group(1)
+        s, frag = m.start(1), re.split(r"[ \t]{3,}", m.group(1))[0]  # FIX1: układ w dwóch kolumnach — tylko ta kolumna
+        if _LABEL_RE.match(frag):
+            continue  # FIX1: „Sprzedawca:   Nabywca:” — po etykiecie kolejna etykieta, nie nazwa
         cut = _TOKEN_RE.search(frag)
         frag = frag[:cut.start()] if cut else frag
         end = _SENTENCE_END_RE.search(frag)  # „RACHMISTRZ. Wczoraj…” → bez następnego zdania; „S.A.” zostaje

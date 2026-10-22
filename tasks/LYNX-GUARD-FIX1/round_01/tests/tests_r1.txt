@@ -1,0 +1,56 @@
+LYNX-GUARD-FIX1 — niezależny audyt r1, 22.10.2026
+Wynik: FAIL — F1 / SAFETY_PRIVACY, regresja R1.
+Exact SHA: cb81de7cc3842d7d04855e7583bf9eb09bfc033f (kod e9eb78afcacd322a985f8b332d126787d5324388).
+Baza diffu i porównania: 75be0ff.
+Etap: implementacja, wąski audyt backend/guard_residue.py.
+Odbiorca: CC. Nie scalać dostawy przed poprawką F1 i recheckiem.
+
+Kontrakt:
+- Frozen arch/spec.md S4; SHA256 zgodny z FROZEN.lock:
+  b67e184f75d23b5ae8d9d5a659360dc829aa25a9ba91868b200fa448e7545b9d.
+- tasks/LYNX-GUARD-FIX1/brief.md na badanym SHA: wyłączenie słów będących nazwami instytucji, naprawa CRLF/kolumn/etykiet.
+- Zaakceptowany brief GUARD-RESIDUE v2 52d83580c4209fbf578f54e11a2dcd23cc27acdc:
+  R1 wskazuje prawdopodobne jawne nazwiska; wyłączenia instytucji nie są globalnym wyłączeniem nazwisk o takim samym prefiksie.
+  "Samo wystąpienie słowa w słowniku pospolitym nie wystarcza do odrzucenia podejrzenia nazwiska."
+  Nie dodaję gwarancji wykrycia wszystkich PII.
+
+F1 — wyłączenie instytucji usuwa wiarygodne ostrzeżenia nazwisk.
+TRACE: powyższy kontrakt R1 i zakres FIX1 (słowa nazw instytucji).
+OWNERSHIP: _person_word w guard_residue.py, nowy warunek _INSTITUTION_RE.fullmatch(word), linia 97.
+REPRO exact SHA: dla każdego syntetycznego zdania
+  "Protokół podpisał Kasprzak w obecności świadka."
+  "Protokół podpisał Kasprowicz w obecności świadka."
+  "Protokół podpisał Sądowski w obecności świadka."
+baza zwraca R1 na nazwisku, dostawa zwraca [].
+Przyczyna odczytana w kodzie: Kas\w+ obejmuje Kasprzak/Kasprowicz, Sąd\w* obejmuje Sądowski.
+To nazwiska wskazane przez Morfeusza, a nie nazwy instytucji. Dopisanie Pan nadal daje R1 (kontrola alternatywna).
+Efekt użytkowy: jeśli takie nazwisko pozostało w finalnym tekście, panel nie pokazuje go do decyzji.
+Test nie dowodzi, że wcześniejszy silnik przepuści te osoby w pełnym dokumencie.
+SAFETY_PRIVACY dotyczy odtworzonej utraty ostrzegania w końcowym Guardzie, nie potwierdzonego eksportu realnych danych.
+Jedna klasa błędu, trzy niezależne przykłady. Nie proponuję przebudowy R1.
+
+Pozostałe wyniki niezależne:
+- Macierz 17 przypadków: 14 PASS, 3 FAIL (wyłącznie F1).
+  Zgłoszony układ dwóch kolumn: oba fałszywe alarmy usunięte, LF i CRLF.
+  Lewa kolumna z firmą: poprawny zakres bez prawej etykiety, LF/CRLF, 3/4 spacje i 3 tabulatory.
+  Jedna kolumna CRLF: brak CR w fragmencie.
+  Kontrole: Centrum z formą prawną nadal R5, urząd bez alarmu, istniejące nazwisko R1 i Pan + nazwisko nadal R1.
+  Zakresy każdego ostrzeżenia równe wycinkom tekstu.
+- tests/test_guard_residue.py: 44 passed (osobny proces; wspierające testy dostawy uruchomione osobiście).
+- Wymagany w briefie rerun reguł na zapisanych 150 wynikach: 25 ostrzeżeń, 130 bez pytań, max 3;
+  R1=14, R3=9, R4=10. To powody, nie oddzielne pozycje.
+  Cache SHA256 baedd9cbaf9622b52ee20f194e6d5d950247185c1a00432e6c69a161eca1e5a5.
+  Nie uruchamiałem OCR ani silnika na nowo; raport zawiera wyłącznie agregaty cache.
+- Lock spec zgodny. Gate CC PASS na e9eb78a jest dowodem pomocniczym, nie niezależnym werdyktem.
+
+Granice:
+NOT_CHECKED: pełny dokument 5 -> 3 przez ponowiony pipeline/OCR, API/GUI/schowek/archiwum, pełna suita.
+Zmiana nie zmienia połączenia warstw; wykorzystano zachowane dowody A/B. Nie powtarzano pionu i zamkniętych F1–F3 GUARD-B.
+Do wykazania obecnego findingu wystarcza realny collect_warnings na finalnym tekście; brak stubów.
+Bez zmian produktu, merge, profilu i backendu Pawła.
+
+Zachowane dowody lokalne (izolowana kopia exact SHA i stan):
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/fix1-audit/
+repro_r1.py, matrix.json, measure.json, guard_base.py, exact/.
+Przenośny reproduktor w tym katalogu raportu: repro_r1.py <izolowany-backend-exact-SHA>.
+Następny ruch: CC poprawia wyłączenie tej klasy, Codex sprawdza wąski diff + zachowany repro + test ownera.
