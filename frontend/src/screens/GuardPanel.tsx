@@ -10,14 +10,20 @@ interface Props {
   kept:      ReadonlySet<string>;
   onCover:   (w: GuardWarning) => void;
   onKeep:    (key: string, keep: boolean) => void;
+  remember?: boolean;                   // Zakryj → słownik biura (brak = tryb bez profilu, np. Express)
+  onRemember?: (on: boolean) => void;
 }
+
+const REMEMBER_HELP = "Zakryte słowa trafią do słownika biura, więc w następnych dokumentach program zakryje je sam. "
+  + "Odznacz, jeśli zakrywasz tylko w tym dokumencie. Pojedyncze cyfry, inicjały i lata zakrywamy tylko tutaj. "
+  + "Zostaw i odkrycie tokenu zawsze dotyczą tylko bieżącego dokumentu.";
 
 const btn = (color: string, border: string) => ({
   fontSize: 13, padding: "3px 10px", background: T.surface, border: `1px solid ${border}`,
   borderRadius: 4, color, cursor: "pointer", flexShrink: 0,
 });
 
-export default function GuardPanel({ base, warnings, pending, kept, onCover, onKeep }: Props) {
+export default function GuardPanel({ base, warnings, pending, kept, onCover, onKeep, remember, onRemember }: Props) {
   if (warnings.length === 0) return null;
   const open = new Set(pending.map(w => w.id));
   const shown = warnings.filter(w => open.has(w.id) || kept.has(warningKey(base, w)));
@@ -32,6 +38,16 @@ export default function GuardPanel({ base, warnings, pending, kept, onCover, onK
           : `⚠ Pozostało ${pending.length} ${pending.length === 1 ? "ostrzeżenie" : "ostrzeżeń"}. Przy każdym wybierz Zakryj albo Zostaw, `
             + "aby zapisać, skopiować lub wyeksportować dokument."}
       </div>
+      {onRemember && !done && (
+        <label style={{ padding: "0 16px 8px", fontSize: 13, color: T.textSecondary, display: "flex", alignItems: "center", gap: 6,
+          flexShrink: 0, cursor: "pointer" }}>
+          <input type="checkbox" checked={!!remember} onChange={e => onRemember(e.target.checked)} />
+          Zapamiętaj zakryte w słowniku biura
+          <span title={REMEMBER_HELP} aria-label={REMEMBER_HELP} style={{ display: "inline-flex", alignItems: "center",
+            justifyContent: "center", width: 16, height: 16, borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 11,
+            color: T.textMuted, cursor: "help" }}>?</span>
+        </label>
+      )}
       <div style={{ overflowY: "auto", minHeight: 0, padding: "0 16px 10px" }}>
         {shown.map(w => {
           const key = warningKey(base, w), isKept = kept.has(key);

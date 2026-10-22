@@ -35,7 +35,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { T } from "../theme";
 import { segments, finalText, toggleReveal } from "./revealText";  // [LYNX-MANUAL-REVEAL]
 import GuardPanel from "./GuardPanel";  // [LYNX-GUARD-B]
-import { GuardWarning, Cover, applyCovers, coverWarning, pendingWarnings, warningKey } from "./guardDecisions";
+import { GuardWarning, Cover, applyCovers, coverWarning, coverTypeFor, pendingWarnings, rememberable, warningKey }
+  from "./guardDecisions";
 
 const API = "http://127.0.0.1:8765";
 
@@ -130,6 +131,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   const [guardBlocked,   setGuardBlocked]   = useState(false);  // twarda blokada z silnika (nie ostrzeżenia)
   const [kept,         setKept]         = useState<Set<string>>(new Set());  // [LYNX-GUARD-B] Zostaw (tylko pamięć)
   const [covered,      setCovered]      = useState<Set<string>>(new Set());  // [LYNX-GUARD-B] Zakryj (klucze, tylko pamięć)
+  const [remember,     setRemember]     = useState(true);  // [LYNX-GUARD-B] Zakryj → słownik biura (Paweł 22.10)
   const [pasteText,    setPasteText]    = useState("");
   const [dragOver,     setDragOver]     = useState(false);
   const [ocrWarning,   setOcrWarning]   = useState(false);
@@ -285,6 +287,21 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
     } finally {
       setSaving(false);
     }
+  }
+
+  // [LYNX-GUARD-B] Zakryj z panelu: w tym dokumencie zawsze; do słownika biura gdy zaznaczone i wartość się nadaje
+  async function handleCover(w: GuardWarning) {
+    if (!result) return;
+    setCovered(s => new Set(s).add(warningKey(result.anonymized_preview, w)));
+    setSaved(false);
+    const type = coverTypeFor(w, resultMap);  // słownik biura przyjmuje OSOBA/FIRMA/NUMER/ADRES
+    if (expressMode || !remember || !rememberable(w.fragment) || !["OSOBA", "FIRMA", "NUMER", "ADRES"].includes(type)) return;
+    try {
+      const res = await fetch(`${API}/profile/add-entity`, { method: "POST", headers: { "Content-Type": "application/json",
+        ...(apiToken ? { "X-Api-Token": apiToken } : {}) }, body: JSON.stringify({ text: w.fragment.trim(), token_type: type }) });
+      const data = await res.json();
+      if (!data.ok) setError(`Zakryto w tym dokumencie; słownik biura: ${data.error ?? "nie udało się zapisać"}.`);
+    } catch { setError("Zakryto w tym dokumencie, ale nie udało się zapisać w słowniku biura."); }
   }
 
   // ── Dodaj encję i od razu ponów pseudonimizację ────────────
@@ -870,7 +887,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
 
       {/* [LYNX-GUARD-B] ostrzeżenia Guarda: decyzja przy każdej pozycji, bez zbiorczego „zapisz mimo to” (S4) */}
       {result && !ocrWarning && <GuardPanel base={result.anonymized_preview} warnings={result.guard_warnings ?? []} pending={pending}
-        kept={kept} onCover={w => { setCovered(s => new Set(s).add(warningKey(result.anonymized_preview, w))); setSaved(false); }}
+        kept={kept} onCover={handleCover} remember={remember} onRemember={expressMode ? undefined : setRemember}
         onKeep={(key, keep) => setKept(s => { const n = new Set(s); if (keep) n.add(key); else n.delete(key); return n; })} />}
       {guardBlocked && result && (
         <div style={{ background: T.redBg, border: `1px solid ${T.redBorder}`, borderRadius: 8, padding: "12px 16px",

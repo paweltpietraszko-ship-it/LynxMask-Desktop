@@ -22,7 +22,16 @@ Gałąź na etapie A (`task/LYNX-GUARD-A`, Codex PASS r2 `f47fdb9`). Uwagi CC U1
    - Odkryj działa przy ostrzeżeniach; odkrycie to decyzja użytkownika dla tego miejsca (S4/U1), Guard go nie ocenia.
    - Tryb Express: ten sam panel (Zakryj lokalnie, bez profilu); kopia też zablokowana do rozstrzygnięcia.
 
-Poza zakresem: dopisywanie Zakryj do słownika biura (istnieje osobne „Dodaj i zakryj”), szyfrowana allowlista / „zapamiętaj” (S5, osobno),
+4. **Zakryj → słownik biura (OWNER 22.10: „jeśli zakryte encje nie będą budowały słownika biura, to jest bez sensu”):**
+   - przełącznik „Zapamiętaj zakryte w słowniku biura” nad listą, domyślnie zaznaczony;
+   - wyjaśnienie pod znakiem „?” (podpowiedź po najechaniu);
+   - przy zaznaczonym Zakryj woła istniejące `/profile/add-entity` (szyfrowany profil, S5) dla słów/nazw ≥3 litery i identyfikatorów ≥5 znaków
+     (nie: pojedyncza cyfra, inicjał, rok);
+   - błąd zapisu słownika → komunikat, zakrycie w dokumencie zostaje;
+   - Express bez przełącznika (brak profilu).
+   Zostaw i Odkryj — zawsze tylko bieżący dokument; trwałe „nie zakrywaj w przyszłości” dopiero z szyfrowaną allowlistą (osobne zadanie, S4/S5).
+
+Poza zakresem: szyfrowana allowlista / „zapamiętaj” (S5, osobno),
 rejestr decyzji (`LYNX-GUARD-DECISION-LOG`), zmiany backendu.
 
 TASK_SCOPE:

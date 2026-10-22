@@ -105,3 +105,9 @@ test("Zostaw tylko wskazane wystąpienie: to samo słowo w innym kontekście nad
   const kept = new Set([warningKey(t, ws[0])]);
   assert.deepEqual(pendingWarnings(t, ws, kept, []).map(x => x.id), ["W002"]);
 });
+
+test("słownik biura: słowa i dłuższe identyfikatory tak; cyfra, inicjał, rok nie", async () => {
+  const { rememberable } = await import("../src/screens/guardDecisions.ts");
+  for (const f of ["Śludkowskiego", "Biuro Rachunkowe RACHMISTRZ", "AB/123/45"]) assert.equal(rememberable(f), true, f);
+  for (const f of ["7", "S.", "2019", "128/7"]) assert.equal(rememberable(f), false, f);
+});

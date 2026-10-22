@@ -35,12 +35,26 @@ function coverType(w: GuardWarning): string {
   return "NUMER";
 }
 
+/** Typ tokenu dla Zakryj: typ wartości z mapy albo wg reguły ostrzeżenia. */
+export function coverTypeFor(w: GuardWarning, map: Record<string, string>): string {
+  const low = w.fragment.toLowerCase();
+  const known = Object.entries(map).find(([, v]) => v.toLowerCase() === low)?.[0];
+  return known ? known.split("_")[0] : coverType(w);
+}
+
+/** Czy Zakryj może trafić do słownika biura: słowo/nazwa (≥3 litery) albo dłuższy identyfikator (≥5 znaków, nie sam rok).
+ *  Pojedyncze cyfry, inicjały i lata tylko w tym dokumencie — w słowniku zakrywałyby je w każdym przyszłym piśmie. */
+export function rememberable(fragment: string): boolean {
+  const f = fragment.trim();
+  return /\p{L}{3,}/u.test(f) || (f.replace(/[^\p{L}\d]/gu, "").length >= 5 && /\d/.test(f) && !/^(19|20)\d\d$/.test(f));
+}
+
 /** Zakryj: słowo/nazwę we wszystkich wystąpieniach (bez wielkości liter, całe słowa) poza tokenami i zakryciami — jednym tokenem;
  *  wartość obecna w mapie dostaje jej token (jedna wartość = jeden token), inaczej kolejny wolny numer typu. */
 export function coverWarning(base: string, w: GuardWarning, map: Record<string, string>, covers: readonly Cover[]): Cover[] {
   const low = w.fragment.toLowerCase();
   const known = Object.entries(map).find(([, v]) => v.toLowerCase() === low)?.[0];
-  const type = known ? known.split("_")[0] : coverType(w);
+  const type = coverTypeFor(w, map);
   const used = new Set([...Object.keys(map), ...covers.map(c => c.token)]);
   let n = 1;
   while (!known && used.has(`${type}_${String(n).padStart(3, "0")}`)) n++;
