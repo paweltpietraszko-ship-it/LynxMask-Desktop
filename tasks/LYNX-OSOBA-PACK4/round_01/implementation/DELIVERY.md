@@ -32,7 +32,7 @@ WYMAGA_DECYZJI:
 
 ## Testy
 - `test_osoba_pack4.py` 11 passed.
-- `test_guard_residue.py` 52 passed.
+- `test_guard_residue.py` 50 passed.
 - Bez zmian: `test_ner_multiline.py` 21 (warunek wstępny poprawiony zgodnie z briefem), `test_failclosed` 23, `test_osoba_not_person` 25, `test_names_dict_clean` 22, `test_map_fidelity` 29, `test_pipeline_v2` 41, `test_addr_email_leaks` 22, `test_express_one_engine` 6, `test_herbert_net` 7 (+1 skip), `test_amounts_numbers` 20, `test_formats_pack2` 20.
 - `test_audyt_2026_10.py`: `test_kont0_nie_jest_osoba` XPASS → marker zdjęty.
   - Pozostaje 1 fail jak na main (Komornik Sądowy).
