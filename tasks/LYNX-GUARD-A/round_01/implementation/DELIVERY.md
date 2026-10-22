@@ -46,3 +46,13 @@ na zapisanych tekstach; `kpwr_guard.py <wt>/backend` — KPWr).
 - **Etapu A nie scalać bez B**: A zostawia stary zbiorczy „To nie PII — zapisz mimo to” (B go usuwa).
 - MAP_LEAK nadal korzysta z istniejącej allowlisty (tylko odczyt); nowy kod jej nie zapisuje (S5).
 - Wartości fragmentów są w odpowiedzi `/preview` (dla UI), nie w logach — log tylko liczba ostrzeżeń.
+
+## Runda 2 — poprawka F1 (Codex r1 `a06e9de`), HEAD `93cd35b`
+F1: wyłączenie instytucji w R5 używało szerokiej listy R1 („Centrum”, „Instytut”…) i tłumiło prywatne spółki. Poprawka (`guard_residue.py`):
+R5 wyłącza tylko organy publiczne (`_PUBLIC_RE`: sąd, urząd, gmina, powiat, starostwo, województwo, Skarb Państwa, prokuratura, policja,
+ministerstwo, komornik, rada miasta, izba skarbowa, ZUS/NFZ/KRUS/GUS/NIK/UODO/KNF/UOKiK); fragment z formą prawną jest firmą zawsze.
+Szeroka lista `_INSTITUTION_RE` zostaje wyłącznie dla R1 (ciągi nazw instytucji — źródło zalewu).
+Testy: reproduktory F1 (Centrum/Instytut + MODRZEW sp. z o.o.), kontrola „MODRZEW sp. z o.o.”, „Fundusz Inwestycyjny ORZEŁ” z roli → R5;
+bez alarmu: „Urząd Skarbowy w Radomiu”, „ZUS Oddział w Warszawie”, „Gmina Kraków”, „Sąd Rejonowy”. `test_guard_residue.py` 39 passed,
+`test_failclosed.py` 23 passed, ruff czysto. Pomiar `rerun_cc.py`: bez zmian — 25 ostrzeżeń / 150 dok. (R1 14, R3 9, R4 10).
+gate r4 (`round_01/gate_r4.txt`): `STATUS: WYMAGA_DECYZJI` — RATIO i TOTAL_LINES (rozmiar, zgoda OWNERA), jak r3.
