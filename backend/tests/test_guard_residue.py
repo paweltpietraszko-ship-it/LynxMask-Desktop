@@ -29,6 +29,8 @@ def _frags(text, **kw):
     # [LYNX-GUARD-B ROZSZERZENIE CC] nazwa z roli kończy się na końcu zdania
     ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ. Wczoraj przyszła faktura.", "Biuro Rachunkowe RACHMISTRZ", "R5"),
     ("Nabywca: GAMMA S.A. Termin płatności 14 dni.", "GAMMA S.A.", "R5"),
+    # [LYNX-GUARD-FIX1] kolumny: nazwa z lewej kolumny bez prawej, bez znaku końca linii
+    ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ          Nabywca: OSOBA_001\r\n", "Biuro Rachunkowe RACHMISTRZ", "R5"),
 ])
 def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     found = _frags(text)
@@ -45,6 +47,9 @@ def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     "Nabywca: Gmina Kraków",
     "Odbiorca: Urząd Skarbowy w Radomiu",
     "Płatnik: ZUS Oddział w Warszawie",
+    # [LYNX-GUARD-FIX1] OWNER 22.10, `Pliki testowe/doc_stresstest_silnik_guard_lvl0_3.txt` l. 112–113: dwie kolumny, CRLF
+    "Sprzedawca:                              Nabywca:\r\nFIRMA_001              Przychodnia Rejonowa „Zdrowie”\r\n",
+    "Odbiorca:\r\nPrzychodnia Rejonowa w Krakowie przyjmuje pacjentów.",
     "Dostawca: FIRMA_002 ul. Długa",
     "Sygn. akt I C 123/24. Rozprawa odbędzie się w Sądzie.",
     # pomiar 22.10 (150 dok. OCR): największe źródła fałszywych R1

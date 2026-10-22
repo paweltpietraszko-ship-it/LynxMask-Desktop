@@ -56,8 +56,9 @@ _DZU_RE = re.compile(r"Dz\.\s?U|poz\.|art\.|ust\.|§", re.IGNORECASE)
 _ROLE_RE = re.compile(
     r"\b(?:Sprzedawc\w*|Nabywc\w*|Kontrahent\w*|Usługodawc\w*|Zleceniobiorc\w*|Zleceniodawc\w*|Wykonawc\w*|Dostawc\w*"
     r"|Odbiorc\w*|Zamawiając\w*|Najemc\w*|Wynajmując\w*|Pracodawc\w*|Ubezpieczyciel\w*|Płatnik\w*|Firma)[ \t]*:[ \t]*"
-    r"([^\n,;]{2,80})")
+    r"([^\r\n,;]{2,80})")
 _FORM = r"(?i:sp\.[ \t]*z[ \t]*o\.[ \t]*o\.?|sp\.[ \t]*k\.[ \t]*a\.?|sp\.[ \t]*[jkp]\.?|s\.[ \t]*a\.|s\.[ \t]*c\.|p\.[ \t]*s\.[ \t]*a\.?)"
+_LABEL_RE = re.compile(r"[^\W\d_][\w ]{0,30}:")  # etykieta pola: „Nabywca:”, „Dane kontaktowe:”
 _SENTENCE_END_RE = re.compile(rf"\.[ \t]+(?=[{_UP}][{_LO}])")
 _FORM_NAME_RE = re.compile(
     rf"(?<![\w„\"])[{_UP}0-9„\"][\w„\"&.\-]*(?:[ \t]+[{_UP}0-9„\"&][\w„\"&.\-]*){{0,4}}[ \t]+{_FORM}(?!\w)")
@@ -93,7 +94,7 @@ def _person_word(text: str, m: re.Match) -> bool:
         return True  # „Pan Rogalik” — tytuł to dowód osoby niezależnie od słownika
     before = text[max(0, m.start() - 80):m.start()]
     if low in OSOBA_DENYLIST or low in WHITE_LISTS or low in _OFFICE_TERMS or _sentence_start(text, m.start()) \
-            or _DEFINED_RE.search(before) or _in_institution(before):
+            or _DEFINED_RE.search(before) or _in_institution(before) or _INSTITUTION_RE.fullmatch(word):  # FIX1: „Przychodnia”
         return False
     parts = [_morf_interps(w) for w in word.split("-")]
     if any(p is None for p in parts):
@@ -173,7 +174,9 @@ def _firm_ok(frag: str) -> bool:
 
 def _r5(text: str):
     for m in _ROLE_RE.finditer(text):
-        s, frag = m.start(1), m.group(1)
+        s, frag = m.start(1), re.split(r"[ \t]{3,}", m.group(1))[0]  # FIX1: układ w dwóch kolumnach — tylko ta kolumna
+        if _LABEL_RE.match(frag):
+            continue  # FIX1: „Sprzedawca:   Nabywca:” — po etykiecie kolejna etykieta, nie nazwa
         cut = _TOKEN_RE.search(frag)
         frag = frag[:cut.start()] if cut else frag
         end = _SENTENCE_END_RE.search(frag)  # „RACHMISTRZ. Wczoraj…” → bez następnego zdania; „S.A.” zostaje
