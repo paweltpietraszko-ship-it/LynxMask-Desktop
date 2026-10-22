@@ -698,7 +698,7 @@ async def archive_audit():
 # ── Export PDF ────────────────────────────────────────────────────────────────
 
 try:
-    from export_pdf import generate_pdf as _generate_pdf
+    from pdf_worker import export_pdf as _generate_pdf  # [LYNX-PDF-CRASH] PyMuPDF poza procesem silnika
     _EXPORT_PDF_AVAILABLE = True
     logger.info("[STARTUP] export_pdf załadowany")
 except ImportError:
