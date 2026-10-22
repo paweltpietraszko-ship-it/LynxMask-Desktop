@@ -1,0 +1,29 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 133cefd3426cd29e9aed65d4e9e3c0bc892092fb
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 156 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\engine_quality.py
+  - tasks\LYNX-PHOTO-CHAIN\measure\photo_measure.py
+  - tasks\LYNX-PDF-CRASH\round_01\tests\repro_pdf_crash.py
+  - tasks\LYNX-OCR-PARITY-STEP2\round_01\tests\repro_r3.py
+  - tasks\LYNX-OCR-GATE-COMPARE\measure\chain_compare.py
+  - tasks\LYNX-HERBERT-NET\measure\herbert_measure.py
+  - tasks\LYNX-FIRMA-FILTER-FIX\measure\measure_run.py
+  - backend\tests\test_addr_email_leaks.py
+  - backend\tests\test_archive_adversarial.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_disk_pii.py
+  - backend\tests\test_engine_quality_layout.py
+  - backend\tests\test_express_one_engine.py
+  - backend\tests\test_failclosed.py
+  - backend\tests\test_photo_chain.py
+  - backend\tests\test_startup_check.py
+  - backend\tests\test_text_limit_15k.py
+  - backend\tests\test_token_re_spec.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-PDF-CRASH/brief.md
+  - tasks/LYNX-PDF-CRASH/repo_before.hash
+  - tasks/LYNX-PDF-CRASH/round_01/tests/repro_pdf_crash.py
