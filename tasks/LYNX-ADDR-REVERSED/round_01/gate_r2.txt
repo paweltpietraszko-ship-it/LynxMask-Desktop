@@ -1,0 +1,20 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 249c72f9d8f9b7c82952a8e69ee72fcedafba90e
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 131/1 = 131.0:1 (threshold 5:1)
+IMPORTERS_FOR_REVIEW:
+  - backend\osoba_not_person.py
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - backend\tests\test_ocr_chain_compare.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-ADDR-REVERSED/brief.md
+  - tasks/LYNX-ADDR-REVERSED/repo_before.hash
+  - tasks/LYNX-ADDR-REVERSED/round_01/gate_qwen_wip.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/gate_r1.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-ADDR-REVERSED/round_01/qwen_trial.md
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/repro_r1.py
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/tests_r1.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/tests_r2.txt

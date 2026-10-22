@@ -42,5 +42,17 @@ Samo miasto bez sąsiedztwa adresu zostaje jawne.
 | pytania Guarda / dok. | 2,62 · 2,23 | **1,62 · 1,23** |
 
 ## Granice
-- Miasto jednowyrazowe z SIMC tuż przed adresem jest wciągane do ADRES także wtedy, gdy jest nazwiskiem („Jan Kalisz, ul. Polna 5” → „Kalisz” w ADRES). Kierunek nadmaskowania jest zgodny z polityką.
 - Miasto po adresie wymaga przecinka, żeby nie wciągać słów z SIMC bez separatora.
+
+## Runda 2 — Codex r1/r2 F1–F2 (`0826de1`), kod `249c72f`
+- **F1:** miasto po ulicy także po samym odstępie (spacja/tab), dwuwyrazowe i ASCII: „ul. Polna 5 Radom” → jeden ADRES.
+- **F2 (S4, OWNER_CORRECTED):** `_city_before` nie zabiera słowa, które jest:
+  - słowem osoby rozpoznanej przed warstwą adresu (`state.ner_results`, przekazane do `_with_neighbours`);
+  - słowem tuż po imieniu (`names_inflected`) albo po „Pan/Pani/p.”.
+  - „Pan Jan Kalisz, ul. Polna 5” → „Pan OSOBA_001, ADRES_001” (OSOBA = Jan Kalisz). Usunięte zdanie z „Granic” o akceptacji tego nadmaskowania.
+- Testy:
+  - `test_addr_reversed.py`: 21 passed (+4 separator, +2 nazwisko);
+  - regresja bez zmian: addr_email 22, map_fidelity 29, pipeline_v2 41, osoba_pack4 12, failclosed 23, formats_pack2 20;
+  - reproduktor Codexa `repro_r1.py`: space → ADRES całość, person → OSOBA=Jan Kalisz + ADRES=ul. Polna 5.
+- GOLD bez zmian względem r1: ADRES 120/120 · 240/240, ciche 102 · 217, pytania 1,62 · 1,23, OSOBA jak main.
+- gate r2: STATUS: WYMAGA_DECYZJI —   - RATIO: 131/1 = 131.0:1 (threshold 5:1) 
