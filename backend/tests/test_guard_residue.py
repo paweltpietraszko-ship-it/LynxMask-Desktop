@@ -37,6 +37,14 @@ def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     "Nabywca: Gmina Kraków",
     "Dostawca: FIRMA_002 ul. Długa",
     "Sygn. akt I C 123/24. Rozprawa odbędzie się w Sądzie.",
+    # pomiar 22.10 (150 dok. OCR): największe źródła fałszywych R1
+    "Organ: Urząd Marszałkowski Województwa Mazowieckiego, Wydział Ochrony Środowiska.",
+    "Wydał Urząd Gminy Warszawa-Wola w sprawie.",
+    "Niniejszym wzywa Panią/Pana do zapłaty.",
+    "Umowa z OSOBA_001, zwanym dalej „Zleceniobiorcą”, na okres próbny.",
+    "Siedziba w dzielnicy Kraków-Śródmieście od roku.",
+    "Odpis wydano dnia 2 NUMER_005 w sekretariacie.",
+    "Marek OSOBA_001\n4 ADRES_001",
 ])
 def test_brak_alarmu(text):
     assert _frags(text) == {}

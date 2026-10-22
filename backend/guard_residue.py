@@ -22,11 +22,20 @@ _LO = "a-ząćęłńóśźż"
 _WORD_RE = re.compile(rf"(?<![\w-])[{_UP}][{_LO}]{{2,}}(?:-[{_UP}][{_LO}]{{2,}})?(?![\w-])")
 _TITLES = {"p", "pan", "pani", "dr", "mgr", "inż", "prof", "hab", "adw", "św"}
 _TITLE_BEFORE_RE = re.compile(r"(?:^|[\s(])(?:[Pp]an(?:a|u|em|i|ią)?|[Pp]\.|dr|mgr|inż\.|prof\.|adw\.|mec\.)[ \t]+$")
-_OFFICE_TERMS = {"strona", "strony", "stronę", "stron", "stronami", "stronom", "stronie"}  # Morfeusz: także nazwisko
+_OFFICE_TERMS = {"strona", "strony", "stronę", "stron", "stronami", "stronom", "stronie",  # Morfeusz: także nazwisko
+                 "pan", "pana", "panu", "panem", "pani", "panią", "państwo", "państwa", "państwu"}
+_DEFINED_RE = re.compile(r"zwan\w*[ \t]+(?:dalej[ \t]+)?[„\"]?$", re.IGNORECASE)  # „zwanym dalej Zleceniobiorcą”
+# słowo nieznane Morfeuszowi (często szum OCR) — alarm tylko przy końcówce nazwiska
+_SURNAME_END_RE = re.compile(r"(?:[scd]k|dzk)(?:i|a|ie|iego|iej|iemu|im|imi|ą|ich)$|[iy]cz(?:a|owi|em|u)?$"
+                             r"|(?:czyk|czuk|iak|uk)(?:a|owi|iem|em|u)?$")
 _GEO_PREP_RE = re.compile(r"(?:^|\s)(?:w|we|z|ze|do|na|pod|nad|przy|koło|od|dla)\s+$", re.IGNORECASE)
 _INSTITUTION_RE = re.compile(
     r"\b(?:Sąd\w*|Urz[ąę]d\w*|Gmin\w*|Powiat\w*|Starostw\w*|Województw\w*|Skarb\w* Państwa|Prokuratur\w*|Policj\w*"
-    r"|Ministerstw\w*|Szkoł\w*|Komornik\w*|Rad\w* Miasta|Izb\w* Skarbow\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK)\b")
+    r"|Ministerstw\w*|Szkoł\w*|Komornik\w*|Rad\w* Miasta|Izb\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK|Wydział\w*|Oddział\w*"
+    r"|Kolegi\w*|Inspektorat\w*|Dyrekcj\w*|Agencj\w*|Fundusz\w*|Rzecznik\w*|Zarząd\w*|Departament\w*|Ośrod\w*|Centrum"
+    r"|Instytut\w*|Uniwersytet\w*|Politechnik\w*|Szpital\w*|Przychodni\w*|Przedszkol\w*|Regionaln\w*|Kas\w+)\b")
+# słowo w ciągu nazwy instytucji: „Urząd Marszałkowski Województwa Mazowieckiego”, „Urząd Gminy Warszawa-Wola”
+_IN_INSTITUTION_RE = re.compile(rf"(?:[ \t\-]+(?:[{_UP}][\w\-]*|w|we|przy|dla|ds\.|i|do|spraw))*[ \t\-]*")
 # R2: imię albo token osoby + jedna wielka litera z kropką (bez „S.A.”)
 _INITIAL_RE = re.compile(rf"\b(?:(OSOBA_\d{{3}})|([{_UP}][{_LO}]+))[ \t]+([{_UP}])\.(?![ \t]?[A-Za-z]\.)")
 # R3: cyfry tuż przed/po tokenie NUMER/ADRES, kod pocztowy (+ miejscowość) po ADRES, litery doklejone do tokenu
@@ -78,15 +87,26 @@ def _person_word(text: str, m: re.Match) -> bool:
     word, low = m.group(0), m.group(0).lower()
     if _TITLE_BEFORE_RE.search(text[max(0, m.start() - 8):m.start()]):
         return True  # „Pan Rogalik” — tytuł to dowód osoby niezależnie od słownika
-    if low in OSOBA_DENYLIST or low in WHITE_LISTS or low in _OFFICE_TERMS or _sentence_start(text, m.start()):
+    before = text[max(0, m.start() - 80):m.start()]
+    if low in OSOBA_DENYLIST or low in WHITE_LISTS or low in _OFFICE_TERMS or _sentence_start(text, m.start()) \
+            or _DEFINED_RE.search(before) or _in_institution(before):
         return False
-    interps = _morf_interps(word.split("-")[0])
-    if interps is None:
+    parts = [_morf_interps(w) for w in word.split("-")]
+    if any(p is None for p in parts):
         return True
-    quals = {q.split("_(")[0] for i in interps for q in i[2][3]}
-    if quals & {"imię", "nazwisko"}:
-        return not ("nazwa_geograficzna" in quals and _GEO_PREP_RE.search(text[:m.start()]))
-    return all(i[2][2] == "ign" for i in interps)  # znane wyłącznie jako zwykłe słowo/miejsce → bez alarmu
+    quals = [{q.split("_(")[0] for i in p for q in i[2][3]} for p in parts]
+    if len(parts) > 1 and any("nazwa_geograficzna" in q for q in quals):
+        return False  # „Kraków-Śródmieście”
+    if quals[0] & {"imię", "nazwisko"}:
+        return not ("nazwa_geograficzna" in quals[0] and _GEO_PREP_RE.search(before))
+    if all(i[2][2] == "ign" for i in parts[0]):  # nieznane: nazwisko albo szum OCR
+        return bool(_SURNAME_END_RE.search(low))
+    return False  # znane wyłącznie jako zwykłe słowo/miejsce → bez alarmu
+
+
+def _in_institution(before: str) -> bool:
+    line = before[before.rfind("\n") + 1:]
+    return any(_IN_INSTITUTION_RE.fullmatch(line, k.end()) for k in _INSTITUTION_RE.finditer(line))
 
 
 def _r1(text: str):
@@ -111,7 +131,9 @@ def _r3(text: str):
         if kind in ("NUMER", "ADRES"):
             lo = max(0, t.start() - 14)
             b = _DIGITS_BEFORE_RE.search(text[lo:t.start()])
-            if b:
+            s0 = lo + b.start(1) if b else 0
+            if b and not (s0 and text[s0 - 1] in "/.-" or text[max(0, s0 - 6):s0].rstrip().endswith("dnia")
+                          or kind == "ADRES" and len(b.group(1).strip()) == 1):  # „4 ADRES_001” = OCR „ul.”
                 found.append(((lo + b.start(1), lo + b.end(1)), "Resztka numeru obok zakrytego fragmentu"))
             for rx, reason in ((_DIGITS_AFTER_RE, "Resztka numeru obok zakrytego fragmentu"),
                                (_POSTAL_AFTER_RE, "Kod pocztowy obok zakrytego adresu")):
