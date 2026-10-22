@@ -106,120 +106,6 @@ def _match_city(text: str, pos: int) -> tuple[int, str] | None:
 # Wzorce adresów
 # ---------------------------------------------------------------------------
 
-# [LYNX-ADDR-REVERSED] Kod pocztowy NN-NNN jako całość (bez \b na końcu — „31-001”
-# w „II 15 31-001” kończy się cyfrą; sam kod nie może być cięty w połowie).
-_POSTAL_RE = re.compile(r'\d{2}-\d{3}(?!\d)')
-# [LYNX-ADDR-REVERSED] Ulica bez prefiksu „ul.”: 1–2 członów + numer ze ściężkiem
-# („Twarda 18”, „Powązek 3”). Tylko w Fazie 4, zaraz po „kod + miasto”.
-_STREET_BARE_RE = re.compile(
-    r'[A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+(?:-[A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+)?'
-    r'(?: [A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+)?[ ,]\d+[a-zA-Z]?(?:/\d+)?(?![\w/-])'
-)
-
-
-def _skip_sep(text: str, pos: int) -> int:
-    """[LYNX-ADDR-REVERSED] Przeskocz spacje/przecinki; None gdy brak separatora."""
-    end = pos
-    while end < len(text) and text[end] in ' \t,\n\r':
-        end += 1
-    return end if end > pos else None
-
-
-def _find_postal_before(text: str, pos: int):
-    """[LYNX-ADDR-REVERSED] Kod NN-NNN kończący się tuż przed pozycją pos.
-
-    Dopuszcza między kodem a pozycją wyłącznie przecinki/spacje; zwraca ostatni
-    taki kod (albo None)."""
-    last = None
-    for m in _POSTAL_RE.finditer(text[:pos]):
-        if re.fullmatch(r'[ \t,\n\r]*', text[m.end():pos]):
-            last = m
-    return last
-
-
-def _street_end_after(text: str, pos: int) -> int | None:
-    """[LYNX-ADDR-REVERSED] Koniec ulicy z numerem, która zaczyna się tuż za pozycją pos."""
-    p = _skip_sep(text, pos)
-    if p is None:
-        return None
-    m = _STREET_BARE_RE.match(text, p)
-    return m.end() if m else None
-
-
-def _city_after(text: str, pos: int):
-    """[LYNX-ADDR-REVERSED] Miasto SIMC tuż za pozycją pos (przecinek/spacje) albo None."""
-    p = _skip_sep(text, pos)
-    if p is None:
-        return None
-    return _match_city(text, p)
-
-
-def _reversed_addr_hit(text: str, s: int, e: int) -> tuple[int, int] | None:
-    """[LYNX-ADDR-REVERSED] Rozszerzenie hitu (s,e) o bezpośrednio sąsiadujące elementy.
-
-    Polityka OWNERA: miasto jest częścią adresu tylko gdy bezpośrednio sąsiaduje
-    (przecinek/spacja) z rozpoznaną ulicą z numerem albo z kodem pocztowym;
-    samo miasto pozostaje jawne. Zwraca nowy span albo None (bez zmian).
-    - przed hitem kod (+miasto po tym kodzie): „Opole, 45-407, ul. …”;
-    - za hitem miasto SIMC: „ul. Polna 5, Radom”, „Warszawa, ul. …, 00-001”;
-      jeśli to miasto stoi zaraz po kodzie — rozszerzamy też wstecz do tego kodu;
-    - za hitem ulica bez prefiksu („Twarda 18”), tylko gdy hit = „kod + miasto”
-      i miasto potwierdza bazę SIMC (Faza 2b).
-    """
-    pm = _find_postal_before(text, s)
-    if pm is not None:
-        city_r = _city_after(text, pm.end())
-        return (pm.start(), max(e, city_r[0]) if city_r else e)
-    city_r = _city_after(text, e)
-    if city_r:
-        base_end = city_r[0]
-        inner = _find_postal_before(text, city_r[1] - len(city_r[0]))
-        if inner is not None:
-            return (inner.start(), base_end)
-        return (s, base_end)
-    if _POSTAL_RE.match(text, s):
-        mid = _match_city(text, e)
-        if mid and mid[1] == e:
-            se = _street_end_after(text, mid[0])
-            if se:
-                return (s, se)
-    return None
-
-
-def _untruncated_postal_end(text: str, start: int, end: int) -> int:
-    """[LYNX-ADDR-REVERSED] Jeśli hit kończy się uciętym kodem NN-NNN (przyklejona
-    reszta \\d{1,3}, np. „… 15 31” z „31-001”) — zwróć koniec pełnego kodu."""
-    m = re.match(r'\d-(\d{1,3})(\d{1,3})(?!\d)', text[end - 2:])
-    if m and '-' not in text[start:end]:
-        return end + m.end() - 2
-    return end
-
-
-def _extend_reversed_hits(text: str, all_hits: list) -> None:
-    """[LYNX-ADDR-REVERSED] Faza 3: przygotuj hity faz 1–2b przed wspólnym _apply_hits.
-
-    Naprawia ucięte kody pocztowe i rozszerza hity o bezpośrednio sąsiadujące
-    miasto/kod/ulicę bez prefiksu. Zmiany nanosimy od prawej strony tekstu, więc
-    rozszerzenia lewe nie przesuwają już przetworzonych right-hitów; na końcu
-    usuwamy hity wewnętrznie sprzeczne (token w tokenie), a _apply_hits rozwiązuje
-    resztę nakłań przez wybór największego spanu.
-    """
-    order = sorted(range(len(all_hits)), key=lambda i: all_hits[i][0], reverse=True)
-    for i in order:
-        start, end, value, token_type = all_hits[i]
-        end = _untruncated_postal_end(text, start, end)
-        ext = _reversed_addr_hit(text, start, end)
-        if ext:
-            start, end = ext
-        all_hits[i] = (start, end, text[start:end], token_type)
-    kept: list[tuple[int, int, str, str]] = []
-    for start, end, value, token_type in all_hits:
-        if any(a < end and start < b and (start, end) != (a, b) for a, b, _, _ in kept):
-            continue
-        kept.append((start, end, value, token_type))
-    all_hits[:] = kept
-
-
 # Faza 1: pełne adresy z prefiksem ul./al./etc.
 # Zatrzymuje się na kodzie pocztowym — miasto dopisuje _match_city (SIMC lookup).
 _ADDR_RE = re.compile(
@@ -301,8 +187,6 @@ def apply_address_layer(state: PipelineState) -> None:
     Faza 1: _ADDR_RE + _match_city — adresy z prefiksem ul./al./os.
     Faza 2a: _ADDR_STRUCTURAL_FULL + _match_city — wzorce bez prefiksu (OCR).
     Faza 2b: _POSTAL_ANCHOR_RE + _match_city — sam kod pocztowy + miasto (SIMC).
-    Faza 3 [LYNX-ADDR-REVERSED]: _extend_reversed_hits — miasto/kod/ulica bezpośrednio
-      sąsiadujące z hitem nie zostają jawne; ucięty kod NN-NNN nigdy nie jest cięty.
     """
     text = state.text
     all_hits: list[tuple[int, int, str, str]] = []
@@ -347,9 +231,6 @@ def apply_address_layer(state: PipelineState) -> None:
         if city_r:
             city_end, _ = city_r
             all_hits.append((m.start(), city_end, text[m.start():city_end], "ADRES"))
-
-    # Faza 3 [LYNX-ADDR-REVERSED] — miasto/kod/ulica tuż przy adresie nie zostają jawne.
-    _extend_reversed_hits(text, all_hits)
 
     state.text = _apply_hits(text, all_hits, state.allocator)
 
