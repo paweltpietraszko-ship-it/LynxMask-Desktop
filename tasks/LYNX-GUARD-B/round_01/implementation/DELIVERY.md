@@ -53,3 +53,19 @@ gate r3 (`round_01/gate_r3.txt`): `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
 - Zostaw i Odkryj dotyczą tylko bieżącego dokumentu (S4). Trwałe „nie zakrywaj” to osobne zadanie z szyfrowaną allowlistą.
 - `node --test tests/revealText.test.mjs`: 14 pass. `tsc`: 0. `Pseudonimizuj.tsx`: 912 l. (baza 933).
 - gate r4: `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
+
+## Runda 2 — poprawki F1–F3 (Codex r1 `40c4b25`), kod `0f3f855`
+- **F1 (pozycje Python → JS):** API zostaje bez zmian (punkty kodowe).
+  - `guardDecisions.ts` `at16`: gdy pozycja nie wskazuje fragmentu, przelicza punkty kodowe na UTF-16 i przyjmuje wynik tylko wtedy, gdy wskazuje dokładnie fragment. Gdy pozycja jest już poprawna, nic nie zmienia.
+  - Używane w środku `coverWarning`, `pendingWarnings` i `warningKey`, więc bezpieczne także przy wywołaniu bez przeliczenia, jak w reproduktorze. Ekran dodatkowo raz woła `toUtf16`.
+  - Format tokenów bez zmian.
+- **F2 (częściowe zakrycie):**
+  - `pendingWarnings`: ostrzeżenie jest rozstrzygnięte tylko wtedy, gdy każda litera i cyfra w jego zakresie jest zakryta.
+  - `coverWarning`: zakrycia leżące w środku wskazanego miejsca zastępuje jeden token całej wartości („Rogalik i KOWALCZYK sp. k.” → `FIRMA_001`).
+- **F3 (granica słowa):** `[\p{L}\p{N}_]` zamiast `\w`; „Kawałek” zostaje w całości.
+- **Testy:**
+  - reproduktor Codexa `node tasks/LYNX-GUARD-B/round_01/tests/repro_r1.mjs`: `failures=0` (7/7);
+  - `node --test tests/revealText.test.mjs`: 17 pass, w tym 3 nowe (F1 emoji, F2 Rogalik/KOWALCZYK, F3 Kawałek);
+  - `tsc`: 0;
+  - `Pseudonimizuj.tsx` 914 l. (baza 933).
+- **gate r6:** `STATUS: WYMAGA_DECYZJI` — tylko rozmiar.
