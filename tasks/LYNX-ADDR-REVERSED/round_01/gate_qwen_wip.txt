@@ -1,0 +1,12 @@
+STATUS: FAIL
+HEAD_SHA: a377f85577f7273c428f3aa25dc1c56fa2e3c403
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+REASON:
+  - SIZE_FUNC: backend/layers/address.py:apply_address_layer has 61 lines (max 50, before 56)
+IMPORTERS_FOR_REVIEW:
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - backend\tests\test_ocr_chain_compare.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-ADDR-REVERSED/brief.md
+  - tasks/LYNX-ADDR-REVERSED/repo_before.hash

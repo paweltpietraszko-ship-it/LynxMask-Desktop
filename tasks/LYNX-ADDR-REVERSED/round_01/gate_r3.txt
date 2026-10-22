@@ -1,0 +1,24 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: de4185e696db4f5ab7d5fa0ee9b171cf0a396703
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 150/1 = 150.0:1 (threshold 5:1)
+  - TOTAL_LINES: 151 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - backend\osoba_not_person.py
+  - backend\pipeline_new.py
+  - backend\smoke_test.py
+  - backend\tests\test_ocr_chain_compare.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-ADDR-REVERSED/brief.md
+  - tasks/LYNX-ADDR-REVERSED/repo_before.hash
+  - tasks/LYNX-ADDR-REVERSED/round_01/gate_qwen_wip.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/gate_r1.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/gate_r2.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/implementation/DELIVERY.md
+  - tasks/LYNX-ADDR-REVERSED/round_01/qwen_trial.md
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/repro_r1.py
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/repro_r3.py
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/tests_r1.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/tests_r2.txt
+  - tasks/LYNX-ADDR-REVERSED/round_01/tests/tests_r3.txt

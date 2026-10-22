@@ -1,0 +1,56 @@
+LYNX-ADDR-REVERSED — r2, rozstrzygnięcie po OWNER_CORRECTED, 22.10.2026
+WERDYKT: FAIL dla exact SHA 352975698a2a321709ecd39c113d8fdc8b26b074.
+Kod: 39c92397a9faeba4603274c064419098f17de2e7. Baza: 3ad472b.
+Odbiorca: CC — poprawka tej samej klasy, bez Architekta.
+To uzupełnienie niezmiennego r1, nie nowy audyt kodu ani ponowienie testów.
+
+OWNER_CORRECTED:
+Po wyjaśnieniu T1/T2 Paweł odpowiedział:
+„Nie CC zrobil to bo nie umial zrobic chyba inaczej albo nie zauważył, tak nie moze byc”.
+To jawne odrzucenie opisanego zachowania, nie akceptacja wyjątku od S4.
+Nie przypisuję CC motywacji — przyczyna wskazana przez Pawła jest przypuszczeniem.
+Zamykam OWNER_EXPLANATION_GATE. Rozpoznana osoba ma pozostać jedną OSOBA;
+nazwisko nie może być zabierane do ADRES tylko dlatego, że występuje również w SIMC.
+Nie tworzę nowej funkcji ani nowej polityki: jest to dotychczasowe S4.
+
+F1 (T1 z r1), SAFETY_PRIVACY: niepełny adres po separatorze spacji.
+TRACE: brief exact SHA, Rozszerzenie, Zasada — bezpośrednie sąsiedztwo „(przecinek/spacja)”.
+OWNERSHIP: backend/layers/address.py, _with_neighbours, dołączanie miasta po ulicy przez _COMMA_RE.
+REPRO: zachowany niezależny rzeczywisty pipeline -> Guard na exact SHA:
+  wejście: ul. Polna 5 Radom
+  wynik:   ADRES_001 Radom
+  mapa:    ADRES_001 = ul. Polna 5
+  guard_warnings = []
+Kontrola z przecinkiem zakrywa całość. Rodzina: tabulator, miasto dwuwyrazowe, ASCII.
+Wymagana korekta: pełny adres także przy separatorach z kontraktu; samo miasto nadal jawne.
+
+F2 (T2 z r1): rozbicie już rozpoznanej osoby między OSOBA i ADRES.
+TRACE: frozen arch/spec.md S4: „jedna wiarygodnie ustalona osoba = jeden token także przy odmianach”;
+dodatkowo OWNER_CORRECTED powyżej, odrzucające opisany wyjątek.
+OWNERSHIP: nowa faza _with_neighbours/_city_before w address.py poszerza span adresu o nazwisko z SIMC.
+Nie żądam nowego/dublowanego walidatora downstream; korekta należy do zmienionej reguły i jej styku z istniejącym pipeline.
+REPRO: zachowany niezależny rzeczywisty pipeline z r1:
+  wejście: Pan Jan Kalisz, ul. Polna 5
+  baza:    Pan OSOBA_001, ADRES_001
+           OSOBA_001 = Jan Kalisz; ADRES_001 = ul. Polna 5
+  dostawa: Pan OSOBA_001 ADRES_001
+           OSOBA_001 = Jan; ADRES_001 = Kalisz, ul. Polna 5
+W obu: brak błędu, guard_warnings = []. Potwierdzone także bez „Pan”.
+Nie jest to wyciek nazwiska: oba fragmenty są zakryte. Defekt dotyczy podziału i błędnego przypisania osoby.
+Wymagana korekta: zachować rozpoznaną całą osobę w OSOBA, właściwy adres w ADRES.
+Pozytywne przypadki prawdziwego miasta przed adresem muszą nadal działać.
+Zdanie DELIVERY o „zgodności z polityką” nie uzasadnia odstępstwa od S4.
+
+Dowody i zakres:
+Zachowuję r1 i repro_r1.py. Nie powtarzam testów na niezmienionym SHA po samej odpowiedzi OWNERA.
+W r1 wykonano: macierz20 (16 zgodnych/4 odchylenia F1), rzeczywisty pion oraz porównanie bazy dla F2,
+test_addr_reversed.py 15 passed, test_addr_email_leaks.py 22 passed (razem37).
+To nie usuwa niezależnie odtworzonych F1/F2.
+GOLD dev/test, szersza regresja, GUI/eksport, OCR pozostają NOT_CHECKED w opisanym w r1 zakresie.
+FAIL wynika wyłącznie z TRACE + OWNERSHIP + REPRO F1/F2, nie z brakujących pomiarów ani gate RATIO102:1.
+
+Dalszy krok CC:
+Poprawić F1/F2, uaktualnić DELIVERY i przekazać nowy exact SHA.
+Recheck: diff od 3529756, zachowany repro_r1.py, celowane testy zmienionego ownera.
+Nie ma potrzeby ponownie pytać Pawła o akceptację odrzuconego wyjątku.
+Bez zmian produktu, merge i subagentów w tym uzupełnieniu; przykłady wyłącznie syntetyczne.
