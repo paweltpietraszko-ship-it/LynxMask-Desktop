@@ -290,9 +290,10 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
   }
 
   // [LYNX-GUARD-B] Zakryj z panelu: w tym dokumencie zawsze; do słownika biura gdy zaznaczone i wartość się nadaje
-  async function handleCover(w: GuardWarning) {
-    if (!result) return;
-    setCovered(s => new Set(s).add(warningKey(result.anonymized_preview, w)));
+  async function handleCover(ws: GuardWarning[]) {  // wiersz panelu = te same słowo (×N) — wszystkie wskazane wystąpienia
+    if (!result || ws.length === 0) return;
+    const w = ws[0];
+    setCovered(s => { const n = new Set(s); ws.forEach(x => n.add(warningKey(result.anonymized_preview, x))); return n; });
     setSaved(false);
     const type = coverTypeFor(w, resultMap);  // słownik biura przyjmuje OSOBA/FIRMA/NUMER/ADRES
     if (expressMode || !remember || !rememberable(w.fragment) || !["OSOBA", "FIRMA", "NUMER", "ADRES"].includes(type)) return;
@@ -888,7 +889,7 @@ export default function Pseudonimizuj({ apiToken = "", expressMode = false }: Pr
       {/* [LYNX-GUARD-B] ostrzeżenia Guarda: decyzja przy każdej pozycji, bez zbiorczego „zapisz mimo to” (S4) */}
       {result && !ocrWarning && <GuardPanel base={result.anonymized_preview} warnings={result.guard_warnings ?? []} pending={pending}
         kept={kept} onCover={handleCover} remember={remember} onRemember={expressMode ? undefined : setRemember}
-        onKeep={(key, keep) => setKept(s => { const n = new Set(s); if (keep) n.add(key); else n.delete(key); return n; })} />}
+        onKeep={(keys, keep) => setKept(s => { const n = new Set(s); keys.forEach(k => keep ? n.add(k) : n.delete(k)); return n; })} />}
       {guardBlocked && result && (
         <div style={{ background: T.redBg, border: `1px solid ${T.redBorder}`, borderRadius: 8, padding: "12px 16px",
           marginTop: 12, fontSize: 15, color: T.red, flexShrink: 0 }}>

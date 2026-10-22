@@ -31,6 +31,13 @@ Gałąź na etapie A (`task/LYNX-GUARD-A`, Codex PASS r2 `f47fdb9`). Uwagi CC U1
    - Express bez przełącznika (brak profilu).
    Zostaw i Odkryj — zawsze tylko bieżący dokument; trwałe „nie zakrywaj w przyszłości” dopiero z szyfrowaną allowlistą (osobne zadanie, S4/S5).
 
+5. **Układ panelu jak Mobile (OWNER 22.10, zrzuty Mobile; pierwsza wersja „optycznie chaos”):**
+   - dwie sekcje: czerwona „Możliwy wyciek — zamaskuj albo zostaw jawne” (RED) i żółta „Do sprawdzenia” (YELLOW);
+   - pozycja = rodzaj i sama wartość („Możliwe nazwisko — Jelenia”), kontekst w podpowiedzi;
+   - przyciski „Maskuj” / „Zostaw jawne”, jedno zdanie wyjaśnienia nad listą;
+   - to samo słowo w sekcji = jeden wiersz „×N”: decyzja dotyczy wszystkich wskazanych wystąpień tego słowa
+     (jawnie widoczna liczba; to nie jest zbiorcze „zostaw wszystko”).
+
 Poza zakresem: szyfrowana allowlista / „zapamiętaj” (S5, osobno),
 rejestr decyzji (`LYNX-GUARD-DECISION-LOG`), zmiany backendu.
 
