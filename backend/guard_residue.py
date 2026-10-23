@@ -138,7 +138,8 @@ def _released(text: str, words: list[str]):
         stem = cut if len(cut) >= 3 else w  # „Maciolusa” → „Maciolus”, „Róża” → „Róż” (Codex F2: „Róży”); rdzeń ≥3 litery
         # Codex F1: bez względu na wielkość liter — „MALINA” w nagłówku to ta sama niezakryta wartość
         for m in re.finditer(rf"(?<![\w-]){re.escape(stem)}(?:{_INFLECTIONS})?(?![\w-])", text, re.IGNORECASE):
-            yield m.start(), m.end(), "R1", "Możliwe nazwisko — silnik nie miał dowodu, że to osoba"
+            if not m.group(0).islower():  # [LYNX-OSOBA-HANDOFF] „odwołującego”, „kawa” małymi literami to zwykłe słowo; CAPS zostaje
+                yield m.start(), m.end(), "R1", "Możliwe nazwisko — silnik nie miał dowodu, że to osoba"
 
 
 def _r2(text: str):
