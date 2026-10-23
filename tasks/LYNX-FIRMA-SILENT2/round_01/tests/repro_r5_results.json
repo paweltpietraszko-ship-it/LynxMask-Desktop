@@ -1,0 +1,162 @@
+{
+  "audited_sha": "d058a43d8041ae5190a8dc82ceec7c1559a209ba",
+  "repro_r2": [
+    {
+      "case": "A_control",
+      "name": "Usługi Konserwatorskie Cezary Jeż",
+      "jdg_candidates": [
+        "Usługi Konserwatorskie Cezary Jeż",
+        "Usługi Konserwatorskie Cezary Jeż"
+      ],
+      "output": "Wykonawca: FIRMA_001\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+      "map": {
+        "FIRMA_001": "Usługi Konserwatorskie Cezary Jeż",
+        "OSOBA_001": "Cezary Jeż"
+      },
+      "warnings": []
+    },
+    {
+      "case": "A_surname_firstname",
+      "name": "Usługi Konserwatorskie Cezary Marek",
+      "jdg_candidates": [
+        "Usługi Konserwatorskie Cezary Marek",
+        "Usługi Konserwatorskie Cezary Marek"
+      ],
+      "output": "Wykonawca: FIRMA_001\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+      "map": {
+        "FIRMA_001": "Usługi Konserwatorskie Cezary Marek",
+        "OSOBA_001": "Cezary Marek"
+      },
+      "warnings": []
+    },
+    {
+      "case": "A_surname_firstname2",
+      "name": "Biuro Rachunkowe Anna Roman",
+      "jdg_candidates": [
+        "Biuro Rachunkowe Anna Roman",
+        "Biuro Rachunkowe Anna Roman"
+      ],
+      "output": "Wykonawca: FIRMA_001\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+      "map": {
+        "FIRMA_001": "Biuro Rachunkowe Anna Roman",
+        "OSOBA_001": "Anna Roman"
+      },
+      "warnings": []
+    },
+    {
+      "case": "A_short_jdg",
+      "name": "Studio Jan Marek",
+      "jdg_candidates": [
+        "Studio Jan Marek",
+        "Studio Jan Marek"
+      ],
+      "output": "Wykonawca: FIRMA_001\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+      "map": {
+        "FIRMA_001": "Studio Jan Marek",
+        "OSOBA_001": "Jan Marek",
+        "FIRMA_002": "Studio"
+      },
+      "warnings": []
+    },
+    {
+      "case": "B",
+      "name": "Perłowy Nawias s.c.",
+      "jdg_candidates": [],
+      "output": "Wykonawca: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+      "map": {
+        "FIRMA_001": "Perłowy Nawias s.c"
+      },
+      "warnings": []
+    },
+    {
+      "case": "C",
+      "name": "Ulotny Rys sp. z o.o.",
+      "jdg_candidates": [],
+      "output": "Wykonawca: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+      "map": {
+        "FIRMA_001": "Ulotny Rys sp. z o.o",
+        "FIRMA_002": "Ulotny"
+      },
+      "warnings": []
+    }
+  ],
+  "repro_r3": [
+    {
+      "case": "A_person_separate",
+      "input": "Wykonawca: Biuro Rachunkowe Anna Roman\nBiuro Rachunkowe Anna Roman zachowuje egzemplarz. Oświadczenie złożyła Anna Roman.",
+      "output": "Wykonawca: FIRMA_001\nFIRMA_001 zachowuje egzemplarz. Oświadczenie złożyła OSOBA_001.",
+      "map": {
+        "FIRMA_001": "Biuro Rachunkowe Anna Roman",
+        "OSOBA_001": "Anna Roman"
+      },
+      "warnings": []
+    },
+    {
+      "case": "C_short_company_separate",
+      "input": "Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót podmiotu.\nPodwykonawca: Ulotny sp. z o.o.",
+      "output": "Zamawiający: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.\nPodwykonawca: FIRMA_002.",
+      "map": {
+        "FIRMA_001": "Ulotny Rys sp. z o.o",
+        "FIRMA_002": "Ulotny sp. z o.o",
+        "FIRMA_003": "Ulotny"
+      },
+      "warnings": []
+    },
+    {
+      "case": "C_short_company_alfa",
+      "input": "Zamawiający: Alfa Serwis sp. z o.o.\nW dalszej części pisma nazwę Alfa Serwis stosuje się jako skrót podmiotu.\nPodwykonawca: Alfa sp. z o.o.",
+      "output": "Zamawiający: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.\nPodwykonawca: FIRMA_002.",
+      "map": {
+        "FIRMA_001": "Alfa Serwis sp. z o.o",
+        "FIRMA_002": "Alfa sp. z o.o"
+      },
+      "warnings": []
+    },
+    {
+      "case": "C_two_long_companies",
+      "input": "Zamawiający: Ulotny Rys sp. z o.o.\nDostawca: Ulotny Las sp. z o.o.\nNazwę Ulotny Rys oraz nazwę Ulotny Las stosuje się dalej.",
+      "output": "Zamawiający: FIRMA_001.\nDostawca: FIRMA_002.\nNazwę FIRMA_001 oraz nazwę FIRMA_003 stosuje się dalej.",
+      "map": {
+        "FIRMA_001": "Ulotny Rys sp. z o.o",
+        "FIRMA_002": "Ulotny Las sp. z o.o",
+        "FIRMA_003": "Ulotny Las"
+      },
+      "warnings": []
+    }
+  ],
+  "repro_r4": [
+    {
+      "case": "short_full_only",
+      "input": "Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.\nPodwykonawca: Ulotny sp. z o.o.",
+      "output": "Zamawiający: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót zamawiającego.\nPodwykonawca: FIRMA_002.",
+      "map": {
+        "FIRMA_001": "Ulotny Rys sp. z o.o",
+        "FIRMA_002": "Ulotny sp. z o.o",
+        "FIRMA_003": "Ulotny"
+      },
+      "warnings": []
+    },
+    {
+      "case": "both_repeat",
+      "input": "Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.\nPodwykonawca: Ulotny sp. z o.o.\nNazwę Ulotny stosuje się jako skrót podwykonawcy.",
+      "output": "Zamawiający: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót zamawiającego.\nPodwykonawca: FIRMA_002.\nNazwę FIRMA_003 stosuje się jako skrót podwykonawcy.",
+      "map": {
+        "FIRMA_001": "Ulotny Rys sp. z o.o",
+        "FIRMA_002": "Ulotny sp. z o.o",
+        "FIRMA_003": "Ulotny"
+      },
+      "warnings": []
+    },
+    {
+      "case": "both_repeat_short_first",
+      "input": "Podwykonawca: Ulotny sp. z o.o.\nZamawiający: Ulotny Rys sp. z o.o.\nNazwę Ulotny stosuje się jako skrót podwykonawcy.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.",
+      "output": "Podwykonawca: FIRMA_002.\nZamawiający: FIRMA_001.\nNazwę FIRMA_003 stosuje się jako skrót podwykonawcy.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót zamawiającego.",
+      "map": {
+        "FIRMA_001": "Ulotny Rys sp. z o.o",
+        "FIRMA_002": "Ulotny sp. z o.o",
+        "FIRMA_003": "Ulotny"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+[
+  {
+    "case": "A_control",
+    "name": "Usługi Konserwatorskie Cezary Jeż",
+    "jdg_candidates": [
+      "Usługi Konserwatorskie Cezary Jeż",
+      "Usługi Konserwatorskie Cezary Jeż"
+    ],
+    "output": "Wykonawca: FIRMA_001\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+    "map": {
+      "FIRMA_001": "Usługi Konserwatorskie Cezary Jeż",
+      "OSOBA_001": "Cezary Jeż"
+    },
+    "warnings": []
+  },
+  {
+    "case": "A_surname_firstname",
+    "name": "Usługi Konserwatorskie Cezary Marek",
+    "jdg_candidates": [],
+    "output": "Wykonawca: Usługi Konserwatorskie OSOBA_001\nW dalszej części pisma nazwę Usługi Konserwatorskie OSOBA_001 stosuje się jako skrót podmiotu.",
+    "map": {
+      "OSOBA_001": "Cezary Marek"
+    },
+    "warnings": [
+      {
+        "fragment": "Usługi Konserwatorskie",
+        "rules": [
+          "R5"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "A_surname_firstname2",
+    "name": "Biuro Rachunkowe Anna Roman",
+    "jdg_candidates": [],
+    "output": "Wykonawca: Biuro Rachunkowe OSOBA_001\nW dalszej części pisma nazwę Biuro Rachunkowe OSOBA_001 stosuje się jako skrót podmiotu.",
+    "map": {
+      "OSOBA_001": "Anna Roman"
+    },
+    "warnings": [
+      {
+        "fragment": "Biuro Rachunkowe",
+        "rules": [
+          "R5"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "A_short_jdg",
+    "name": "Studio Jan Marek",
+    "jdg_candidates": [],
+    "output": "Wykonawca: FIRMA_001 OSOBA_001\nW dalszej części pisma nazwę FIRMA_001 OSOBA_001 stosuje się jako skrót podmiotu.",
+    "map": {
+      "OSOBA_001": "Jan Marek",
+      "FIRMA_001": "Studio"
+    },
+    "warnings": []
+  },
+  {
+    "case": "B",
+    "name": "Perłowy Nawias s.c.",
+    "jdg_candidates": [],
+    "output": "Wykonawca: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+    "map": {
+      "FIRMA_001": "Perłowy Nawias s.c"
+    },
+    "warnings": []
+  },
+  {
+    "case": "C",
+    "name": "Ulotny Rys sp. z o.o.",
+    "jdg_candidates": [],
+    "output": "Wykonawca: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót podmiotu.",
+    "map": {
+      "FIRMA_001": "Ulotny Rys sp. z o.o"
+    },
+    "warnings": []
+  }
+]

@@ -1,0 +1,80 @@
+LYNX-FIRMA-SILENT2 — recheck r5, 23.10.2026
+WYNIK: PASS badanego zakresu na d058a43d8041ae5190a8dc82ceec7c1559a209ba.
+F1 i F2 ZAMKNIĘTE.
+Adresat: CC.
+Poprzedni SHA: e08ff5126ef9d528bd544b46c3e9e08587881e51.
+Baza Tasku: f617ef6fecf9c1c409afb2bf19c9a579d12a2e33.
+Brief: ad35f6c; poprzedni raport r4 91ab3503c7a92facd4c9b3001dfeb05119f63788.
+DELIVERY r4 fe06d83, zapis zgody TOTAL_LINES d45f922.
+
+ZAKRES I ZMIANA
+Wąski diff od e08ff51: usunięcie heurystyki _absorb_inside_core, wspólna kolejność podmian wartości NER i wielowyrazowych wariantów FIRMA w ner_adapter; wydzielenie dotychczasowej obsługi wariantu do _sub_variant.
+Mechanizm naprawia przyczynę rozcinania: pełny znany wariant FIRMA bierze udział w wyborze najdłuższego przed krótszą wartością NER.
+Sprawdzono punktowo odwołania nowych helperów i brak pozostałych referencji do usuniętego helpera w backendzie.
+Bez zmian produktu przez Codexa, merge i subagentów.
+Exact-SHA izolowany git archive backend + audyt, własne profile/stan Temp; bez serwera 8765/profilu OWNERA.
+
+NIEZALEŻNE REPRODUKTORY — 13/13 PASS
+Retained repro_r2.py: 6/6 pełnych pionów.
+Retained repro_r3.py: 4/4 pełnych pionów.
+Retained repro_r4.py: 3/3 pełnych pionów.
+Zweryfikowano:
+- pełne JDG, także Cezary Marek / Anna Roman / Studio Jan Marek;
+- pełne i powtórzone nazwy s.c.;
+- dłuższą firmę i odrębną krótszą firmę;
+- powtórzenia obu bez formy prawnej w obu kolejnościach;
+- osobne użycie osoby z JDG pozostaje OSOBA;
+- pełna dłuższa firma zachowuje właściwy token przy obu wzmiankach, krótsza firma nie zostaje z nią scalona.
+Załącznik repro_r5_results.json zawiera wyniki na obecnym SHA, wyłącznie syntetyki.
+Skrypty r2/r3/r4 są zachowane w repo; nie nadpisywano ich ani wcześniejszych wyników/raportów.
+
+F2 — ZAMKNIĘTE
+Wejście z obiema firmami i oboma powtórzeniami nie pozostawia Rys ani Ulotny jawnie.
+Pełne „Ulotny Rys sp. z o.o.” i „Ulotny sp. z o.o.” mają odrębne tokeny; dłuższy występuje dwukrotnie we właściwych miejscach.
+Nie wymaga to globalnego przepinania krótszej nazwy na dłuższą, więc samodzielna krótsza nazwa zachowuje odrębność.
+F1 pozostaje zamknięte z retained przypadków.
+
+TESTY — 220 PASS, osobne procesy
+test_firma_silent2 16;
+test_firma_context 14;
+test_silent_pack1 30;
+test_formats_pack2 20;
+test_map_fidelity 29;
+test_osoba_layout 49;
+test_ner_multiline 21;
+test_pipeline_v2 41.
+Bez nowych błędów w uruchomionym zakresie. Nie ponawiano całej suity ani znanych wcześniejszych niepowodzeń test_layers.
+
+POMIAR BIEŻĄCEGO SHA — 813 PRZELICZEŃ
+Powód punktowego rozszerzenia poza sam mikro-repro: ta dostawa zmienia wspólną kolejność podmian NER, dotyczącą również innych encji; poprzednie łatki zmieniały tylko warunek pomocniczy firm.
+Ponowiono tylko OBECNĄ wersję: GOLD120 + cały owner693. Użyto tego samego runnera measurement_r3.py i zachowanych źródeł metryk.
+Bazy nie przeliczano ponownie; wykorzystano niezależny pomiar exact f617ef6 z r3 (raport 355718c257e43901b7efc9c04765cd249fadf902).
+Nie ponawiano OCR ani generowania danych.
+
+Baza → obecny d058a43:
+- GOLD ciche FIRMA dev 20→0, test 52→1.
+- FIRMA zakryte dev 125→160, test 240→318.
+- GOLD pytania/dok dev 0,90→0,53, test 0,86→0,53.
+- GOLD zbędne not_pii dev 69/440→69/440, test 152/880→152/880.
+- Wszystkie agregaty GOLD bieżącej wersji identyczne z wcześniejszym pomiarem b9315c5.
+- Owner clean300, stress300, pliki7, ocr48: wszystkie agregaty bez zmiany.
+- Owner testy38: liczba pytań 137→136 (3,61→3,58/dok), pozostałe agregaty bez zmiany.
+- Brak błędów silnika w przeliczonych dokumentach.
+
+GRANICE POMIARU
+Niezależne uruchomienie rzeczywistych backendów i zliczenie wyników; definicje miar zgodne z CC: GOLD char_map/evaluate z human_view.py i owner _kind/_flat/leaks z run_testset.py.
+GOLD ma heurystykę mapowania / awaryjne difflib, owner miarkę literalną. Potwierdzenie agregatów nie oznacza niezależnej semantycznej oceny każdego spanu.
+Nie czytano treści GOLD test, nie strojono kodu na danych; test był już wcześniej używany do pomiarów i nie jest nowym świeżym holdoutem.
+Owner nie ma pełnej annotacji firm ani miary nadmaskowania. Poprawność właściwych spanów i odrębność firm sprawdzają dodatkowo reproduktory.
+measurement_summary_r5.json zawiera tylko agregaty i metadane źródeł; brak realnych dokumentów, map lub PII.
+
+MAPA / ZGODY
+Dostawa jawnie opisuje możliwość pozostawienia wpisów krótszych encji bez wystąpień w wyniku. Takie wpisy nie są dowodem jawnego PII w tekście. W sprawdzonych przypadkach tekst i użyte tokeny/mapy zachowują oczekiwaną ochronę/odrębność.
+Nie badano osobno wpływu tych nieużytych wpisów na wszystkie widoki GUI; nie deklaruję pełnego odbioru interfejsu.
+Zgody Pawła dla tego Tasku na RATIO i TOTAL_LINES zapisane w DELIVERY (7c8390b / d45f922) odnotowane; bez ponownego pytania i bez przenoszenia ich na przyszłe Taski.
+
+WERDYKT I DALEJ
+PASS dotyczy wskazanego exact SHA, klas A–C, zamknięcia F1/F2, wykonanych testów i opisanych miar.
+Nie stanowi gwarancji wykrycia wszystkich możliwych firm/PII/OCR ani certyfikatu całej aplikacji; pozostała 1 cicha FIRMA test pozostaje ograniczeniem wyniku.
+CC: odebrać PASS. Brak dalszej blokującej poprawki w zbadanym zakresie.
+Kod nie został scalony przez Codexa; PASS nie jest nowym poleceniem merge.

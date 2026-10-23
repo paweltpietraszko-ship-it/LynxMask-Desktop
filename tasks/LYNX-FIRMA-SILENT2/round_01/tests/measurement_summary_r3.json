@@ -1,0 +1,228 @@
+{
+  "base_sha": "f617ef6fecf9c1c409afb2bf19c9a579d12a2e33",
+  "audited_sha": "b9315c5890d5838eab38ad9afbc8f0af8f8d0e71",
+  "base": {
+    "backend": "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_codex_firma_b9315c5\\base\\backend",
+    "metric_source_hashes": {
+      "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_cc_review\\gold\\human_view.py": "a4b1bc5b22d17587b6a8f59b7c4317573d3f4edb7dfce1a0a43876691f25e736",
+      "C:\\Users\\p_pie\\Desktop\\LynxMask-Desktop\\testset_owner\\run_testset.py": "82b076363e3da3aab08057d02c85f8f5fdf6669ecb891871f9d949d981bb3411"
+    },
+    "gold_dev": {
+      "docs": 40,
+      "counts": {
+        "pii:zakryte": 1107,
+        "pii:wyciek_z_ostrzezeniem": 25,
+        "not_pii:zbedne_zakrycie": 69,
+        "not_pii:ok": 371,
+        "pii:cichy_wyciek": 20
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 125,
+          "wyciek_z_ostrzezeniem": 15,
+          "cichy_wyciek": 20
+        },
+        "ADRES": {
+          "zakryte": 120
+        },
+        "OSOBA": {
+          "zakryte": 335
+        },
+        "NUMER": {
+          "zakryte": 327,
+          "wyciek_z_ostrzezeniem": 10
+        },
+        "EMAIL": {
+          "zakryte": 80
+        },
+        "KWOTA": {
+          "zakryte": 120
+        }
+      },
+      "warnings": 36,
+      "warnings_per_doc": 0.9
+    },
+    "gold_test": {
+      "docs": 80,
+      "counts": {
+        "pii:zakryte": 2201,
+        "pii:cichy_wyciek": 52,
+        "pii:wyciek_z_ostrzezeniem": 48,
+        "not_pii:zbedne_zakrycie": 152,
+        "not_pii:ok": 728
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 240,
+          "cichy_wyciek": 52,
+          "wyciek_z_ostrzezeniem": 28
+        },
+        "ADRES": {
+          "zakryte": 240
+        },
+        "OSOBA": {
+          "zakryte": 669,
+          "wyciek_z_ostrzezeniem": 1
+        },
+        "NUMER": {
+          "zakryte": 652,
+          "wyciek_z_ostrzezeniem": 19
+        },
+        "EMAIL": {
+          "zakryte": 160
+        },
+        "KWOTA": {
+          "zakryte": 240
+        }
+      },
+      "warnings": 69,
+      "warnings_per_doc": 0.86
+    },
+    "owner": {
+      "testy": {
+        "docs": 38,
+        "warnings": 137
+      },
+      "clean": {
+        "docs": 300,
+        "warnings": 0,
+        "osoba:total": 417,
+        "adres:total": 342,
+        "numer:total": 1107,
+        "email:total": 39,
+        "data:total": 83
+      },
+      "pliki": {
+        "docs": 7,
+        "warnings": 23
+      },
+      "stress": {
+        "docs": 300,
+        "warnings": 6,
+        "osoba:total": 412,
+        "adres:total": 340,
+        "numer:total": 1091,
+        "email:total": 48,
+        "data:total": 82,
+        "osoba:silent": 8,
+        "adres:silent": 2,
+        "osoba:warned": 1
+      },
+      "ocr": {
+        "docs": 48,
+        "warnings": 11
+      }
+    }
+  },
+  "delivery": {
+    "backend": "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_codex_firma_b9315c5\\backend",
+    "metric_source_hashes": {
+      "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_cc_review\\gold\\human_view.py": "a4b1bc5b22d17587b6a8f59b7c4317573d3f4edb7dfce1a0a43876691f25e736",
+      "C:\\Users\\p_pie\\Desktop\\LynxMask-Desktop\\testset_owner\\run_testset.py": "82b076363e3da3aab08057d02c85f8f5fdf6669ecb891871f9d949d981bb3411"
+    },
+    "gold_dev": {
+      "docs": 40,
+      "counts": {
+        "pii:zakryte": 1142,
+        "pii:wyciek_z_ostrzezeniem": 10,
+        "not_pii:zbedne_zakrycie": 69,
+        "not_pii:ok": 371
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 160
+        },
+        "ADRES": {
+          "zakryte": 120
+        },
+        "OSOBA": {
+          "zakryte": 335
+        },
+        "NUMER": {
+          "zakryte": 327,
+          "wyciek_z_ostrzezeniem": 10
+        },
+        "EMAIL": {
+          "zakryte": 80
+        },
+        "KWOTA": {
+          "zakryte": 120
+        }
+      },
+      "warnings": 21,
+      "warnings_per_doc": 0.53
+    },
+    "gold_test": {
+      "docs": 80,
+      "counts": {
+        "pii:zakryte": 2279,
+        "pii:wyciek_z_ostrzezeniem": 21,
+        "not_pii:zbedne_zakrycie": 152,
+        "not_pii:ok": 728,
+        "pii:cichy_wyciek": 1
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 318,
+          "wyciek_z_ostrzezeniem": 1,
+          "cichy_wyciek": 1
+        },
+        "ADRES": {
+          "zakryte": 240
+        },
+        "OSOBA": {
+          "zakryte": 669,
+          "wyciek_z_ostrzezeniem": 1
+        },
+        "NUMER": {
+          "zakryte": 652,
+          "wyciek_z_ostrzezeniem": 19
+        },
+        "EMAIL": {
+          "zakryte": 160
+        },
+        "KWOTA": {
+          "zakryte": 240
+        }
+      },
+      "warnings": 42,
+      "warnings_per_doc": 0.53
+    },
+    "owner": {
+      "testy": {
+        "docs": 38,
+        "warnings": 137
+      },
+      "clean": {
+        "docs": 300,
+        "warnings": 0,
+        "osoba:total": 417,
+        "adres:total": 342,
+        "numer:total": 1107,
+        "email:total": 39,
+        "data:total": 83
+      },
+      "pliki": {
+        "docs": 7,
+        "warnings": 23
+      },
+      "stress": {
+        "docs": 300,
+        "warnings": 6,
+        "osoba:total": 412,
+        "adres:total": 340,
+        "numer:total": 1091,
+        "email:total": 48,
+        "data:total": 82,
+        "osoba:silent": 8,
+        "adres:silent": 2,
+        "osoba:warned": 1
+      },
+      "ocr": {
+        "docs": 48,
+        "warnings": 11
+      }
+    }
+  },
+  "owner_identical": true
+}

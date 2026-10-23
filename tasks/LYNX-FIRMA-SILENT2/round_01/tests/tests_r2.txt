@@ -1,0 +1,67 @@
+LYNX-FIRMA-SILENT2 — audyt implementacji r2, 23.10.2026
+WYNIK: FAIL — F1 [P2], niedomknięta klasa A: nazwisko będące również imieniem.
+Adresat: CC.
+Exact audited SHA: 281b7d9c3aa87d9aa244e205db68a79ac39d6503.
+Diff base: f617ef6fecf9c1c409afb2bf19c9a579d12a2e33.
+Brief: ad35f6cff72ea61c0f8ea42122a2b954b99e1dc4, precheck PASS 4b1bac7f8a4c5c86d3b9c18fc469e4679ed3a51a.
+DELIVERY: f02db4a.
+Warstwy: wąski diff 2 plików produkcyjnych i nowych testów; testy ownera; niezależny rzeczywisty pipeline → Guard.
+Izolowany exact-SHA git archive backend + audyt, własne profile/stan Temp. Serwer 8765 i profil OWNERA nietknięte.
+Bez zmian produktu, merge, subagentów. Teksty i mapy załącznika wyłącznie syntetyczne.
+
+F1 [P2] Nazwisko obecne na liście imion wyłącza JDG.
+TRACE:
+Brief A: rzeczownik działalności + człony z wielkiej litery + imię i nazwisko → jedna FIRMA obejmująca całość; każda pełna wzmianka wspólnym tokenem.
+Warunek imienia z listy dotyczy imienia, nie zakazuje nazwiska, które jest również imieniem.
+OWNERSHIP:
+firma_context.jdg_entities, warunek words[i].group(1).lower() not in names — niezależnie od nazwiskowego znaczenia odrzuca ostatni człon obecny na liście imion.
+is_jdg opiera się na tej samej funkcji, więc również nie rozpoznaje takiej pełnej nazwy.
+Morfeusz dla „Marek” i „Roman” zawiera kwalifikator nazwisko; oba wyrazy są też na liście imion. Nie jest to żądanie obsługi wymyślonej kategorii słów ani odgadywania nieznanego nazwiska.
+
+REPRO na exact SHA, realny pseudonymize_document:
+Wejście:
+„Wykonawca: Usługi Konserwatorskie Cezary Marek
+W dalszej części pisma nazwę Usługi Konserwatorskie Cezary Marek stosuje się jako skrót podmiotu.”
+jdg_entities: [].
+Wynik:
+„Wykonawca: Usługi Konserwatorskie OSOBA_001
+W dalszej części pisma nazwę Usługi Konserwatorskie OSOBA_001 stosuje się jako skrót podmiotu.”
+Mapa: tylko OSOBA_001 = „Cezary Marek”; brak pełnej FIRMA.
+Guard pyta o „Usługi Konserwatorskie” w pierwszym wierszu, nie o powtórzenie.
+
+Rodzeństwo tej samej klasy:
+- „Biuro Rachunkowe Anna Roman” → „Biuro Rachunkowe OSOBA_001” w obu wzmiankach; jdg_entities=[]; pytanie tylko przy pierwszej wzmiance.
+- „Studio Jan Marek” → „FIRMA_001 OSOBA_001”, mapa rozbita na Studio oraz Jan Marek, zamiast jednej pełnej firmy; brak ostrzeżeń.
+Ta klasa jest normalną granicą imię/nazwisko w nazwie działalności. Nie rozszerzam briefu na dowolne niejednoznaczne zdania, nowe słowniki czy nowy silnik.
+Osoby w tych przykładach są zakryte. Finding dotyczy niespełnionej obietnicy pełnej FIRMA; nie przedstawiam jawnego opisu działalności jako udowodnionego wycieku nazwiska.
+Nie twierdzę, że jest to regresja względem starej bazy — implementacja nie domyka klasy naprawy A.
+
+POTWIERDZONE DZIAŁAJĄCE PRZYKŁADY
+- A kontrolne: „Usługi Konserwatorskie Cezary Jeż” — pełna FIRMA, wspólny token w dwóch wzmiankach.
+- B: „Perłowy Nawias s.c.” i powtórzenie rdzenia — pełna firma, wspólny token.
+- C: „Ulotny Rys sp. z o.o.” i powtórzenie „Ulotny Rys” — brak jawnego Rys, wspólny token.
+To niezależne uruchomienia pionu na syntetykach, nie tylko odczyt wyników CC.
+
+TESTY
+- test_firma_silent2.py: 10 PASS.
+- test_firma_context.py: 14 PASS.
+Łącznie 24 testy PASS.
+repro_r2.py: 6 wykonanych scenariuszy; trzy kontrolne A/B/C zgodne, trzy warianty A pokazują opisany brak.
+Załączniki: repro_r2.py i repro_r2_results.json.
+Nie nadpisano prechecku r1.
+
+NOT_CHECKED / STOP
+Po wystarczającym dowodzie F1 zatrzymano dalsze testy i kosztowne pomiary.
+Pozostała regresja oraz GOLD/owner z DELIVERY nie zostały niezależnie ponowione w r2; deklarowane 20→0 / 52→1 pozostają dowodem CC.
+Nie podważam tych liczb bez pomiaru, ale nie dowodzą one obsługi nazwisk będących też imionami poza przypadkami zbioru.
+Nie otwierano treści GOLD test, nie strojono danych/reguł.
+
+GATE
+CC zgłasza RATIO 127/5 = 25,4:1. To formalna miarka przyrostu; nie jest podstawą niniejszego FAIL.
+Wcześniejsza zgoda Pawła na miarkę linii dotyczyła dostawy kwot; nie zapisuję jej jako ogólnego zwolnienia dla przyszłych Tasków.
+Najpierw potrzebna poprawka odtworzonego F1; ewentualną formalną uwagę gate należy jasno opisać przy następnym przekazaniu.
+
+NASTĘPNY KROK
+CC: poprawić klasę nazwisk będących też imionami w istniejącym ownerze, zachować negatywy A oraz B/C.
+Nie narzucam sposobu rozstrzygania wszystkich niejednoznaczności ani nie projektuję nowej architektury.
+Recheck: diff od 281b7d9, retained repro, test ownera; potem wymagane pomiary, jeśli nie ma już blokera.

@@ -1,0 +1,93 @@
+LYNX-FIRMA-SILENT2 — recheck i zakończenie pomiarów r3, 23.10.2026
+WYNIK: FAIL — F1 zamknięte; F2 [P2] klasa C nie działa, gdy krótsza nazwa ma też odrębne użycie w tym samym dokumencie.
+Exact audited SHA: b9315c5890d5838eab38ad9afbc8f0af8f8d0e71.
+Poprzedni audyt: 281b7d9c3aa87d9aa244e205db68a79ac39d6503; raport d32fcd6c2aa48dacca991f1bf4463eec753b4eb9.
+Baza pomiarów Tasku: f617ef6fecf9c1c409afb2bf19c9a579d12a2e33.
+Brief: ad35f6c; DELIVERY r2 cd3aa0a; zapis zgody RATIO 7c8390b.
+Adresat: CC. Bez zmian produktu, merge i subagentów.
+
+F1 — ZAMKNIĘTE
+Wąski diff 281b7d9..b9315c5 usuwa zakaz nazwiska obecnego na liście imion.
+Retained repro_r2.py uruchomiony bez zmiany przypadków na rzeczywistym pipeline: 6/6 zgodne.
+Cezary Marek, Anna Roman i Studio Jan Marek: jedna pełna FIRMA, ten sam token w obu wzmiankach.
+Kontrolne A, B (s.c.) i podstawowe C (Ulotny Rys) zachowują wynik.
+Dodatkowy pion A: pełna JDG „Biuro Rachunkowe Anna Roman” maskowana jako FIRMA, osobne „Anna Roman” dalej maskowane jako OSOBA — poprawnie.
+
+F2 [P2] — niedomknięta klasa C
+TRACE: brief C: „krótsza encja zawarta w wystąpieniu dłuższej znanej wartości (rdzeń pełnej firmy) nie blokuje dłuższej — wygrywa dłuższe”.
+Wymóg dotyczy wystąpienia znanej pełnej nazwy, nie wymaga, aby krótsze słowo nigdy nie pojawiło się poza nią.
+OWNERSHIP: firma_context._absorb_inside_core wycofuje krótszą encję tylko wtedy, gdy WSZYSTKIE literalne wystąpienia jej wartości mieszczą się w rdzeniu. Przy odrębnym użyciu krótszej nazwy nie wycofuje jej, a wcześniejsza podmiana w ner_adapter nadal rozcina dłuższy wariant.
+Ten finding ujawniono przy dokończeniu jawnej macierzy A–C po zamknięciu F1; nie jest ponownym otwieraniem nazwisk ani nowym wymaganiem architektury.
+
+REPRO na exact SHA, pełny rzeczywisty pseudonymize_document:
+Wejście syntetyczne:
+Zamawiający: Ulotny Rys sp. z o.o.
+W dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót podmiotu.
+Podwykonawca: Ulotny sp. z o.o.
+
+Wynik:
+Zamawiający: FIRMA_001.
+W dalszej części pisma nazwę FIRMA_003 Rys stosuje się jako skrót podmiotu.
+Podwykonawca: FIRMA_002.
+
+Mapa:
+FIRMA_001 = Ulotny Rys sp. z o.o
+FIRMA_002 = Ulotny sp. z o.o
+FIRMA_003 = Ulotny
+Guard: [].
+
+Powtórzenie dłuższej, wcześniej rozpoznanej firmy nie jest zakryte w całości, a fragment Rys pozostaje jawny. Oczekiwanie nie wymaga odgadnięcia nowej firmy: pełna nazwa już jest w mapie tego dokumentu.
+Nie żądam globalnego przypisania krótszej nazwy do dłuższej — odrębna krótsza firma ma nadal zachować własne znaczenie/mapę.
+Nie twierdzę, że znaleziono jawne nazwisko osoby ani że wszystkie firmy o wspólnym początku zawodzą.
+Kontrole:
+- oryginalny przykład Ulotny Rys bez odrębnej krótszej firmy — poprawny;
+- analogiczny syntetyk Alfa Serwis / Alfa — poprawny;
+- Ulotny Rys / Ulotny Las — oba powtórzenia zakryte w całości (jeden rdzeń dostaje własny token, bez jawnego ogona).
+Wystąpienie zależy od kandydatów spaCy i kolejności map, a nie wyłącznie od wspólnego początku nazwy.
+Częstości tego problemu w typowych dokumentach nie oszacowano. F2 jest odtworzonym brakiem realizacji klasy C, nie dowodem powszechnej nieskuteczności.
+
+TESTY NIEZALEŻNE
+- test_firma_silent2.py: 13 PASS.
+- test_firma_context.py: 14 PASS.
+- test_silent_pack1.py: 30 PASS.
+- test_osoba_layout.py: 49 PASS.
+- test_map_fidelity.py: 29 PASS.
+Łącznie 135 różnych testów PASS, osobne procesy.
+Retained repro r2: 6 pełnych pionów PASS.
+repro_r3.py: 4 dodatkowe pełne piony: A osobno osoba, C krótsza odrębna firma (F2), C kontrola Alfa, C dwie dłuższe firmy.
+Załączone repro_r3_results.json zawiera wyłącznie syntetyki.
+Nie ponawiano pełnej suity / znanych niepowodzeń test_layers.
+
+POMIARY — WYKONANE, DANE CC POTWIERDZONE
+Dokończono wymagane pomiary, które w r2 zatrzymano po F1.
+Na KAŻDĄ wersję: GOLD dev40/test80 + cały testset_owner 693 dokumenty = 813 przeliczeń.
+Łącznie 1626 przeliczeń rzeczywistego silnika/pipeline/Guarda.
+Owner: testy38, clean300, pliki7, stress300, ocr48.
+Korzystano z istniejących TXT (także zachowanych wyników OCR); nie ponawiano OCR/ekstrakcji.
+Własne izolowane exact-SHA kopie, profile/stan w Temp; bez użycia profilu/serwera OWNERA.
+Wyniki baza → dostawa:
+- GOLD ciche FIRMA dev 20 → 0, test 52 → 1.
+- GOLD FIRMA zakryte dev 125 → 160; test 240 → 318.
+- GOLD pytania/dok dev 0,90 → 0,53; test 0,86 → 0,53.
+- GOLD zbędne not_pii dev 69/440 → 69/440, test 152/880 → 152/880.
+- Owner: agregaty wszystkich pięciu podzbiorów identyczne z bazą.
+- Brak błędów silnika w przeliczonych dokumentach.
+Nie otwierano treści GOLD test, nie strojono kodu ani danych.
+
+METODA / GRANICE POMIARU
+Niezależne wykonanie backendów przez runner audytora; definicje metryk zachowano, aby sprawdzić deklarowane liczby:
+GOLD char_map/evaluate z human_view.py; owner _kind/_flat/leaks z run_testset.py; SHA256 źródeł zapisane w summary.
+GOLD ma heurystyczne mapowanie i awaryjne difflib, owner literalne wartości/substringową kwalifikację pytań. Nie są to nowe niezależne oceny semantyczne każdego spanu.
+Dlatego potwierdzona duża poprawa agregatów nie obala dokładnego kontrprzykładu F2.
+Owner nie ma pełnej annotacji firm i nie mierzy nadmaskowania; stanowi kontrolę braku pogorszenia tej miarki.
+To nie gwarancja pełnego wykrycia dowolnych firm ani niezależny świeży holdout. Wcześniej mierzony GOLD test z tego samego generatora pozostaje takim zbiorem.
+Do repo trafiły wyłącznie skrypty, syntetyczne reproduktory i agregaty; żadnych realnych dokumentów/map/PII.
+
+RATIO
+DELIVERY 7c8390b zapisuje osobną zgodę Pawła dla LYNX-FIRMA-SILENT2 na RATIO 133/5, odpowiedź „Tak”.
+Odnotowano zgodę dla tej dostawy, bez ponownego pytania. Gate RATIO nie jest podstawą FAIL.
+
+NASTĘPNY KROK
+CC: poprawić istniejącą klasę C w podanym TASK_SCOPE, zachować osobną krótszą firmę i pełne powtórzenie dłuższej.
+Recheck: diff od b9315c5, retained r2 i r3, bezpośredni test ownera. Nie powtarzać mechanicznie pomiarów 1626 dokumentów po mikrofixie, jeśli zakres/ryzyko nie da konkretnego powodu.
+F1 i potwierdzone wyniki pomiarów pozostają zamkniętymi dowodami.
