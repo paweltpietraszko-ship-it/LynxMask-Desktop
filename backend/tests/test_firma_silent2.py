@@ -37,6 +37,12 @@ def run():
      "Usługi Konserwatorskie Cezary Jeż", ["Usługi", "Konserwatorskie"]),
     ("WYKONAWCA: Biuro Organizacji Pracy Bartosz Bogucki\nAdres siedziby: ul. Polna 4",
      "Biuro Organizacji Pracy Bartosz Bogucki", ["Biuro", "Organizacji", "Pracy"]),
+    # Codex r2 F1: nazwisko będące też imieniem
+    ("Wykonawca: Usługi Konserwatorskie Cezary Marek\nW dalszej części pisma nazwę Usługi Konserwatorskie Cezary Marek stosuje się.",
+     "Usługi Konserwatorskie Cezary Marek", ["Usługi", "Konserwatorskie"]),
+    ("Wykonawca: Biuro Rachunkowe Anna Roman\nBiuro Rachunkowe Anna Roman zachowuje egzemplarz.",
+     "Biuro Rachunkowe Anna Roman", ["Biuro", "Rachunkowe"]),
+    ("Wykonawca: Studio Jan Marek\nStudio Jan Marek zachowuje egzemplarz.", "Studio Jan Marek", ["Studio"]),
     # B — s.c. i powtórzenie bez formy
     ("Zamawiający: Perłowy Nawias s.c.\nW dalszej części pisma nazwę Perłowy Nawias stosuje się jako skrót podmiotu.",
      "Perłowy Nawias s.c", ["Perłowy", "Nawias"]),

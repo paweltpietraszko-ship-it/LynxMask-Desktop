@@ -96,8 +96,8 @@ def jdg_entities(text: str) -> list:
         while (w := _CAP_WORD_RE.match(text, pos)) and len(words) < 8:
             words.append(w)
             pos = w.end()
-        for i in range(len(words) - 1, 0, -1):   # ostatnia para imię + nazwisko, przed nią ≥1 słowo opisu
-            if words[i - 1].group(1).lower() in names and words[i].group(1).lower() not in names:
+        for i in range(len(words) - 1, 0, -1):   # ostatnia para imię + nazwisko (nazwisko bywa też imieniem: „Cezary Marek”)
+            if words[i - 1].group(1).lower() in names:
                 out.append(NERResult(text[m.start():words[i].end()], "FIRMA", 0.8, m.start(), words[i].end()))
                 break
     return out
