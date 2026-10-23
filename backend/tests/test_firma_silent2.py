@@ -67,6 +67,16 @@ def test_powtorzenie_przy_osobnej_krotszej_firmie(run):  # Codex r3 F2
     assert out.count(full) == 2 and out.count(short) == 1, (out, rmap)
 
 
+@pytest.mark.parametrize("short_first", [False, True])
+def test_obie_firmy_powtorzone_bez_formy(run, short_first):  # Codex r4 F2: dłuższa nazwa nie rozcięta, krótsza osobno
+    a = "Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.\n"
+    b = "Podwykonawca: Ulotny sp. z o.o.\nNazwę Ulotny stosuje się jako skrót podwykonawcy.\n"
+    out, rmap = run(b + a if short_first else a + b)
+    assert "Rys" not in out and "Ulotny" not in out, out
+    full = [k for k, v in rmap.items() if v == "Ulotny Rys sp. z o.o"][0]
+    assert out.count(full) == 2, (out, rmap)
+
+
 @pytest.mark.parametrize("text,kept", [
     ("Sprawę prowadzi Biuro Obsługi Klienta.", "Biuro Obsługi Klienta"),           # dział wewnętrzny bez osoby
     ("Dział Kadr przekazał dokumenty.", "Dział Kadr"),
