@@ -1,0 +1,52 @@
+LYNX-OSOBA-REDESIGN — BRIEF_ONLY r1
+Data: 2026-10-23
+Exact SHA briefu: b697c47545aed502fe4e42b76e93361565cf8c97
+Branch: task/LYNX-OSOBA-REDESIGN
+Main przy przekazaniu: b850257e7ce77d50e76d196886899b58b64f401a
+Wynik: jedna zamknięta lista C1–C3; brak PASS PREIMPLEMENTATION.
+Nie jest to FAIL implementacji. Kod nie został dostarczony.
+Odbiorca: Architekt — uzupełnienie C1/C2 i konkretne wyjaśnienie C3 do rozstrzygnięcia OWNERA.
+
+Zakres
+Przeczytano brief v1 oraz obie propozycje CC (20 i 23.10) na exact SHA. Punktowo odczytano wskazane szwy pipeline_new, ner_adapter i ich bezpośrednie kontrakty PipelineState/TokenAllocator oraz _run_pipeline w pipeline.py. Bez testów, reproduktorów, benchmarków, modeli, pobierania PESEL i czytania zbiorów dokumentów. Nie analizowano implementacji redesignu ani całego repo.
+Reużyto zamrożonych S2–S5, wcześniejszych ustaleń Guarda i wyników HANDOFF. Spadek 7448->902 pozostaje baseline, nie wynikiem redesignu. Liczby prototypów CC nie są tutaj niezależnie powtarzane.
+
+Co jest poprawnie ograniczone
+- Jeden owner automatycznej decyzji OSOBA na wystąpieniu zamiast równoległego słownika maskującego. Źródła kandydatów i wykonawcy maskowania mogą pozostać istniejące, ale nie wolno im ponownie wyrokować po ASK/PASS.
+- Zachowanie pełnej pary, ocena przed utratą kontekstu adresu, ochrona tokenów strukturalnych, osobne R2–R5/HIGH/MEDIUM/MAP_LEAK.
+- Świadomy wpis OSOBA użytkownika pozostaje nadrzędny; bez nowego UI i bez zmiany formatu tokenów/.lynxdict. HerBERT OFF i poza arbitrażem cofającym wcześniejsze zakrycia.
+- Bramka E1 przed E2, oddzielenie poprawnych i błędnych nowych/utraconych zakryć, GOLD holdout tylko do kontroli, koszt do estymacji i osobnej zgody. Nie żądam nowego modelu, nowych zbiorów ani następnej warstwy.
+
+Zamknięta lista uzupełnień
+
+C1 — wskazać rzeczywisty szew zachowania tożsamości wystąpienia aż do aplikacji i Guarda
+Źródło: brief §2–3 wymaga decyzji per span, odmiennego wyniku dla homonimów i jednego R1 z ASK.
+Fakty z kodu na exact SHA:
+- extract_ner_results przed adresem wywołuje już process_ner i przechowuje słowniki wartości/wariantów, nie rejestr decyzji per wystąpienie;
+- ner_adapter stosuje _sub_whole i propagację wartości na tekst; te funkcje zastępują wiele dopasowań tej samej wartości;
+- PipelineState zawiera text/allocator/ner_results/ner_variants; TokenAllocator.reset_spans czyści lokalne spany między warstwami, ponieważ współrzędne się zmieniają. To nie jest trwała mapa pozycji;
+- run_pipeline_new zwraca (text, reverse_map, force_block); pipeline._run_pipeline rozpakowuje te trzy wartości i dopiero wywołuje _apply_guard. Dotychczasowy kontrakt nie przenosi ASK z identyfikatorem wystąpienia.
+Wniosek: samo „użyć istniejącego mapowania albo odtworzyć span” nie wskazuje istniejącego właściciela/kontraktu, który gwarantuje rozróżnienie dwóch identycznych słów po podmianach. Nie stwierdzam, że redesign jest niewykonalny.
+Uzupełnienie: nazwać minimalny kontrakt danych i właściciela przekazania od snapshotu decyzji przez aplikację MASK do finalnego ASK (współrzędne/jednostka, tożsamość wystąpienia, kolizja lub utrata spanu). Wskazać istniejący mechanizm albo minimalny nowy szew, bez projektowania ogólnego frameworku. Pokazać w zakresie potrzebne zmiany transportu aktywnej nowej ścieżki: pipeline.py jest potrzebny do oceny tego połączenia niezależnie od obsługi legacy, podczas gdy dziś TASK_SCOPE dopuszcza go tylko dla legacy. PipelineState/pipeline_core uwzględnić, jeśli wybrany szew wymaga ich zmiany; nie narzucam, że muszą być zmienione.
+Dodać klasę odbioru: powtórzone identyczne słowo z dwiema różnymi decyzjami, wcześniej zmieniona długość tekstu przez ADRES/FIRMA, a ASK ma wskazać dokładnie właściwe wystąpienie na finalnym wyniku, także z emoji. Nie wolno odtwarzać tożsamości samym globalnym wyszukaniem wartości.
+
+C2 — domknąć deterministyczny kontrakt dowodów i kolizji
+Źródło: §2 zapowiada deterministyczne reguły v1, ale słabsze ZA „mogą wspierać MASK lub prowadzić do ASK”; sam spaCy nie wystarcza do automatycznego ASK, a ostatnia reguła opisuje tylko kolizję lub brak przesłanek.
+Nie ma jednoznacznego wyniku dla m.in. PESEL 100–999 + spaCy PER, bez kotwicy i bez dowodu przeciw; ani reguły kiedy niejednoznaczna fleksja/czynność osoby przekracza granicę MASK/ASK. Samotna kotwica Pan/Pani i rozpoznana pełna para są razem w kroku 2, przed silnym PRZECIW, mimo że funkcja/nie-słowo mają być takim PRZECIW. Nie wiadomo, czy wygrywa każda kotwica, czy tylko potwierdzona pełna osoba.
+Uzupełnienie: mała zamknięta tabela dla klas silne/słabe ZA, pewne PRZECIW, kolizja i brak danych; jednoznaczny wynik albo jawnie dopuszczony zestaw wyników (wtedy nie przedstawiać go jako jednego deterministycznego algorytmu). Wprost rozstrzygnąć podane granice, także tytuł + funkcja bez niezależnego dowodu nazwiska. To decyzja autora kontraktu, nie propozycja implementacji Codexa.
+Nie wymagam rozpisania wszystkich nazwisk, heurystyk językowych ani nowych progów. Obecna wersja zostawia implementerowi zmianę zachowania produktu pod hasłem „rzeczywista kolizja”.
+
+C3 — wyjaśnić OWNEROWI zawężenie wyjątku białej listy do pojedynczego słowa
+OWNER_DECISION_NEEDED — propozycja widocznego zachowania, nie UNAUTHORIZED wykonana zmiana.
+Propozycja CC §2 przytacza zasadę: „Słowa z białej listy wyłączone i z zakrywania, i z pytań Guarda”.
+Brief v1 wprowadza istotne doprecyzowanie: wyłączenie tylko samodzielnego zgłoszenia; potwierdzona pełna osoba może być maskowana z takim członem. Brief sam wskazuje tę kwestię do oceny Codexa.
+Ocena Codexa: ochrona pełnej osoby jest merytorycznie uzasadniona, bo globalne wyłączenie członu mogłoby rozciąć prawdziwe imię i nazwisko. Nie mogę jednak uznać wyjątku od literalnie przytoczonej zasady za już rozstrzygnięty przez OWNERA.
+Wyjaśnienie do rozstrzygnięcia:
+- Wyzwalacz: słowo z listy 316 występuje jako człon wiarygodnie rozpoznanej pełnej osoby, np. syntetyczne „Jan Termin”, a nie samodzielny „Termin wykonania”.
+- Efekt propozycji Architekta: „Termin wykonania” pozostaje jawne bez R1; pełna osoba może dostać OSOBA jako całość mimo białej listy. Lista nie gwarantuje wtedy, że te litery zawsze pozostaną widoczne.
+- Dane/UI: zwykłe lokalne maskowanie i istniejąca mapa/Przywróć; token zamiast pełnej osoby. Bez nowej transmisji, bez nowego jawnego logu. ASK, jeśli przewidziany przez domknięte reguły, podlega dotychczasowej bramce decyzji Guarda.
+- Błąd/powrót: przy błędnym rozpoznaniu pozostaje istniejąca ręczna korekta/Odkryj; awaria decydera pozostaje S3, nie białolistowym obejściem.
+Architekt powinien wskazać istniejące rozstrzygnięcie obejmujące ten wyjątek albo uzyskać wyraźną akceptację/skorygowanie tej konkretnej granicy po wyjaśnieniu. Nie wymagam ponownej akceptacji samych 316 słów ani projektu technicznego przez OWNERA.
+
+Status końcowy
+C1/C2 do Architekta; C3 do rozstrzygnięcia po konkretnym wyjaśnieniu, jeśli brak wcześniejszej zgody. Bez implementacji i estymacji traktowanej jako zgoda na kod. Po uzupełnieniu: jeden wąski ponowny precheck, potem estymacja CC i wymagana zgoda na koszt. Nie otwierać ponownie historycznych wyników HANDOFF i zaakceptowanych S4.
