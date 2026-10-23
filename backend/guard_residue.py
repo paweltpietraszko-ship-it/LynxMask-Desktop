@@ -143,8 +143,13 @@ def _unknown(text: str, analyse):
                 continue
             if _known(p):
                 continue  # Morfeusz opisał słowo
-            if not re.search(r"[ąćęłńóśźż]", low) and any(_known(analyse(v)) for v in _variants(w)[1:]):
-                continue  # bez ogonków po OCR („Platnosc” → „Płatność”)
+            if not re.search(r"[ąćęłńóśźż]", low):
+                variants = [analyse(v) for v in _variants(w)[1:]]
+                if any(_only_person_name(q) for q in variants):
+                    yield m.start(), m.end(), "R1", "Nazwisko lub imię według słownika — silnik go nie zakrył"
+                    continue  # Codex r1 F1: „Ladzinski” → „Ladziński” (wyłącznie nazwisko) — pytanie, nie wyciszenie
+                if any(q and any(i[2][2] != "ign" and i[2][1][:1].islower() for i in q) for q in variants):
+                    continue  # bez ogonków po OCR zwykłe słowo („Platnosc” → „płatność”)
             if _ocr_common(w, analyse):
                 continue  # jedna typowa pomyłka OCR („Komomik”, „Wydziatu”)
         yield m.start(), m.end(), "R1", "Słowo nierozpoznane przez żadną warstwę — możliwe nazwisko"

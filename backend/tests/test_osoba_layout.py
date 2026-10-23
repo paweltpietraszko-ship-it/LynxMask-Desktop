@@ -126,6 +126,25 @@ def test_guard_nie_pyta(text, word):
     assert word not in _r1(text)
 
 
+@pytest.mark.parametrize("word", ["Ladzinski", "Cieslikowski"])
+def test_bez_ogonkow_nazwisko_pyta(word):  # Codex r1 F1: wariant z ogonkami jest wyłącznie nazwiskiem → pytanie
+    assert word in _r1(f"Pismo przekazał {word}.")
+
+
+@pytest.mark.parametrize("text,kept", [
+    ("Pismo przekazała Pani Termin. Termin wykonania upływa jutro.", "Termin wykonania"),   # Codex r1 F2
+    ("Skargę złożyła Lucyna Osoba. Osoba trzecia nie brała udziału.", "Osoba trzecia"),
+])
+def test_kotwica_nie_przenosi_sie_na_zwykle_slowo(text, kept):
+    out, _ = _layout(text)
+    assert kept in out and out.count("OSOBA_") == 1, out
+
+
+def test_czyste_nazwisko_zakryte_wszedzie():
+    out, _ = _layout("Przyszedł Pan Kasprzak. Wniosek Kasprzak podpisał wczoraj.")
+    assert "Kasprzak" not in out, out
+
+
 def test_biala_lista():
     wl = guard_residue._WHITELIST
     assert len(wl) == 316 and {"termin", "dziennik", "art"} <= wl and "nowak" not in wl

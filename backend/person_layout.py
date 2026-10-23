@@ -89,39 +89,55 @@ def _after_token(text: str, values: dict) -> list:
         only_first = values.get(m.group(1), "").strip().lower() in names
         if "\n" in m.group(2):  # przez złamanie wiersza tylko nazwisko za samym imieniem („OSOBA_010 ⏎ Zająca”), nie etykieta
             if only_first and surname and ":" not in text[m.end():].split("\n", 1)[0]:
-                out.append(w)
+                out.append(m.span(3))
             continue
         closes = re.match(r"[ \t]*(?:$|\n|[,.;:)])", text[m.end():m.end() + 3])
         if surname or (only_first and closes):
-            out.append(w)
+            out.append(m.span(3))
     return out
 
 
 def _initial_surname(text: str) -> list:
     """Inicjał + nazwisko wg Morfeusza („P.Kapusta”, „J. Nowak”) — poza ulicą („ul. A. Mickiewicza”) i funkcją."""
     from osoba_not_person import inside_street_name
-    return [m.group(1) for m in _INITIAL_RE.finditer(text)
+    return [m.span(1) for m in _INITIAL_RE.finditer(text)
             if _ok([m.group(1)]) and not inside_street_name(text, m.start())
             and any("nazwisko" in q for _l, _t, q in _readings(m.group(1)))]
 
 
 def _titled(text: str) -> list:
     out = []
-    for w in dict.fromkeys(m.group(1) for m in _TITLED_RE.finditer(text)):
+    for m in _TITLED_RE.finditer(text):
+        w = m.group(1)
         rd = _readings(w)
         if _ROLE_WORD_RE.match(w) or any(_ROLE_WORD_RE.match(lem) for lem, _t, _q in rd) \
                 or (rd and all(t.split(":")[0] in _VERB_ADJ for _l, t, _q in rd)):
             continue
-        out.append(w)
+        out.append(m.span(1))
     return out
 
 
+def _mask_spans(text: str, spans: list, allocator, sub_whole) -> str:
+    """Słowo ze zwykłym znaczeniem („Termin”, „Osoba”) — tylko wystąpienia z kotwicą (decyzja per wystąpienie, C3);
+    nazwisko bez zwykłego znaczenia — każde wystąpienie w tekście (jak dotąd)."""
+    common = {}
+    for s, e in spans:
+        w = text[s:e]
+        if w not in common:
+            common[w] = any(lem[:1].islower() for lem, _t, q in _readings(w) if "nazwa_pospolita" in q)
+    tokens = {w: allocator.assign("OSOBA", w) for w in dict.fromkeys(text[s:e] for s, e in spans)}
+    for s, e in sorted(set(spans), reverse=True):
+        if common[text[s:e]]:
+            text = text[:s] + tokens[text[s:e]] + text[e:]
+    for w, tok in tokens.items():
+        if not common[w]:
+            text = sub_whole(text, w, tok)
+    return text
+
+
 def apply_person_layout(text: str, allocator, sub_whole) -> str:
-    """Zakrywa osoby z reguł 1–4 (każde wystąpienie wartości, jeden token na wartość)."""
+    """Zakrywa osoby z reguł 1–4 (jeden token na wartość)."""
     for p in dict.fromkeys(_layout_lines(text) + _name_pairs(text)):
         text = sub_whole(text, p, allocator.assign("OSOBA", p))
-    for w in dict.fromkeys(_after_token(text, allocator.reverse_map) + _initial_surname(text)):
-        text = sub_whole(text, w, allocator.assign("OSOBA", w))
-    for w in _titled(text):
-        text = sub_whole(text, w, allocator.assign("OSOBA", w))
-    return text
+    text = _mask_spans(text, _after_token(text, allocator.reverse_map) + _initial_surname(text), allocator, sub_whole)
+    return _mask_spans(text, _titled(text), allocator, sub_whole)
