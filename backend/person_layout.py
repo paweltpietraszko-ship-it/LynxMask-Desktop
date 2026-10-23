@@ -117,16 +117,25 @@ def _titled(text: str) -> list:
     return out
 
 
+def _sentence_initial(text: str, start: int) -> bool:
+    before = text[:start].rstrip(" \t„\"(")
+    return not before or before[-1] in "\n.!?:;•–-"
+
+
 def _mask_spans(text: str, spans: list, allocator, sub_whole) -> str:
-    """Słowo ze zwykłym znaczeniem („Termin”, „Osoba”) — tylko wystąpienia z kotwicą (decyzja per wystąpienie, C3);
-    nazwisko bez zwykłego znaczenia — każde wystąpienie w tekście (jak dotąd)."""
+    """Słowo ze zwykłym znaczeniem („Termin”, „Osoba”): wystąpienia z kotwicą + wystąpienia z wielkiej litery w środku zdania
+    (nazwa własna); na początku zdania/wiersza zostaje („Termin wykonania…” — decyzja per wystąpienie, C3).
+    Nazwisko bez zwykłego znaczenia — każde wystąpienie w tekście (jak dotąd)."""
     common = {}
     for s, e in spans:
         w = text[s:e]
         if w not in common:
             common[w] = any(lem[:1].islower() for lem, _t, q in _readings(w) if "nazwa_pospolita" in q)
     tokens = {w: allocator.assign("OSOBA", w) for w in dict.fromkeys(text[s:e] for s, e in spans)}
-    for s, e in sorted(set(spans), reverse=True):
+    spans = set(spans) | {m.span() for w, c in common.items() if c
+                          for m in re.finditer(r"(?<![\w-])" + re.escape(w) + r"(?![\w-])", text)
+                          if not _sentence_initial(text, m.start())}
+    for s, e in sorted(spans, reverse=True):
         if common[text[s:e]]:
             text = text[:s] + tokens[text[s:e]] + text[e:]
     for w, tok in tokens.items():

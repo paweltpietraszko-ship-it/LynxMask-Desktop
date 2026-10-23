@@ -140,6 +140,11 @@ def test_kotwica_nie_przenosi_sie_na_zwykle_slowo(text, kept):
     assert kept in out and out.count("OSOBA_") == 1, out
 
 
+def test_druga_wzmianka_w_srodku_zdania_zakryta():  # nazwa własna = wielka litera w środku zdania
+    out, _ = _layout("Pismo przekazała Pani Malina. Wniosek podpisała wczoraj Malina osobiście.")
+    assert "Malina" not in out, out
+
+
 def test_czyste_nazwisko_zakryte_wszedzie():
     out, _ = _layout("Przyszedł Pan Kasprzak. Wniosek Kasprzak podpisał wczoraj.")
     assert "Kasprzak" not in out, out
