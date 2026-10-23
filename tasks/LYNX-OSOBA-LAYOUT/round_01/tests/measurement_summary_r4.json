@@ -1,0 +1,267 @@
+{
+  "base_sha": "b50655a8d3991add5313714f59f89bb3211e0afa",
+  "code_sha": "e1cb34dbc9f62b81edfc91857437339535ef74b9",
+  "base": {
+    "backend": "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_codex_layout_9216821\\base\\backend",
+    "metric_source_hashes": {
+      "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_cc_review\\gold\\human_view.py": "a4b1bc5b22d17587b6a8f59b7c4317573d3f4edb7dfce1a0a43876691f25e736",
+      "C:\\Users\\p_pie\\Desktop\\LynxMask-Desktop\\testset_owner\\run_testset.py": "82b076363e3da3aab08057d02c85f8f5fdf6669ecb891871f9d949d981bb3411"
+    },
+    "gold_dev": {
+      "docs": 40,
+      "counts": {
+        "pii:zakryte": 1097,
+        "pii:wyciek_z_ostrzezeniem": 35,
+        "not_pii:zbedne_zakrycie": 69,
+        "not_pii:ok": 371,
+        "pii:cichy_wyciek": 20
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 125,
+          "wyciek_z_ostrzezeniem": 16,
+          "cichy_wyciek": 19
+        },
+        "ADRES": {
+          "zakryte": 120
+        },
+        "OSOBA": {
+          "zakryte": 325,
+          "wyciek_z_ostrzezeniem": 9,
+          "cichy_wyciek": 1
+        },
+        "NUMER": {
+          "zakryte": 327,
+          "wyciek_z_ostrzezeniem": 10
+        },
+        "EMAIL": {
+          "zakryte": 80
+        },
+        "KWOTA": {
+          "zakryte": 120
+        }
+      },
+      "warnings": 49,
+      "warnings_per_doc": 1.23
+    },
+    "gold_test": {
+      "docs": 80,
+      "counts": {
+        "pii:zakryte": 2189,
+        "pii:cichy_wyciek": 52,
+        "pii:wyciek_z_ostrzezeniem": 60,
+        "not_pii:zbedne_zakrycie": 152,
+        "not_pii:ok": 728
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 240,
+          "cichy_wyciek": 52,
+          "wyciek_z_ostrzezeniem": 28
+        },
+        "ADRES": {
+          "zakryte": 240
+        },
+        "OSOBA": {
+          "zakryte": 657,
+          "wyciek_z_ostrzezeniem": 13
+        },
+        "NUMER": {
+          "zakryte": 652,
+          "wyciek_z_ostrzezeniem": 19
+        },
+        "EMAIL": {
+          "zakryte": 160
+        },
+        "KWOTA": {
+          "zakryte": 240
+        }
+      },
+      "warnings": 78,
+      "warnings_per_doc": 0.97
+    },
+    "owner": {
+      "clean": {
+        "docs": 300,
+        "warnings": 0,
+        "osoba:total": 417,
+        "adres:total": 342,
+        "numer:total": 1107,
+        "email:total": 39,
+        "data:total": 83
+      },
+      "stress": {
+        "docs": 300,
+        "warnings": 45,
+        "osoba:total": 412,
+        "adres:total": 340,
+        "numer:total": 1091,
+        "email:total": 48,
+        "data:total": 82,
+        "osoba:warned": 34,
+        "osoba:silent": 21,
+        "adres:silent": 2
+      }
+    },
+    "blind": {
+      "clean": {
+        "docs": 300,
+        "warnings": 0,
+        "osoba:total": 408,
+        "adres:total": 333,
+        "numer:total": 1086,
+        "email:total": 44,
+        "data:total": 82
+      },
+      "stress": {
+        "docs": 300,
+        "warnings": 55,
+        "osoba:silent": 17,
+        "osoba:total": 410,
+        "adres:total": 333,
+        "numer:total": 1073,
+        "email:total": 45,
+        "data:total": 85,
+        "osoba:warned": 39,
+        "adres:silent": 2
+      }
+    },
+    "public255": {
+      "docs": 255,
+      "R1": 902
+    }
+  },
+  "delivery": {
+    "backend": "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_codex_layout_e1cb34d\\backend",
+    "metric_source_hashes": {
+      "C:\\Users\\p_pie\\AppData\\Local\\Temp\\lynx_cc_review\\gold\\human_view.py": "a4b1bc5b22d17587b6a8f59b7c4317573d3f4edb7dfce1a0a43876691f25e736",
+      "C:\\Users\\p_pie\\Desktop\\LynxMask-Desktop\\testset_owner\\run_testset.py": "82b076363e3da3aab08057d02c85f8f5fdf6669ecb891871f9d949d981bb3411"
+    },
+    "gold_dev": {
+      "docs": 40,
+      "counts": {
+        "pii:zakryte": 1107,
+        "pii:wyciek_z_ostrzezeniem": 25,
+        "not_pii:zbedne_zakrycie": 69,
+        "not_pii:ok": 371,
+        "pii:cichy_wyciek": 20
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 125,
+          "wyciek_z_ostrzezeniem": 15,
+          "cichy_wyciek": 20
+        },
+        "ADRES": {
+          "zakryte": 120
+        },
+        "OSOBA": {
+          "zakryte": 335
+        },
+        "NUMER": {
+          "zakryte": 327,
+          "wyciek_z_ostrzezeniem": 10
+        },
+        "EMAIL": {
+          "zakryte": 80
+        },
+        "KWOTA": {
+          "zakryte": 120
+        }
+      },
+      "warnings": 36,
+      "warnings_per_doc": 0.9
+    },
+    "gold_test": {
+      "docs": 80,
+      "counts": {
+        "pii:zakryte": 2201,
+        "pii:cichy_wyciek": 52,
+        "pii:wyciek_z_ostrzezeniem": 48,
+        "not_pii:zbedne_zakrycie": 152,
+        "not_pii:ok": 728
+      },
+      "types": {
+        "FIRMA": {
+          "zakryte": 240,
+          "cichy_wyciek": 52,
+          "wyciek_z_ostrzezeniem": 28
+        },
+        "ADRES": {
+          "zakryte": 240
+        },
+        "OSOBA": {
+          "zakryte": 669,
+          "wyciek_z_ostrzezeniem": 1
+        },
+        "NUMER": {
+          "zakryte": 652,
+          "wyciek_z_ostrzezeniem": 19
+        },
+        "EMAIL": {
+          "zakryte": 160
+        },
+        "KWOTA": {
+          "zakryte": 240
+        }
+      },
+      "warnings": 69,
+      "warnings_per_doc": 0.86
+    },
+    "owner": {
+      "clean": {
+        "docs": 300,
+        "warnings": 0,
+        "osoba:total": 417,
+        "adres:total": 342,
+        "numer:total": 1107,
+        "email:total": 39,
+        "data:total": 83
+      },
+      "stress": {
+        "docs": 300,
+        "warnings": 6,
+        "osoba:total": 412,
+        "adres:total": 340,
+        "numer:total": 1091,
+        "email:total": 48,
+        "data:total": 82,
+        "osoba:silent": 8,
+        "adres:silent": 2,
+        "osoba:warned": 1
+      }
+    },
+    "blind": {
+      "clean": {
+        "docs": 300,
+        "warnings": 0,
+        "osoba:total": 408,
+        "adres:total": 333,
+        "numer:total": 1086,
+        "email:total": 44,
+        "data:total": 82
+      },
+      "stress": {
+        "docs": 300,
+        "warnings": 5,
+        "osoba:total": 410,
+        "adres:total": 333,
+        "numer:total": 1073,
+        "email:total": 45,
+        "data:total": 85,
+        "osoba:silent": 3,
+        "adres:silent": 2,
+        "osoba:warned": 1
+      }
+    },
+    "public255": {
+      "docs": 255,
+      "R1": 542
+    }
+  },
+  "public_person_value_diff": {
+    "docs": 255,
+    "new_osoba_values": 28,
+    "lost_osoba_values": 0
+  }
+}
