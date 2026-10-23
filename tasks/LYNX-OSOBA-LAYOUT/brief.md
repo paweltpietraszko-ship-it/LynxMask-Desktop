@@ -19,15 +19,15 @@ Kolejność wyjątkowo: kod powstał na prototypach (scratchpad CC, wersje v6–
 - R2–R5, wzorce HIGH/MEDIUM i MAP_LEAK bez zmian.
 
 ## Zmiany
-1. **Nowy `backend/guard_unknown.py`** (R1 nowy): `unknown_words(text, analyse)`; `_only_person_name`, `_ocr_common`, `_ABBR`,
-   biała lista z **`backend/guard_unknown_whitelist.json`** (316 słów z `tasks/LYNX-OSOBA-REDESIGN/evidence_2026-10-23/biala_lista_pesel_zatwierdzona.csv`, gałąź `task/LYNX-OSOBA-REDESIGN`).
-   Błąd Morfeusza → pytanie. Brak pliku listy → więcej pytań, nigdy mniej.
+1. **`backend/guard_residue.py` — nowe R1** `_unknown(text, analyse)`; `_only_person_name`, `_ocr_common`, `_ABBR`,
+   biała lista jako stała `_WHITELIST` (316 słów z `tasks/LYNX-OSOBA-REDESIGN/evidence_2026-10-23/biala_lista_pesel_zatwierdzona.csv`, gałąź `task/LYNX-OSOBA-REDESIGN`).
+   Błąd Morfeusza → pytanie. (Po gate r1: bez osobnego modułu i pliku JSON — limit nowych plików 2.)
 2. **`backend/guard_residue.py`**: usunięte stare R1 (`_person_word`, `_r1`, `_released` i ich stałe), `collect_warnings` bez parametru
-   `released_words`, źródło R1 = `guard_unknown.unknown_words`. Plik 270 → ~190 l.
+   `released_words`, źródło R1 = `_unknown`. Plik 270 → ~277 l. (stare R1 −80, nowe R1 z listą +87).
 3. **`backend/pipeline.py`**: 2 linie — `collect_warnings(text, guard_values, _allowlist)`; import tylko `start_run`.
    Rejestr `osoba_not_person.released()` zostaje (Guard go nie czyta) — usunięcie martwego kanału = osobna drobna sprawa.
-4. **Nowy `backend/person_layout.py`** (silnik, `apply_person_layout(text, allocator, sub_whole)`), wołany w `ner_adapter` po
-   `_apply_dictionary_names` (+2 linie: import i wywołanie). Reguły:
+4. **Nowy `backend/person_layout.py`** (silnik, `apply_person_layout(text, allocator, sub_whole)`), wołany na końcu
+   `ner_adapter._apply_dictionary_names` (import + zmiana linii `return`; `apply_ner_layer` bez wzrostu). Reguły:
    - wiersz z 2–3 słów z wielkiej litery po etykiecie osoby („Imię i nazwisko:”, „NABYWCA:”, „Wnioskodawca:”, „pomiędzy:”…) albo nad
      wierszem „PESEL”/„zamieszkały”/„data urodzenia”; ta sama etykieta z nazwą w jednym wierszu;
    - znane imię + słowo z wielkiej litery (C3), poza ulicą/patronem („im.”), miejscowością wieloczłonową (`in_city_name`) i gdy pierwsze
@@ -44,8 +44,6 @@ Kolejność wyjątkowo: kod powstał na prototypach (scratchpad CC, wersje v6–
 - Ciche FIRMA (GOLD dev 20 / test 52) — bez zmian, następny temat.
 
 TASK_SCOPE:
-- backend/guard_unknown.py
-- backend/guard_unknown_whitelist.json
 - backend/person_layout.py
 - backend/guard_residue.py
 - backend/pipeline.py
@@ -64,7 +62,7 @@ Szacunek: kod ~230 l. nowych, ~90 l. usuniętych; testy ~130 l. (Paweł 23.10: b
 
 ## Odbiór
 - `tests/test_osoba_layout.py` (nowy): osoby z układu, reszta za tokenem, Pan + słowo, funkcje w odmianie, przypadki „nie osoba”,
-  Guard pyta / nie pyta, biała lista z pliku, brak listy, awaria Morfeusza.
+  Guard pyta / nie pyta, biała lista, pusta lista nie wycisza, awaria Morfeusza.
 - Zaktualizowane testy starego R1 (`test_guard_residue`, `test_osoba_handoff`, `test_guard_allowlist_s5`, `test_osoba_pack4`, `test_map_fidelity`): przypadki zależne od
   zgadywania R1 („Kawa”, „Pan Rogalik”, kanał released) przeniesione na nowy model — opis zmian w DELIVERY.
 - Regresja: te same pliki testów na main i na gałęzi — bez nowych faili.

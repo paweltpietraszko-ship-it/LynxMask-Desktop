@@ -6,7 +6,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.getcwd())
-import guard_unknown  # noqa: E402
+import guard_residue  # noqa: E402
 from guard_residue import collect_warnings  # noqa: E402
 from layers.ner_adapter import _sub_whole  # noqa: E402
 from person_layout import apply_person_layout  # noqa: E402
@@ -105,17 +105,17 @@ def test_guard_nie_pyta(text, word):
     assert word not in _r1(text)
 
 
-def test_biala_lista_z_pliku():
-    wl = guard_unknown._whitelist()
+def test_biala_lista():
+    wl = guard_residue._WHITELIST
     assert len(wl) == 316 and {"termin", "dziennik", "art"} <= wl and "nowak" not in wl
 
 
-def test_brak_listy_nie_wycisza(monkeypatch):
-    monkeypatch.setattr(guard_unknown, "_WHITELIST", frozenset())
-    monkeypatch.setattr(guard_unknown, "_ABBR", frozenset())
+def test_pusta_lista_nie_wycisza(monkeypatch):
+    monkeypatch.setattr(guard_residue, "_WHITELIST", frozenset())
+    monkeypatch.setattr(guard_residue, "_ABBR", frozenset())
     assert "Sygn" in _r1("Sygn. akt II C 1/24.")
 
 
 def test_awaria_morfeusza_to_pytanie():
-    hits = list(guard_unknown.unknown_words("Wczoraj Termin podpisał.", lambda w: None))
+    hits = list(guard_residue._unknown("Wczoraj Termin podpisał.", lambda w: None))
     assert [h[2] for h in hits] == ["R1"]

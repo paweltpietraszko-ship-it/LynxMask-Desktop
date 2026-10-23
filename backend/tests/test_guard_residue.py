@@ -28,7 +28,7 @@ def _frags(text, **kw):
     ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ. Wczoraj przyszła faktura.", "Biuro Rachunkowe RACHMISTRZ", "R5"),
     ("Nabywca: GAMMA S.A. Termin płatności 14 dni.", "GAMMA S.A.", "R5"),
     # [LYNX-GUARD-FIX1 r2] Codex F1: nazwiska o prefiksie słowa instytucji nadal wskazywane
-    # [LYNX-OSOBA-LAYOUT] teraz jako „słownik zna wyłącznie jako nazwisko” (guard_unknown)
+    # [LYNX-OSOBA-LAYOUT] teraz jako „słownik zna wyłącznie jako nazwisko” (guard_residue._unknown)
     ("Protokół podpisał Kasprzak w obecności świadka.", "Kasprzak", "R1"),
     ("Protokół podpisał Kasprowicz w obecności świadka.", "Kasprowicz", "R1"),
     ("Protokół podpisał Sądowski w obecności świadka.", "Sądowski", "R1"),

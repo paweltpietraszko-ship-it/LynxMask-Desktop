@@ -3,7 +3,7 @@ guard_residue.py — [LYNX-GUARD-A] lista ostrzeżeń Guarda zamiast automatyczn
 
 Guard wskazuje JAWNE fragmenty finalnego tekstu, każdy do decyzji użytkownika (Zakryj/Zostaw). Nic tu nie maskuje.
 Źródła: dotychczasowe wzorce HIGH/MEDIUM i MAP_LEAK (`output_guard`) + grupy pozostałości R1–R5 (brief v2):
-R1 słowa nieopisane przez nikogo (`guard_unknown`), R2 inicjały, R3 resztki przy tokenach, R4 identyfikatory w kontekście,
+R1 słowa nieopisane przez nikogo (`_unknown`), R2 inicjały, R3 resztki przy tokenach, R4 identyfikatory w kontekście,
 R5 nazwy firm. [LYNX-OSOBA-LAYOUT] Guard nie zgaduje osób w całym tekście: słowa znane Morfeuszowi i decyzje silnika są dla niego
 niewidzialne (dawne R1 „słownik/końcówka” i kanał `released` usunięte — osobę rozpoznaje silnik, `person_layout`).
 Wartości fragmentów trafiają tylko do odpowiedzi dla UI, nigdy do logów (S5).
@@ -14,7 +14,6 @@ import re
 
 from guard_allowlist import ANY_YELLOW, silenced
 from guard_allowlist import load as load_allowlist  # noqa: F401  [S5] zaszyfrowana lista (pipeline)
-from guard_unknown import unknown_words
 from output_guard import _LEAK_HIGH, _LEAK_MEDIUM, _TOKEN_RE
 
 _UP = "A-ZĄĆĘŁŃÓŚŹŻ"
@@ -60,6 +59,95 @@ def _morf_interps(word: str) -> list | None:
         return _morf.analyse(word)
     except Exception:
         return None
+
+
+# ── [LYNX-OSOBA-LAYOUT] R1: słowo nieopisane przez nikogo ─────────────────────────────────────────────────────
+# Pytanie dostaje: (a) słowo, które słownik zna wyłącznie jako imię/nazwisko, a silnik go nie zakrył („Kasprzak”);
+# (b) słowo, którego Morfeusz nie zna (ign), nie imię, nie z białej listy ani skrótów, i nie zwykłe słowo po błędzie OCR.
+# Słowa ze zwykłym znaczeniem („Kawa”, „Termin”) i decyzje silnika są dla Guarda niewidzialne. Obce → pytanie.
+# biała lista (316 słów ze słownika nazwisk PESEL używanych w pismach jako zwykłe słowa; zatwierdzona 23.10.2026,
+# tasks/LYNX-OSOBA-REDESIGN/evidence_2026-10-23/biala_lista_pesel_zatwierdzona.csv na gałęzi task/LYNX-OSOBA-REDESIGN)
+_WHITELIST = frozenset("""
+angielski art badan bank bać beda beza bieg blat brak bram brudny budynek budziło być ból błąd cały cech cel cena
+chodnik choroba chyba ciemny ciepła ciągło ciężar ciężki cyfra czarna czuja czynsz członka dabrowski dach dal daleki dan
+dana danych doba dobra dobry dola dorobek dota druk duży dym działa dzienia dziennik dzierżawa dzień długi forma franka
+fundament gleba godzina gorączka gotówka granica graniczna graniczny grecki grono grosz grunt grupa handel izba jakim
+jasny jałowy jeżyk kamień karny kasa kilka klub klucz koda kol kola kolej komoda komornik koniec kopia kosa koła końca
+kość kropka krótki ksiąg książka kul kupiecki kupny kurs lampa lata lec lepsza lewy leśna leśny lider link litera los
+luka macierzyński mandat marcu mas masa masek mazowiecki mała mały miedza miesiąc moc mocny mokry mostowa mostowy
+musiała myć nadzieja nagły należyta należyty nam naprawa nast naturalny nauka nica niewiadoma niewiadomy niska niski
+nocny nowy obecna obecny obrał ofiara oko okrągła okrągły olej opieka organ osada osoba ołówek paczek paczka pakiet pal
+paleta pan papier parka pas paz per pieczątka pieniądz pieniężna pieniężny pilny pilot pić poczta poda podstawa pokrywa
+pokój pola polska polski pompa ponieważ poprawka pora poseł posiadała postawa potrzeba powaga powierza pożyczka prawda
+proba przeszło przyczyna przypis próba pusty rad radna radny ram rama rana raz reja robota rodzaj rok rynka rząd równa
+równy ręka sadowy sali sekunda senator siatka sil silny skrajny składnik spadek spora sporna sporny sposób stal stan
+stary statek stawiany stań stempel straż strona studencki student sum suma surowy syty szega szkoła sztuk szybka szybko
+słowy tam tama termin tom tor trafny trawa troska trąd tuta tylko tym tys tysiąc udziela uliczny ułamek walka walor
+warta warunek ważna widok winny wiosna woda wola wszelaki wycinka wyraz wójt wątek zamiar zapłata zasadny zatoka zawarty
+zbieg zera zieleń zielony znak związek złoty łączna łączny ściana ścieżka ścisło ścisły środek śruba świadek świat
+światowy żałoba żołnierz żyto żółty
+""".split())
+
+_ABBR = frozenset(("sygn", "wyd", "lex", "dz", "poz", "nr", "tel", "ul", "al", "pl", "os", "godz", "str", "ust", "pkt", "lit", "art",
+                   "par", "rozdz", "zał", "red", "oprac", "tzw", "np", "itd", "ok", "tj", "im", "sp", "zob", "por", "kpc", "kpk",
+                   "kpa", "pzp", "kc", "kk", "kp", "kro", "op", "cyt", "wg", "nt", "ws", "dot", "przyp", "uzas", "sent", "akt"))
+# typowe pomyłki OCR: (co odczytano, co mogło być); od indeksu 9 — same ogonki
+_OCR_SUBST = (("m", "rn"), ("rn", "m"), ("t", "ł"), ("i", "ł"), ("l", "ł"), ("i", "l"), ("l", "i"), ("o", "c"), ("c", "o"),
+              ("a", "ą"), ("e", "ę"), ("o", "ó"), ("s", "ś"), ("z", "ż"), ("z", "ź"), ("c", "ć"), ("n", "ń"), ("ż", "ź"), ("ź", "ż"))
+_DIACRITIC_FROM = 9
+_WORD_RE = re.compile(rf"(?<![\w-])[{_UP}][{_LO}]{{2,}}(?:-[{_UP}][{_LO}]{{2,}})?(?![\w-])")
+
+
+def _known(interps) -> bool:
+    return bool(interps) and not all(i[2][2] == "ign" for i in interps)
+
+
+def _only_person_name(interps) -> bool:
+    """Morfeusz zna słowo wyłącznie jako imię/nazwisko („Kasprzak”) — bez zwykłego znaczenia i bez nazwy miejsca („Góra”, „Kawa”)."""
+    if not _known(interps):
+        return False
+    quals = [set(i[2][3]) for i in interps]
+    return any(q & {"nazwisko", "imię"} for q in quals) \
+        and not any(i[2][1][:1].islower() or i[2][2].startswith("adj") for i in interps) \
+        and not any(q & {"nazwa_geograficzna", "człon_nazwy_geograficznej"} for q in quals)
+
+
+def _ocr_common(word: str, analyse) -> bool:
+    """Słowo ≥5 liter, które po jednej typowej pomyłce OCR (plus ewentualnie jednym ogonku) jest zwykłym słowem (lemat małą literą)."""
+    if len(word) < 5:
+        return False
+    low = word.lower()
+    cands = {low[:i] + b + low[i + len(a):] for a, b in _OCR_SUBST for i in range(len(low)) if low.startswith(a, i)}
+    cands |= {c[:i] + b + c[i + len(a):] for c in list(cands) for a, b in _OCR_SUBST[_DIACRITIC_FROM:]
+              for i in range(len(c)) if c.startswith(a, i)}
+    for c in cands:
+        q = analyse(c[:1].upper() + c[1:])
+        if q and any(i[2][2] != "ign" and i[2][1][:1].islower() for i in q):
+            return True
+    return False
+
+
+def _unknown(text: str, analyse):
+    """Pozycje słów nieopisanych przez nikogo: (start, end, "R1", powód). `analyse` = Morfeusz (None przy błędzie → pytanie)."""
+    from osoba_not_person import _variants, first_names
+    names, white = first_names(), _WHITELIST
+    for m in _WORD_RE.finditer(text):
+        w = m.group(0)
+        low = w.lower()
+        if low in names or low in white or low in _ABBR or not re.search(r"[aeiouyąęó]", low):
+            continue
+        p = analyse(w)
+        if p is not None:
+            if _only_person_name(p):
+                yield m.start(), m.end(), "R1", "Nazwisko lub imię według słownika — silnik go nie zakrył"
+                continue
+            if _known(p):
+                continue  # Morfeusz opisał słowo
+            if not re.search(r"[ąćęłńóśźż]", low) and any(_known(analyse(v)) for v in _variants(w)[1:]):
+                continue  # bez ogonków po OCR („Platnosc” → „Płatność”)
+            if _ocr_common(w, analyse):
+                continue  # jedna typowa pomyłka OCR („Komomik”, „Wydziatu”)
+        yield m.start(), m.end(), "R1", "Słowo nierozpoznane przez żadną warstwę — możliwe nazwisko"
 
 
 def _r2(text: str):
@@ -160,7 +248,7 @@ def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: 
     masked = _TOKEN_RE.sub(lambda m: "#" * len(m.group(0)), text)
     allow = [(a, ANY_YELLOW) if isinstance(a, str) else tuple(a) for a in allowlist or []]
     hits = []
-    for src in (_patterns(masked), _map_leaks(masked, map_values or []), unknown_words(text, _morf_interps),
+    for src in (_patterns(masked), _map_leaks(masked, map_values or []), _unknown(text, _morf_interps),
                 _r2(text), _r3(text), _r4(text), _r5(text)):
         for s, e, rule, reason in src:
             if s < e and not any(ts < e and s < te for ts, te in tokens) and not silenced(text[s:e], rule, allow):

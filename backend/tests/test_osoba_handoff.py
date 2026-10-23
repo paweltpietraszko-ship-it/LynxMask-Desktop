@@ -1,5 +1,5 @@
 # LYNX-OSOBA-HANDOFF: silnik zapisuje w rejestrze (released) tylko kandydatów, którzy mogą być nazwiskiem.
-# [LYNX-OSOBA-LAYOUT] Guard nie czyta już rejestru (pyta o słowa nieopisane — guard_unknown); testy rejestru zostają.
+# [LYNX-OSOBA-LAYOUT] Guard nie czyta już rejestru (pyta o słowa nieopisane — guard_residue._unknown); testy rejestru zostają.
 # Uruchamianie (cwd = backend): python -m pytest tests/test_osoba_handoff.py -q -p no:cacheprovider --rootdir .
 import os
 import sys

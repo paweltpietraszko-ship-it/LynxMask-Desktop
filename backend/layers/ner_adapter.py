@@ -246,7 +246,7 @@ def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
             return allocator.assign("OSOBA", w)
         return repl
     text = _STANDALONE_RE.sub(standalone(_SURNAMES_FORMS_FLAT, 4), text)
-    return _STANDALONE_RE.sub(standalone(_FIRST_NAMES, 3), text)
+    return apply_person_layout(_STANDALONE_RE.sub(standalone(_FIRST_NAMES, 3), text), allocator, _sub_whole)  # [LYNX-OSOBA-LAYOUT]
 
 
 def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
@@ -368,7 +368,6 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             state.text = _sub_whole(state.text, _var_text, _tok_id)
         state.text = _sub_whole(state.text, _target, _tok_id)
     state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
-    state.text = apply_person_layout(state.text, state.allocator, _sub_whole)  # [LYNX-OSOBA-LAYOUT] osoba z układu pisma
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 
