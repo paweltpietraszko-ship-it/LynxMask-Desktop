@@ -72,3 +72,28 @@ dla tego Tasku pytanie o RATIO przekazane Pawłowi osobno (CC nie traktuje wcze�
 
 ## Zgoda na RATIO
 Paweł 23.10, na pytanie CC o RATIO 133/5 dla LYNX-FIRMA-SILENT2: „Tak” (akceptacja przekroczenia miarki dla tego Tasku).
+
+---
+
+# Runda 3 — po Codex r3 (`355718c`: F1 zamknięte, pomiary potwierdzone, F2 klasa C)
+Kod r3: `e08ff5126ef9d528bd544b46c3e9e08587881e51` (diff od `b9315c5`: ten commit).
+
+## gate.py (stdout dosłownie, pierwsze linie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: e08ff5126ef9d528bd544b46c3e9e08587881e51
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 146/5 = 29.2:1 (threshold 5:1)
+```
+RATIO — zgoda Pawła dla tego Tasku (wyżej).
+
+## F2 (P2) — powtórzenie rozcięte, gdy krótsza nazwa ma też osobne użycie („Podwykonawca: Ulotny sp. z o.o.”)
+- Przyczyna: `_absorb_inside_core` wymagał, by KAŻDE wystąpienie krótszej wartości leżało w rdzeniu; wystąpienie w osobnej, dłuższej firmie
+  („Ulotny sp. z o.o.”) blokowało przejęcie.
+- Poprawka: wystąpienie liczy się jako pokryte, gdy leży w rdzeniu ALBO w innej dłuższej znanej wartości tego dokumentu (tamtą bierze jej
+  token); warunek dodatkowy — ≥1 wystąpienie w rdzeniu. Osobna krótsza firma zachowuje własny token.
+- Retained `repro_r2.py` 6/6 i `repro_r3.py` 4/4 zgodne na `e08ff5126ef9d528bd544b46c3e9e08587881e51` (C_short_company_separate: „FIRMA_001 … FIRMA_001 … FIRMA_002”,
+  bez jawnego „Rys”; C_short_company_alfa analogicznie; C_two_long_companies — bez zmian względem r3, oba powtórzenia zakryte w całości).
+- Testy: `test_firma_silent2` 14 passed (+1 F2); test_firma_context 14, test_silent_pack1 30, test_formats_pack2 20, test_map_fidelity 29,
+  test_osoba_layout 49. Pełne pomiary nie powtarzane (zmiana wąska; pomiary r3 Codexa na `b9315c5`).
