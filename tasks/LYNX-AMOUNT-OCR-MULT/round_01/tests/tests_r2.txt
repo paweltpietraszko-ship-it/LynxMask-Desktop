@@ -1,0 +1,54 @@
+LYNX-AMOUNT-OCR-MULT — audyt implementacji r2, 23.10.2026
+WYNIK: FAIL — F1 niepełne maskowanie kwoty z groszami; F2 brak wykrycia O przy dziesiętnej kropce.
+Adresat: CC.
+Exact audited SHA: 8681158bc06734bf4a03d45ce2f09a10e28f3f74.
+Diff base: 9fb40b1c438b67c85059e1a3dbd2342937f6c9d9.
+Brief: 8356de7bfb07878b41334d41845488687220e9f5; precheck PASS c7b1d84adee90c878924df9494112273f843e028; DELIVERY 273f494.
+Zakres: wąski diff amount.py + nowe testy; niezależna macierz granic tej samej klasy; realny pion pipeline → Guard.
+Izolowany git archive exact SHA, własny stan/profile w Temp. Bez serwera 8765, profilu OWNERA, zmian produktu, merge i subagentów.
+Wszystkie przykłady są syntetyczne.
+
+F1 [P1] Stary krótszy wzorzec wygrywa z pełną kwotą O/o.
+TRACE: brief Zasada: liczba zaczynająca się cyfrą, dalej cyfry/O/o i separatory jak _AMOUNT_RE, przy walucie to KWOTA; wartość mapy ma obejmować maskowany oryginalny fragment.
+OWNERSHIP: amount.py, _apply_patterns — trafienia sortowane od końca po początku; istniejący _AMOUNT_RE może znaleźć same grosze i walutę. To trafienie zajmuje span, więc późniejsze pełne trafienie nowego wzorca jest pomijane.
+Deklaracja DELIVERY o pierwszeństwie przy tym samym początku nie obejmuje przypadku krótszego trafienia zaczynającego się DALEJ w kwocie.
+REPRO na exact SHA, zarówno apply_amount_layer, jak i rzeczywisty pseudonymize_document:
+- „Kwota 15 OOO,50 zł.” → „Kwota 15 OOO,KWOTA_001.”; mapa KWOTA_001 = „50 zł”; Guard [].
+- „Kwota 15 OOO,50 PLN.” → „Kwota 15 OOO,KWOTA_001.”; mapa = „50 PLN”; Guard [].
+- „Kwota 15OOO,50zł.” → „Kwota 15OOO,KWOTA_001.”; mapa = „50zł”; Guard [].
+Cała część tysięczna pozostaje jawna. To zwykła kwota z groszami wprost z klasy zgłoszenia, nie egzotyczny kontekst.
+Kontrole:
+- „15 OOO,00 PLN” zakryte poprawnie (właśnie takie zakończenie ma test CC).
+- „15 OOO,5O zł” zakryte poprawnie.
+W istniejącym _AMOUNT_RE działa specjalne wyłączenie 00+spacja; dlatego test z ,00 nie ujawnia kolizji z ,50.
+Nie projektuję sposobu naprawy; oczekiwane pełne trafienie wynika już z briefu.
+
+F2 [P2] Dziesiętna kropka nie obsługuje litery O.
+TRACE: brief Zasada, O/o w liczbie: „separatory jak w _AMOUNT_RE”; istniejący wzorzec dopuszcza [.,] dla części dziesiętnej.
+OWNERSHIP: nowy _O_NUM ma końcową część dziesiętną tylko po przecinku (?:,[\dOo]{2})?, a kropkę dopuszcza w grupie tysięcznej długości 3.
+REPRO:
+„Kwota 1200.5O zł.” → identyczny jawny tekst, mapa KWOTA pusta, Guard [].
+Dotyczy ownera i pełnego pipeline; wcześniejszy normalizer nie naprawia tego przypadku.
+Kontrole:
+- „Kwota 1200,5O zł.” → jeden KWOTA z pełną literalną wartością.
+- „Kwota 1200.50 zł.” → jeden KWOTA z pełną wartością.
+Nie żądam I/l ani nowego formatu liczby; chodzi o O przy już obsługiwanym separatorze.
+
+WYKONANE NIEZALEŻNIE
+- test_amount_ocr_mult.py: 20 PASS.
+- test_amounts_numbers.py: 20 PASS.
+- repro_r2.py: 17 scenariuszy, każdy bezpośrednio owner + realny pipeline/Guard; 4 nie spełniają oczekiwanego pełnego maskowania (3 warianty F1, 1 F2).
+Pozostałe: mnożnik z walutą, mnożnik z kontekstem, integer O, kontrolne kwoty z różnymi końcówkami oraz negatywy jednostek/wersji bez nowego KWOTA.
+„OOO Gazprom” nie jest KWOTA; realny pipeline może prawidłowo maskować je jako FIRMA — nie traktowano tego jako niepowodzenia negatywu kwot.
+Granica Przywróć z prechecku r1 zachowana: nie żądano cofania wcześniejszych normalizacji, nie zgłoszono ich jako regresji.
+Załączniki: repro_r2.py i repro_r2_results.json — wyłącznie syntetyczne teksty, wyniki i mapy tych syntetyków.
+
+NOT_CHECKED / STOP
+Po wystarczającym dowodzie obu błędów zatrzymano audyt zgodnie z CODEX_START_HERE.
+Pozostałe regresje oraz GOLD/owner z DELIVERY nie zostały ponowione niezależnie; pozostają dowodem pomocniczym CC.
+Zgodne agregaty GOLD/owner nie obalają tych kontrprób, skoro według samego DELIVERY nie obejmują takich kwot.
+Nie wydano PASS pełnej macierzy Tasku.
+
+NASTĘPNY KROK
+CC: poprawić F1 i F2 w istniejącym ownerze, zachować reproduktor; przekazać nowy exact SHA.
+Recheck od 8681158: retained repro + bezpośrednio potrzebne testy kwot. Bez automatycznego powtarzania całej suity/korpusów po mikrofixie.
