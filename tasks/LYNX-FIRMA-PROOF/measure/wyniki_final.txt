@@ -1,0 +1,36 @@
+{'R1': 95, 'R4': 42, 'R5': 12, 'R3': 5, 'MAP_LEAK': 4} suma 158 na dok 3.95
+GORZEJ KIO_201961.txt.json 'Dróg' 0 -> 1
+GORZEJ KIO_201977.txt.json 'Nieruchomości' 17 -> 22
+gorzej 2 lepiej 11
+[dev] dok=40 pii=1152 zakryte=1142 z_ostrz=10 CICHE=0 | not_pii zbędne=18/440 | ostrz/dok {'sr': 0.53, 'mediana': 0, 'max': 2}
+    ADRES:rodo: {'zakryte': 120}
+    EMAIL:nierodo: {'zakryte': 40}
+    EMAIL:rodo: {'zakryte': 40}
+    FIRMA:nierodo: {'zakryte': 80}
+    FIRMA:rodo: {'zakryte': 80}
+    KWOTA:rodo: {'zakryte': 120}
+    NUMER:rodo: {'zakryte': 327, 'wyciek_z_ostrzezeniem': 10}
+    OSOBA:rodo: {'zakryte': 335}
+[test] dok=80 pii=2301 zakryte=2278 z_ostrz=22 CICHE=1 | not_pii zbędne=43/880 | ostrz/dok {'sr': 0.54, 'mediana': 0, 'max': 3}
+    ADRES:rodo: {'zakryte': 240}
+    EMAIL:nierodo: {'zakryte': 80}
+    EMAIL:rodo: {'zakryte': 80}
+    FIRMA:nierodo: {'zakryte': 158, 'wyciek_z_ostrzezeniem': 1, 'cichy_wyciek': 1}
+    FIRMA:rodo: {'zakryte': 160}
+    KWOTA:rodo: {'zakryte': 240}
+    NUMER:rodo: {'zakryte': 651, 'wyciek_z_ostrzezeniem': 20}
+    OSOBA:rodo: {'zakryte': 669, 'wyciek_z_ostrzezeniem': 1}
+clean     300      0.00  osoba 0(0)/417  adres 0(0)/342  numer 0(0)/1107  email 0(0)/39  data 0(0)/83
+stress    300      0.02  osoba 8(1)/412  adres 2(0)/340  numer 0(0)/1091  email 0(0)/48  data 0(0)/82
+testy      38      3.42  
+pliki       7      3.14  
+ocr        48      0.23  
+ciche osoba: Data:2, Lada:1, Łazarz:1, Noga:1, Łączna:1, Ido:1, Green:1
+ciche adres: ul. Rondo nszz "solidarność" 189:1, ul. Zawadzkiego "zoski" 122:1
+szczegóły: C:/Users/p_pie/AppData/Local/Temp/claude/C--Users-p-pie-Desktop-LynxMask-Desktop/928d3a23-1719-41ac-aa93-eb1f796e9196/scratchpad/kio/ts_final.json
+zbiór     dok pytań/dok  ciche wycieki (z pytaniem) / wartości w kluczu
+clean     300      0.00  osoba 0(0)/408  adres 0(0)/333  numer 0(0)/1086  email 0(0)/44  data 0(0)/82
+stress    300      0.02  osoba 3(2)/410  adres 2(0)/333  numer 0(0)/1073  email 0(0)/45  data 0(0)/85
+ciche osoba: Data:2, Dąbrówka:1
+ciche adres: ul. Nszz "solidarnosc" 14:1, ul. 25-lecia 87/8:1
+szczegóły: C:/Users/p_pie/AppData/Local/Temp/claude/C--Users-p-pie-Desktop-LynxMask-Desktop/928d3a23-1719-41ac-aa93-eb1f796e9196/scratchpad/kio/blind_final.json

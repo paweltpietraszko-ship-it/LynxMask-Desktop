@@ -1,0 +1,80 @@
+tests/test_addr_email_leaks.py: 22 passed
+tests/test_addr_reversed.py: 23 passed
+tests/test_amount_ocr_mult.py: 24 passed
+tests/test_amounts_numbers.py: 20 passed
+tests/test_anonymizer_adversarial.py: 21 passed, 1 skipped, 1 xfailed
+tests/test_archive_adversarial.py: 19 passed
+tests/test_audyt_2026_10.py: FAILED tests/test_audyt_2026_10.py::test_filtr_ner_nadal_odrzuca_nie_osoby[Komornik S\u0105dowy'-FIRMA]
+tests/test_audyt_2026_10.py: 1 failed, 122 passed, 2 xfailed
+tests/test_benchmark_ocr_diagnostics.py: 28 passed
+tests/test_disk_pii.py: FAILED tests/test_disk_pii.py::test_f2_reset_usuwa_wszystko_i_dziala_od_razu
+tests/test_disk_pii.py: 1 failed, 5 passed
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_komorka_tabeli_to_brak_ekstrakcji_nie_maskowanie
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_zmieniony_zapis_to_extraction_changed
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_pole_kratkowe_pesel_nip_cala_wartosc_bez_fuzji
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_pole_kratkowe_powtorzone_prefiks_i_zwykle[fields0]
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_pole_kratkowe_powtorzone_prefiks_i_zwykle[fields1]
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_pole_kratkowe_powtorzone_prefiks_i_zwykle[fields2]
+tests/test_engine_quality_layout.py: FAILED tests/test_engine_quality_layout.py::test_pole_kratkowe_maskowane_jednym_tokenem
+tests/test_engine_quality_layout.py: 7 failed, 8 passed
+tests/test_express_one_engine.py: 6 passed
+tests/test_failclosed.py: 23 passed
+tests/test_firma_context.py: 14 passed
+tests/test_firma_proof.py: 56 passed
+tests/test_firma_silent2.py: 16 passed
+tests/test_formats_pack2.py: 20 passed
+tests/test_guard_allowlist_s5.py: 13 passed
+tests/test_guard_residue.py: 50 passed
+tests/test_herbert_net.py: 8 passed
+tests/test_layers.py: E        +  where False = PipelineResult(text='Umowa z firm¹ FIRMA_001 zosta³a podpisana. Wykonawca: FIRMA_001.\nTermin: 30 dni.', reverse_map={...A_001': 'Mega-Pack Polska S.A'}, guard_blocked=False, guard_reasons=[], error=None, guard_values=[], guard_warnings=[]).guard_blocked
+tests/test_layers.py: FAILED tests/test_layers.py::TestFirmaBounds::test_osoba_i_fragment_formy
+tests/test_layers.py: FAILED tests/test_layers.py::test_forma_prawna_nie_ginie_przy_przywroc[{n}-{n} {f}-S.A.]
+tests/test_layers.py: 2 failed, 119 passed
+tests/test_map_fidelity.py: 29 passed
+tests/test_names_dict_clean.py: 22 passed
+tests/test_ner_multiline.py: 21 passed
+tests/test_ocr_cascade_probe.py: ERROR tests/test_ocr_cascade_probe.py
+tests/test_ocr_cascade_probe.py: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+tests/test_ocr_cascade_probe.py: 1 error
+tests/test_ocr_chain_compare.py: FAILED tests/test_ocr_chain_compare.py::test_stage2b_standalone_dictionary_name_masked[Wiktoria]
+tests/test_ocr_chain_compare.py: FAILED tests/test_ocr_chain_compare.py::test_stage2b_standalone_dictionary_name_masked[Kalina]
+tests/test_ocr_chain_compare.py: 2 failed, 50 passed
+tests/test_ocr_rapid.py: 6 passed
+tests/test_osoba_handoff.py: 16 passed
+tests/test_osoba_layout.py: 49 passed
+tests/test_osoba_not_person.py: 25 passed
+tests/test_osoba_pack4.py: 12 passed
+tests/test_output_guard_adversarial.py: 31 passed
+tests/test_pdf_worker.py: 2 passed
+tests/test_photo_chain.py: 25 passed, 1 skipped
+tests/test_pipeline.py: ERROR tests/test_pipeline.py::test
+tests/test_pipeline.py: 1 error
+tests/test_pipeline_adversarial.py: 13 passed, 1 skipped, 4 subtests passed
+tests/test_pipeline_v2.py: 41 passed
+tests/test_pp_ocr_calibration.py: 13 passed
+tests/test_silent_pack1.py: 30 passed
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py:         assert status == 200, f"{doc_path.name}: HTTP {status} — {body.get('error')}"
+tests/test_smoke_e2e.py:         assert not body.get("error"), f"{doc_path.name}: error={body.get('error')!r}"
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_lvl0_umowa_o_prace.txt]
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_lvl1_decyzja_administracyjna.txt]
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_lvl2_pismo_komornicze.txt]
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_lvl3_faktura_zlecenie.txt]
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_stresstest_silnik_guard_lvl0_3.txt]
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_test_guard.txt]
+tests/test_smoke_e2e.py: FAILED tests/test_smoke_e2e.py::TestSmokeTestFiles::test_plik_testowy[doc_test_nowe_encje.txt]
+tests/test_smoke_e2e.py: 7 failed, 2 passed
+tests/test_startup_check.py: 17 passed
+tests/test_text_limit_15k.py: 7 passed
+tests/test_token_re_spec.py: 18 passed

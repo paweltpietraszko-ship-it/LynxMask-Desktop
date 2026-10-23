@@ -1,0 +1,24 @@
+{
+ "base": {
+  "dok": 40,
+  "pozycje_panelu": {
+   "R4": 113,
+   "R1": 100,
+   "R5": 11,
+   "MAP_LEAK": 43,
+   "R3": 5
+  },
+  "suma": 272
+ },
+ "final": {
+  "dok": 40,
+  "pozycje_panelu": {
+   "R1": 95,
+   "R4": 42,
+   "R5": 12,
+   "R3": 5,
+   "MAP_LEAK": 4
+  },
+  "suma": 158
+ }
+}
