@@ -215,122 +215,62 @@ Konto: PL27114020040000300201355387."""
 
 class TestBug1PublicInstitutions(_BackendRequired):
     """
-    Instytucje publiczne muszą być zakryte tokenem INSTYTUCJA — nie FIRMA.
-    Pipeline używa _INSTITUTION_RE (regex) który tokenizuje je jako INSTYTUCJA_NNN.
-    Testy sprawdzają że:
-      1. Fraza nie jest widoczna jawnie w wyjściu (zakryta).
-      2. Token jest typu INSTYTUCJA, nie FIRMA.
+    [LYNX-FIRMA-PROOF] Zasada (RODO art. 4 pkt 1 / motyw 26; Reguły anonimizacji Portalu Orzeczeń pkt 3.3):
+      1. Sama nazwa instytucji publicznej jest jawna i nie jest FIRMA („Sąd Najwyższy”, „ZUS”, „Urząd Skarbowy”).
+      2. Instytucja z miejscowością / numerem / wydziałem jest zakryta tokenem INSTYTUCJA („Sąd Rejonowy w Legnicy”).
     """
 
-    def _check_tokenized_as_institution(self, institution, variant=None):
-        """Instytucja musi być zakryta i mieć token INSTYTUCJA, nie FIRMA."""
-        phrase = variant or institution
+    def _check_visible_not_firm(self, phrase):
         text = f"Zgodnie z orzeczeniem {phrase} strony ustaliły warunki umowy."
         result = pseudonymize(text)
         anon   = result.get("anonymized_preview", "")
-        tokens = result.get("tokens", [])
+        firma_originals = [t["original"] for t in result.get("tokens", []) if t["type"] == "FIRMA"]
+        self.assertIn(phrase, anon, f"'{phrase}' zakryty — sama nazwa instytucji ma być jawna")
+        self.assertFalse(any(phrase in f for f in firma_originals), f"'{phrase}' trafił jako FIRMA: {firma_originals}")
 
-        all_originals       = [t["original"] for t in tokens]
-        instytucja_originals = [t["original"] for t in tokens if t["type"] == "INSTYTUCJA"]
-        firma_originals      = [t["original"] for t in tokens if t["type"] == "FIRMA"]
-
-        # Fraza nie może być widoczna jawnie w wyjściu
-        self.assertNotIn(phrase, anon,
-            f"[BUG-1] '{phrase}' widoczny jawnie w eksporcie — nie zakryty")
-
-        # Musi być zakryta jako INSTYTUCJA, nie jako FIRMA
-        self.assertNotIn(institution, firma_originals,
-            f"[BUG-1] '{institution}' trafił jako FIRMA zamiast INSTYTUCJA: {firma_originals}")
-
-        # Sprawdź że w wyjściu jest token INSTYTUCJA_NNN — pipeline zakrył encję.
-        # Nie porównujemy mianownika z formą fleksyjną (substring match nie obsługuje
-        # fleksji: "Sąd Najwyższy" not in "Sądu Najwyższego"). Wystarczy że
-        # wyjście zawiera jakikolwiek token INSTYTUCJA i fraza nie jest jawna.
+    def _check_tokenized_as_institution(self, phrase):
+        text = f"Zgodnie z orzeczeniem {phrase} strony ustaliły warunki umowy."
+        result = pseudonymize(text)
+        anon   = result.get("anonymized_preview", "")
+        self.assertNotIn(phrase, anon, f"'{phrase}' widoczny jawnie — instytucja z miejscem/numerem ma być zakryta")
         import re as _re
-        has_instytucja_token = bool(_re.search(r"\bINSTYTUCJA_\d{3}\b", anon))
-        self.assertTrue(has_instytucja_token,
-            f"[BUG-1] '{institution}' nie zakryty tokenem INSTYTUCJA — "
-            f"instytucja_originals={instytucja_originals}, all={all_originals}")
+        self.assertRegex(anon, _re.compile(r"\bINSTYTUCJA_\d{3}\b"))
 
     def test_sad_najwyzszy(self):
-        self._check_tokenized_as_institution("Sąd Najwyższy")
+        self._check_visible_not_firm("Sąd Najwyższy")
 
     def test_sad_najwyzszy_dopelniacz(self):
-        self._check_tokenized_as_institution("Sąd Najwyższy", "Sądu Najwyższego")
-
-    def test_sad_rejonowy(self):
-        self._check_tokenized_as_institution("Sąd Rejonowy")
-
-    def test_sad_okregowy(self):
-        self._check_tokenized_as_institution("Sąd Okręgowy")
+        self._check_visible_not_firm("Sądu Najwyższego")
 
     def test_zus(self):
-        self._check_tokenized_as_institution("Zakład Ubezpieczeń Społecznych")
-
-    def test_zus_dopelniacz(self):
-        self._check_tokenized_as_institution("Zakład Ubezpieczeń Społecznych",
-                                              "Zakładu Ubezpieczeń Społecznych")
-
-    def test_ppk(self):
-        self._check_tokenized_as_institution("Pracownicze Plany Kapitałowe")
-
-    def test_pip(self):
-        self._check_tokenized_as_institution("Państwowa Inspekcja Pracy")
-
-    def test_trybunal_konstytucyjny(self):
-        self._check_tokenized_as_institution("Trybunał Konstytucyjny")
+        self._check_visible_not_firm("Zakład Ubezpieczeń Społecznych")
 
     def test_urzad_skarbowy(self):
-        self._check_tokenized_as_institution("Urząd Skarbowy")
+        self._check_visible_not_firm("Urząd Skarbowy")
 
     def test_knf(self):
-        self._check_tokenized_as_institution("Komisja Nadzoru Finansowego")
+        self._check_visible_not_firm("Komisja Nadzoru Finansowego")
 
-    def test_rzecznik_praw_obywatelskich(self):
-        self._check_tokenized_as_institution("Rzecznik Praw Obywatelskich")
+    def test_sad_rejonowy_z_miastem(self):
+        self._check_tokenized_as_institution("Sąd Rejonowy w Legnicy")
+
+    def test_szkola_z_numerem(self):
+        self._check_tokenized_as_institution("Szkoły Podstawowej nr 18 w Elblągu")
+
+    def test_wydzial(self):
+        self._check_tokenized_as_institution("Wydział I Cywilny")
 
     def test_osoba_i_instytucja_razem(self):
-        """
-        Kluczowy test: osoba i instytucja w tym samym zdaniu.
-        Osoba musi dostać token OSOBA, instytucja token INSTYTUCJA.
-        Żadne z nich nie może być widoczne jawnie.
-        """
+        """Osoba dostaje token OSOBA; sąd z miejscowością — INSTYTUCJA."""
         text = "Anna Kowalska złożyła skargę do Sądu Najwyższego w Warszawie."
         result = pseudonymize(text)
         anon   = result.get("anonymized_preview", "")
-        tokens = result.get("tokens", [])
-
-        instytucja_originals = [t["original"] for t in tokens if t["type"] == "INSTYTUCJA"]
-        osoby                = [t for t in tokens if t["type"] == "OSOBA"]
-
-        self.assertNotIn("Anna Kowalska", anon,
-            "[BUG-1] 'Anna Kowalska' nie zastąpiona tokenem")
-        self.assertTrue(len(osoby) > 0,
-            "[BUG-1] Anna Kowalska nie wykryta jako OSOBA")
-
-        self.assertNotIn("Sądu Najwyższego", anon,
-            "[BUG-1] 'Sądu Najwyższego' widoczny jawnie — nie zakryty jako INSTYTUCJA")
+        osoby  = [t for t in result.get("tokens", []) if t["type"] == "OSOBA"]
+        self.assertNotIn("Anna Kowalska", anon)
+        self.assertTrue(len(osoby) > 0, "Anna Kowalska nie wykryta jako OSOBA")
+        self.assertNotIn("Sądu Najwyższego w Warszawie", anon)
         import re as _re
-        has_instytucja_token = bool(_re.search(r"\bINSTYTUCJA_\d{3}\b", anon))
-        self.assertTrue(has_instytucja_token,
-            f"[BUG-1] 'Sąd Najwyższy' nie zakryty tokenem INSTYTUCJA — "
-            f"instytucja_originals={instytucja_originals}")
-
-    def test_wiele_instytucji(self):
-        """Wiele instytucji w jednym tekście — każda zakryta jako INSTYTUCJA, nie FIRMA."""
-        text = """Składki ZUS odprowadza pracodawca.
-PPK obsługuje podmiot zarządzający.
-Spory rozstrzyga Sąd Rejonowy.
-Kontrolę przeprowadza Państwowa Inspekcja Pracy."""
-        result = pseudonymize(text)
-        anon   = result.get("anonymized_preview", "")
-        tokens = result.get("tokens", [])
-        firma_originals = [t["original"] for t in tokens if t["type"] == "FIRMA"]
-        for inst in ["Sąd Rejonowy", "Państwowa Inspekcja Pracy"]:
-            self.assertNotIn(inst, anon,
-                f"[BUG-1] '{inst}' widoczny jawnie w eksporcie")
-            self.assertNotIn(inst, firma_originals,
-                f"[BUG-1] '{inst}' trafił jako FIRMA zamiast INSTYTUCJA")
+        self.assertRegex(anon, _re.compile(r"\bINSTYTUCJA_\d{3}\b"))
 
 
 # ── [NER] ─────────────────────────────────────────────────────────────────────

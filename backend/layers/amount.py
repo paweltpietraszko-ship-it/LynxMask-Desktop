@@ -123,6 +123,26 @@ _BIRTH_DATE_CTX_RE = re.compile(
 _DATE_PL_RE = re.compile(
     r"\b(?:0?[1-9]|[12]\d|3[01])[.,/\-](?:0?[1-9]|1[0-2])[.,/\-](?:19|20)\d{2}\b"
 )
+# [LYNX-FIRMA-PROOF] Data pisma w nagłówku jest jawna (nie jest informacją o osobie — Reguły anonimizacji Portalu Orzeczeń
+# pkt 3.2: czas jawny poza datą urodzenia): linia „Miejscowość, [dnia] DD.MM.RRRR [r.]” albo odwrotnie, rok z ostatnich 5 lat.
+# Każda inna data (urodzenia, zdarzenia, w zdaniu, w tabeli bez miejscowości) zostaje zakryta — silnik nie odróżni jej od urodzenia.
+_PLACE_WORDS_RE = re.compile(r"[A-ZĄĆĘŁŃÓŚŹŻ][\w-]+(?:[ \t-][A-ZĄĆĘŁŃÓŚŹŻ]?[\w-]+){0,3}")
+
+
+def _doc_date(text: str, m: re.Match) -> bool:
+    """True = data pisma (pominąć): w linii poza datą tylko miejscowość po jednej stronie przecinka, „dnia”, „r.”."""
+    import datetime
+    s, e = text.rfind("\n", 0, m.start()) + 1, text.find("\n", m.end())
+    before, after = text[s:m.start()], text[m.end():e if e >= 0 else len(text)]
+    if ":" in before + after or int(m.group(0)[-4:]) < datetime.date.today().year - 5:
+        return False
+    before = re.sub(r"(?i)\bdnia\s*$", "", before.strip()).strip()
+    after = re.sub(r"(?i)^\s*(?:r\.|roku)?", "", after).strip()
+    place = (before[:-1].strip() if before.endswith(",") and not after.strip(".") else
+             after[1:].strip() if after.startswith(",") and not before else None)
+    return bool(place) and _PLACE_WORDS_RE.fullmatch(place.rstrip(".")) is not None
+
+
 # [LYNX-FORMATS-PACK2] Data ISO RRRR-MM-DD — ten sam zakres lat co DD.MM.RRRR („ur. 1989-01-05”); bez fragmentu „1989-01-05-001”.
 _DATE_ISO_RE = re.compile(r"(?<![\d-])(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?!\d|-\d)")
 
@@ -170,7 +190,7 @@ def apply_amount_layer(state: PipelineState) -> None:
         (TOKEN_KWOTA,  _AMOUNT_NOCUR_RE, _not_amount_nocur),
         (TOKEN_KWOTA,  _AMOUNT_NOCUR_CTX_RE, _not_amount_ctx),
         (TOKEN_NUMER,  _BIRTH_DATE_CTX_RE),
-        (TOKEN_NUMER,  _DATE_PL_RE),
+        (TOKEN_NUMER,  _DATE_PL_RE, _doc_date),  # [LYNX-FIRMA-PROOF] data pisma jawna
         (TOKEN_NUMER,  _DATE_ISO_RE),
     ])
 

@@ -148,7 +148,8 @@ def _firma_core(value: str) -> str | None:
     words = core.split()
     if core == value.strip(" \"„”“,") or not words or not all(w[0].isupper() or w[0].isdigit() or w in ("i", "&") for w in words):
         return None
-    return core if len(words) >= 2 or (len(core) >= 4 and core.isalpha() and not _common_word(core)) else None
+    # [LYNX-FIRMA-PROOF] jedno słowo z łącznikiem („AG-COMPLEX”) też jest rdzeniem
+    return core if len(words) >= 2 or (len(core) >= 4 and core.replace("-", "").isalpha() and not _common_word(core)) else None
 
 
 def _common_word(word: str) -> bool:

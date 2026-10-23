@@ -19,6 +19,37 @@ _FALLBACK_RE = re.compile(r"(?<!\d)\d{8,}(?!\d)")
 _LONG_NUMBER_RE = re.compile(r"(?<!\w)(?:[A-Z]{2}(?=\d{2}))?\d(?:(?:[ \t]*-[ \t]*|[ \t]*)\d){14,}(?!\w)")
 
 
+# [LYNX-FIRMA-PROOF] Wartość zakryta raz jest zakryta wszędzie. Warstwy regułowe łapią numer, datę czy znak sprawy w jednym
+# kontekście („nr 75/06”, „dnia 02.11.2011 r.”), a to samo powtórzone gdzie indziej („zaświadczenia nr 75/06.”, „02.11.2011r.”)
+# zostawało jawne — Guard zgłaszał czerwone MAP_LEAK. Po wszystkich warstwach każda wartość z cyfrą (NUMER, KWOTA, ADRES, EMAIL,
+# INSTYTUCJA) zastępuje swoje pozostałe dokładne wystąpienia tym samym tokenem (OSOBA/FIRMA mają warianty w ner_adapter).
+# Granica: przed wartością nie litera/cyfra/„/”; po cyfrze — nie cyfra ani „/” („02.11.2011r.” tak, „75/061” nie), po literze — nie litera.
+_TOKEN_RE = re.compile(r"\b(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d{3}(?!\d)")
+_TYPES = ("NUMER", "KWOTA", "ADRES", "EMAIL", "INSTYTUCJA")
+
+
+def _pattern(value: str) -> re.Pattern:
+    tail = r"(?![\d/])" if value[-1].isdigit() else r"(?!\w)"
+    return re.compile(rf"(?<![\w/]){re.escape(value)}{tail}")
+
+
+def apply_value_propagation(state: PipelineState) -> None:
+    """Pozostałe wystąpienia zakrytych wartości z cyfrą (≥4 znaki) → ten sam token; najdłuższe wartości najpierw."""
+    items = [(tok, val) for tok, val in state.allocator.reverse_map.items()
+             if tok.startswith(_TYPES) and len(val.strip()) >= 4 and any(c.isdigit() for c in val)]
+    for tok, val in sorted(items, key=lambda x: -len(x[1])):
+        val = val.strip()
+        tokens = [m.span() for m in _TOKEN_RE.finditer(state.text)]
+        parts, pos = [], 0
+        for m in _pattern(val).finditer(state.text):
+            if any(a < m.end() and m.start() < b for a, b in tokens):
+                continue
+            parts += [state.text[pos:m.start()], tok]
+            pos = m.end()
+        if parts:
+            state.text = "".join(parts) + state.text[pos:]
+
+
 def long_number_runs(text: str) -> list[tuple[int, int]]:
     """[LYNX-T07] Spany całych ciągów ≥15 cyfr w tekście (to samo, co przejmie końcowy fallback)."""
     return [(m.start(), m.end()) for m in _LONG_NUMBER_RE.finditer(text)]

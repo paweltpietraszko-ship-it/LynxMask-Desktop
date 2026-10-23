@@ -13,30 +13,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pipeline_core import PipelineState, TokenAllocator
 
-# Lustrzana kopia _INSTITUTION_RE z pipeline.py.
-# Nie importujemy pipeline.py bezpośrednio — jego import ładuje ner_layer,
-# verbal_amounts i ner_blocklist ze skutkami ubocznymi.
+# [LYNX-FIRMA-PROOF] Zasada (RODO art. 4 pkt 1 / motyw 26; Reguły anonimizacji Portalu Orzeczeń pkt 3.3, 2.6, 2.8; UODO,
+# Biuletyn 4/06/23 — szkoła + klasa identyfikuje): nazwa instytucji publicznej nie jest daną osobową — zostaje jawna („ZUS”,
+# „Sąd Najwyższy”, „Urząd Skarbowy”). Zakrywamy instytucję z tym, co ją zawęża: miejscowością („w Legnicy”), numerem („nr 18”)
+# albo wydziałem („Wydział I Cywilny”) — wtedy cała fraza to INSTYTUCJA.
+_UP = "A-ZĄĆĘŁŃÓŚŹŻ"
+_TOK = r"(?:FIRMA|OSOBA|NUMER|KWOTA|ADRES|INSTYTUCJA|EMAIL)_\d"   # miejscowość nie jest tokenem
+_ROLE = r"(?!(?:Zamawiając|Wykonawc|Odwołując|Przystępując)\w*)"   # słowo roli nie jest częścią nazwy
+_HEAD = (r"(?:Sąd(?!ownictw)|Urz[ąę]d(?!ow)|Prokuratur|Starostw|Komend|Komisariat|Zarząd|Szpital|Przychodni|Przedszkol|Szkoł|Zesp[oó]ł\s+Szkół"
+         r"|Gimnazj|Liceum|Technikum|Żłob|Ośrod|Inspektorat|Izb[aąęy]\s+(?:Skarbow|Administracji)|Kuratori|Trybunał)\w*")
+_PLACE = rf"(?:[ \t]+nr[ \t]*\d+[A-Za-z]?)?[ \t]+(?:w|we|dla)[ \t]+(?!{_TOK})[{_UP}][\w-]+(?:[ \t-](?!{_TOK})[{_UP}][\w-]+)?"
+_NUMBER = r"[ \t]+nr[ \t]*\d+[A-Za-z]?"
 _INSTITUTION_RE = re.compile(
-    r"(?:"
-    r"(?:Sąd|Sądu|Sądowi)\s+(?:Rejonowy|Rejonowego|Rejonowemu|Okręgowy|Okręgowego|Okręgowemu|Apelacyjny|Apelacyjnego|Administracyjny|Administracyjnego|Najwyższy|Najwyższego)"
-    r"|(?:Naczelny|Naczelnego)\s+(?:Sąd|Sądu)\s+Administracyjny(?:ego)?"
-    r"|(?:Wojewódzki|Wojewódzkiego)\s+(?:Sąd|Sądu)\s+Administracyjny(?:ego)?"
-    r"|(?:Urząd|Urzędu|Urzędowi)\s+(?:Skarbowy|Skarbowego|Celno-Skarbowy|Celno-Skarbowego|Pracy|Ochrony\s+Danych\s+Osobowych)"
-    r"|(?:Prokuratura|Prokuratury|Prokuraturze)\s+(?:Rejonowa|Rejonowej|Okręgowa|Okręgowej|Apelacyjna|Apelacyjnej|Krajowa|Krajowej)"
-    r"|(?:Powiatowy|Powiatowego|Wojewódzki|Wojewódzkiego)\s+(?:Urząd|Urzędu)\s+Pracy"
-    r"|(?:Zakład|Zakładu|Zakładowi)\s+Ubezpieczeń\s+Społecznych"
+    rf"(?<![\w-])(?:{_ROLE}[{_UP}][\w-]+[ \t]+){{0,2}}{_HEAD}(?:[ \t]+(?:[{_UP}][\w-]*|i|ds\.)){{0,6}}?(?:{_PLACE}|{_NUMBER})(?![\w-])"
     r"|Wydział[ \t]+(?:[IVX]+|[0-9]+)[ \t]+[\wÀ-ž][\w \t\-À-ž]{0,30}"
-    r"|(?:Komisja|Komisji|Komisję)\s+Nadzoru\s+Finansowego"
-    r"|(?:Rzecznik|Rzecznika|Rzecznikowi)\s+Praw\s+Obywatelskich"
-    r"|(?:Trybunał|Trybunału|Trybunałowi)\s+Konstytucyjn(?:y|ego|emu)"
-    r"|(?:Państwowa|Państwowej)\s+Inspekcja\s+Pracy|Państwowej\s+Inspekcji\s+Pracy"
-    r"|(?:Pracownicze|Pracowniczych|Pracowniczymi)\s+Plan(?:y|ów|ami)\s+Kapitałow(?:e|ych|ymi)"
-    # [BUG-INSTITUTION-FP] Skróty muszą być TYLKO wielkie litery — re.IGNORECASE
-    # całego wzorca powodował, że "ppk", "knf" itp. (małe) też trafiały do tokenizacji.
-    # (?-i:...) wyłącza IGNORECASE lokalnie dla grupy skrótów.
-    r"|(?-i:\bPPK\b|\bKNF\b|\bRPO\b|\bTK\b|\bPIP\b|\bGUS\b|\bNIK\b|\bUOKiK\b)"
-    r")",
-    re.IGNORECASE | re.UNICODE,
 )
 
 _INSTITUTION_PATTERNS: list[tuple[str, re.Pattern]] = [
@@ -45,7 +35,7 @@ _INSTITUTION_PATTERNS: list[tuple[str, re.Pattern]] = [
 
 
 def apply_institution_layer(state: PipelineState) -> None:
-    """Stosuje wzorce polskich instytucji publicznych na state.text."""
+    """Zakrywa instytucje publiczne z miejscowością / numerem / wydziałem (sama nazwa instytucji zostaje jawna)."""
     hits: list[tuple[int, int, str, str]] = []
     for token_type, pat in _INSTITUTION_PATTERNS:
         for m in pat.finditer(state.text):
@@ -84,21 +74,19 @@ def test_institution_layer() -> bool:
 
     print("=== test_institution_layer ===\n")
 
-    cases = [
-        ("ZUS", "Sprawa dotyczy Zakładu Ubezpieczeń Społecznych.", "INSTYTUCJA"),
-        ("Sąd Rejonowy", "Zgodnie z orzeczeniem Sąd Rejonowy strony zawarły ugodę.", "INSTYTUCJA"),
-        ("Urząd Skarbowy", "Pismo od Urzędu Skarbowego.", "INSTYTUCJA"),
-        ("Prokuratura Okręgowa", "Prokuratura Okręgowa wszczęła dochodzenie.", "INSTYTUCJA"),
-        ("Trybunał Konstytucyjny", "Wyrok Trybunału Konstytucyjnego.", "INSTYTUCJA"),
-        ("KNF skrót", "Decyzja KNF z dnia 01.01.2024.", "INSTYTUCJA"),
-        ("RPO skrót", "Wniosek do RPO.", "INSTYTUCJA"),
+    cases = [  # [LYNX-FIRMA-PROOF] sama nazwa instytucji jawna; z miejscowością / numerem / wydziałem — INSTYTUCJA
+        ("ZUS jawny", "Sprawa dotyczy Zakładu Ubezpieczeń Społecznych.", False),
+        ("Sąd Najwyższy jawny", "Wyrok Sądu Najwyższego z dnia 5 maja.", False),
+        ("Sąd Rejonowy z miastem", "Sąd Rejonowy w Legnicy wydał wyrok.", True),
+        ("Wydział", "Sprawę prowadzi Wydział I Cywilny.", True),
+        ("Szkoła z numerem", "Uczeń Szkoły Podstawowej nr 18 w Elblągu.", True),
+        ("KNF skrót jawny", "Decyzja KNF z dnia 01.01.2024.", False),
     ]
 
-    for name, text, expected_type in cases:
+    for name, text, masked in cases:
         state = PipelineState(text=text, allocator=TokenAllocator())
         apply_institution_layer(state)
-        found = expected_type + "_" in state.text
-        check(name, found, f"tekst po: {state.text!r}")
+        check(name, ("INSTYTUCJA_" in state.text) == masked, f"tekst po: {state.text!r}")
 
     print(f"\nWynik: {passed} passed, {failed} failed")
     return failed == 0

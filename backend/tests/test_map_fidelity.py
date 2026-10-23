@@ -85,8 +85,8 @@ def test_rozne_kwoty_i_daty_w_dokumencie():
     ("Pozew: Jan Nowak-Kowalski, świadek Jan Nowak.", [("OSOBA", "Jan Nowak")], ["Nowak"], []),   # łącznik = granica:
     ("Komentarz: M. Pyziak-Szafnicka (red.).", [("OSOBA", "Pyziak")], ["Pyziak"], []),              # nadmaskowanie
     ("Umowę zawarł „Alfa Serwis”. Alfa Serwis potwierdza.", [("FIRMA", "Alfa Serwis")], ["Alfa Serwis"], []),
-    ("Wniosek do Beta Grupa Polska. Spór z Beta Grupa w toku.",                                   # krótsza wartość nie
-     [("FIRMA", "Beta Grupa"), ("FIRMA", "Beta Grupa Polska")], ["Beta Grupa Polska", "Beta Grupa"], []),  # w dłuższej
+    ("Wniosek do Betanex Grupa Polska. Spór z Betanex Grupa w toku.",                                   # krótsza wartość nie
+     [("FIRMA", "Betanex Grupa"), ("FIRMA", "Betanex Grupa Polska")], ["Betanex Grupa Polska", "Betanex Grupa"], []),  # w dłuższej; [LYNX-FIRMA-PROOF] nazwa z dowodem
 ])
 def test_podmiana_tylko_calych_wyrazow(text, frags, hidden, visible):
     out, rev, blocked = _full(text, *frags)

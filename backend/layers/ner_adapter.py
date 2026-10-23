@@ -94,15 +94,16 @@ _BARE_SUFFIX_RE = re.compile(
 )
 
 
-def _whole(value: str) -> re.Pattern:
+def _whole(value: str, ci: bool = False) -> re.Pattern:
     """[LYNX-MAP-FIDELITY] Wartość tylko jako cały wyraz: nie „OSOBA_001owska”, nie „FIRMA_013u” z „Sądu”, nie w środku
     istniejącego tokenu. Łącznik = granica (nadmaskowanie „OSOBA_001-Kowalski” zamiast jawnego „Pyziak-Szafnicka”).
     Obecność i podmiana tym samym wzorcem."""
-    return re.compile(rf"(?<!\w){re.escape(value)}(?!\w)")
+    return re.compile(rf"(?<!\w){re.escape(value)}(?!\w)", re.IGNORECASE if ci else 0)
 
 
 def _sub_whole(text: str, value: str, token_id: str) -> str:
-    return _whole(value).sub(lambda m: token_id, text)
+    # [LYNX-FIRMA-PROOF] FIRMA bez względu na wielkość liter („Strabag Sp. z o.o.” = „STRABAG Sp. z o.o”, „HONDA” = „Honda”)
+    return _whole(value, token_id.startswith("FIRMA")).sub(lambda m: token_id, text)
 
 
 # ── Polskie diakrytyki do strip (NFD) ────────────────────────────────────────
@@ -369,7 +370,7 @@ def _sub_variant(state: PipelineState, var_text: str, tok_id: str, local: dict, 
         return
     stripped = re.sub(r"[,\.;:!?\s]+$", "", var_text).rstrip()
     target = stripped if stripped else var_text
-    if not target or not _whole(target).search(state.text):
+    if not target or not _whole(target, tok_id.startswith("FIRMA")).search(state.text):
         return
     if tok_id not in remap:
         remap[tok_id] = state.allocator.assign(tok_id.rsplit("_", 1)[0], local[tok_id])

@@ -36,6 +36,10 @@ _ID_KEY_RE = re.compile(
     r"|dowod\w*|paszport\w*|legitymacj\w*|KW|księg\w* wieczyst\w*)(?![\w])[ \t]*[.:#]?[ \t]*", re.IGNORECASE)
 _ID_VALUE_RE = re.compile(r"[A-Z0-9][A-Z0-9/.\-]*[A-Z0-9]|\d")
 _DZU_RE = re.compile(r"Dz\.\s?U|poz\.|art\.|ust\.|§", re.IGNORECASE)
+# [LYNX-FIRMA-PROOF] „nr” po rzeczowniku porządkowym / aktu publicznego to struktura pisma, nie dana osoby: „Dz. U. z 2010 r.
+# Nr 113”, „droga krajowa nr 87”, „załącznik nr 2”, „pytanie nr 21”, „ogłoszenie nr 2016/S …”, „uchwała nr XII/1/19”.
+_STRUCT_NR_RE = re.compile(r"(?:Dz\.\s?U|M\.\s?P|Dziennik\w*|Biuletyn\w*)\b[\s\S]{0,45}$|\b(?:drog\w*|autostrad\w*|załącznik\w*|pytani\w*|rozdział\w*|punkt\w*|pkt\.?|tabel\w*|częś\w*|zadani\w*|pakiet\w*|pozycj\w*|str\.?|stron\w*|wzor\w*|wzór|formularz\w*|rysun\w*|ogłoszeni\w*|uchwał\w*|zarządzeni\w*|rozporządzeni\w*|ustaw\w*|norm\w*|lini\w*|decyzj\w*|zał\.|zarzut\w*|odpowied\w*|jednostk\w*|LEX|Legalis|OSN\w*)(?:\s+\w+)?\s*$", re.IGNORECASE)
+_BLANK_RE = re.compile(r"[ \t]*")
 # R5: rola kontrahenta + nazwa; nazwa z formą prawną
 _ROLE_RE = re.compile(
     r"\b(?:Sprzedawc\w*|Nabywc\w*|Kontrahent\w*|Usługodawc\w*|Zleceniobiorc\w*|Zleceniodawc\w*|Wykonawc\w*|Dostawc\w*"
@@ -194,11 +198,15 @@ def _r3(text: str):
 
 def _r4(text: str):
     for k in _ID_KEY_RE.finditer(text):
+        if _TOKEN_RE.match(text, k.start()):
+            continue  # [LYNX-FIRMA-PROOF] „NUMER_010:1999” — słowo-klucz „numer” wewnątrz tokenu
         v = _ID_VALUE_RE.match(text, k.end())
         if not v or sum(c.isdigit() for c in v.group(0)) < 2 or _TOKEN_RE.match(text, v.start()):
             continue
-        if _DZU_RE.search(text[max(0, k.start() - 12):k.start()]):
+        if _DZU_RE.search(text[max(0, k.start() - 12):k.start()]) or _STRUCT_NR_RE.search(text[max(0, k.start() - 60):k.start()]):
             continue
+        if _TOKEN_RE.match(text, _BLANK_RE.match(text, v.end()).end()):
+            continue  # [LYNX-FIRMA-PROOF] „2012/S NUMER_004” — resztka obok tokenu to R3, nie R4
         yield v.start(), v.end(), "R4", "Numer lub data w kontekście danych identyfikujących"
 
 

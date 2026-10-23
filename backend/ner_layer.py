@@ -127,6 +127,7 @@ import re
 import logging
 
 from firma_context import firma_core_variants, is_jdg, jdg_entities, legal_form_entities, scan_legal_forms
+from firma_proof import firma_proof  # [LYNX-FIRMA-PROOF]
 from osoba_not_person import drop_street_osoba, filter_single_osoba, reject_single_osoba  # [LYNX-OSOBA-PACK4]
 from ner_blocklist import (
     _GEO_WORDS,
@@ -457,6 +458,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
 def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
     ner_results = _split_lines(text, _firma_entities(text, spacy_ner_mod.detect_entities(text)))
     ner_results = filter_single_osoba(text, _filter_institutions(drop_street_osoba(text, ner_results)), _PERSON_FORMS)  # [PACK4]
+    ner_results = firma_proof(text, ner_results)  # [LYNX-FIRMA-PROOF] FIRMA tylko z dowodem, bez słowa roli
 
     reverse_map:          dict[str, str] = {}
     all_variants:         dict[str, str] = {}
