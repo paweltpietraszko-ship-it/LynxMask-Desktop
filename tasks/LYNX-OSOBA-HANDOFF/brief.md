@@ -76,7 +76,7 @@ Szacunek: kod ~10 l., testy ~60 l. (< 150).
 `tasks/LYNX-NAMES-DICT-CLEAN/clean_names.py`; PESEL = dane.gov.pl zbiór 1681 „Nazwiska osób żyjących występujące w rejestrze PESEL”, CC0,
 zasoby 1148808/1148811 stan 2026-01-20, kolumny `Nazwisko aktualne, Liczba`; bez danych z dokumentów):
 - 38 783 hasła listy; **113** Morfeusz klasyfikuje jako tylko-pospolite (`common=True, person=False`) — razem 51 092 osoby w PESEL; 11 z nich jest w `person_forms`.
-  Największe: Kim 4012, Li 2111, Holub 2107, Prokopenko 1673, Park 1240, Łysak/Lysak 1211, Islam 1052, Palii 1003, Yang 1000, Sokol 890 … (głównie nazwiska obce).
+  Największe: Kim 4012, Li 2111, Holub 2107, Prokopenko 1673, Park 1240, Lysak 1211, Islam 1052, Palii 1003, Yang 1000, Sokol 890 … (głównie nazwiska obce).
 - Najczęstsze słowa `released()` na main: **żadne słowo roli nie jest na liście nazwisk** — „Odwołującego/Odwołujący/Odwołującemu”, „Przystępującego”,
   „Protokolant”, „Powódka”, „Powodowi”, „Pozwanemu”, „Protestującego”, „Skarżącego”, „Zaskarżonemu”, „Gwaranta”, „Poręczyciela”, „Mebla”, „Ergo”, „Loco”,
   „Komornika”, „Sam”. Na liście są: „Mają”, „Rady”, „Marszałek”, „Konieczne”, „Pola” — mają odczyt imię/nazwisko (`person=True`), więc reguła A ich i tak nie dotyczy.
