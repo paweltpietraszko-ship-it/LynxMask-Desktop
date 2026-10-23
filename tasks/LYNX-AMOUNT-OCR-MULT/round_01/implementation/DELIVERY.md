@@ -47,7 +47,10 @@ Kod r2: `46984da1c545ce9fd3e325fedf5dacefdc585324` (diff od `8681158`: commit `4
 STATUS: WYMAGA_DECYZJI
 HEAD_SHA: 46984da1c545ce9fd3e325fedf5dacefdc585324
 CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 104/1 = 104.0:1 (threshold 5:1)
 ```
+RATIO: zmiana prawie wyłącznie dodaje (nowe wzorce + testy, 1 linia usunięta); r1 miał PASS, r2 dodał 4 testy i wybór najdłuższego trafienia. Rozmiar mały (TOTAL_LINES bez uwag).
 
 ## F1 (P1) — krótsze trafienie zaczynające się dalej blokowało pełną kwotę („15 OOO,50 zł” → „15 OOO,KWOTA_001”)
 - Przyczyna: `_apply_patterns` przydzielał trafienia od końca tekstu; „50 zł” (`_AMOUNT_RE`) zajmowało span przed pełnym trafieniem O.
