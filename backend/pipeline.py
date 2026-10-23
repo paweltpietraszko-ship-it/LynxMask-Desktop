@@ -114,7 +114,7 @@ from typing import Any
 import ner_layer
 import verbal_amounts
 from ner_blocklist import _LEGAL_SUFFIXES_LOWER as _FIRMA_SUFFIXES
-from osoba_not_person import released, start_run  # [LYNX-OSOBA-PACK4] krok 2 → Guard
+from osoba_not_person import start_run  # [LYNX-OSOBA-PACK4] rejestr kandydatów per dokument (Guard już go nie czyta)
 
 logger = logging.getLogger("pseudominizer.pipeline")
 
@@ -352,7 +352,7 @@ def _apply_output_guard(
                 return _s3_failure("[GUARD_ERROR] awaria Guarda")
             guard_reasons, guard_values = guard_result.reasons, guard_result.values
             # [LYNX-GUARD-A] S4: bez automatycznego [REDACTED] i blokady — każde wykrycie to ostrzeżenie do decyzji
-            guard_warnings = collect_warnings(text, guard_values, _allowlist, released())  # [PACK4] + kandydaci bez dowodu
+            guard_warnings = collect_warnings(text, guard_values, _allowlist)  # [LYNX-OSOBA-LAYOUT] bez zgadywania osób
             if guard_warnings:
                 logger.warning("[PIPELINE] Guard: %d ostrzeżeń do decyzji", len(guard_warnings))
         except Exception as e:

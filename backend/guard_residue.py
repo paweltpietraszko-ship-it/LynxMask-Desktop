@@ -3,8 +3,9 @@ guard_residue.py — [LYNX-GUARD-A] lista ostrzeżeń Guarda zamiast automatyczn
 
 Guard wskazuje JAWNE fragmenty finalnego tekstu, każdy do decyzji użytkownika (Zakryj/Zostaw). Nic tu nie maskuje.
 Źródła: dotychczasowe wzorce HIGH/MEDIUM i MAP_LEAK (`output_guard`) + grupy pozostałości R1–R5 (brief v2):
-R1 nierozpoznane imiona/nazwiska, R2 inicjały, R3 resztki przy tokenach, R4 identyfikatory w kontekście, R5 nazwy firm.
-Cel: wiarygodne podejrzenia, nie każde słowo z wielkiej litery (dokumenty biurowe: „Zamawiający”, „Umowa” — bez alarmu).
+R1 słowa nieopisane przez nikogo (`guard_unknown`), R2 inicjały, R3 resztki przy tokenach, R4 identyfikatory w kontekście,
+R5 nazwy firm. [LYNX-OSOBA-LAYOUT] Guard nie zgaduje osób w całym tekście: słowa znane Morfeuszowi i decyzje silnika są dla niego
+niewidzialne (dawne R1 „słownik/końcówka” i kanał `released` usunięte — osobę rozpoznaje silnik, `person_layout`).
 Wartości fragmentów trafiają tylko do odpowiedzi dla UI, nigdy do logów (S5).
 """
 from __future__ import annotations
@@ -13,35 +14,14 @@ import re
 
 from guard_allowlist import ANY_YELLOW, silenced
 from guard_allowlist import load as load_allowlist  # noqa: F401  [S5] zaszyfrowana lista (pipeline)
-from osoba_not_person import OSOBA_DENYLIST, WHITE_LISTS, in_city_name
+from guard_unknown import unknown_words
 from output_guard import _LEAK_HIGH, _LEAK_MEDIUM, _TOKEN_RE
 
 _UP = "A-ZĄĆĘŁŃÓŚŹŻ"
 _LO = "a-ząćęłńóśźż"
-_WORD_RE = re.compile(rf"(?<![\w-])[{_UP}][{_LO}]{{2,}}(?:-[{_UP}][{_LO}]{{2,}})?(?![\w-])")
-_TITLES = {"p", "pan", "pani", "dr", "mgr", "inż", "prof", "hab", "adw", "św"}
-_TITLE_BEFORE_RE = re.compile(r"(?:^|[\s(])(?:[Pp]an(?:a|u|em|i|ią)?|[Pp]\.|dr|mgr|inż\.|prof\.|adw\.|mec\.)[ \t]+$")
-_OFFICE_TERMS = {"strona", "strony", "stronę", "stron", "stronami", "stronom", "stronie",  # Morfeusz: także nazwisko
-                 "pan", "pana", "panu", "panem", "pani", "panią", "państwo", "państwa", "państwu"}
-_DEFINED_RE = re.compile(r"zwan\w*[ \t]+(?:dalej[ \t]+)?[„\"]?$", re.IGNORECASE)  # „zwanym dalej Zleceniobiorcą”
-# słowo nieznane Morfeuszowi (często szum OCR) — alarm tylko przy końcówce nazwiska
-_SURNAME_END_RE = re.compile(r"(?:[scd]k|dzk)(?:i|a|ie|iego|iej|iemu|im|imi|ą|ich)$|[iy]cz(?:a|owi|em|u)?$"
-                             r"|(?:czyk|czuk|iak|uk)(?:a|owi|iem|em|u)?$")
-_GEO_PREP_RE = re.compile(r"(?:^|\s)(?:w|we|z|ze|do|na|pod|nad|przy|koło|od|dla)\s+$", re.IGNORECASE)
-_INSTITUTION_RE = re.compile(
-    r"\b(?:Sąd\w*|Urz[ąę]d\w*|Gmin\w*|Powiat\w*|Starostw\w*|Województw\w*|Skarb\w* Państwa|Prokuratur\w*|Policj\w*"
-    r"|Ministerstw\w*|Szkoł\w*|Komornik\w*|Rad\w* Miasta|Izb\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK|Wydział\w*|Oddział\w*"
-    r"|Kolegi\w*|Inspektorat\w*|Dyrekcj\w*|Agencj\w*|Fundusz\w*|Rzecznik\w*|Zarząd\w*|Departament\w*|Ośrod\w*|Centrum"
-    r"|Instytut\w*|Uniwersytet\w*|Politechnik\w*|Szpital\w*|Przychodni\w*|Przedszkol\w*|Regionaln\w*|Kas\w+)\b")
-_INSTITUTION_LEMMAS = frozenset((  # rzeczowniki-głowy nazw instytucji (lemat Morfeusza, małe litery)
-    "sąd", "urząd", "gmina", "powiat", "starostwo", "województwo", "prokuratura", "policja", "ministerstwo", "szkoła", "komornik",
-    "izba", "wydział", "oddział", "kolegium", "inspektorat", "dyrekcja", "agencja", "fundusz", "rzecznik", "zarząd", "departament",
-    "ośrodek", "centrum", "instytut", "uniwersytet", "politechnika", "szpital", "przychodnia", "poradnia", "przedszkole"))
-# słowo w ciągu nazwy instytucji: „Urząd Marszałkowski Województwa Mazowieckiego”, „Urząd Gminy Warszawa-Wola”
 _PUBLIC_RE = re.compile(  # R5: tylko urzędy/sądy/samorząd/organy — nie „Centrum”, „Instytut”, „Fundusz” (bywają firmami)
     r"\b(?:Sąd\w*|Urz[ąę]d\w*|Gmin\w*|Powiat\w*|Starostw\w*|Województw\w*|Skarb\w* Państwa|Prokuratur\w*|Policj\w*"
     r"|Ministerstw\w*|Komornik\w*|Rad\w* Miasta|Izb\w* Skarbow\w*|ZUS|NFZ|KRUS|GUS|NIK|UODO|KNF|UOKiK)\b")
-_IN_INSTITUTION_RE = re.compile(rf"(?:[ \t\-]+(?:[{_UP}][\w\-]*|w|we|przy|dla|ds\.|i|do|spraw))*[ \t\-]*")
 # R2: imię albo token osoby + jedna wielka litera z kropką (bez „S.A.”)
 _INITIAL_RE = re.compile(rf"\b(?:(OSOBA_\d{{3}})|([{_UP}][{_LO}]+))[ \t]+([{_UP}])\.(?![ \t]?[A-Za-z]\.)")
 # R3: cyfry tuż przed/po tokenie NUMER/ADRES, kod pocztowy (+ miejscowość) po ADRES, litery doklejone do tokenu
@@ -80,66 +60,6 @@ def _morf_interps(word: str) -> list | None:
         return _morf.analyse(word)
     except Exception:
         return None
-
-
-def _sentence_start(text: str, start: int) -> bool:
-    before = text[:start].rstrip(" \t„\"(")
-    if not before or before[-1] in "\n!?:;•–-" or re.search(r"(?:^|\n)\s*\d+[.)]?$", before):
-        return True
-    if before[-1] == ".":
-        prev = re.search(r"([\w]+)\.$", before)
-        return not (prev and prev.group(1).lower() in _TITLES)
-    return False
-
-
-def _person_word(text: str, m: re.Match) -> bool:
-    """R1: słowo z wielkiej litery w środku zdania, nieznane jako zwykłe słowo albo znane jako imię/nazwisko."""
-    word, low = m.group(0), m.group(0).lower()
-    if _TITLE_BEFORE_RE.search(text[max(0, m.start() - 8):m.start()]):
-        return True  # „Pan Rogalik” — tytuł to dowód osoby niezależnie od słownika
-    before = text[max(0, m.start() - 80):m.start()]
-    if low in OSOBA_DENYLIST or low in WHITE_LISTS or low in _OFFICE_TERMS or _sentence_start(text, m.start()) \
-            or _DEFINED_RE.search(before) or _in_institution(before) or in_city_name(text, m.start(), m.end()):
-        return False
-    parts = [_morf_interps(w) for w in word.split("-")]
-    if any(p is None for p in parts):
-        return True
-    if any(i[2][1].lower() in _INSTITUTION_LEMMAS for i in parts[0]):
-        return False  # FIX1: samo słowo nazwy instytucji („Przychodnia”) wg lematu — nie prefiks (Codex F1: Kasprzak, Sądowski)
-    quals = [{q.split("_(")[0] for i in p for q in i[2][3]} for p in parts]
-    if len(parts) > 1 and any("nazwa_geograficzna" in q for q in quals):
-        return False  # „Kraków-Śródmieście”
-    if quals[0] & {"imię", "nazwisko"}:
-        return not ("nazwa_geograficzna" in quals[0] and _GEO_PREP_RE.search(before))
-    if all(i[2][2] == "ign" for i in parts[0]):  # nieznane: nazwisko albo szum OCR
-        return bool(_SURNAME_END_RE.search(low))
-    return False  # znane wyłącznie jako zwykłe słowo/miejsce → bez alarmu
-
-
-def _in_institution(before: str) -> bool:
-    line = before[before.rfind("\n") + 1:]
-    return any(_IN_INSTITUTION_RE.fullmatch(line, k.end()) for k in _INSTITUTION_RE.finditer(line))
-
-
-def _r1(text: str):
-    for m in _WORD_RE.finditer(text):
-        if _person_word(text, m):
-            yield m.start(), m.end(), "R1", "Możliwe imię lub nazwisko, którego silnik nie zakrył"
-
-
-_INFLECTIONS = "owie|ami|ach|ego|emu|owi|iem|ów|om|em|ej|ie|a|u|ą|ę|y|i|e"  # końcówki odmiany nazwisk/imion
-_INFLECTION_RE = re.compile(rf"(?:{_INFLECTIONS})$", re.IGNORECASE)  # Codex r4 F2: „RÓŻA” → „RÓŻ” jak „Róża” → „Róż”
-
-
-def _released(text: str, words: list[str]):
-    """[LYNX-OSOBA-PACK4] Kandydaci OSOBA odrzuceni przez silnik z braku dowodu — każde wystąpienie, także na początku zdania."""
-    for w in dict.fromkeys(words):
-        cut = _INFLECTION_RE.sub("", w)
-        stem = cut if len(cut) >= 3 else w  # „Maciolusa” → „Maciolus”, „Róża” → „Róż” (Codex F2: „Róży”); rdzeń ≥3 litery
-        # Codex F1: bez względu na wielkość liter — „MALINA” w nagłówku to ta sama niezakryta wartość
-        for m in re.finditer(rf"(?<![\w-]){re.escape(stem)}(?:{_INFLECTIONS})?(?![\w-])", text, re.IGNORECASE):
-            if not m.group(0).islower():  # [LYNX-OSOBA-HANDOFF] „odwołującego”, „kawa” małymi literami to zwykłe słowo; CAPS zostaje
-                yield m.start(), m.end(), "R1", "Możliwe nazwisko — silnik nie miał dowodu, że to osoba"
 
 
 def _r2(text: str):
@@ -191,7 +111,7 @@ def _r4(text: str):
 
 def _firm_ok(frag: str) -> bool:
     """R5: forma prawna = firma zawsze (Codex F1: „Centrum Projektowe MODRZEW sp. z o.o.”); bez niej wyłączone tylko
-    urzędy publiczne — szersza lista `_INSTITUTION_RE` („Centrum”, „Instytut”, „Fundusz”…) służy wyłącznie R1."""
+    urzędy publiczne („Centrum”, „Instytut”, „Fundusz” bywają firmami)."""
     if not re.search(rf"[{_UP}]", frag):
         return False
     return bool(re.search(_FORM + r"(?!\w)", frag)) or not _PUBLIC_RE.search(frag)
@@ -233,15 +153,14 @@ def _map_leaks(text: str, values: list[str]):
 _RED = ("HIGH", "MAP_LEAK")
 
 
-def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list | None = None,
-                     released_words: list[str] | None = None) -> list[dict]:
+def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list | None = None) -> list[dict]:
     """Ostrzeżenia dla finalnego tekstu: [{id, start, end, fragment, rule, level, reasons}], posortowane po pozycji.
     Fragmenty nachodzące na siebie → jedna pozycja (wszystkie powody); nic wewnątrz tokenów; allowlista (fragment, reguła) wycisza tylko żółte (S5)."""
     tokens = [m.span() for m in _TOKEN_RE.finditer(text)]
     masked = _TOKEN_RE.sub(lambda m: "#" * len(m.group(0)), text)
     allow = [(a, ANY_YELLOW) if isinstance(a, str) else tuple(a) for a in allowlist or []]
     hits = []
-    for src in (_patterns(masked), _map_leaks(masked, map_values or []), _r1(text), _released(text, released_words or []),
+    for src in (_patterns(masked), _map_leaks(masked, map_values or []), unknown_words(text, _morf_interps),
                 _r2(text), _r3(text), _r4(text), _r5(text)):
         for s, e, rule, reason in src:
             if s < e and not any(ts < e and s < te for ts, te in tokens) and not silenced(text[s:e], rule, allow):

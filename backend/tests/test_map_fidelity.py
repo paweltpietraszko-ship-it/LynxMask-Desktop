@@ -79,7 +79,8 @@ def test_rozne_kwoty_i_daty_w_dokumencie():
 
 # ── D2: tylko całe wyrazy ──────────────────────────────────────────────────────
 @pytest.mark.parametrize("text,frags,hidden,visible", [
-    ("Pozwany Nowak oraz Anna Nowakowska.", [("OSOBA", "Nowak")], [], ["Nowakowska"]),
+    # [LYNX-OSOBA-LAYOUT] „Anna Nowakowska” zakrywa teraz reguła imię + słowo (person_layout) — całym wyrazem, bez doklejania
+    ("Pozwany Nowak oraz Anna Nowakowska.", [("OSOBA", "Nowak")], ["Nowakowska"], []),
     ("Odwołanie do Sądu złożył Sąd Rejonowy? Nie, Sąd.", [("FIRMA", "Sąd")], [], ["Sądu"]),
     ("Pozew: Jan Nowak-Kowalski, świadek Jan Nowak.", [("OSOBA", "Jan Nowak")], ["Nowak"], []),   # łącznik = granica:
     ("Komentarz: M. Pyziak-Szafnicka (red.).", [("OSOBA", "Pyziak")], ["Pyziak"], []),              # nadmaskowanie

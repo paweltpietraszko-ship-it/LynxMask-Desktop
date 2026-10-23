@@ -1,4 +1,5 @@
-# LYNX-OSOBA-HANDOFF: silnik przekazuje Guardowi (released) tylko kandydatów, którzy mogą być nazwiskiem.
+# LYNX-OSOBA-HANDOFF: silnik zapisuje w rejestrze (released) tylko kandydatów, którzy mogą być nazwiskiem.
+# [LYNX-OSOBA-LAYOUT] Guard nie czyta już rejestru (pyta o słowa nieopisane — guard_unknown); testy rejestru zostają.
 # Uruchamianie (cwd = backend): python -m pytest tests/test_osoba_handoff.py -q -p no:cacheprovider --rootdir .
 import os
 import sys
@@ -60,15 +61,9 @@ def test_nie_nazwa_nie_idzie_do_guarda(word):
     assert _released_after(f"Wczoraj {word} wpłynęło.", word) == (False, [])
 
 
-def test_male_litery_bez_pytania_caps_z_pytaniem():
-    text = "Kawa zlecił paczkę. Potem kawa stygnie. W notatce KAWA."
-    assert [w["fragment"] for w in collect_warnings(text, released_words=["Kawa"])] == ["Kawa", "KAWA"]
-
-
-def test_brak_pytan_o_koncowki_odmiany():
-    # reproduktor błędu: pusty/nie-nazwa w released() dopasowywał same końcówki („i”, „a”)
+def test_guard_nie_czyta_rejestru():  # [LYNX-OSOBA-LAYOUT] słowo ze zwykłym znaczeniem — bez pytania mimo rejestru
     onp.start_run()
-    t = "Wczoraj …… wpłynęło i a e."
-    s = t.index("……")
-    onp.single_osoba_evidence(t, s, s + 2)
-    assert collect_warnings(t, released_words=onp.released()) == []
+    t = "Dokument przekazał wczoraj Kawa. W notatce KAWA."
+    s = t.index("Kawa")
+    onp.single_osoba_evidence(t, s, s + 4)
+    assert collect_warnings(t) == []

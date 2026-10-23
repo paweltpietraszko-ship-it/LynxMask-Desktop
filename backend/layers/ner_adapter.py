@@ -39,6 +39,7 @@ import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
 from osoba_not_person import DICTIONARY_PATH_DENYLIST as _OSOBA_DENYLIST  # [LYNX-OSOBA-NOT-PERSON] listy w jednym miejscu
 from osoba_not_person import inside_street_name, person_words_of, single_osoba_evidence  # [LYNX-OSOBA-PACK4]
+from person_layout import apply_person_layout  # [LYNX-OSOBA-LAYOUT]
 from pipeline_core import PipelineState, TokenAllocator
 
 # ── Słownik form fleksyjnych nazwisk (port: LookupTables.surnamesForms) ─────
@@ -367,6 +368,7 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
             state.text = _sub_whole(state.text, _var_text, _tok_id)
         state.text = _sub_whole(state.text, _target, _tok_id)
     state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
+    state.text = apply_person_layout(state.text, state.allocator, _sub_whole)  # [LYNX-OSOBA-LAYOUT] osoba z układu pisma
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 
