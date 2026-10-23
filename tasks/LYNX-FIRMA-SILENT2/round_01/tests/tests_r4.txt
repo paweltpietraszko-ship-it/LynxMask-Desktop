@@ -1,0 +1,73 @@
+LYNX-FIRMA-SILENT2 — wąski recheck r4, 23.10.2026
+WYNIK: FAIL — F2 [P2] nadal otwarte w tej samej klasie C.
+Exact audited SHA: e08ff5126ef9d528bd544b46c3e9e08587881e51.
+Poprzedni SHA: b9315c5890d5838eab38ad9afbc8f0af8f8d0e71; raport r3 355718c257e43901b7efc9c04765cd249fadf902.
+Diff: b9315c5..e08ff51 — _absorb_inside_core i jeden test.
+DELIVERY r3: 8427872.
+Adresat: CC. F1 i pomiary r3 pozostają zamkniętymi dowodami.
+
+CO PRZESZŁO
+- Retained repro_r2: 6/6 pełnych pionów zgodnych; F1 nie wraca.
+- Retained repro_r3: 4/4 pełnych pionów zgodnych, w tym dotychczasowy przykład F2 z osobną krótszą firmą w pełnym zapisie.
+- test_firma_silent2: 14 PASS.
+- test_firma_context: 14 PASS.
+- test_silent_pack1: 30 PASS.
+- test_map_fidelity: 29 PASS.
+Łącznie 87 testów PASS, osobne procesy, exact-SHA git archive + własne izolowane profile/stan w Temp.
+Bez serwera 8765/profilu OWNERA, zmian produktu, merge i subagentów.
+
+F2 — NADAL OTWARTE, nie nowe wymaganie
+TRACE: brief C: krótsza encja wewnątrz wystąpienia dłuższej znanej nazwy nie może blokować dłuższej — wygrywa dłuższa.
+Znana pełna firma ma być zakryta także przy powtórzeniu rdzenia; dokument może zawierać odrębną krótszą firmę.
+Nie dodaję nowego typu danych ani wymogu odgadywania nieznanej firmy.
+
+OWNERSHIP / POWÓD WARIANTU
+Poprawka nadal sprawdza WSZYSTKIE wystąpienia krótszej wartości w całym dokumencie.
+Obecnie uznaje za pokryte wystąpienie w innym dłuższym znanym zapisie (np. „Ulotny sp. z o.o.”), ale nie samodzielne powtórzenie znanej krótszej nazwy „Ulotny”.
+Po takim zwykłym powtórzeniu _absorb_inside_core znów nie usuwa krótszego kandydata; wcześniejsza podmiana w adapterze rozcina dłuższą nazwę.
+To konkretna niejednoznaczność widoczna w zmienionym warunku, dlatego sprawdzono minimalnego sąsiada retained repro: dopisano jedno zdanie o już znanym podwykonawcy.
+
+REPRO, rzeczywisty pseudonymize_document na e08ff51
+Wejście syntetyczne:
+Zamawiający: Ulotny Rys sp. z o.o.
+W dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.
+Podwykonawca: Ulotny sp. z o.o.
+Nazwę Ulotny stosuje się jako skrót podwykonawcy.
+
+Wynik:
+Zamawiający: FIRMA_001.
+W dalszej części pisma nazwę FIRMA_003 Rys stosuje się jako skrót zamawiającego.
+Podwykonawca: FIRMA_002.
+Nazwę FIRMA_003 stosuje się jako skrót podwykonawcy.
+
+Mapa:
+FIRMA_001 = Ulotny Rys sp. z o.o
+FIRMA_002 = Ulotny sp. z o.o
+FIRMA_003 = Ulotny
+Guard: [].
+
+Wystarczy dopisać czwarty wiersz do naprawionego przykładu, aby ponownie pojawiło się jawne Rys przy powtórzeniu dłuższej firmy.
+Obie firmy zostały wcześniej rozpoznane w tym samym dokumencie; rozróżniono role i opisano skróty.
+Wariant kolejności: krótsza firma pierwsza, potem dłuższa i oba powtórzenia — ten sam błąd.
+Kontrola bez powtórzenia krótszej nazwy — poprawna (naprawa CC rzeczywiście działa dla retained przykładu).
+repro_r4.py: 3 piony, 1 kontrola zgodna / 2 warianty odtwarzają F2.
+Nie oszacowano częstości; nie twierdzę, że każda para firm o wspólnym początku zawodzi ani że ujawniono nazwisko osoby.
+
+ZAMKNIĘTA KLASA DO RECHECKU
+Zachować wcześniejsze A/B/C i osobną krótszą firmę.
+Dla C objąć oba znane podmioty powtarzane bez formy prawnej, w obu sprawdzonych kolejnościach.
+Pełna dłuższa wzmianka ma być chroniona bez rozcinania, a samodzielne użycie krótszej nazwy nadal ma pozostać odrębne od dłuższej firmy.
+Nie wymagam globalnego przepięcia wszystkich krótszych nazw na dłuższą; to złamałoby rozróżnienie podmiotów.
+Nie narzucam algorytmu ani nowego ownera — istniejący TASK_SCOPE obejmuje firma_context, ner_layer i ner_adapter.
+
+DOWODY POMIARÓW / GRANICE
+Wyniki r3 na b9315c5 pozostają ważnymi historycznymi pomiarami: GOLD ciche FIRMA 20/52→0/1, not_pii bez wzrostu, owner identyczny.
+Nie przedstawiam ich jako ponowionego pomiaru exact e08ff51.
+Nie uruchamiano ponownie GOLD/owner/OCR ani całej suity przy mikrofixie. STOP po odtworzonym F2.
+87 testów i retained reproduktory wykonano na bieżącym exact SHA; nie jest to PASS całego Tasku.
+RATIO: zgoda Pawła dla tego Tasku zachowana, nie jest podstawą FAIL.
+W repo wyłącznie syntetyczne reproduktory i wyniki; raportów wcześniejszych nie modyfikowano.
+
+NASTĘPNY KROK
+CC: domknąć tę samą klasę F2 z uwzględnieniem samodzielnego powtórzenia krótszej znanej firmy.
+Następny recheck: diff od e08ff51, retained r2/r3/r4 i test ownera. Bez mechanicznego ponawiania pełnych pomiarów.
