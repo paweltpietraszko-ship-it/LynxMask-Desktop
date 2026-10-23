@@ -135,3 +135,6 @@ każdy nowy układ (r3, r4) ją obchodził.
   test_osoba_not_person 25, test_names_dict_clean 22; test_layers 2 failed/119 i test_audyt_2026_10 1 failed/122/2 xfailed — jak main.
 - Pomiar (zmiana kolejności w adapterze dotyczy wszystkich encji — dlatego ponowiony): GOLD ciche dev 0 / test 1, zbędne 69/152,
   pytania 0,53/0,53 (= r1–r3); `testset_owner` jak main poza testy 3,61 → 3,58 pytań/dok.
+
+## Zgoda na TOTAL_LINES
+Paweł 23.10, na pytanie CC o TOTAL_LINES 203 > 150 dla LYNX-FIRMA-SILENT2 (r4): „Tak”.
