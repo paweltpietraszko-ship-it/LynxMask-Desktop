@@ -48,6 +48,27 @@ def test_reszta_za_tokenem_imienia(text, first, rest):
     assert rest not in out, out
 
 
+@pytest.mark.parametrize("text,first,rest,hidden", [
+    ("Pytania Pana Senatora Józefa \nZająca oraz innych.", "Józefa", "Zająca", True),    # złamanie wiersza PDF
+    ("Grupa Dominik \nSkiba, ul. Polna 4", "Dominik", "Skiba", True),
+    ("Sporządził Jan\nTermin wykonania: jutro", "Jan", "Termin", False),                   # nowy wiersz, nie nazwisko
+])
+def test_nazwisko_w_nastepnym_wierszu(text, first, rest, hidden):
+    out, _ = _layout(text, [first])
+    assert (rest not in out) == hidden, out
+
+
+@pytest.mark.parametrize("text,word,hidden", [
+    ("Wykonawca E-TECH S.C., P.Kapusta, ul. Polna 1", "Kapusta", True),   # inicjał przyklejony
+    ("Podpisał J. Nowak w imieniu spółki.", "Nowak", True),
+    ("Adres: ul. A. Mickiewicza 5, Kraków", "Mickiewicza", False),          # patron ulicy
+    ("Rozdział I. Wstęp do umowy.", "Wstęp", False),
+])
+def test_inicjal_i_nazwisko(text, word, hidden):
+    out, _ = _layout(text)
+    assert (word not in out) == hidden, out
+
+
 @pytest.mark.parametrize("text,value,word", [
     ("Zamawiający: FIRMA_001 GmbH, Berlin.", "Alfa", "GmbH"),         # nieznane Morfeuszowi — zostaje (pyta Guard)
     ("Wezwanie dla OSOBA_001 Sąd Rejonowy w Opolu.", "Jan Nowak", "Sąd"),

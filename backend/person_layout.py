@@ -21,7 +21,8 @@ _NEXT_RE = re.compile(r"(?i)[ \t]*(?:\d{1,2}[.)][ \t]*)?(?:pesel|zamieszka|data 
 _SAME_LINE_RE = re.compile(r"(?i:imi[eę] i nazwisko|nabywca|sprzedawca|wnioskodawca)[ \t]*:[ \t]*(" + _W + r"(?:[ \t]+" + _W + r"){1,2})"
                            r"[ \t]*$", re.MULTILINE)
 _PAIR_RE = re.compile(r"(?<![\w.])(" + _W + r")(?=[ \t]+(" + _W + r")(?![\w-]))")  # pary zachodzące („Wczoraj Lucyna Osoba”)
-_AFTER_TOKEN_RE = re.compile(r"(OSOBA_\d+)[ \t]+(" + _W + r")(?![\w-])")
+_AFTER_TOKEN_RE = re.compile(r"(OSOBA_\d+)([ \t]*\n[ \t]*|[ \t]+)(" + _W + r")(?![\w-])")  # także przez złamanie wiersza PDF
+_INITIAL_RE = re.compile(r"(?<![\w.])[A-ZĄĆĘŁŃÓŚŹŻ]\.[ \t]?([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{2,})(?![\w-])")  # „P.Kapusta”, „J. Nowak”
 _TITLED_RE = re.compile(r"(?:^|[\s(])(?:[Pp]an(?:a|u|em|ie|i|ią|owie)?|P\.|[Dd]r\.?|mgr|mec\.)[ \t]+"
                         r"([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{2,}(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{2,})?)(?![\w-])")
 # nazwa funkcji (rdzeń, także w odmianie: minist-er/-ra/-rze, radn-y/-ej, prezyden-t/-cie)
@@ -81,15 +82,27 @@ def _after_token(text: str, values: dict) -> list:
     from osoba_not_person import first_names
     names, out = first_names(), []
     for m in _AFTER_TOKEN_RE.finditer(text):
-        w = m.group(2)
+        w = m.group(3)
         if not _ok([w]):
             continue
         surname = any("nazwisko" in q for _l, _t, q in _readings(w))
         only_first = values.get(m.group(1), "").strip().lower() in names
+        if "\n" in m.group(2):  # przez złamanie wiersza tylko nazwisko za samym imieniem („OSOBA_010 ⏎ Zająca”), nie etykieta
+            if only_first and surname and ":" not in text[m.end():].split("\n", 1)[0]:
+                out.append(w)
+            continue
         closes = re.match(r"[ \t]*(?:$|\n|[,.;:)])", text[m.end():m.end() + 3])
         if surname or (only_first and closes):
             out.append(w)
     return out
+
+
+def _initial_surname(text: str) -> list:
+    """Inicjał + nazwisko wg Morfeusza („P.Kapusta”, „J. Nowak”) — poza ulicą („ul. A. Mickiewicza”) i funkcją."""
+    from osoba_not_person import inside_street_name
+    return [m.group(1) for m in _INITIAL_RE.finditer(text)
+            if _ok([m.group(1)]) and not inside_street_name(text, m.start())
+            and any("nazwisko" in q for _l, _t, q in _readings(m.group(1)))]
 
 
 def _titled(text: str) -> list:
@@ -107,7 +120,7 @@ def apply_person_layout(text: str, allocator, sub_whole) -> str:
     """Zakrywa osoby z reguł 1–4 (każde wystąpienie wartości, jeden token na wartość)."""
     for p in dict.fromkeys(_layout_lines(text) + _name_pairs(text)):
         text = sub_whole(text, p, allocator.assign("OSOBA", p))
-    for w in dict.fromkeys(_after_token(text, allocator.reverse_map)):
+    for w in dict.fromkeys(_after_token(text, allocator.reverse_map) + _initial_surname(text)):
         text = sub_whole(text, w, allocator.assign("OSOBA", w))
     for w in _titled(text):
         text = sub_whole(text, w, allocator.assign("OSOBA", w))
