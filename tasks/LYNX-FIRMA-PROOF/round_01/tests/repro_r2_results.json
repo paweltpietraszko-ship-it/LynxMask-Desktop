@@ -1,0 +1,188 @@
+{
+  "base_sha": "948c3bb",
+  "code_sha": "bff9b8ab7cf685096898b1a9ee024a17d2c5e88e",
+  "base": [
+    {
+      "case": "birth_child_person",
+      "input": "Daty urodzenia dzieci:\nJan Kowalski, 05.01.2024",
+      "target": "05.01.2024",
+      "output": "Daty urodzenia dzieci:\nOSOBA_001, NUMER_001",
+      "target_visible": false,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "NUMER_001": "05.01.2024",
+        "OSOBA_001": "Jan Kowalski"
+      }
+    },
+    {
+      "case": "birth_child_place",
+      "input": "Daty i miejsca urodzenia dzieci:\nWarszawa, 05.01.2024",
+      "target": "05.01.2024",
+      "output": "Daty i miejsca urodzenia dzieci:\nWarszawa, NUMER_001",
+      "target_visible": false,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "NUMER_001": "05.01.2024"
+      }
+    },
+    {
+      "case": "birth_older_control",
+      "input": "Daty urodzenia dzieci:\nJan Kowalski, 05.01.2020",
+      "target": "05.01.2020",
+      "output": "Daty urodzenia dzieci:\nOSOBA_001, NUMER_001",
+      "target_visible": false,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "NUMER_001": "05.01.2020",
+        "OSOBA_001": "Jan Kowalski"
+      }
+    },
+    {
+      "case": "letter_header_control",
+      "input": "Warszawa, 05.01.2024\nWniosek o udostępnienie informacji.",
+      "target": "05.01.2024",
+      "output": "Warszawa, NUMER_001\nWniosek o udostępnienie informacji.",
+      "target_visible": false,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "NUMER_001": "05.01.2024"
+      }
+    },
+    {
+      "case": "individual_decision",
+      "input": "Doręczono decyzję nr AB12 w indywidualnej sprawie dziecka.",
+      "target": "AB12",
+      "output": "Doręczono decyzję nr AB12 w indywidualnej sprawie dziecka.",
+      "target_visible": true,
+      "target_warned": true,
+      "warnings": [
+        {
+          "fragment": "AB12",
+          "rules": [
+            "R4"
+          ]
+        }
+      ],
+      "map": {}
+    },
+    {
+      "case": "individual_decision_nominative",
+      "input": "Decyzja nr AB12 dotyczy małoletniego Jana Kowalskiego.",
+      "target": "AB12",
+      "output": "Decyzja nr AB12 dotyczy małoletniego OSOBA_001.",
+      "target_visible": true,
+      "target_warned": true,
+      "warnings": [
+        {
+          "fragment": "AB12",
+          "rules": [
+            "R4"
+          ]
+        }
+      ],
+      "map": {
+        "OSOBA_001": "Jana Kowalskiego"
+      }
+    },
+    {
+      "case": "structural_control",
+      "input": "Załącznik nr 12 zawiera wykaz dokumentów.",
+      "target": "12",
+      "output": "Załącznik nr 12 zawiera wykaz dokumentów.",
+      "target_visible": true,
+      "target_warned": true,
+      "warnings": [
+        {
+          "fragment": "12",
+          "rules": [
+            "R4"
+          ]
+        }
+      ],
+      "map": {}
+    }
+  ],
+  "delivery": [
+    {
+      "case": "birth_child_person",
+      "input": "Daty urodzenia dzieci:\nJan Kowalski, 05.01.2024",
+      "target": "05.01.2024",
+      "output": "Daty urodzenia dzieci:\nOSOBA_001, 05.01.2024",
+      "target_visible": true,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "OSOBA_001": "Jan Kowalski"
+      }
+    },
+    {
+      "case": "birth_child_place",
+      "input": "Daty i miejsca urodzenia dzieci:\nWarszawa, 05.01.2024",
+      "target": "05.01.2024",
+      "output": "Daty i miejsca urodzenia dzieci:\nWarszawa, 05.01.2024",
+      "target_visible": true,
+      "target_warned": false,
+      "warnings": [],
+      "map": {}
+    },
+    {
+      "case": "birth_older_control",
+      "input": "Daty urodzenia dzieci:\nJan Kowalski, 05.01.2020",
+      "target": "05.01.2020",
+      "output": "Daty urodzenia dzieci:\nOSOBA_001, NUMER_001",
+      "target_visible": false,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "NUMER_001": "05.01.2020",
+        "OSOBA_001": "Jan Kowalski"
+      }
+    },
+    {
+      "case": "letter_header_control",
+      "input": "Warszawa, 05.01.2024\nWniosek o udostępnienie informacji.",
+      "target": "05.01.2024",
+      "output": "Warszawa, 05.01.2024\nWniosek o udostępnienie informacji.",
+      "target_visible": true,
+      "target_warned": false,
+      "warnings": [],
+      "map": {}
+    },
+    {
+      "case": "individual_decision",
+      "input": "Doręczono decyzję nr AB12 w indywidualnej sprawie dziecka.",
+      "target": "AB12",
+      "output": "Doręczono decyzję nr AB12 w indywidualnej sprawie dziecka.",
+      "target_visible": true,
+      "target_warned": false,
+      "warnings": [],
+      "map": {}
+    },
+    {
+      "case": "individual_decision_nominative",
+      "input": "Decyzja nr AB12 dotyczy małoletniego Jana Kowalskiego.",
+      "target": "AB12",
+      "output": "Decyzja nr AB12 dotyczy małoletniego OSOBA_001.",
+      "target_visible": true,
+      "target_warned": false,
+      "warnings": [],
+      "map": {
+        "OSOBA_001": "Jana Kowalskiego"
+      }
+    },
+    {
+      "case": "structural_control",
+      "input": "Załącznik nr 12 zawiera wykaz dokumentów.",
+      "target": "12",
+      "output": "Załącznik nr 12 zawiera wykaz dokumentów.",
+      "target_visible": true,
+      "target_warned": false,
+      "warnings": [],
+      "map": {}
+    }
+  ]
+}
