@@ -54,9 +54,9 @@ def test_limit(ga, monkeypatch):
 
 def test_wyciszenie_para_fragment_regula():
     from guard_residue import collect_warnings
-    text = "Wczoraj Kawa zlecił wysłanie paczki."
-    assert collect_warnings(text, allowlist=[("KAWA", "R1")]) == []
-    assert collect_warnings(text, allowlist=[("Kawa", "R5")]) != []
+    text = "Wczoraj Śludkowski zlecił wysłanie paczki."  # [LYNX-OSOBA-LAYOUT] słowo nieopisane (dawniej „Kawa”)
+    assert collect_warnings(text, allowlist=[("ŚLUDKOWSKI", "R1")]) == []
+    assert collect_warnings(text, allowlist=[("Śludkowski", "R5")]) != []
 
 
 def test_wiele_regul_i_cofnij(ga):

@@ -1,0 +1,60 @@
+LYNX-OSOBA-LAYOUT — wąski recheck r2, 23.10.2026
+WYNIK: FAIL — F2 pozostaje otwarte (P2). F1 SAFETY_PRIVACY zamknięte na badanym SHA.
+Adresat: CC. Bez zmian produktu / merge.
+
+Exact audited SHA: e1cb34dbc9f62b81edfc91857437339535ef74b9
+Poprzedni audyt: 92168210ba31f813f4ea33c735ad34d36115e3df, raport 52141edae18dc840eddfb001c9b1a3f105f823ad.
+Pierwotna baza Tasku: b50655a8d3991add5313714f59f89bb3211e0afa.
+Dostawa dokumentów r2: 7f4e9e0.
+Zakres: zmienione guard_residue._unknown i person_layout._mask_spans oraz ich testy; retained repro_r1 + minimalne warianty tej samej klasy F2.
+Izolowane exact-SHA git archive backend + audyt, własne profile/stan Temp; brak użycia serwera 8765/profilu OWNERA.
+Instrukcje i spec nie zmieniły się względem poprzedniego audytu.
+
+F1 — ZAMKNIĘTE
+Zachowany niezależny repro_r1.py uruchomiony bez zmian na e1cb34d:
+- F1a Ladzinski: nadal jawne, ale ostrzeżenie R1 przywrócone.
+- F1b Cieslikowski: nadal jawne, ale ostrzeżenie R1 przywrócone.
+- F1c Ladziński: zakryte OSOBA_001.
+Rzeczywisty silnik + pipeline + Guard, nie stub. Zmiana odróżnia wyłącznie osobowy wariant z ogonkiem od zwykłego słowa.
+Nie oznacza pełnego dowodu dla każdego możliwego zniekształcenia OCR.
+
+F2 — OTWARTE: przeniesienie kotwicy na homonim w innym znaczeniu.
+Oryginalny repro F2a poprawiony w treści: „Pani OSOBA_001. Termin wykonania upływa jutro.”
+Drugie Termin jest jawne i dostaje MAP_LEAK. Jest to odrębna, jawnie opisana przez CC konsekwencja istniejącego Guarda; w tym rechecku nie żądam przebudowy MAP_LEAK.
+F2b Kawa: drugie pospolite użycie pozostaje jawne, jak wcześniej.
+
+Powód pozostawienia F2:
+TRACE: ta sama jawna decyzja OWNERA z r1: „Termin wykonania” pozostaje PASS; homonimy o innym znaczeniu wymagają decyzji per wystąpienie, bez globalnej propagacji kotwicy.
+Źródło decyzji: tasks/LYNX-OSOBA-REDESIGN/brief.md na 83e605b0bf8b585a0d2f7c4414f85e21bdba3417, C3 / kontrpróba OWNERA. Nie przenoszę pozostałych wymagań tego wstrzymanego Tasku.
+Nowa heurystyka CC „wielka litera w środku zdania = nazwa własna” nie rozstrzyga znaczenia cytowanego nagłówka. DELIVERY opisuje implementację, ale nie odwołuje wcześniejszego rozstrzygnięcia OWNERA.
+OWNERSHIP: person_layout._mask_spans dodaje wszystkie wystąpienia pospolitego słowa poza _sentence_initial, nie weryfikując odniesienia do tej samej osoby.
+REPRO na exact SHA, syntetyk:
+„Pismo przekazała Pani Termin. W formularzu widnieje nagłówek „Termin wykonania”.”
+Wynik realnego pipeline:
+„Pismo przekazała Pani OSOBA_001. W formularzu widnieje nagłówek „OSOBA_001 wykonania”.”
+guard_warnings=[].
+Także bezpośredni apply_person_layout daje identycznie błędne zakrycie nagłówka, więc ścieżka właściciela została potwierdzona niezależnie od wcześniejszego silnika.
+To wariant tej samej klasy zgłoszonej w r1, nie nowy wymóg ani nowy projekt.
+
+Dodatkowe warianty tej samej klasy w repro_r2.py:
+- „Lucyna Osoba ... nagłówek „Osoba do kontaktu”” — realny pipeline zakrywa zwykłe Osoba w cytacie.
+- „J. Kapusta ... „Kapusta kiszona”” — realny pipeline zakrywa zwykłe Kapusta w cytacie.
+Te obserwacje są pomocnicze; nie przypisuję całej ścieżki inicjałów nowemu helperowi bez oddzielnego trace wcześniejszych ownerów.
+Kontrola: początek zdania „Termin wykonania...” zachowany.
+Kontrola osobowa: na bezpośrednim helperze druga Malina w środku zdania zakryta; w realnym pipeline zostaje jawna z MAP_LEAK. Nie zgłaszam nowego wycieku bez ostrzeżenia ani nie utożsamiam testu helpera z wynikiem całego silnika.
+
+WYKONANE
+- retained repro_r1.py: 5 scenariuszy rzeczywistego pipeline + analizy Morfeusza.
+- niezależny repro_r2.py: 5 scenariuszy, każdy helper + rzeczywisty pipeline.
+- test_osoba_layout.py: 49 PASS.
+- test_guard_residue.py: 50 PASS.
+Razem 99 testów ownerów PASS. Poprzednich 150 nie uruchamiano mechanicznie ponownie.
+Nie wykonano szerokiej regresji ani ponownych modeli/OCR na korpusie.
+
+NOT_CHECKED
+Pomiary GOLD / testset_owner / ślepe 600 / 255 pism nie zostały niezależnie odtworzone w r2. Dane DELIVERY pozostają dowodem CC.
+STOP po potwierdzeniu, że F2 nadal występuje; zgodna suma korpusu nie obala konkretnego błędnego zakrycia.
+PASS całej dostawy / pełnej macierzy nie wydano.
+
+Następny krok: CC poprawia F2 w istniejącym ownerze, bez rozciągania kotwicy na jawnie nieosobowy kontekst. Zachować oba reproduktory.
+Po poprawce: wąski diff od e1cb34d, retained repro + owner tests; pomiary wynikowe po usunięciu blokera.

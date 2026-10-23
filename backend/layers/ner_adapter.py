@@ -39,6 +39,7 @@ import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
 from osoba_not_person import DICTIONARY_PATH_DENYLIST as _OSOBA_DENYLIST  # [LYNX-OSOBA-NOT-PERSON] listy w jednym miejscu
 from osoba_not_person import inside_street_name, person_words_of, single_osoba_evidence  # [LYNX-OSOBA-PACK4]
+from person_layout import apply_person_layout  # [LYNX-OSOBA-LAYOUT]
 from pipeline_core import PipelineState, TokenAllocator
 
 # ── Słownik form fleksyjnych nazwisk (port: LookupTables.surnamesForms) ─────
@@ -245,7 +246,7 @@ def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
             return allocator.assign("OSOBA", w)
         return repl
     text = _STANDALONE_RE.sub(standalone(_SURNAMES_FORMS_FLAT, 4), text)
-    return _STANDALONE_RE.sub(standalone(_FIRST_NAMES, 3), text)
+    return apply_person_layout(_STANDALONE_RE.sub(standalone(_FIRST_NAMES, 3), text), allocator, _sub_whole)  # [LYNX-OSOBA-LAYOUT]
 
 
 def extract_ner_results(state: PipelineState, anon_map: dict) -> None:

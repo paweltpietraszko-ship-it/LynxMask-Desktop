@@ -1,0 +1,77 @@
+LYNX-OSOBA-LAYOUT — zakończenie pomiarów r4, 23.10.2026
+WYNIK: PASS badanego zakresu Tasku, z komentarzem o jednej skorygowanej metryce FIRMA.
+Exact audited SHA: e1cb34dbc9f62b81edfc91857437339535ef74b9.
+Baza porównania: b50655a8d3991add5313714f59f89bb3211e0afa.
+Poprzednie dowody: r1/r2; kwalifikacja F2 skorygowana w r3 (925fea6e43dabc33792158a5514ec14ec29cfc7b).
+F1 SAFETY_PRIVACY zamknięte. F2 pozostaje uwagą NIEBLOKUJĄCĄ. Nie otwieram ich ponownie.
+
+CO WYKONANO
+Samodzielnie ponowiono rzeczywisty silnik → pipeline → Guard dla bazy i dostawy, na izolowanych exact-SHA kopiach i pustych profilach.
+Na KAŻDĄ wersję: GOLD 120 + owner clean/stress 600 + blind clean/stress 600 + cache 255 pism = 1575 dokumentów.
+Łącznie 3150 przeliczeń dokumentów. Bez błędów silnika, brakujących/pustych wpisów cache.
+Nie ponawiano OCR/ekstrakcji ani generowania danych, nie dotykano serwera 8765/profilu OWNERA.
+255 pism: te same jobs_realpub.json (178) i jobs_pub.json (77), te same zachowane teksty z r1/text_cache.
+Blind: gotowy zestaw CC blind/ts ze wskazanego generatora/ziarna; nie generowano nowego niezależnego holdoutu.
+Do repo trafił wyłącznie skrypt audytu i agregaty. Treści rzeczywistych dokumentów, nazwy osób/mapy i wyniki per dokument pozostały lokalne.
+
+WYNIKI: BAZA → DOSTAWA
+GOLD dev40 / test80:
+- pytania/dokument 1,23 / 0,97 → 0,90 / 0,86 (liczby całkowite: 49/78 → 36/69).
+- ciche pozycje OSOBA 1 / 0 → 0 / 0.
+- OSOBA z ostrzeżeniem 9 / 13 → 0 / 1.
+- zbędne zakrycia not_pii 69/440 / 152/880 → 69/440 / 152/880.
+- FIRMA cicho: 19 / 52 → 20 / 52 (korekta względem DELIVERY; wyjaśnienie poniżej).
+Owner clean300 / stress300:
+- clean: brak jawnych wartości z klucza na obu wersjach.
+- stress OSOBA: 21 cicho +34 z pytaniem → 8 cicho +1 z pytaniem /412 wartości w kluczu.
+- wszystkie pytania stress: 45 → 6.
+- adresy stress: 2 ciche na obu wersjach; brak pogorszenia według tej miarki.
+Blind clean300 / stress300:
+- clean: brak jawnych wartości z klucza na obu wersjach.
+- stress OSOBA: 17 cicho +39 z pytaniem → 3 cicho +1 z pytaniem /410 wartości w kluczu.
+- wszystkie pytania stress: 55 → 5.
+- adresy stress: 2 ciche na obu wersjach.
+255 pism:
+- R1: 902 → 542.
+- nowe wartości OSOBA w reverse_map, sumowane per dokument: 28; utracone: 0.
+- To porównanie wartości mapy jak w osoba_diff.py, NIE potwierdzenie, że wszystkie 28 dodatków to prawdziwe osoby albo poprawne spany. Opisane przez CC nadmaskowania pozostają ograniczeniem.
+
+JEDNA KOREKTA DANYCH DELIVERY — FIRMA
+W GOLD dev baza daje 19, a nie 20 cichych pozycji FIRMA. Dostawa daje 20.
+Sprawdzono wyłącznie odpowiadającą temu zmianę w dev/doc_020, bez otwierania treści GOLD test:
+syntetyczna firma „Ulotny Rys”, gold rodo=false.
+W obu wersjach fragment wynikowy:
+„W dalszej części pisma nazwę FIRMA_002 Rys stosuje się jako skrót podmiotu wskazanego w nagłówku.”
+Baza ostrzega o Rys przez R1; dostawa usuwa to pytanie. R5 dotyczące innej pozycji pozostaje.
+To rzeczywista utrata pytania o fragment firmy, nie artefakt mapowania. Brak nowego odsłonięcia przez silnik — tekst był jawny wcześniej.
+Nie przedstawiam więc firm jako całkowicie niezmienionych.
+Zmiana wynika z jawnego nowego modelu R1 (znane pospolite słowo nie jest pytaniem); ta pozycja nie zawiera danych osobowych według zamrożonego gold.
+Nie tworzę nowego blokera OSOBA ani nie przywracam starego R1. Temat cichych fragmentów FIRMA pozostaje odrębny, jak wskazano już w briefie/DELIVERY.
+CC powinien skorygować opis miary FIRMA na 19/52 → 20/52 i uwzględnić przypadek w dalszym zadaniu firm. Jest to uwaga nieblokująca tę poprawkę.
+
+JAK ROZUMIEĆ POTWIERDZENIE POMIARÓW
+To niezależne uruchomienie backendów i zliczenie wyników w osobnym runnerze audytora.
+Definicje miar CC zachowano celowo, aby sprawdzić deklarowane liczby:
+- GOLD: funkcje char_map/evaluate z human_view.py, z odnotowanym SHA256 źródła.
+- owner/blind: _kind/_flat/leaks z run_testset.py; jawne literały i substringowa kwalifikacja ostrzeżeń, jak w dostawie.
+Nie jest to niezależna ocena semantyczna każdej pozycji. GOLD evaluator ma heurystyczne dopasowanie i awaryjne difflib; zgodność agregatów nie dowodzi dokładności każdego spanu.
+GOLD test czytany przez kod pomiarowy, człowiek/audytor oglądał tylko agregaty; nie strojono reguł, nie edytowano produktu ani zbiorów.
+Zbiory owner były używane przez CC w projektowaniu. Blind ma ten sam generator, a GOLD test był wcześniej mierzony wielokrotnie. Nie nazywam ich nowym, nietkniętym holdoutem.
+Miarka owner/blind mówi, co musi zniknąć; nie mierzy nadmaskowania. Pozostałe 8/3 ciche pozostałości osób są ograniczeniem wyniku, nie gwarancją pełnej ochrony.
+Nie wnioskuję o braku wszystkich nowych cichych przejść per osoba jedynie z poprawy sum.
+
+TESTY / REGRESJA
+Zachowano dowody r2: 99 testów ownerów PASS i retained reproduktory F1/F2, realny pion. Nie powtarzano ich ani pełnej suity, bo od r2 kod nie zmienił się.
+Szersze testy bazowe/gałęziowe w DELIVERY to dowód pomocniczy CC, nie ponowiony tu niezależny wynik.
+PASS dotyczy wymienionego exact SHA oraz przetestowanych warstw i zadeklarowanych metryk, nie całej skuteczności programu, wszystkich PII/OCR, GUI czy przyszłych zmian.
+
+POWTARZALNOŚĆ / ZAŁĄCZNIKI
+measurement_r4.py <backend_exact_SHA> <nowy_katalog_wyników>, interpreter repo .venv.
+Wymaga wskazanych lokalnych korpusów i źródeł metryk; ich SHA256 zapisano w measurement_summary_r4.json.
+Każdy backend uruchomiony w osobnym procesie; własne katalogi stanu i wyników w Temp.
+measurement_summary_r4.json zawiera wyłącznie agregaty. private_person_values.json pozostaje lokalny i NIE jest publikowany.
+
+NASTĘPNY KROK
+Nie ma potrzeby zlecania CC ponowienia tych samych pomiarów: zostały wykonane.
+CC: odebrać PASS badanego zakresu i skorygować jedną miarę/opis FIRMA w DELIVERY.
+Kod nie został scalony przez Codexa. PASS nie jest nowym poleceniem merge.

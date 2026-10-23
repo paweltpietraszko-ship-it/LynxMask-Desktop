@@ -10,8 +10,6 @@ def _frags(text, **kw):
 
 @pytest.mark.parametrize("text,fragment,rule", [
     ("Świadek Śludkowskiego nie stawił się na rozprawę.", "Śludkowskiego", "R1"),
-    ("Wczoraj Kawa zlecił wysłanie paczki.", "Kawa", "R1"),
-    ("Przyszedł Pan Rogalik z wnioskiem.", "Rogalik", "R1"),
     ("Protokół podpisał Marcin S. w obecności świadków.", "Marcin S.", "R2"),
     ("Protokół podpisał OSOBA_001 S. w obecności świadków.", "S.", "R2"),
     ("NIP: 7 NUMER_021", "7", "R3"),
@@ -30,6 +28,7 @@ def _frags(text, **kw):
     ("Sprzedawca: Biuro Rachunkowe RACHMISTRZ. Wczoraj przyszła faktura.", "Biuro Rachunkowe RACHMISTRZ", "R5"),
     ("Nabywca: GAMMA S.A. Termin płatności 14 dni.", "GAMMA S.A.", "R5"),
     # [LYNX-GUARD-FIX1 r2] Codex F1: nazwiska o prefiksie słowa instytucji nadal wskazywane
+    # [LYNX-OSOBA-LAYOUT] teraz jako „słownik zna wyłącznie jako nazwisko” (guard_residue._unknown)
     ("Protokół podpisał Kasprzak w obecności świadka.", "Kasprzak", "R1"),
     ("Protokół podpisał Kasprowicz w obecności świadka.", "Kasprowicz", "R1"),
     ("Protokół podpisał Sądowski w obecności świadka.", "Sądowski", "R1"),
@@ -64,6 +63,9 @@ def test_wskazuje_jawna_pozostalosc(text, fragment, rule):
     "Siedziba w dzielnicy Kraków-Śródmieście od roku.",
     "Odpis wydano dnia 2 NUMER_005 w sekretariacie.",
     "Marek OSOBA_001\n4 ADRES_001",
+    # [LYNX-OSOBA-LAYOUT] słowo ze zwykłym znaczeniem jest dla Guarda niewidzialne (osobę rozpoznaje silnik)
+    "Wczoraj Kawa zlecił wysłanie paczki.",
+    "Termin wykonania upływa jutro, Dział IV umowy.",
 ])
 def test_brak_alarmu(text):
     assert _frags(text) == {}
@@ -85,7 +87,7 @@ def test_nic_wewnatrz_tokenow():
 
 
 def test_allowlista_wycisza_fragment():
-    assert _frags("Wczoraj Kawa zlecił wysłanie paczki.", allowlist=["kawa"]) == {}
+    assert _frags("Wczoraj Śludkowski zlecił wysłanie paczki.", allowlist=["śludkowski"]) == {}
 
 
 def test_przesuniecie_o_naglowek_pse():
@@ -103,22 +105,6 @@ def test_miejscowosc_po_zakrytym_adresie_to_pytanie():  # [LYNX-OSOBA-PACK4] adr
     assert _frags("Data: NUMER_008, Jelenia Góra") == {}
 
 
-def test_kandydat_bez_dowodu_takze_w_odmianie():  # [LYNX-OSOBA-PACK4] pomiar KPWr: „Maciolus” / „Maciolusa”
-    ws = collect_warnings("Model Maciolus działał. Model Maciolusa zasilano pakietem.", released_words=["Maciolus"])
+def test_nieznane_slowo_w_odmianie():  # [LYNX-OSOBA-LAYOUT] dawny kanał released → słowo nieopisane, każde wystąpienie
+    ws = collect_warnings("Model Maciolus działał. Model Maciolusa zasilano pakietem.")
     assert {w["fragment"] for w in ws} >= {"Maciolus", "Maciolusa"}, ws
-    ws = collect_warnings("Kawa zlecił paczkę. Kawałek chleba.", released_words=["Kawa"])
-    assert "Kawałek" not in {w["fragment"] for w in ws}, ws
-
-
-def test_kandydat_bez_dowodu_wersaliki_i_krotka_odmiana():  # [LYNX-OSOBA-PACK4] Codex r3 F1/F2
-    ws = collect_warnings("Dokument przekazał wczoraj Malina. W notatce zapisano MALINA.", released_words=["Malina"])
-    assert {w["fragment"] for w in ws} >= {"Malina", "MALINA"}, ws
-    ws = collect_warnings("Róża złożyła wniosek. Róży dotyczy odpis.", released_words=["Róża"])
-    assert {w["fragment"] for w in ws} >= {"Róża", "Róży"}, ws
-    assert "Różowy" not in {w["fragment"] for w in collect_warnings("Różowy płot.", released_words=["Róża"])}
-
-
-@pytest.mark.parametrize("released", ["Róża", "RÓŻA", "RÓŻY"])
-def test_odmiana_kandydata_niezaleznie_od_wielkosci_liter(released):  # [LYNX-OSOBA-PACK4] Codex r4 F2
-    ws = collect_warnings("RÓŻA złożyła wniosek. RÓŻY dotyczy odpis.", released_words=[released])
-    assert {w["fragment"] for w in ws} >= {"RÓŻA", "RÓŻY"}, ws
