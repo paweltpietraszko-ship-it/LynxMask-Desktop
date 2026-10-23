@@ -95,3 +95,35 @@ LITERAMI bez innych dowodów); (8) mała litera; (9) początek zdania bez czynno
 4. Dane: plik PESEL w repo (CC0, ~0,8 MB dla ≥100 osób + biała lista) i proces odświeżania (raz w roku?).
 5. Etapy i rozmiar (OWNER: mniej szwów, ale >150 l. wymaga zgody); kryteria odbioru: GOLD (ciche OSOBA, zbędne), 255 dok. publicznych
    (nowe/utracone zakrycia z oceną), zdania kontrolne, pytania Guarda/dok.
+
+## 6. Cel produktu (OWNER 23.10, wybór spośród opcji CC: „model rozumiejący” vs „człowiek decyduje w szarej strefie”)
+OWNER: „pogodzić się z tym, że człowiek decyduje 2–4 razy na dokument; robimy wszystko, by śmieci nie trafiały do Guarda i nie było
+idiotycznego FP”. Ocena CC: zgodne ze sprawdzonym wzorcem (GALL w sądach administracyjnych — system podpowiada, człowiek decyduje;
+Presidio — pasmo niepewności), program zostaje deterministyczny i wytłumaczalny (RODO), bez kosztu modelu (rozmiar, czas, licencja,
+powtarzalność). **Kryteria odbioru projektu:**
+1. pytania Guarda (R1/osoby): średnio **2–4 na dokument** w zbiorach odbiorczych;
+2. **zero oczywistych śmieci** wśród pytań: słowa ról i funkcji, człony nazw urzędów/miejsc, skróty i nie-słowa, słowa z białej
+   listy, zapis małymi literami (warunek przeciw „zmęczeniu alarmami” — użytkownik klikający „Zostaw” odruchowo przepuści prawdziwe
+   nazwisko);
+3. **żadne prawdziwe nazwisko nie przechodzi cicho** (bez zakrycia albo pytania) w zbiorach odbiorczych; FP po stronie zakrycia
+   akceptowalne (OWNER: zakryć za dużo > wyciek; użytkownik odkryje, „Zawsze jawne” ogranicza powtórki);
+4. model rozumiejący zdanie (np. lokalny Bielik jako sędzia szarej strefy) **poza zakresem** — wpis w `ODLOZONE.md`; projekt nie musi
+   go przewidywać, ale nie powinien go wykluczać (punkt decyzji „zapytaj” jako jedyne wejście).
+
+## 7. Ryzyko dopasowania do naszych zbiorów i kontrola (pytanie OWNERA 23.10)
+**Różnorodność dziś:** GOLD dev 40 dok., 7 rodzajów (umowa 8, faktura 7, pismo/decyzja 7, wezwanie 5, protokół 5, pełnomocnictwo 3,
+e-mail 5), 120 różnych osób/nazwisk — wg PESEL: ≥10 tys. 18, 1000–9999 62, 100–999 20, <100 17, brak 3; trudna klasa
+(`surname_common_word`) tylko w 10 dok. i z powtarzalnych szablonów zdań. Dokumenty publiczne: 255, ~200 różnych osób w gold
+(głównie pisma o firmach — dobre do FP, słabe do kompletności osób).
+**Ryzyka:** (a) biała lista liczona z tych samych 445 pism, na których mierzymy — słownictwo przetargów/KIO, brak dziedzin
+(medycyna, kadry, budowa, księgowość) → FP gdzie indziej i zawyżony wynik; (b) trudna klasa mała i szablonowa → dopasowanie do
+szablonu; (c) reguły dopisywane po błędach z naszego zbioru → silnik uczy się zbioru, nie polszczyzny.
+**Kontrola (propozycja do briefu):**
+1. biała lista z **niezależnego źródła ogólnej polszczyzny** (np. listy frekwencyjne NKJP — dostępność i licencja do sprawdzenia
+   przez CC przed użyciem), nasze pisma tylko jako kontrola;
+2. rozdzielenie danych: zbiór do strojenia ≠ zbiór odbiorczy (nigdy nie używany przy projektowaniu): GOLD test (CC nie otwiera),
+   pl-pii (3000 syntetyków z osobami), testy/`dataset_clean` Mobile (300 z gold), dokumenty OWNERA (agregaty);
+3. **nowy GOLD od innego autora**, inne szablony, brakujące dziedziny; zasady OWNERA: autor pisze dokument i gold, osobny
+   weryfikator, bez powtarzania encji, minimalne liczby na typ;
+4. każdy wyjątek uzasadniony ogólną zasadą (słownik, liczba nosicieli, budowa zdania), nie pojedynczym dokumentem;
+5. wyniki raportowane osobno per dziedzina/rodzaj dokumentu.
