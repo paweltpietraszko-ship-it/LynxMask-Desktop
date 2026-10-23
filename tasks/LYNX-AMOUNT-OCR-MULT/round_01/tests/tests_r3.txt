@@ -1,0 +1,60 @@
+LYNX-AMOUNT-OCR-MULT — wąski recheck r3, 23.10.2026
+WYNIK: PASS badanego zakresu na 46984da1c545ce9fd3e325fedf5dacefdc585324.
+F1 i F2 z r2 ZAMKNIĘTE.
+Adresat: CC.
+Poprzedni audytowany SHA: 8681158bc06734bf4a03d45ce2f09a10e28f3f74; raport r2 98060a91e292cf023c24f485dd0ee9f1a0d49307.
+Baza Tasku: 9fb40b1c438b67c85059e1a3dbd2342937f6c9d9.
+Dokumenty dostawy r2: 9327f90 + doprecyzowanie gate ada0c9a.
+Zakres diffu rechecku: 8681158..46984da, amount.py i test_amount_ocr_mult.py.
+
+ZGODA NA MIARKĘ LINII
+Paweł w bieżącym poleceniu: „Masz dostawę od CC, przekroczenie linii akceptuję”.
+Gate tej dostawy zgłasza RATIO 104/1 = 104:1 (próg 5:1), a nie przekroczenie TOTAL_LINES.
+To proporcja dodanych/usuniętych linii, związana z przyrostem tej samej poprawki. Przyjmuję zgodę na ten wyjątek miarki zmian w obecnej dostawie; nie poszerzam jej na nowe zachowania ani przyszłe zmiany.
+Nie ma potrzeby ponownego pytania o to samo przekroczenie.
+
+WYKONANE NIEZALEŻNIE
+Izolowany exact-SHA git archive backend + audyt, puste własne profile/stan Temp, brak użycia serwera 8765 lub profilu OWNERA.
+Bez zmian produktu, merge i subagentów.
+1. Retained repro_r2.py, bez zmiany przypadków: 17/17 zgodnych wyników na ownerze ORAZ rzeczywistym pseudonymize_document → Guard.
+Sprawdzono literalne wartości KWOTA w obu mapach, a dla negatywów brak nowego KWOTA.
+2. Krótkie rodzeństwo zmienionego helpera, repro_r3.py: 4/4 PASS na ownerze, odtworzenie literalnego wejścia przez mapę 4/4.
+Powód tego punktowego rozszerzenia: wybór najdłuższego trafienia dotyczy całej warstwy amount, także dat.
+Przypadki:
+- data urodzenia 21.05.1979 obok „15 OOO,50 zł” — osobny NUMER i KWOTA, brak kolizji.
+- dwie kwoty zł/PLN z emoji na początku — oba pełne spany, poprawne przypisanie.
+- „15 OOO.5O” bez waluty, ale ze słowem kwotowym — pełna wartość.
+- małe o, jedna cyfra groszy: „15 ooo,5 zł” — pełna wartość.
+To testy warstwy, nie dodatkowe 4 pełne piony; pełny pion obejmował retained 17.
+3. Testy w osobnych procesach:
+- test_amount_ocr_mult.py: 24 PASS.
+- test_amounts_numbers.py: 20 PASS.
+- test_silent_pack1.py: 30 PASS.
+- test_formats_pack2.py: 20 PASS.
+- test_map_fidelity.py: 29 PASS.
+Łącznie 123 różne testy PASS.
+
+F1 — ZAMKNIĘTE
+„Kwota 15 OOO,50 zł.” → „Kwota KWOTA_001.”, mapa = „15 OOO,50 zł”.
+Analogicznie PLN i zapis „15OOO,50zł” — pełny literalny span, żaden jawny prefiks nie zostaje.
+Krótsze wewnętrzne trafienie groszy nie blokuje już całej kwoty.
+Kontrole z ,00 i z O w groszach nadal poprawne.
+Wybór najdłuższych niepokrywających się trafień poprzedza teraz podstawianie od końca, więc offsety dotyczą pierwotnego wejścia warstwy.
+
+F2 — ZAMKNIĘTE
+„Kwota 1200.5O zł.” → „Kwota KWOTA_001.”, mapa = „1200.5O zł”.
+Kontrole z przecinkiem/O i kropką/cyframi nadal przechodzą.
+Brak rozszerzenia na I/l ani zmiany wcześniejszego normalizera.
+
+GRANICE
+Nie uruchamiano ponownie całej suity, znanych niepowodzeń test_layers ani szerokich pomiarów GOLD/owner/OCR.
+Pomiar CC z DELIVERY r2 (GOLD/owner identyczne z bazą) pozostaje dowodem pomocniczym CC, nie nowym niezależnym pomiarem Codexa.
+W tych zbiorach brak kwot tego typu w kluczu; naprawę potwierdza niezależna macierz syntetycznych przypadków, a nie sama zgodność agregatów.
+Pozostałe deklaracje szerokiej regresji w DELIVERY nie były w tym rechecku niezależnie odtwarzane.
+Zastosowano CODEX_START_HERE: mikrofix → wąski diff, zachowany reproduktor i bezpośrednio potrzebne testy; STOP po wystarczającym wyniku.
+PASS odnosi się do wskazanego exact SHA, zamknięcia F1/F2 i sprawdzonych warstw. Nie jest gwarancją wykrywania wszystkich możliwych kwot ani certyfikatem całego programu.
+Granica Przywróć: fragment tak, jak dotarł do amount.py; wcześniejsze normalizacje nie są cofane.
+
+NASTĘPNY KROK
+CC: odebrać PASS; F1/F2 nie wymagają dalszych poprawek w tym rechecku.
+Kod nie został scalony przez Codexa; PASS nie jest nowym poleceniem merge.
