@@ -1,0 +1,30 @@
+LYNX-OSOBA-HANDOFF — BRIEF_ONLY r2 (zamknięcie C1)
+Data: 2026-10-23
+Exact SHA: 3cfa83804c4da880e9b21e41895bbd7942d9312a
+Branch: task/LYNX-OSOBA-HANDOFF
+Poprzedni brief: 500ff2f2a713f72ea12edcc73403b90fab49bd56
+Poprzedni raport: b4ac3be96f48b95aa3bcd9ffc44d17a77663d9b5
+Wynik: PASS PREIMPLEMENTATION; C1 zamknięte na poziomie kontraktu.
+Odbiorca: CC — implementacja zgodnie z poprawionym briefem. Bez merge.
+
+Zakres:
+Wąski ponowny precheck uzupełnienia C1, TASK_SCOPE i nowych klas odbioru; odczyt dostarczonego c1_evidence.py jako dokumentacji sposobu uzyskania dowodu. Reużyto inspekcji istniejącego ownera z r1. Instrukcje i S4 bez zmiany. Nie uruchamiano skryptu, testów, Morfeusza ani pomiarów; nie pobierano PESEL/listy nazwisk i nie czytano realnych dokumentów. To nie audyt implementacji.
+
+C1:
+- Warunek A zastąpiono jawną koniunkcją: common=True AND person=False AND brak w person_forms AND brak na oczyszczonej liście nazwisk. Nie wolno implementować starego A z początku briefu zamiast nadrzędnej sekcji „Granica (zastępuje pkt 1.A)”.
+- Kandydat z person_forms lub listy nazwisk nie jest wyciszany samym brakiem kwalifikatora Morfeusza. Jest to dokładnie granica wskazana w r1.
+- Plik listy jest w TASK_SCOPE; lista z formami odmiany, ładowana raz. Brak pliku wyłącza A, więc nie staje się powodem masowego wyciszenia.
+- Odbiór zawiera osobno: tylko-pospolite nazwisko z listy, kandydat z person_forms, rola poza listą i brak pliku.
+- Skrypt wskazuje sposób odtworzenia klasy oraz używane kolumny/źródła. Deklarowane 113 haseł, 51 092 osób i 11 haseł w person_forms pozostają wynikiem CC, nie niezależnie potwierdzonym faktem. Skrypt liczy hasła bazowe; te liczby nie dowodzą pełnego pokrycia wszystkich odmian. Kontrakt operacyjny obejmuje jednak formy z listy, więc nie jest ograniczony do tych 113 haseł.
+
+Ocena:
+SOURCE/NECESSITY: S4 — wiarygodne podejrzenia zamiast przypadkowych wyrazów; istniejące single_osoba_evidence odpowiada za przekazanie, _released za wystąpienia. Oczyszczona lista służy ochronie kandydatów przed nowym filtrem, nie tworzy nowego silnika maskowania. Nie potrzeba nowej warstwy/Architekta do tej poprawki.
+Zachowanie CAPS, filtr małych liter, poprawka nie-nazw i istniejące kryteria z r1 pozostają opisane. Kontrakt jest jednoznaczny i testowalny; CC może implementować.
+
+Granice wyniku:
+- Nazwiska poza listą i person_forms, tylko-pospolite w Morfeuszu, bez mocnego kontekstu mogą utracić pytanie pochodzące z released. Brief ujawnia tę granicę; _r1/pozostałe reguły pozostają niezależne. Nie zamykam jej jako gwarancji prywatności ani nie potwierdzam niezmierzonego rozmiaru tej klasy.
+- S4 nie gwarantuje wykrycia każdego PII; samo istnienie niepełnej listy nie jest nowym findingiem implementacji ani powodem powtarzania projektowania. PASS dotyczy prechecku opisanej poprawki, nie uniwersalnego twierdzenia „każde nazwisko zostanie wskazane”.
+- Jeśli implementacja/pomiar wykaże konkretną dodatkową stratę, trzeba ją ujawnić i ocenić na dowodach; nie ukrywać jej za wynikiem GOLD ani za tym PASS.
+- Prototyp 7448->899 i GOLD bez zmian dotyczą wcześniejszego wariantu. Finalny wariant z ochroną listą musi spełnić odbiór na finalnym SHA; obecny PASS nie potwierdza tych liczb.
+
+Dalej: CC implementuje poprawiony A oraz pozostały zakres, dostarcza exact SHA, DELIVERY, wymagane testy/pomiary i opis różnic. Codex następnie audytuje implementację. Nie uruchamiano odłożonych SURNAME-DICT ani GUARD-R1-NOISE.

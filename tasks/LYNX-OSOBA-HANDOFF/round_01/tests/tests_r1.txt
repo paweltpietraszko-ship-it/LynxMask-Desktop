@@ -1,0 +1,33 @@
+LYNX-OSOBA-HANDOFF — BRIEF_ONLY r1
+Data: 2026-10-23
+Exact SHA: 500ff2f2a713f72ea12edcc73403b90fab49bd56
+Branch: task/LYNX-OSOBA-HANDOFF
+Baza briefu: edc2868
+Wynik: jedna zamknięta lista braków C1; bez PASS/FAIL implementacji.
+Odbiorca: CC.
+
+Zakres:
+Cały brief, bieżący wiersz BOARD, wcześniej przeczytane S4 i zasady audytu. Jedna punktowa inspekcja istniejącego ownera: osoba_not_person._common_or_person i single_osoba_evidence. Lokalny odczyt odpowiada tym plikom na exact SHA. Nie badano implementacji, nie uruchamiano modeli, testów, reproduktorów ani pomiaru próbek nazwisk. Prototyp i agregaty GOLD pozostają deklaracją CC, nie wynikiem niezależnego audytu.
+Poprzedni LYNX-GUARD-R1-NOISE został wycofany do przepisania; jego koszt 20->22 nie jest automatycznie findingiem nowego zadania. Tutaj CC deklaruje 20/52 bez zmian.
+
+Ocena techniczna:
+Istniejący owner i miejsce przekazania wystarczają; nie potrzeba nowej warstwy ani Architekta do samej poprawki pustych kandydatów. Pomijanie całkowicie małych liter jest opisane osobno od zachowania CAPS; brief zachowuje MALINA/RÓŻY, zatem nie odwraca wprost poprawki PACK4 F1. Próg R1, agregaty GOLD i lista regresji są jawne. S4 pozwala usuwać przypadkowy szum i nie obiecuje pełnej wykrywalności PII.
+
+C1 — doprecyzować granicę „tylko pospolite” dla nazwisk
+TRACE: tytuł i opis zadania ograniczają odrzucanie do kandydatów, którzy nie mogą być nazwiskiem; S4 każe wskazywać wiarygodne podejrzenia. Sam common=True, person=False oznacza brak odczytu imię/nazwisko w Morfeuszu, nie dowód, że dana forma nie jest nazwiskiem.
+OWNERSHIP: single_osoba_evidence jest właścicielem przekazania. Istniejący parametr person_forms stanowi osobny sygnał nazwiska. Obecna gałąź zakrywa przy not common AND (person OR low in person_forms); przy common=True i person=False może dojść do przekazania do Guarda także przy low in person_forms. Nowy warunek A nie opisuje tej kolizji.
+REPRO: NOT_RUN — BRIEF_ONLY. Nie ogłaszam wycieku ani FAIL.
+
+Zamknięta lista uzupełnień:
+1. Określić oczekiwane zachowanie dla common=True, person=False przy formie znanej przez istniejące person_forms oraz dla rzeczywistego nazwiska mającego wyłącznie pospolity odczyt Morfeusza. Nie utożsamiać automatycznie „nieznane jako nazwisko Morfeuszowi” z „nie może być nazwiskiem”.
+2. CC ma dostarczyć mały, odtwarzalny dowód dla tej granicy (wystarczy celowana próbka z dostępnej listy nazwisk i dokładny wynik klasyfikacji; bez realnych danych dokumentów) oraz dopisać wynikające klasy do odbioru. Nie wymagam nowego pełnego benchmarku, źródła PESEL ani wdrożenia odłożonego SURNAME-DICT w tym zadaniu. Jeżeli kolizja nie występuje w deklarowanym zakresie, udokumentować to z ograniczeniem wniosku; jeżeli występuje, opisać jej obsługę.
+Jeżeli CC świadomie proponuje wyciszanie także takich nazwisk, najpierw przedstawić konkretny koszt OWNEROWI albo wskazać istniejącą zgodę na dokładnie ten zakres. Nie żądam decyzji o hipotetycznym wycieku bez danych.
+
+Znaczenie dla użytkownika (jeżeli ta kolizja występuje):
+Wyzwalacz: pojedynczy kandydat spaCy bez mocnego kontekstu, zwykłe znaczenie w Morfeuszu, brak jego kwalifikatora nazwiska.
+Efekt: silnik jak wcześniej nie zakrywa, ale nowy filtr nie przekazuje kandydata Guardowi. UI nie pokaże dawnego pytania pochodzącego z released; niezależne _r1 i inne ostrzeżenia nadal mogą zadziałać. Jeśli żadne nie zadziała, fragment nie zatrzyma kopiowania/eksportu.
+Dane: brak nowej transmisji lub trwałego zapisu przez sam filtr; ewentualny jawny fragment zostaje w wyniku. To normalna ścieżka filtra, nie awaria fail-closed. Użytkownik może ręcznie skorygować fragment, jeśli go dostrzeże.
+Klasyfikacja: granica wymagająca wyjaśnienia technicznego; SAFETY_PRIVACY jako potencjalny skutek, nie potwierdzony incydent.
+
+Pozostałych braków nie zgłaszam. Brak wzrostu pominięć w GOLD wspiera propozycję, lecz sam nie rozstrzyga wskazanej klasy poza tym zbiorem.
+Dalej: CC uzupełnia C1 -> wąski ponowny BRIEF_ONLY. Bez implementacji/merge na podstawie tego raportu.

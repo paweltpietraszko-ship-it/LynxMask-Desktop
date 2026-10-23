@@ -137,6 +137,25 @@ def released() -> list[str]:
     return list(dict.fromkeys(_RELEASED.get([])))
 
 
+# [LYNX-OSOBA-HANDOFF] do Guarda tylko kandydaci, którzy mogą być nazwiskiem: kształt nazwy + lista nazwisk Mobile (39k z odmianą,
+# oczyszczona `tasks/LYNX-NAMES-DICT-CLEAN/clean_names.py`); brak pliku → pusty zbiór, reguła A wyłączona (jak przed zmianą)
+_NAME_SHAPE_RE = re.compile(r"[^\W\d_]{3,}(?:-[^\W\d_]{2,})*")
+_VOWEL_RE = re.compile(r"[aeiouyąęó]", re.IGNORECASE)
+_SURNAMES: frozenset[str] | None = None
+
+
+def _surname_forms() -> frozenset[str]:
+    global _SURNAMES
+    if _SURNAMES is None:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "surnames_extended.json"), encoding="utf-8") as f:
+                d = json.load(f)
+            _SURNAMES = frozenset(d) | frozenset(x for v in d.values() for x in v)
+        except (OSError, ValueError):
+            _SURNAMES = frozenset()
+    return _SURNAMES
+
+
 def first_names() -> frozenset[str]:
     global _FIRST
     if _FIRST is None:
@@ -227,6 +246,10 @@ def single_osoba_evidence(text: str, start: int, end: int, person_words=(), pers
         return True
     if geo and not person:
         return False  # wyłącznie nazwa miejsca (np. „Tomaszów”) — samo miasto jawne, bez pytania (polityka OWNERA)
+    if not _NAME_SHAPE_RE.fullmatch(word) or not _VOWEL_RE.search(word):
+        return False  # [LYNX-OSOBA-HANDOFF] B: nie-nazwa („……”, „Pzp”, „Cz”) — bez pytania
+    if common and not person and low not in person_forms and _surname_forms() and low not in _surname_forms():
+        return False  # [LYNX-OSOBA-HANDOFF] A: tylko słowo pospolite spoza list nazwisk („Odwołującego”, „Powódka”)
     _RELEASED.get([]).append(word)  # [krok 2] bez dowodu: nie zakrywamy, Guard zapyta
     return False
 
