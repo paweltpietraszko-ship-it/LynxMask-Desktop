@@ -87,3 +87,54 @@ Ograniczenia pomiaru: `testset_owner` stress był podglądany przy projektowaniu
 - Merge po PASS Codexa (polecenie Pawła 23.10).
 - Po merge: zamknąć `task/LYNX-GUARD-R1-FILTERS` (filtry starego R1 — zbędne) i usunąć martwy rejestr `osoba_not_person.released()` (drobna sprawa).
 - Następny temat: ciche FIRMA (GOLD 20/52), potem zbędne zakrycia (~17% not_pii) — najpierw zasada słowami.
+
+---
+
+# Runda 2 — po Codex r1 FAIL (`52141ed`, `tests_r1.txt`)
+Kod r2: `e1cb34dbc9f62b81edfc91857437339535ef74b9` (diff od `9216821`: commity `e030860`, `e1cb34d`).
+
+## gate.py (stdout dosłownie, pierwsze linie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: e1cb34dbc9f62b81edfc91857437339535ef74b9
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 563 lines changed (threshold 150)
+```
+
+## F1 (P1) — nazwisko bez ogonków wyciszane
+- Przyczyna: `guard_residue._unknown` wyciszał słowo bez ogonków, gdy JAKIKOLWIEK wariant z ogonkami był znany Morfeuszowi.
+- Poprawka: wariant znany wyłącznie jako imię/nazwisko (`_only_person_name`) → pytanie R1; wyciszenie tylko gdy wariant jest zwykłym
+  słowem (lemat małą literą). `_ocr_common` już wymagał zwykłego słowa.
+- Retained `repro_r1.py` na `e1cb34d`: F1a „Ladzinski” → R1, F1b „Cieslikowski” → R1, F1c „Ladziński” → OSOBA_001.
+- Test: `test_osoba_layout::test_bez_ogonkow_nazwisko_pyta[Ladzinski|Cieslikowski]`.
+
+## F2 (P2) — kotwica przeniesiona na zwykłe słowo w innym zdaniu
+- Przyczyna: `apply_person_layout` podmieniał wartość `sub_whole` w całym tekście także dla słowa ze zwykłym znaczeniem.
+  Ta sama klasa dotyczyła reszty za tokenem i inicjału („Lucyna Osoba” → każde „Osoba”).
+- Poprawka (`person_layout._mask_spans`): słowo ze zwykłym znaczeniem — zakryte wystąpienie z kotwicą + wystąpienia z wielkiej litery
+  w środku zdania (nazwa własna); na początku zdania/wiersza zostaje (decyzja per wystąpienie, C3). Nazwisko bez zwykłego znaczenia —
+  jak dotąd wszędzie.
+- Pierwsza wersja poprawki (`e030860`: tylko wystąpienie z kotwicą) pogorszyła GOLD (OSOBA dev 1 cicho + 3 z pytaniem, test 6 z pytaniem —
+  druga wzmianka osoby w środku zdania jawna) → dodana reguła „środek zdania” (`e1cb34d`).
+- Retained `repro_r1.py`: F2a „Pani Termin. Termin wykonania…” → „Pani OSOBA_001. Termin wykonania…”; drugie „Termin” dostaje czerwone
+  MAP_LEAK (wartość zakryta gdzie indziej) — decyzja człowieka per wystąpienie; szum MAP_LEAK = osobny wiersz `LYNX-GUARD-MAPLEAK-NOISE`.
+  F2b „Pani Kawa. Kawa i herbata…” bez zmian.
+- Testy: `test_kotwica_nie_przenosi_sie_na_zwykle_slowo` (Termin, Osoba), `test_druga_wzmianka_w_srodku_zdania_zakryta`,
+  `test_czyste_nazwisko_zakryte_wszedzie`.
+
+## Testy r2 (cwd = backend, `.venv`)
+test_osoba_layout 49 passed; test_guard_residue 50; test_osoba_handoff 16; test_osoba_pack4 12; test_map_fidelity 29;
+test_guard_allowlist_s5 13; test_osoba_not_person 25; test_names_dict_clean 22; test_ner_multiline 21; test_silent_pack1 30;
+test_pipeline_v2 41; test_layers 2 failed/119 (jak main); test_audyt_2026_10 1 failed/122/2 xfailed (jak main).
+
+## Pomiar r2 (main `b50655a` → r1 `9216821` → r2 `e1cb34d`)
+| zbiór | miara | main | r1 | r2 |
+|---|---|---|---|---|
+| GOLD dev / test | pytania na dok. | 1,23 / 0,97 | 0,82 / 0,80 | **0,90 / 0,86** |
+| GOLD | OSOBA cicho | 1 / 0 | 0 / 0 | **0 / 0** (test 1 z pytaniem) |
+| GOLD | zbędne zakrycia | 69 / 152 | 73 / 157 | **69 / 152** |
+| `testset_owner` stress | osoby widoczne cicho (z pytaniem) | 21 (34) | 8 (1) | **8 (1)** |
+| ślepe 600 stress | j.w. | 17 (39) | 3 (1) | **3 (1)** |
+| 255 pism | pytania R1 | 902 | 526 | **542** (+F1: pytania o nazwiska bez ogonków) |
+| 255 pism | OSOBA nowe / utracone | — | 28 / 0 | **28 / 0** |
