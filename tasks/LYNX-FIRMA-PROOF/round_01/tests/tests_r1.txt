@@ -1,0 +1,95 @@
+LYNX-FIRMA-PROOF — precheck + przegląd statyczny r1, 23.10.2026
+STATUS: OWNER_DECISION_NEEDED — bez PASS/FAIL przed zamrożeniem nowych zachowań.
+Kod obejrzany na exact SHA bff9b8ab7cf685096898b1a9ee024a17d2c5e88e.
+Baza: 948c3bb (wskazana w briefie/BOARD).
+Aktualny HEAD dokumentów cd69f1e8c3daf331cc0dd128f8f1d471e00dcfb0; backend bez zmian względem bff9b8a.
+Adresat: Paweł, potem Codex kontynuuje audyt; CC nie ma z tego raportu polecenia projektowania kolejnej wersji.
+
+DLACZEGO NIE MA JESZCZE WERDYKTU
+Użytkownik jawnie zlecił łączny precheck i audyt kodu mimo odwróconej kolejności. Samo napisanie kodu przed precheckiem nie jest podstawą FAIL.
+Jednocześnie zlecenie oceny nie jest zatwierdzeniem wszystkich nowych zachowań produktu.
+AGENTS.md:63–68, OWNER_EXPLANATION_GATE:
+„TRIGGER = dostawa zawiera zachowanie niezaakceptowane jawnie przez OWNERA.”
+„Sprawdź exact SHA. NIE wydawaj PASS/FAIL.”
+„Czekaj na OWNER_ACCEPTED albo OWNER_CORRECTED. Dopiero potem audyt PASS/FAIL.”
+Brief nie powołuje decyzji produktowej dla pełnego zakresu nowych zwolnień, lecz stwierdza „Podstawa (sprawdzona w źródłach, nie wybór Pawła)”.
+Źródła prawne nie zastępują zamrożonego kontraktu funkcji ani wyboru konkretnych heurystyk programu.
+
+WYKONANE
+Przeczytano pełny brief/DELIVERY i aktualny wiersz/nagłówek BOARD.
+Przejrzano diff wszystkich zmienionych ownerów na exact SHA i nowy firma_proof.py:
+firmy/dowody, podmiany bez rozróżniania wielkości liter, instytucje, data pisma, propagacja wartości, wyłączenia R4.
+Potwierdzono brak driftu instrukcji/spec względem lokalnego punktu startu.
+Nie uruchamiano testów, modeli, benchmarków, realnych dokumentów, OCR ani serwera 8765. Nie dotykano profilu Pawła.
+Przegląd statyczny nie jest niezależnym reproduktorem i nie dowodzi wyniku pomiarów.
+Wyniki 272→158, 69→18/152→43 itp. pozostają dowodem CC (w dodatku część na d2fd24d), nie wynikiem Codexa na bff9b8a.
+
+OWNER_CONFIRMED
+- Cel operacyjny: ograniczyć śmieciowe FIRMA i lawinę pytań, rozpatrzyć tę dostawę łącznie.
+- Zgoda na TOTAL_LINES 504 tej dostawy została zapisana w DELIVERY/BOARD.
+- Istniejący format tokenów, mapa, Guard z decyzjami użytkownika i świadome Zostaw/Odkryj nie wymagają ponownego zatwierdzania.
+Nie rozszerzam zgody na rozmiar na nową politykę danych jawnych.
+
+OWNER_DECISION_NEEDED — KONKRETNE ZACHOWANIA
+1. Firmy wyłącznie z dowodem:
+Wyzwalacz: kandydat FIRMA nie spełnia formy prawnej / rodzaju+nazwy wyróżniającej / osoby/JDG / cytatu / nieznanego słowa / odniesienia do udowodnionej firmy.
+Efekt: kandydat nie jest maskowany jako FIRMA. Nazwa z polskich słów może pozostać jawna, nawet jeśli jest rzeczywistą firmą.
+UI: mniej tokenów i mniej MAP_LEAK; dla znanych zwykłych słów może nie być pytania.
+Firmy rozpoznane podmieniane są niezależnie od wielkości liter; Przywróć oddaje zapis z mapy, niekoniecznie wielkość liter każdego wystąpienia.
+Nazwiska ma nadal chronić ścieżka osób — to wymaga pionowej weryfikacji, a nie przyjęcia na wiarę.
+
+2. Instytucje:
+Wyzwalacz: sama publiczna nazwa instytucji bez zawężenia.
+Efekt/UI: np. ZUS/Sąd Najwyższy/KNF pozostają jawne. Nazwa z miejscem, numerem lub wydziałem ma być INSTYTUCJA.
+To zmiana poprzednich oczekiwań produktu; przerobiono też istniejące testy.
+Informacja o instytucji może być quasi-identyfikatorem zależnie od kontekstu; nie wynika z tego automatyczny nakaz zakrycia każdej nazwy, ale też nie ogólna gwarancja bezpieczeństwa pozostawienia jej jawnie.
+
+3. Daty:
+Wyzwalacz z briefu: samodzielny nagłówek „Miejscowość, [dnia] data” lub odwrotnie, bez dwukropka, rok z ostatnich pięciu lat.
+Efekt/UI: data zostaje jawna; pozostałe daty nadal mają być maskowane.
+Próg pięciu lat i sposób rozpoznawania miejscowości są heurystykami CC, nie regułą wynikającą wprost z RODO.
+Nie zatwierdzono jeszcze ich jako polityki Desktopa.
+Statycznie do sprawdzenia po akceptacji kierunku: _doc_date rozpoznaje „miejscowość” kształtem słów, nie potwierdzeniem nazwy miasta; kontrola roku ma dolny próg bez jawnego górnego. To obserwacje kodu, nie finding z REPRO.
+
+4. Powtarzanie zakryć + R4:
+Wyzwalacz: wartość z cyfrą została wcześniej zakryta; kod propaguje dokładne wystąpienia wartości NUMER/KWOTA/ADRES/EMAIL/INSTYTUCJA, jeżeli po strip ma ≥4 znaki.
+Efekt/UI: kolejne takie wystąpienia stają się tym samym tokenem bez pytania. Może to objąć identyczny zapis o innym znaczeniu — nie ma rozstrzygnięcia tożsamości referentu.
+Brief mówi o każdej wartości z cyfrą, a kod wprowadza minimum 4 znaki — granicę trzeba jawnie zachować w kontrakcie.
+R4 jest wyciszane przy słowach strukturalnych i aktach, m.in. „decyzja”/„uchwała”; nie jest to automatyczny dowód, że konkretny numer nie identyfikuje indywidualnej sprawy.
+Należy zatwierdzić zasadę zwolnienia ewidentnej struktury z ostrzeżeń, zachowując ochronę numerów indywidualnych pism/spraw. Konkretne granice podlegają audytowi kodu.
+
+WSPÓLNY PRZEPŁYW DANYCH I POWRÓT
+Nowe funkcje czytają istniejący tekst dokumentu, lokalne słowniki i mapę; data używa zegara systemowego.
+W przejrzanym diffie nie ma nowego kanału wysyłki, usługi sieciowej ani osobnego magazynu.
+Zmieniają treść wyniku i istniejącą mapę. To, co zostanie uznane za jawne, może trafić do zwykłego podglądu/kopii/eksportu w dotychczasowym przepływie.
+Brak tokenu/ostrzeżenia nie powoduje nowej prośby do użytkownika o potwierdzenie takiego miejsca.
+Nie wprowadzono nowego mechanizmu cofania zmiany polityki. Ewentualne cofnięcie wersji wymaga osobnego działania i ponownego przeliczenia; Codex tego teraz nie wykonuje.
+Nie testowano ścieżek awarii/recovery tej dostawy; istniejącego S3 nie uznano za nową obietnicę dowodzącą poprawności klasyfikacji.
+
+TECHNICAL_ONLY
+Nowy moduł i przeniesienie wywołań w istniejące linie same w sobie nie tworzą nowej polityki produktu.
+Format tokenów i kategorie pozostają wspólne z Mobile; różnica Desktop/Mobile w regułach dat/instytucji jest jednak skutkiem produktowym, nie tylko refaktorem.
+
+UNAUTHORIZED
+Nie wydaję takiej kwalifikacji dla całej dostawy: naprawy/kierunek zostały operacyjnie zlecone.
+Nie przedstawiam również szczegółów dopisanych przez CC jako decyzji OWNERA. Wymagają przedstawionej akceptacji.
+
+SAFETY_PRIVACY
+Zmniejszenie pytań i zgodność agregatów nie dowodzą braku nowych cichych przejść.
+Nie odtworzono w tym etapie konkretnego wycieku, więc nie zgłaszam udowodnionej awarii prywatności.
+Wymienione decyzje zmniejszają zakres automatycznego maskowania; dlatego trzeba je zamrozić przed werdyktem.
+
+WERYFIKACJA ŹRÓDEŁ — OGRANICZONA
+Sprawdzono motywy 14/26 RODO w oficjalnym EUR-Lex oraz wskazany dokument EDPB 01/2025, w tym pkt 101–104.
+EDPB PDF jest oznaczony jako „Adopted - version for public consultation”; nie przedstawiam go jako finalnego aktu prawnego.
+Źródła wspierają rozróżnienie danych osoby prawnej i ocenę quasi-identyfikatorów, nie ustanawiają automatycznego pięcioletniego progu dla daty pisma.
+Nie przeprowadzono pełnej opinii prawnej ani niezależnej weryfikacji pozostałych materiałów DOC/UODO z briefu.
+Źródła:
+https://eur-lex.europa.eu/legal-content/PL/ALL/?uri=CELEX%3A32016R0679
+https://www.edpb.europa.eu/system/files/2025-01/edpb_guidelines_202501_pseudonymisation_en.pdf
+
+DALEJ
+Paweł: zaakceptować lub skorygować powyższy zakres (cel firmy/instytucje/daty/propagacja/R4), nie kod ani same wyniki CC.
+Po rozstrzygnięciu Codex kontynuuje z tego exact SHA: niezależne kontrpróby granic, testy ownerów, realny pion i wymagane pomiary w izolacji.
+Nie potrzebuje ponownie czytać całego repo ani przeliczać wcześniejszych niezwiązanych benchmarków.
+Do tego czasu brak PASS PREIMPLEMENTATION i brak PASS/FAIL implementacji.
