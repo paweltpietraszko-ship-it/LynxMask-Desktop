@@ -12,7 +12,7 @@ reszta (HerBERT, trie, stara ścieżka, odmiana firm) nie występuje w cichych w
 | C. powtórzenie rozcięte krótszą encją | 1 | „Ulotny Rys sp. z o.o.” + „nazwę Ulotny Rys stosuje się…” | „FIRMA_002 Rys” (spaCy: samo „Ulotny” = FIRMA_002; „Rys” jawne) |
 
 ## Zasady (słowami)
-- **A — decyzja Pawła 23.10 („Tak”, po rekomendacji CC: zakryć za dużo > wyciek):** nazwa jednoosobowej działalności = rzeczownik działalności
+- **A — propozycja CC (zakryć za dużo > wyciek), Paweł 23.10 wybrał „Tak”:** nazwa jednoosobowej działalności = rzeczownik działalności
   (Usługi, Biuro, Zakład, Pracownia, Studio, Kancelaria, Gabinet, Warsztat, Firma, Przedsiębiorstwo, Sklep, Hurtownia, Serwis, Salon, Atelier,
   Agencja) + dalsze słowa z wielkiej litery w tej samej linii + **imię i nazwisko** (imię z listy imion) → jedna FIRMA obejmująca całość.
   Bez imienia i nazwiska na końcu — bez zmian („Biuro Rzecznika Praw Pacjenta”, „Zakład Ubezpieczeń Społecznych”).
