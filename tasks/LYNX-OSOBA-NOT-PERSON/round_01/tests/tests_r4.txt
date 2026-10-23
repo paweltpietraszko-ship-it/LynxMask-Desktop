@@ -1,0 +1,80 @@
+LYNX-OSOBA-NOT-PERSON — wąska weryfikacja polskich kolizji / tests_r4
+Data: 2026-10-21
+Exact SHA dostawy: 389830290bc6e28573da1c17f405960bf0cf0c75
+Baza: 1f60c060e3ecd2beab215e34ad4f817a1aeb8e24
+Poprzedni raport: b5b6547aab1a1eaf785fa63162857ebd9ec2011c (r3)
+Polecenie: po uwadze Pawła, że Bill jest słabym przykładem dla Polski,
+sprawdzić tylko konkretne kolizje z polskimi imionami/nazwiskami.
+
+WYNIK
+R1 POTWIERDZONE DLA POLSKICH PRZYPADKÓW.
+SAFETY_PRIVACY / WYMAGA_DECYZJI jak w r3; nadal bez końcowego PASS/FAIL.
+Nie opieramy już oceny istotności R1 wyłącznie na zagranicznym Bill.
+Brak merge i brak zmian produktu.
+
+WYBÓR PRÓB
+Zestawiono WHITE_LISTS poza właściwą OSOBA_DENYLIST ze słownikiem
+nazwisk Mobile:
+C:/Projects/LynxMask/app/src/main/assets/surnames_extended.json.
+Czerwiec i Styczeń są w tym rozszerzonym słowniku, ale nie w używanym
+przez filtr Desktop _PERSON_FORMS (wczytuje names_inflected i top1000).
+Nie zakładamy, że słownik top1000 zawiera wszystkie polskie nazwiska.
+Nie uruchamiano benchmarku całego słownika ani modelu na wszystkich wpisach.
+
+REPRO — PRAWDZIWY PION /preview
+Cztery celowane syntetyki, w osobnych dokumentach, PRZED/PO.
+Każde wejście miało postać "Podpisał <nazwisko>.".
+- Czerwiec:
+  baza: "Podpisał OSOBA_001."
+  dostawa: "Podpisał Czerwiec."
+- Styczeń:
+  baza: "Podpisał OSOBA_001."
+  dostawa: "Podpisał Styczeń."
+Oba wyniki dostawy: HTTP200, blocked=false, brak tokenu osoby.
+To nowe jawne nazwiska w syntetykach, bez konfliktu lub łączenia
+niezależnych danych i bez danych realnych klientów.
+- Sierpień: przed i po FIRMA_001, brak nowej utraty.
+- Środa: przed i po jawne, brak nowej utraty.
+Nie przedstawiam tych dwóch ostatnich jako nowych regresji.
+
+MECHANIZM / OWNERSHIP
+Dla Czerwiec i Styczeń:
+WHITE_LISTS=True, OSOBA_DENYLIST=False, _PERSON_FORMS=False.
+Nowy reject_single_osoba usuwa trafienie spaCy przed T01.
+Pion: dokument TXT -> rzeczywisty spaCy -> ner_layer i nowy helper
+-> pipeline -> Guard -> /preview.
+Środowisko jak r3: git archive dokładnych SHA, izolowane profile w Temp,
+TestClient w procesie, odcięte realne 8765 i połączenia zewnętrzne,
+HerBERT OFF; nie używano ani nie restartowano backendu właściciela.
+Łącznie 8 żądań /preview (4 PRZED + 4 PO), wszystkie HTTP200.
+Nie powtarzano 42 testów, 746 kontroli ani dużego pomiaru CC.
+
+KONTRAKT / DECYZJA
+Utrata leży poza kompromisem 2a zaakceptowanym dla właściwej denylisty.
+Pozostaje konflikt: warunek 2b ją powoduje, a Odbiór wymaga 0 nowych
+wycieków poza 2a. Nie zamieniam niejednoznacznego TRACE w automatyczny FAIL.
+Nowy dowód pokazuje praktyczne znaczenie R1 dla polskich danych;
+nie jest to wyłącznie ograniczenie obcych imion.
+Wyzwalacz: nazwisko z białej listy rozpoznane przez model, ale nieobecne
+w węższym słowniku. Efekt/UI: jawne nazwisko w niezablokowanym podglądzie;
+możliwy dalszy eksport przez istniejące ścieżki, którego test nie wykonywał.
+Brak nowego magazynu/wysyłki; brak automatycznego alertu lub odzyskania
+maskowania w tym reproduktorze.
+Rekomendacja: zachować dotychczasową ochronę tych przypadków,
+zwrócić CC do minimalnej korekty, bez redesignu OSOBA.
+Nie rozszerzać kompromisu na takie nazwiska bez jawnego rozstrzygnięcia Pawła.
+
+DOWODY
+Zachowano oryginalny repro_bill_r3.py.
+Uogólnienie tej samej klasy:
+tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/repro_polish_r4.py
+(commit e1dca00dc434707878a5fc34b2598c27bfe11036).
+Uruchomienie: python repro_polish_r4.py <absolutny backend na badanym SHA>.
+Lokalny pełny pion:
+C:/Users/p_pie/AppData/Local/Temp/lynx-osoba-audit-r3/
+audit.py (tryb polish), before_polish.json, after_polish.json.
+Dane wyłącznie syntetyczne; wygenerowanych profili/kluczy nie publikować.
+
+STOP przy wystarczającym dowodzie. Dalszych nazwisk ani pełnych suit
+nie sprawdzano. Status OWNER_EXPLANATION_GATE z r3 pozostaje otwarty;
+niniejsza notatka dodaje polskie dowody, nie nowy projekt rozwiązania.

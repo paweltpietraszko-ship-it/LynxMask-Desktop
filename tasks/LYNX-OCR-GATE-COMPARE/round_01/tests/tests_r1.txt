@@ -1,0 +1,63 @@
+LYNX-OCR-GATE-COMPARE v3.2 — wąski BRIEF_ONLY precheck r1, 2026-10-20
+
+EXACT SHA: 052f1d768db979b932e078a6ab7d94718cd2ec9a.
+BRANCH: task/LYNX-OCR-GATE-COMPARE.
+WYNIK: WYMAGA_KOREKTY_KONTRAKTU — jedna zamknięta uwaga C1 (izolacja startu).
+Nie jest to FAIL implementacji ani odtworzony incydent zmiany backendu.
+ODBIORCA: CC / Architekt / Paweł.
+
+ZAKRES
+Właściwy wiersz BOARD, brief v3.2, recenzja Architekta V3 oraz punktowe
+potwierdzenie ownerów identity/numeric i szwu startu prawdziwego /preview
+na tym samym SHA. Bez diffu implementacji, kodowania produktu, testów,
+reproduktorów, modeli, zdjęć i backendu 8765.
+
+C1 — LIFESPAN WYKRACZA POZA OPISANĄ IZOLACJĘ C3
+TRACE: C2 wymaga REAL_MASKING_PIPELINE; C3 wymaga handlera /preview
+w izolowanym procesie TestClient, wszystkich zapisów tylko w świeżym
+katalogu tymczasowym i NOT_RUN(ISOLATION) przy jakiejkolwiek zmianie poza nim.
+OWNERSHIP / OBSERWACJA PUNKTOWA (nie wykonywany REPRO):
+- API definiuje _API_TOKEN_PATH i _STARTUP_ERROR_PATH względem __file__,
+  a nie cwd ani wskazanych w C3 zmiennych środowiskowych.
+- _lifespan na starcie unlinkuje oba pliki; po próbach funkcjonalnych
+  zapisuje token do _API_TOKEN_PATH. Przy błędzie startu zapisuje
+  _STARTUP_ERROR_PATH.
+- Ta sama funkcja dopiero inicjalizuje _app_state.anonymizer, mapę,
+  Morfeusza i moduły. Sam TestClient bez uruchomionego lifespan nie
+  jest dowodem pracy zainicjalizowanego rzeczywistego silnika.
+
+Skutek: wymienione env/cwd nie wystarczają do obiecanego startu bez zapisów
+w backend/. Nie wolno ani uruchomić tak startu, ani obejść problemu atrapą
+silnika i nadal oznaczyć wynik REAL_MASKING_PIPELINE.
+To luka kontraktu uruchomienia, nie żądanie refaktoru API lub nowego backendu.
+
+Minimalna korekta kontraktu: opisać audytowalny sposób pełnej inicjalizacji
+rzeczywistych komponentów i przekierowania także ścieżek tokenu/błędu
+startowego w izolowanym procesie, z zachowaniem migawki repo/OWNER backendu.
+Jeżeli potrzebna jest lokalna konfiguracja testowa/override stałych modułu
+w harnessie, jawnie ustalić jej zakres i zabronić stubowania maskowania/Guarda.
+Jeżeli metoda wymaga zmiany produktu, obowiązuje STOP z C3.
+Nie projektujemy za autora konkretnego mechanizmu; po korekcie ocena
+tylko zmienionego fragmentu. Do tego czasu brak PASS uruchomienia pomiaru.
+
+POZOSTAŁE USTALENIA — NIE OTWIERAMY ZAMKNIĘTEJ RECENZJI
+- Dwie uwagi Architekta V3 zamknięte w v3.2: dwa nowe pliki oraz
+  ETAP1-FROZEN z niezmiennymi N/definicjami/regułami przed ETAPEM 2.
+- Nazwa REAL_MASKING_PIPELINE uczciwie dotyczy tekstu z OCR w /preview,
+  nie produkcyjnego E2E zdjęcia. HerBERT i Guard-reszta są symulacjami;
+  NOT_RUN opcjonalnego ramienia nie może zmieniać bazowego pomiaru.
+- Pełne mianowniki, blocked/error, UNKNOWN_REVIEW, dobór N tylko na znanych
+  i ograniczenie ponownego holdoutu są zapisane. READY_FOR_PRODUCT_BRIEF
+  nie jest certyfikacją bezpieczeństwa ani zgodą na produkt.
+- identity zawiera istniejącą odpowiedzialność daty ur. i wzorce numerów;
+  numeric dotyczy numerów kontekstowych. ETAP 2 ograniczono do potwierdzonej
+  klasy OCR po kotwicy, z testem RED/GREEN; brak błędu -> NO_CHANGE.
+  Nie narzucano ownera konkretnego findingu przed reproduktorem.
+- Jeden Task z dwoma etapami respektuje polecenie OWNERA. C1 nie wymaga
+  rozbijania pracy, nowych modeli, kolejnego arbitra ani poszerzania scope.
+- GATE ~650 linii wymaga osobnej zgody OWNERA przed implementacją.
+
+NASTĘPNY KROK
+CC doprecyzowuje wyłącznie C3/start w zakresie C1; wąski re-check tej
+korekty, potem ostateczny szacunek i zgoda OWNERA na rozmiar.
+Bez testów/modeli w prechecku, bez zmian produktu i merge.

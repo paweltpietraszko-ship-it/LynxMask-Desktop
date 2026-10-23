@@ -1,0 +1,106 @@
+LYNX-SILENT-PACK1 — niezależny audyt implementacji r3, 22.10.2026
+WERDYKT: FAIL na exact SHA753b7afcac0ab5d6b7185c6a376035dbd137a381.
+DELIVERY:d9038c02d205f0cf25005d13931cdad55ed41b2d.
+Baza/diff:bb0abbc3f4367cfbc3b3f3f52f983e6e12dc3c88..753b7af.
+Odbiorca: CC — jedna zamknięta poprawka F1.
+Wyniki GOLD potwierdzone. B1–B3 pozostają zgodne w zbadanych klasach.
+FAIL wynika wyłącznie z odtworzonej regresji F1, nie z bramki/liczby linii ani starych porażek testów.
+
+Wyrocznia:
+Brief f572d09 zaakceptowany precheckiem r2; brief/spec/lock bez zmian w dostawie.
+B1 pełna firma przy Przywróć, B2 osobny token konfliktowego rdzenia i B3 predykat pospolitości są już uzgodnione.
+Nie otwieram ich jako nowych pytań produktowych.
+Odczytano cały diff5 plików produkcyjnych, nowy test i DELIVERY.
+
+F1 [P2] — pomiar w milimetrach błędnie maskowany jako KWOTA.
+TRACE: brief, klasa3: „Wykluczenia jak na main: %, jednostki” i jawna kontrola negatywna „1234,56 mm”.
+OWNERSHIP: backend/layers/amount.py, nowy _AMOUNT_NOCUR_CTX_RE (linie44–48) oraz _not_amount_ctx (69–73).
+Lista wykluczanych jednostek zawiera m, ale nie mm; „wartość” spełnia nowy warunek kontekstu kwotowego.
+REPRO rzeczywistego spaCy/Morfeusz -> pipeline -> Guard, bez stubów, na exact SHA:
+  wejście: Wartość pomiaru 1234,56 mm.
+  wynik:   Wartość pomiaru KWOTA_001 mm.
+  mapa:    KWOTA_001=1234,56
+  warnings=[]; error=null.
+Na baziebb0abbc ten sam tekst pozostaje bez zmian, mapa pusta.
+To nowa regresja rozpoznawania, nie wyciek PII ani celowo zaakceptowana normalizacja.
+Ta sama klasa potwierdzona:
+- Wartość pomiaru 12.345,67 mm.
+- Odczyt 1234,56 mm; wartość zmierzono ponownie.
+Kontrole: mm bez słowa kwotowego, g przy „wartość”, procent, wersja — nie są maskowane jako KWOTA;
+prawidłowa kwota „Do zwrotu1049,63” (ze spacją we właściwym wejściu) jest maskowana.
+Minimalny przenośny repro_r3.py:5 kontroli OK/3 warianty F1 niezgodne, exit1.
+Wymagana korekta CC: zachować wyłączenie pomiarów mm także po wejściu nowej reguły kontekstowej.
+Nie wymagam nowej listy wszystkich jednostek, nowego ownera ani zmiany polityki kwot.
+
+Niezależna macierz21 wejść (matrix-exact.json):
+- B1: jeden token pełnej firmy i jednoznacznego rdzenia — zgodnie z zaakceptowaną pełną nazwą.
+- B2: odwrócona kolejność pełnych firm oraz wielokrotne użycie rdzenia — trzy różne tokeny,
+  pełne firmy osobne, konfliktowy rdzeń we własnym tokenie FIRMA.
+- B3: „Most na rzece”, „Jutrzenka rozświetliła niebo” zachowane mimo pełnej firmy w dokumencie.
+  „Jan Kowalski” jako rdzeń osobowy zachowuje OSOBA poza pełną firmą.
+  Brak pełnej firmy nie uruchamia nowej propagacji.
+  Osobno zasymulowany (None,None,None) predykatu: rdzeń jednowyrazowy pomijany.
+- Podwójna forma prawna: nazwa zakryta jako jedna FIRMA.
+- Kwoty:6 cyfr, grupowanie kropkami, kontekst przed/po, brak kontekstu, granica zdania,
+  procenty/wartość wersji/gramy zgodne; jedyne odchylenie tej macierzy to F1 mm.
+- Numery:3 i8 członów, etykieta zachowana, pełny numer ze slashem i przykład OCR zakryte.
+Realny pipeline+Guard w całej macierzy. Nie utożsamiam jej z dowodem skuteczności na dowolnym dokumencie.
+
+Testy z briefu uruchomione osobiście, plikami w osobnych procesach:
+test_silent_pack1.py:24 passed
+test_firma_context.py:14 passed
+test_layers.py:119 passed /2 failed
+test_amounts_numbers.py:20 passed
+test_formats_pack2.py:20 passed
+test_addr_email_leaks.py:22 passed (w tym pion /preview)
+test_map_fidelity.py:29 passed
+test_audyt_2026_10.py:122 passed /1 failed /2 xfailed
+Łącznie370 passed /3 failed /2 xfailed.
+Wszystkie3 porażki odtworzone celowanym wyborem na bazie, te same wyniki:
+- TestFirmaBounds::test_osoba_i_fragment_formy;
+- test_forma_prawna_nie_ginie_przy_przywroc[...S.A.];
+- test_filtr_ner_nadal_odrzuca_nie_osoby[Komornik Sądowy'-FIRMA].
+Nie są nowymi regresjami dostawy. Wymaganie skrótu1:1 w teście S.A. dodatkowo nie może unieważniać
+uzgodnionego B1 o pełnej nazwie przy przywróceniu.
+Nie przypisuję F1 tym trzem starym testom: F1 jest niezależnym reproduktorem poza nimi.
+
+GOLD — niezależnie ponowiono wymagany kontraktem pomiar „human_view.py ... all” na obu SHA:
+dataset lokalny backend/dataset_gold_20261022, dev40/test80.
+Ten sam skrypt, blob0360ba55bd672b6eaf1f085aa11cdee7e8518263.
+Nie zmieniano algorytmu pomiaru ani danych, nie strojono na części test.
+Odczytano tylko agregaty części test; lokalnych widoków/składników test nie publikowano.
+
+                         baza dev   dostawa dev   baza test   dostawa test
+ciche wycieki                 102            20         217             52
+z ostrzeżeniem                 37            35          60             60
+zbędne zakrycia             69/440        69/440     152/880        152/880
+ostrzeżenia/dok.              1,62          1,23        1,23           0,97
+
+Potwierdzone liczby wg typu (ciche, dev/test):
+FIRMA nierodo:33->5 /70->12; FIRMA rodo:14->14 /40->40;
+KWOTA:36->0 /71->0; NUMER:18->0 /36->0; OSOBA:1->1 /0->0.
+ADRES/EMAIL bez pogorszenia, wszystkie ich pozycje zakryte według tej metryki.
+Brak błędów silnika; oba pomiary obejmują odpowiednio40+80 dokumentów.
+
+Interpretacja:
+Liczby CC odtworzone, warunek braku wzrostu zbędnych zakryć W TYM ZBIORZE spełniony.
+Skrypt mapuje znaki sekwencyjnie i przez difflib; liczniki jawnych słów/podciągów nie dowodzą poprawności
+każdego semantycznego spanu. F1 pokazuje dodatkowe zbędne zakrycie poza GOLD mimo stałego licznika.
+To nie powód do unieważnienia poprawy metryki, lecz rzeczywisty brak pokrycia wymaganego wykluczenia.
+
+Gate:
+WYMAGA_DECYZJI — RATIO207/7=29,6:1 i TOTAL_LINES214/150.
+Zgoda OWNERA na szacunek~200 l była odnotowana przed implementacją.
+Nie żądam automatycznie nowej zgody za214; gate pozostaje jawnie mechaniczny, nie jest podstawą FAIL.
+Szew ner_layer to deklarowane2 istniejące linie, bez wzrostu _process_ner.
+
+Izolacja i granice:
+C:/Users/p_pie/AppData/Local/Temp/lynx-silent-pack1-audit-r3-20261022/
+base/,exact/,run_test.py,base_run_test.py,matrix.py,matrix-exact.json,compare_units.py,matrix-base.json,
+human_view.py,measure.py,gold-base/summary.json,gold-exact/summary.json,repro_r3.py.
+Własne profile/klucze, HerBERT OFF. TestClient odcina rzeczywisty port8765 i sieć zewnętrzną.
+Backend/profil/token Pawła nietknięte. Dane wyłącznie syntetyczne.
+Bez pełnej suity repo/OCR/GUI/archiwum eksportu; nie powtarzano poza kontraktem dużych zbiorów.
+Bez zmian produktu, merge, subagentów i pamięci.
+Dalszy krok: CC poprawia F1; zachować obecne dowody GOLD i B1–B3.
+Recheck małej poprawki: diff od753b7af + zachowany repro_r3.py + test zmienionego ownera.

@@ -114,6 +114,7 @@ from typing import Any
 import ner_layer
 import verbal_amounts
 from ner_blocklist import _LEGAL_SUFFIXES_LOWER as _FIRMA_SUFFIXES
+from osoba_not_person import released, start_run  # [LYNX-OSOBA-PACK4] krok 2 → Guard
 
 logger = logging.getLogger("pseudominizer.pipeline")
 
@@ -247,6 +248,7 @@ class PipelineResult:
     guard_reasons: list = field(default_factory=list)
     error:         str | None = None
     guard_values:  list = field(default_factory=list)  # [LYNX-FAILCLOSED-S3] wartości naruszeń tylko dla UI
+    guard_warnings: list = field(default_factory=list)  # [LYNX-GUARD-A] ostrzeżenia do decyzji Zakryj/Zostaw (S4)
 
 
 # â”€â”€ API publiczne â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -258,6 +260,7 @@ def pseudonymize_document(text: str, state: AppState) -> PipelineResult:
     Fail-closed dla output_guard: blokada jest respektowana.
     """
     try:
+        start_run()  # [LYNX-OSOBA-PACK4] nowy dokument: pusty rejestr kandydatów bez dowodu
         return _run_pipeline(text, state)
     except Exception as e:  # [LYNX-FAILCLOSED-S3] F1b: awaria = wynik bez treści i mapy, bez treści wyjątku (S3/S5)
         logger.error("[PIPELINE] Nieoczekiwany błąd: %s", type(e).__name__)
@@ -308,7 +311,19 @@ USE_NEW_PIPELINE: bool = True
 
 # â”€â”€ Implementacja â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-def _apply_guard(
+def _apply_guard(text: str, reverse_map: dict, state: AppState, force_block: bool = False) -> PipelineResult:
+    # [LYNX-HERBERT-NET] kolejno: S3 wcześniejszych etapów → siatka HerBERT (LYNX_HERBERT=off: bez zmian) → Guard raz
+    if not force_block:
+        try:
+            from herbert_net import apply_net
+            text, reverse_map = apply_net(text, reverse_map, state.anon_map)
+        except Exception as e:  # siatka włączona, ale niedostępna → S3 fail-closed; S5: tylko typ wyjątku
+            logger.error("[PIPELINE] HerBERT: %s", type(e).__name__)
+            return _s3_failure("[HERBERT_ERROR] dodatkowa kontrola HerBERT niedostępna")
+    return _apply_output_guard(text, reverse_map, state, force_block)
+
+
+def _apply_output_guard(
     text: str,
     reverse_map: dict,
     state: AppState,
@@ -318,19 +333,12 @@ def _apply_guard(
     # force_block=True: blokada prewencyjna gdy wczesniejszy etap zglosil blad (MED-1).
     if force_block:  # [LYNX-FAILCLOSED-S3] awaria wcześniejszego etapu (NER, warstwa) — bez treści i mapy w wyniku
         return _s3_failure("[FORCE_BLOCK] awaria wcześniejszego etapu")
-    guard_blocked, guard_reasons, guard_values = False, [], []
+    guard_reasons, guard_values, guard_warnings = [], [], []
 
     if _GUARD_AVAILABLE:
         try:
-            try:
-                import pathlib as _alp, os as _alo, json as _alj
-                _alfile = _alp.Path(_alo.environ.get(
-                    "PROFILE_DIR",
-                    str(_alp.Path.home() / ".pseudominizer" / "profile")
-                )) / "guard_allowlist.json"
-                _allowlist = _alj.loads(_alfile.read_text(encoding="utf-8")) if _alfile.exists() else []
-            except Exception:
-                _allowlist = []
+            from guard_residue import collect_warnings, load_allowlist
+            _allowlist = load_allowlist()
             guard_result = guard_output_with_map(
                 text,
                 state.anon_map,
@@ -339,22 +347,14 @@ def _apply_guard(
                     v for v in reverse_map.values()
                     if len(re.sub(r'[\s\"\'“”„‟]+', '', v)) >= 5
                 ],
-                allowlist=_allowlist,
             )
             if guard_result.error:  # [LYNX-FAILCLOSED-S3] F2: awaria wewnątrz Guarda → odmowa bez wyniku i mapy
                 return _s3_failure("[GUARD_ERROR] awaria Guarda")
-            guard_blocked = guard_result.blocked
             guard_reasons, guard_values = guard_result.reasons, guard_result.values
-            if guard_blocked:
-                logger.error("[PIPELINE] Guard zablokował eksport: %s", guard_reasons)
-                # [IBAN-OCR] Przy blokadzie HIGH tekst też zamieniamy na redacted_text
-                # — anonymized_preview pokazuje [REDACTED] zamiast surowych danych.
-                # Guard zawsze wypełnia redacted_text (pattern.sub dla każdego HIGH),
-                # niezależnie od blocked/redacted flag.
-                text = guard_result.redacted_text
-            elif guard_result.redacted:
-                logger.warning("[PIPELINE] Guard zamazał fragmenty: %s", guard_reasons)
-                text = guard_result.redacted_text
+            # [LYNX-GUARD-A] S4: bez automatycznego [REDACTED] i blokady — każde wykrycie to ostrzeżenie do decyzji
+            guard_warnings = collect_warnings(text, guard_values, _allowlist, released())  # [PACK4] + kandydaci bez dowodu
+            if guard_warnings:
+                logger.warning("[PIPELINE] Guard: %d ostrzeżeń do decyzji", len(guard_warnings))
         except Exception as e:
             # [MED-1] Wyjatek guarda -> blokada prewencyjna zamiast przepuszczenia. [LYNX-FAILCLOSED-S3] bez treści (S3/S5)
             logger.error("[PIPELINE] output_guard wyjatek -- BLOKADA prewencyjna: %s", type(e).__name__)
@@ -363,10 +363,10 @@ def _apply_guard(
     return PipelineResult(
         text=text,
         reverse_map=reverse_map,
-        guard_blocked=guard_blocked,
         guard_reasons=guard_reasons,
         error=None,
         guard_values=guard_values,
+        guard_warnings=guard_warnings,
     )
 
 

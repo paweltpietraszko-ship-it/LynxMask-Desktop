@@ -8,8 +8,10 @@ profilu tymczasowym. Komunikaty i logi bez treści wyjątków (S5) — tylko naz
 """
 from __future__ import annotations
 
+import ctypes
 import logging
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -74,6 +76,14 @@ def _check_profile(state, guard_available, crypto_ok) -> bool:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _check_herbert(state, guard_available, crypto_ok) -> bool:
+    """[LYNX-HERBERT-NET] tylko gdy siatka włączona: model ładuje się i wykrywa osobę w syntetyku (off → nie dotyczy)."""
+    import herbert_net
+    if not herbert_net.enabled():
+        return True
+    return any(kind == "PER" for _, _, kind, _ in herbert_net.detect(f"Umowę podpisał {_NAME} w Krakowie."))
+
+
 _CHECKS = (
     ("maskowanie numerów i adresów", _check_pipeline),
     ("Output Guard", _check_guard),
@@ -81,11 +91,31 @@ _CHECKS = (
     ("rozpoznawanie osób (SpaCy)", _check_ner),
     ("odmiana nazw (Morfeusz)", _check_morfeusz),
     ("profil biura", _check_profile),
+    ("dodatkowa kontrola HerBERT", _check_herbert),
 )
+
+
+def keep_full_speed() -> bool:
+    """[LYNX-PHOTO-CHAIN] Windows 11 spowalnia proces w tle bez okna (EcoQoS) ~3–4× po kilku sekundach pracy —
+    silnik uruchamiany ikoną jest takim procesem (zmierzone 20.10: PP 7–8 s → 2,2–3,8 s/str.). Wyłącza to tylko dla
+    tego procesu; poza Windows nic nie robi. Niepowodzenie nie blokuje startu (to wydajność, nie ochrona)."""
+    if sys.platform != "win32":
+        return False
+
+    class _Throttling(ctypes.Structure):   # PROCESS_POWER_THROTTLING_STATE
+        _fields_ = [("Version", ctypes.c_ulong), ("ControlMask", ctypes.c_ulong), ("StateMask", ctypes.c_ulong)]
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.GetCurrentProcess.restype = ctypes.c_void_p
+    k32.SetProcessInformation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_ulong]
+    state = _Throttling(1, 0x1 | 0x4, 0)   # EXECUTION_SPEED | IGNORE_TIMER_RESOLUTION, stan 0 = bez dławienia
+    ok = bool(k32.SetProcessInformation(k32.GetCurrentProcess(), 4, ctypes.byref(state), ctypes.sizeof(state)))
+    logger.info("[STARTUP] pełna szybkość procesu (bez EcoQoS): %s", "OK" if ok else "niedostępne")
+    return ok
 
 
 def run(state, guard_available: bool, crypto_ok: bool) -> list[str]:
     """Zwraca nazwy elementów, które NIE przeszły próby (pusta lista = wszystko działa)."""
+    keep_full_speed()
     failed = []
     for name, check in _CHECKS:
         try:

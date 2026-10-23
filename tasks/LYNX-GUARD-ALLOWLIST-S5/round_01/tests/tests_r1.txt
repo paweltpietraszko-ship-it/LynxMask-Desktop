@@ -1,0 +1,86 @@
+LYNX-GUARD-ALLOWLIST-S5 — BRIEF_ONLY r1, 22.10.2026
+WYNIK: PASS PREIMPLEMENTATION dla wąskiego kontraktu S4/S5 na SHA5c407894ca21e0cfe0e57e411a4c06d2ffbf95c5.
+Baza deklarowana przez Architekta:b0b890d54ea1e6cf1c2a5536d8a5b94dd26bb316.
+Odbiorca: CC — implementacja; Paweł — jawna granica ochrony słownika opisana poniżej.
+Nie jest to PASS implementacji, dowód odporności na włamanie ani orzeczenie zgodności z RODO.
+Bez testów, reproduktorów i diffu implementacji. Nie ma jeszcze nowego guard_allowlist.py na badanym SHA.
+
+Zakres zlecenia:
+User prosi szczególnie o ochronę słownika przed osobami niepowołanymi.
+Dostawa dotyczy listy wyjątków Guarda, nie przebudowy całego słownika biura.
+Nowa lista ma korzystać z tego samego klucza/profilu co istniejąca mapa słownika.
+Odczytano cały brief; punktowo istniejący owner kluczy anonymizer_crypto, middleware i punkty API/UI.
+Nie czytano profilu, tokena, keystore ani realnych danych Pawła.
+
+Precheck:
+1. Zgodność z S4: trwały wyjątek tylko po świadomym „Zawsze jawne”; Zostaw nie staje się automatycznie trwałą regułą.
+   Express bez przycisku, wyjątki dla YELLOW. HIGH/MAP_LEAK niewyciszalne także przez stare wildcardy i pipeline.
+2. Zgodność z S5: zapis AES-GCM do .enc, istniejący owner kluczy, brak jawnych wartości w logach,
+   usunięcie frazy z URL (POST body zamiast DELETE/{phrase}); bez nowych formatów tokenów/KDF.
+3. Migracja: wymagany porządek odczyt starego -> zaszyfrowany zapis -> usunięcie jawnego pliku.
+   Nie traktować tego jako zgody na skasowanie czytelnego pliku przed udanym zapisem.
+4. Wieloregułowe cofnięcie ma odwrócić wszystkie zapamiętane pary tego ostrzeżenia.
+5. Uszkodzone .enc: brak wyciszeń, damaged=true, add/remove409, bez nadpisania; clear usuwa samą listę,
+   jawny przycisk z potwierdzeniem; profil/mapa/keystore pozostają.
+6. Reset usuwa stare/nowe pliki; istniejący owner API i jego autoryzacja pozostają.
+   Aktualne _EXPRESS_PATHS pozwala tokenowi Express tylko na POST /preview, więc token ten nie daje
+   dostępu do endpointów profilu. Nie wymagam zdublowanej autoryzacji w nowym module.
+7. Wskazano istniejących ownerów i minimalny nowy szew guard_allowlist.
+   Nie dokładam nowego silnika ani serwerowego nadzorcy decyzji.
+Macierz odbioru obejmuje najważniejsze klasy powyżej; do wykonania dopiero po implementacji.
+Zgoda na kierunek/szacunkowe~250l odnotowana w aktualnym przekazaniu; nie żądam jej ponownie.
+
+SZCZEGÓLNA OCENA DOSTĘPU DO SŁOWNIKA — ważne dla interpretacji PASS:
+AES-GCM jest właściwym mechanizmem poufności/integralności zapisanego pliku, o ile chroniony jest klucz.
+Samo zaszyfrowanie pliku nie określa, kto w biurze jest upoważniony do danych.
+
+Potwierdzone ODCZYTEM KODU, nie reproduktorem ataku:
+- anonymizer_crypto.get_or_create_keys ładuje klucze z triangulum_keystore.bin.
+- Na Windows CryptProtectData/CryptUnprotectData wiąże keystore z użytkownikiem Windows.
+  Wywołanie używa flags0 i bez dodatkowej tajemnicy hasła aplikacji.
+- Sam docstring ownera mówi wprost, że DPAPI nie chroni przed procesami tego samego użytkownika.
+- Klucz nie jest w tym mechanizmie uzależniony od podania hasła LynxMask.
+- Middleware profilu sprawdza pełny token backendu. Token powstaje przy starcie backendu
+  i jest zapisywany do api_token.txt; to autoryzacja techniczna backendu, nie wykaz osób upoważnionych w biurze.
+- Nie wolno utożsamiać ograniczenia przycisku Express z kryptograficznym odcięciem danych od konta Windows.
+
+Wniosek techniczny dla planowanej listy i obecnego słownika opartego na tych samych kluczach:
+A. Osoba, która skopiuje wyłącznie .enc bez klucza, nie uzyskuje przez to jawnej treści.
+B. Inne zwykłe konto Windows nie powinno móc po prostu użyć tego keystore do odszyfrowania.
+   To właściwość DPAPI dla użytkownika, nie test ACL ani symulacja innego konta.
+C. Program/osoba mogąca wykonywać kod i czytać profil jako ten SAM użytkownik Windows
+   nie jest odcięta przez ten mechanizm DPAPI. Także nieznajomość hasła LynxMask sama w sobie
+   nie stanowi tu dodatkowej bariery do odzyskania klucza.
+D. Zamknięcie okna lub blokada samej aplikacji nie zmienia kryptograficznego powiązania DPAPI.
+   Nie badano teraz rzeczywistego logout ani cyklu życia procesu/kluczy.
+E. Ochrony przed administratorem, malware, przejęciem konta lub pamięcią procesu nie udowodniono.
+   Nie przedstawiam ich jako odtworzonych luk nowej dostawy.
+
+W biurze dostęp do tego samego konta systemowego NIE dowodzi upoważnienia do każdego słownika klienta.
+Dlatego NIE potwierdzam zdania „słownik będzie niedostępny dla wszystkich osób niepowołanych”.
+Można potwierdzić jedynie wąski zamiar ochrony danych na dysku w modelu konta Windows.
+Ograniczenie istnieje już w dotychczasowym ownerze kluczy; nie jest nowo odtworzonym FAIL tej listy.
+Nie projektuję teraz zmiany KDF/hasła, modelu ról ani instalatora.
+Zgodnie z wcześniejszym zakresem nie wskrzeszam ochrony przed celowym obchodzeniem lokalnego UI/API
+jako automatycznego blockera. Jeżeli Paweł wymaga izolacji również pomiędzy osobami używającymi tego samego
+konta Windows, to wymaga odrębnego jawnego rozstrzygnięcia i briefu Architekta; ta dostawa tego nie zapewnia.
+
+Kontekst RODO:
+Art.5 ust.1 lit.f oraz art.32 wymagają odpowiedniej poufności i zabezpieczeń dobranych do ryzyka
+nieuprawnionego dostępu, a nie jedynie pliku z rozszerzeniem .enc.
+Art.32 ust.4 dotyczy również działania osób upoważnionych zgodnie z poleceniem administratora.
+Nie wynika z tych przepisów automatyczny zakaz DPAPI ani automatyczna zgodność każdego zastosowania DPAPI.
+Wniosek dla tego projektu: ocena zależy też od indywidualnych kont Windows, uprawnień, blokady stanowiska
+i faktycznej organizacji dostępu do danych. Sam brief nie wystarcza do orzeczenia zgodności całego produktu.
+Oficjalne źródło:
+https://eur-lex.europa.eu/legal-content/PL/TXT/?uri=CELEX%3A32016R0679
+Potwierdzenie granicy technicznej DPAPI (Microsoft):
+https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata
+Brak testów nie jest dowodem naruszenia; nie zgłaszam incydentu ochrony danych.
+
+Dalszy krok:
+CC może implementować dokładnie ten wąski kontrakt. Po dostawie audyt exact SHA musi sprawdzić
+szyfrowanie i ścieżki API, migrację, błędy zapisu/odszyfrowania, RED, cofanie, clear/reset i Express.
+Do tego czasu mechanizmy nowej listy mają status planowane/NOT_CHECKED, nie „już bezpieczne”.
+PASS PREIMPLEMENTATION nie obejmuje całego słownika/eksportów ani testu dostępu osób trzecich.
+Bez kodowania, testów, subagentów, realnych danych i merge.

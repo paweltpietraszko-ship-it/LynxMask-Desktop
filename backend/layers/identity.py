@@ -46,13 +46,19 @@ _IDENTITY_SOURCES: frozenset[str] = frozenset({
 # Wzorzec NIP z rozszerzonym separatorem: OCR czasem zastepuje myslnik kropka
 # (np. "766-444-75.06"). STRUCTURAL_PATTERNS ma stary [-\s]? — podmieniamy lokalnie.
 _NIP_PATTERN_ORIG = r"(?<!\d)\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}(?!\d)"
-_NIP_RE_OCR = re.compile(r"(?<!\d)\d{3}[-\s.]{0,3}\d{3}[-\s.]{0,3}\d{2}[-\s.]{0,3}\d{2}(?!\d)")
+# [LYNX-OCR-GATE-COMPARE E2] dalsze grupy po „-”/„.” w całości („373251.0081.9795” z numeru działki) — nie urywać ogona
+_NIP_RE_OCR = re.compile(r"(?<!\d)\d{3}[-\s.]{0,3}\d{3}[-\s.]{0,3}\d{2}[-\s.]{0,3}\d{2}(?:[-.]\d{1,4})*(?!\d)")
+# [LYNX-OCR-GATE-COMPARE E2] data po kotwicy „ur” z cyframi pomylonymi przez OCR (klasa jak AnchorEngine Mobile A.7),
+# co najmniej jedna prawdziwa cyfra; czysta data zostaje przy wzorcu STRUCTURAL
+_D = r"[0-9OolIiSsBbZz]"
+_DOB_OCR_RE = re.compile(rf"\bur\.?[ \t]*(?=\S*\d){_D}{{1,2}}[./-]{_D}{{1,2}}[./-]{_D}{{4}}"
+                         r"(?:\s+w\s+[A-ZŁŚŹĆŃ][\w\-]{1,30})?(?!\w)")
 
 _IDENTITY_PATTERNS: list[tuple[str, re.Pattern]] = [
     (tok, _NIP_RE_OCR if pat.pattern == _NIP_PATTERN_ORIG else pat)
     for tok, pat in STRUCTURAL_PATTERNS
     if pat.pattern in _IDENTITY_SOURCES
-]
+] + [("NUMER", _DOB_OCR_RE)]
 
 # [NUMER-RECALL-OCR] OCR wstawia spacje w srodek liczb.
 # Lapiemy: grupy cyfr przedzielone spacjami/tabami, min 2 grupy.

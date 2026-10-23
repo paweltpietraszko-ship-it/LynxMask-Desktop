@@ -126,6 +126,8 @@ import dataclasses
 import re
 import logging
 
+from firma_context import firma_core_variants, legal_form_entities, scan_legal_forms
+from osoba_not_person import drop_street_osoba, filter_single_osoba, reject_single_osoba  # [LYNX-OSOBA-PACK4]
 from ner_blocklist import (
     _GEO_WORDS,
     _LEGAL_SUFFIXES_LOWER,
@@ -195,7 +197,7 @@ _INTERNAL_ORG_RE = re.compile(
 # (np. "Sp. z o.o. ZUS-Warszawa") — pomiń, to nie jest prywatna firma.
 # Ryzyko FP ("ZUS-IT Sp. z o.o.") minimalne — takich firm w Polsce nie ma.
 _INSTITUTION_IN_FIRMA_RE = re.compile(
-    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK)\b',
+    r'\b(?:ZUS|NFZ|KRUS|PIP|UODO|GUS|NIK|RPO|ARiMR|KNF|UOKiK|Urz[ąa]d\w*|Starostw\w*|Prokuratur\w*|Ministerstw\w*|Inspektorat\w*|Kuratori\w*|Izb\w+ Skarbow\w*)\b',  # [LYNX-FIRMA-FILTER-FIX] urzędy
     re.IGNORECASE,
 )
 
@@ -241,7 +243,8 @@ _FORM_WORDS = frozenset("sp spółka z o s a k j c akcyjna jawna komandytowa par
 def _firma_entities(text: str, ner_results: list) -> list:
     """[LYNX-FIRMA-HYPHEN-SUFFIX] Granice FIRMA (_firma_bounds); fragment samej formy prawnej („z o.o.”, „A.”) leżący
     wewnątrz rozpoznanej firmy nie dostaje osobnego tokenu — rozbiłby jej maskowanie."""
-    out = [_firma_bounds(text, r) for r in ner_results]
+    bounded = [_firma_bounds(text, r) for r in ner_results]
+    out = legal_form_entities(text, bounded + scan_legal_forms(text, bounded))  # [LYNX-FIRMA-FILTER-FIX] + [LYNX-FORMATS-PACK2]
     firms = [(r.start, r.end) for r in out if r.label == "FIRMA"]
     return [r for r in out if not (_LEGAL_FRAGMENT_RE.fullmatch(r.text.strip())
                                    and any(a <= r.start and r.end <= b and (a, b) != (r.start, r.end) for a, b in firms))]
@@ -309,7 +312,7 @@ def _prefix_rejects(label: str, entity_text: str, name_lower: str) -> bool:
     """Filtr prefiksów geo. Encja wielowyrazowa z imieniem/nazwiskiem (OSOBA: dowolne słowo,
     FIRMA: pierwsze — „Kowalski i Partnerzy”) go omija; „Samorządowego Kolegium…” nie.
     Bez Morfeusza nie odrzuca nierozstrzygniętej OSOBA (wolimy fałszywy alarm niż wyciek — S1/S3)."""
-    if name_lower[:8] not in _NER_BLOCKLIST_PREFIXES:
+    if name_lower[:8] not in _NER_BLOCKLIST_PREFIXES or _LEGAL_SUFFIX_RE.search(entity_text):  # [LYNX-FIRMA-FILTER-FIX]
         return False
     if label == "OSOBA" and _get_morfeusz() is None:
         return False
@@ -334,8 +337,8 @@ def _filter_institutions(ner_results: list) -> list:
         entity_text = ner.text.strip()
         name_lower  = entity_text.lower()
 
-        if _TOKEN_RE.search(entity_text):
-            logger.debug("[FILTER] pominięto token [len=%d]", len(entity_text))
+        if _TOKEN_RE.search(entity_text) or (ner.label == "OSOBA" and reject_single_osoba(entity_text, _PERSON_FORMS)):  # [LYNX-OSOBA-NOT-PERSON] przed T01
+            logger.debug("[FILTER] pominięto token / nie-osobę [len=%d]", len(entity_text))
             continue
         if _ORDER_CODE_RE.match(entity_text.strip()):
             logger.debug("[FILTER] pominięto kod zamówienia [len=%d]", len(entity_text))
@@ -442,7 +445,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
     """Wykrywa encje OSOBA i FIRMA przez SpaCy. NIE modyfikuje tekstu. [LYNX-FAILCLOSED-S3] Błąd nie jest „zerem
     encji”: propaguje się (adapter → state.ner_error → force_block, S3), bez treści wyjątku (S5)."""
     try:
-        return _process_ner(text, spacy_ner_mod)
+        return firma_core_variants(text, *_process_ner(text, spacy_ner_mod), _is_person_word)  # [SILENT-PACK1]
     except spacy_ner_mod.NERBlockError:  # [BUG-B] re-raise — NERBlockError dostępna przez moduł-argument
         raise
     except Exception as e:
@@ -453,7 +456,7 @@ def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
 
 def _process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
     ner_results = _split_lines(text, _firma_entities(text, spacy_ner_mod.detect_entities(text)))
-    ner_results = _filter_institutions(ner_results)
+    ner_results = filter_single_osoba(text, _filter_institutions(drop_street_osoba(text, ner_results)), _PERSON_FORMS)  # [PACK4]
 
     reverse_map:          dict[str, str] = {}
     all_variants:         dict[str, str] = {}

@@ -63,3 +63,24 @@ OWNER: „Odstawiamy Arenę na boczny tor, nie pokazuje znacznej poprawy jakośc
 Dowody: experiment/lynx-architecture-arena (R1: nadmiar STOP, 16 i 19 prób), experiment/lynx-architecture-arena-v02 (R2: mniej STOP na 35 syntetykach, ale fałszywie szeroka FIRMA pochłania OSOBA+prozę — Codex H1), task/LYNX-ARENA-SIGNALS-PILOT (mechanika zatwierdzona exact 243cc508; r2 Codexa: na trzech NOWYCH syntetykach rzeczywiste kandydatury pozwoliły odróżnić R1 od R2; nie uogólniać „R1=R2”). W żadnym z tych badań nie wykazano dostatecznej przewagi całego nowego silnika nad działającym produktem ani realnego wycieku jednoznacznie spowodowanego sekwencją podmian.
 
 Historia: git log -p BOARD.md dla wierszy LYNX-POLIGON, LYNX-ARENA-SIGNALS-PILOT i dawnych ARCH-ARENA; raporty Codexa w tasks/LYNX-ARCH-ARENA*/round_01/tests/ oraz tasks/LYNX-ARENA-SIGNALS-PILOT/round_01/tests/. Powrót tylko na nowe jawne polecenie OWNERA albo gdy zmierzone powtarzalne błędy produkcji dają **dowód**, że warstwy sekwencyjne są przyczyną, a nie błędne detektory czy mapy. Przed wznowieniem porównanie na tym samym gold, metryki FN/FP, STOP, Przywróć i koszty, nie same testy kontraktowe.
+
+## 2026-10-21 — Aktualizacje składników bez wpływu na jakość maskowania (po LYNX-DEPS-UPDATE)
+Odłożone na etap końcowy („jak uznamy, że program jest zbudowany” — Paweł; decyzję zostawił CC). Załatwione w LYNX-DEPS-UPDATE (main
+`20d43e9`): wszystkie luki bezpieczeństwa (Pillow 13, cryptography 50, starlette/fastapi, multipart, urllib3, rustls/anyhow), Morfeusz
+1.99.15 (SGJP 2026-06-01), własne `.venv` + `backend/requirements.txt`. Czeka (bez znanych luk, bez wpływu na maskowanie): onnxruntime
+1.25→1.31 + numpy 2.4→2.5 (czytnik PP — z pomiarem odczytu), spaCy 3.8.13→3.8.16, phonenumbers 9.0.30→9.0.41 (z pomiarem telefonów),
+PyMuPDF 1.27→1.28, uvicorn, pydantic, Python 3.14.4→3.14.8 (przebudowa `.venv`), Tauri 2.11→2.12 (npm + crate razem), Tesseract
+5.5.0→5.5.3 (tylko zapas); React 18→19 / Vite 5→8 / TypeScript 5→7 — osobny temat. Słownik SGJP 2026-10 (ręczne pobranie) i pełny lock
+zależności tranzytywnych → `LYNX-INSTALLER`. Metoda: nowe `.venv`, porównanie `/preview` przed/po (pomocnik), Codex.
+
+## [2026-10-21] Narzędzie porównujące silnik Mobile i Desktop
+
+Silnik Mobile uruchamia się na komputerze Pawła jako test JVM, bez telefonu: JDK z Android Studio (`C:\Program Files\Android\Android Studio\jbr`), `gradlew.bat testDebugUnitTest --offline`, punkt wejścia `PseudonymEngine.pseudonymize` (`PseudonymEngine.kt:116`), słowniki przez `LookupTables.initializeFromClasspath()`; w kopii repo trzeba podmienić przestarzały root `build.gradle.kts`. Dowód pomocnika CC 21.10: 758/761 testów JVM przechodzi, jedno zdanie zamaskowane poprawnie (kopia i logi lokalnie `%TEMP%\lynx_cc_review\mobile_engine\`). Narzędzie: te same pliki .txt przez Mobile i Desktop `/preview`, lista różnic (~1–2 h pracy pomocnika). Odłożone przez Pawła 21.10; wrócić przy ogólnym teście skuteczności maskowania (BOARD → TERAZ pkt 3) albo przy kolejnym pytaniu „jak robi to Mobile”.
+
+## [2026-10-21] OSOBA krok 2 — „udowodnij, że jesteś OSOBA”
+
+Pojedyncze słowo zakrywane tylko z dowodem (imię obok, Pan/Pani, PESEL, nazwisko ze słownika); bez dowodu — lista do decyzji człowieka. Odłożone przez Pawła 21.10: dziś pojedyncze słowo ze spaCy jest zakrywane (bezpieczny kierunek, czasem nadmaskowanie np. „Kawa”), a celem są dokumenty biurowe, gdzie nadmaskowanie jest akceptowane. Wycieki niezłapanych słów rozwiązuje `LYNX-GUARD-RESIDUE` („pokaż resztę”). Wrócić tylko, jeśli nadmaskowanie zacznie przeszkadzać w praktyce. Kontekst: BOARD 21.10, pomiar KPWr (`%TEMP%\lynx_cc_review\kpwr\` lokalnie u CC).
+
+## [2026-10-23] Model rozumiejący zdanie jako sędzia szarej strefy OSOBA
+
+Pomysł z rozmowy 23.10: mały lokalny model językowy (np. Bielik) ocenia tylko przypadki, w których dziś pyta Guard („czy w tym zdaniu »Kawa« to osoba?”), człowiek dopiero gdy model niepewny. Odłożone przez Pawła 23.10 na rzecz: człowiek decyduje 2–4 razy na dokument, a projekt `LYNX-OSOBA-REDESIGN` dba, by do Guarda nie trafiały śmieci. Test CC 23.10: HerBERT (legal NER) gubi pojedyncze nazwiska w krótkich zdaniach („Wczoraj Nowak zlecił…”). Wrócić, jeśli po REDESIGN pytań będzie wyraźnie więcej niż 2–4 na dokument; wtedy mały eksperyment: kilkadziesiąt trudnych zdań, model vs HerBERT vs reguły; do sprawdzenia licencja, czas na komputerze biurowym, rozmiar instalatora, powtarzalność. Kontekst: `tasks/LYNX-OSOBA-REDESIGN/cc_proposal_update_2026-10-23.md` (gałąź zadania), pkt 6.

@@ -1,0 +1,95 @@
+LYNX-ADDR-REVERSED — niezależny recheck r3, 22.10.2026
+WERDYKT: FAIL dla exact SHA 12dcccc631ca08b43aef2dd70418fa744d4d1404.
+Kod poprawki: 249c72f9d8f9b7c82952a8e69ee72fcedafba90e.
+Poprzednio audytowany: 352975698a2a321709ecd39c113d8fdc8b26b074; baza Tasku: 3ad472b.
+Zakres diffu: 3529756..12dcccc. Odbiorca: CC.
+F1/F2 z r2 zamknięte w zachowanych przypadkach; F3/F4 poniżej pozostają otwarte.
+
+Wyrocznia:
+Frozen arch/spec.md + arch/FROZEN.lock, brief Tasku i OWNER_CORRECTED z r2.
+Spec/lock/brief bez zmian w badanym diffie. Żaden z findingów nie tworzy nowego zachowania produktu.
+Nie wznawiam OWNER_EXPLANATION_GATE dla błędów sprzecznych z istniejącym kontraktem.
+
+Zamknięte:
+F1 — spacja/tab po ulicy: ADRES obejmuje miasto. Niezależna zachowana macierz20:20/20,
+w tym Radom, Jelenia Góra i ASCII; Przywróć przez mapę1:1.
+F2 — „Jan Kalisz, ul. Polna 5” i „Pan Jan Kalisz, ul. Polna 5”:
+rzeczywisty pipeline -> Guard daje OSOBA=Jan Kalisz oraz ADRES=ul. Polna 5, bez błędu/ostrzeżeń.
+Kontrola osoby i miasta po ulicy w jednym adresie także poprawna:
+„Pan Jan Kalisz, ul. Polna 5 Radom” -> „Pan OSOBA_001, ADRES_001”.
+
+F3 [P1] — regresja poprawki F2: globalna lista słów osób zabiera prawdziwe miasto z osobnego adresu.
+TRACE: brief, Rozszerzenie, Zasada — miasto SIMC bezpośrednio przed ulicą jest częścią adresu,
+żaden człon nie zostaje jawny; odbiór wymaga Przywróć1:1.
+Chronienie nazwiska osoby nie ustanawia globalnego zakazu użycia tego samego słowa jako miasta.
+OWNERSHIP: backend/layers/address.py:224 zbiera person_words z całego dokumentu,
+a :207–208 odrzuca każde wystąpienie takiego słowa jako miasta, niezależnie od lokalizacji.
+Zmiana jest przed istniejącym apply_ner_layer; po odrzuceniu miasta dalsza propagacja osoby przejmuje to wystąpienie.
+Nie wymagamy zdublowanej walidacji downstream ani nowego silnika.
+REPRO rzeczywistego pipeline + spaCy/Morfeusz + Guard, bez stubów, na exact SHA:
+  wejście: Podpis: Jan Kalisz. Adres doręczenia: Kalisz, ul. Polna 5.
+  wynik:   Podpis: OSOBA_001. Adres doręczenia: OSOBA_001, ADRES_001.
+  mapa:    OSOBA_001=Jan Kalisz; ADRES_001=ul. Polna 5
+  error=null; guard_warnings=[]
+  podstawienie z mapy:
+           Podpis: Jan Kalisz. Adres doręczenia: Jan Kalisz, ul. Polna 5.
+Miasto zostaje zastąpione pełnym imieniem i nazwiskiem; to błędna klasyfikacja i uszkodzenie przywracanej treści.
+Nie nazywam tego nowym jawnym wyciekiem w maskowanym tekście.
+Poprzedni exact SHA3529756 na tym samym wejściu:
+  Podpis: OSOBA_001. Adres doręczenia: ADRES_001.
+  ADRES_001=Kalisz, ul. Polna 5; OSOBA_001=Jan Kalisz.
+Sam adres „Kalisz, ul. Polna 5”, bez innej osoby, działa także w nowej dostawie.
+To jeden spójny syntetyczny dokument (podpis i adres), nie konflikt sztucznie zestawionych niezależnych zbiorów.
+Wymagana korekta: chronić rozpoznaną osobę bez wyłączania prawdziwego miasta w innym wystąpieniu.
+Nie wskazuję CC nowej architektury.
+
+F4 [P1 / SAFETY_PRIVACY] — w nakładających się trafieniach ginie kod pocztowy przed miastem i ulicą.
+TRACE: brief, Rozszerzenie — „adres w całości z miastem”, „żaden człon nie zostaje jawny”;
+normalna kolejność kod+miasto jest deklarowana jako działająca, liczba tokenów dowolna.
+OWNERSHIP: address.py:_with_neighbours (:230–235) poszerza trafienie ulicy o miasto.
+To trafienie częściowo nakłada się na kod+miasto; wspólne _apply_hits (:159–175) wybiera większe,
+a kolidujące odrzuca w całości. Ochrona wspólnej części nie chroni wystającego kodu pocztowego.
+REPRO rzeczywistego pipeline -> Guard na exact SHA:
+  wejście: Adres: 26-600 Radom, ul. Polna 5
+  wynik:   Adres: 26-600 ADRES_001
+  mapa:    ADRES_001=Radom, ul. Polna 5
+  error=null; ostrzeżenie R3/YELLOW o „26-600”.
+To brak maskowania członu adresu przez ownera. Guard go wskazuje, więc NIE jest to cichy wyciek
+ani dowód obejścia blokady zapisu/eksportu. Guard jest ostatnią kontrolą, nie zastępstwem wymaganego rozpoznania adresu.
+Wariant bez przecinka „Adres: 26-600 Radom ul. Polna 5” daje taki sam brak.
+Kontrola kolejności odwróconej „Radom, 26-600, ul. Polna 5” zakrywa wszystkie człony dwoma ADRES.
+Przypadek prosty z kodem odtworzono też na3529756 — F4 jest wcześniej obecnym, nowo odkrytym
+wariantem tej samej klasy Tasku, NIE nową regresją r2 ani ponownym otwarciem F1/F2.
+Wymagana korekta: nie gubić niepokrytych części poprawnego adresu przy nakładaniu trafień.
+
+Warstwy i wykonane kontrole:
+- Odczyt wąskiego diffu: jeden plik produkcyjny address.py; celowane testy oraz DELIVERY/gate r2.
+- Zachowany audit.py z r1: macierz20/20 z NER wyłączonym, oddzielnie rzeczywisty pion6 przypadków.
+- Celowane testy uruchomione osobiście w osobnych procesach:
+  test_addr_reversed.py21 passed;
+  test_addr_email_leaks.py22 passed (w tym pion /preview).
+  Razem43 PASS. Ostrzeżenia składni/deprecacji nie są podstawą werdyktu.
+- Uzasadnione rozszerzenie: person_words dotyczy całego dokumentu — sprawdzono osobne wystąpienie miasta
+  oraz lokalne kontrole osoby/miasta. Przy tej kontroli wykryto jawny kod; tylko trzy kontrole tego układu.
+- Rzeczywiste spaCy/Morfeusz/pipeline/Guard, HerBERT OFF. Własna izolowana kopia i profile w Temp.
+- TestClient miał blokadę prawdziwego portu8765 i sieci zewnętrznej; nie używano profilu/tokenu/backendu Pawła.
+- formalny repro_r3.py: kontrole F1/F2/miasto przechodzą, F3/F4 nie przechodzą (exit1).
+  Pole restored_via_map to literalne podstawienie według mapy jak _restore w kontrakcie, NIE test kliknięcia GUI.
+- Gate r2 implementatora: WYMAGA_DECYZJI jedynie RATIO131:1. Nie jest podstawą tego FAIL.
+
+NOT_CHECKED:
+Bez nowego GOLD, pełnej regresji, OCR, eksportu i oglądu GUI.
+Agregaty GOLD/pozostałe suity w DELIVERY są dowodem CC, nie ponowionym niezależnym wynikiem tego rechecku.
+Nie wnioskuję z liczników słów o semantycznej poprawności wszystkich spanów.
+Po wystarczającym REPRO kończę, bez kolejnego benchmarku.
+
+Trwały reproduktor:
+tasks/LYNX-ADDR-REVERSED/round_01/tests/repro_r3.py
+  python repro_r3.py <izolowany-backend-exact-SHA> <własny-katalog-stanu>
+Lokalne artefakty:
+C:/Users/p_pie/AppData/Local/Temp/lynx-addr-recheck-r3-20261022/
+exact/, audit.py, matrix.json, vertical.json, siblings.py, siblings.json,
+compare.py, compare-previous.json, compare-postal.py, compare-postal-previous.json,
+postal.py, postal-check.json, run_test.py, repro_r3.py.
+Bez zmian produktu, merge i subagentów. Wszelkie dane przykładowe są syntetyczne.
+Dalszy adresat CC: poprawić F3/F4; zachować zamknięte F1/F2; przekazać nowy exact SHA.

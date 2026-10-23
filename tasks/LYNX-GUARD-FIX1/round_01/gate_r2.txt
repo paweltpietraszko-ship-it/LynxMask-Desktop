@@ -1,0 +1,14 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: d4e295cab17db0bc336d87058a8b5eb313a6c6a9
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 20/2 = 10.0:1 (threshold 5:1)
+IMPORTERS_FOR_REVIEW:
+  - backend\pseudominizer_api.py
+  - tasks\LYNX-GUARD-FIX1\round_01\tests\repro_r1.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-GUARD-FIX1/brief.md
+  - tasks/LYNX-GUARD-FIX1/repo_before.hash
+  - tasks/LYNX-GUARD-FIX1/round_01/gate_r1.txt
+  - tasks/LYNX-GUARD-FIX1/round_01/tests/repro_r1.py
+  - tasks/LYNX-GUARD-FIX1/round_01/tests/tests_r1.txt

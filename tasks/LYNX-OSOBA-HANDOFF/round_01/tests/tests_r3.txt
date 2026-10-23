@@ -1,0 +1,73 @@
+LYNX-OSOBA-HANDOFF — audyt implementacji r3
+Data: 2026-10-23
+Exact audited implementation SHA: 9f8a07e5eb8f0500c872ac1478c597036b1f80e3
+DELIVERY: d502740ca4cbdfd08cc60ed1caecd827afd7b4d5
+Diff base: edc28684413793866f3e71eaa4fa4809b61ffd97
+Kontrakt: brief r2 3cfa83804c4da880e9b21e41895bbd7942d9312a, precheck PASS 95f5ddd.
+Wynik: PASS — kod, niezależne klasy kontraktu, pion silnik->Guard, pomiary R1/GOLD.
+Pełna zadeklarowana regresja: PARTIAL — nieukończone testy obejmujące API. Nie jest to bezwarunkowy PASS wszystkich bramek wydania.
+Defekty implementacji: nie znaleziono.
+Odbiorca: CC / Paweł. Bez merge.
+
+Zakres i izolacja
+Wąski diff dwóch ownerów, nowej listy i testów; ponowne wykorzystanie r1/r2 i zaakceptowanych ograniczeń. Kod z git archive exact SHA w izolowanej kopii Temp, Python repo .venv, osobne profile/mapy. Nie restartowano backendu na 8765 i nie używano profilu/tokena Pawła. Brak zmian produktu.
+Nie badano ponownie odłożonych SURNAME-DICT/R1-NOISE, UI ani OCR robustness. Dokumenty pomiarowe nie trafiają do raportu.
+
+Kod
+- A odpowiada poprawionemu briefowi: common AND NOT person AND brak w person_forms AND niepusta lista AND brak na liście.
+- B przed append usuwa nie-nazwy. Wcześniejsze warunki dowodu/maskowania pozostają.
+- Lista zawiera hasła i odmiany; cache raz na proces. Brak pliku/niepoprawny JSON -> pusty zbiór, A wyłączona.
+- _released pomija całkowicie małe litery; zachowuje CAPS, wielką literę, fleksję i offsety.
+- Nie zmieniono tokenów, taksonomii, .lynxdict ani R2–R5.
+- RATIO 100:1 w DELIVERY wynika z dopisanego filtra/testów przy jednej usuniętej linii. Nie znalazłem zdublowanej odpowiedzialności wymagającej sztucznego usuwania kodu. Status bramki CC pozostaje WYMAGA_DECYZJI/RATIO; niniejszy wynik nie przepisuje go na zielony.
+
+Niezależne dowody
+Reproduktor: round_01/tests/repro_r3.py (commit db6b738f178d8e43b252f0c63a082286ebc7b71e).
+Uruchomienie: python -B -X utf8 <repro_r3.py> <backend exact SHA> <nowy katalog stanu w Temp>.
+20 sprawdzeń PASS:
+- tylko-pospolite hasło/odmiana/CAPS z listy nadal przekazane;
+- ochrona person_forms przy braku na liście;
+- rola poza listą pomijana;
+- pusta lista, rzeczywisty FileNotFoundError i uszkodzony JSON wyłączają A;
+- rzeczywista lista odczytana raz i cache współdzielony;
+- nie-nazwy, pusty kandydat, nieznany kandydat, sygnał osoby, awaria analizy;
+- wielkie/małe litery, fleksja Róża/Róży/RÓŻY i offsety po emoji.
+Część macierzy deterministycznie podstawia wynik analizy, nie udaje testu poprawności Morfeusza.
+Prawdziwy pion (bez stubu spaCy/Guarda): 4 syntetyczne dokumenty -> pseudonymize_document -> Guard:
+Powódka jawna bez pytania; Holub, Prokopenko, Kawa jawne z jednym pytaniem każdy. PASS.
+Pierwsza wersja własnego testu oczekiwała odrzucenia '---'; skorygowano błędne oczekiwanie audytora, ponieważ wcześniejsza niezmieniona gałąź liczbowa obsługuje ten kandydat przed B. Nie jest to finding produktu.
+
+Testy z repo — niezależnie uruchomione, osobne procesy:
+test_osoba_handoff.py: 17 passed.
+test_guard_residue.py: 54 passed.
+test_osoba_not_person.py: 25 passed.
+test_osoba_pack4.py: 12 passed.
+test_guard_allowlist_s5.py: pierwsze 12 pozycji zakończone powodzeniem; test_api nie ukończył się, proces przerwany. NOT_CHECKED końcowego wyniku API.
+test_layers.py: 119 passed, 2 failed:
+  TestFirmaBounds::test_osoba_i_fragment_formy
+  test_forma_prawna_nie_ginie_przy_przywroc[S.A.]
+Te same znane findingi co w DELIVERY i wcześniejszych dowodach; zmiana nie obejmuje ownerów tych usterek.
+test_audyt_2026_10.py: PARTIAL — start wykazał znany błąd oraz postęp testów, potem przebieg nie zakończył się; przerwany. Nie przypisano nieukończonego przebiegu do regresji produktu. Nie twierdzę, że pełny plik przeszedł.
+Pierwsze próby części regresji miały błędy uprawnień w wirtualnym TEMP sandboxa i brak audyt/engine_quality w kopii. Po wskazaniu fizycznego Temp i uzupełnieniu niezmienionych plików exact SHA PACK4/warstwy uruchomiono poprawnie. Błędów środowiska nie liczono jako findingów.
+Nie diagnozowano dalej niepowiązanej ścieżki API w ramach małego filtra. Pełna suita repo nie była wykonywana.
+
+Pomiary wymagane kontraktem — wykonane, nie tylko przepisane z DELIVERY
+1. r1_diag.py z badanego exact SHA, te same dwa lokalne manifesty CC, 255 dokumentów:
+  BIP 18, Sejm 30, UZP 40, KIO B 40, Codex 50, Pliki testowe 7, dataset_public_KIO 50, layout 20.
+  R1 = 902; released = 214. Próg <=950 spełniony.
+  KIO B: 225/40 = 5,625; dataset_public_KIO: 252/50 = 5,04 pytania/dok.
+  Finalny wynik odtworzony dokładnie. Historycznej liczby 7448 na main 2ea3a12 nie ponawiano na tych 255 dokumentach; porównanie 7448->902 korzysta z tej wartości bazowej CC.
+  To test finalnej ścieżki na tekście przetworzonym przez runner; nie osobny benchmark odporności OCR ani ocena, że każde usunięte pytanie było fałszywe.
+2. human_view.py z gałęzi GOLD-SET, ten sam skrypt/dataset w obu uruchomieniach:
+  final 9f8a07e i baza edc2868, dev 40 + test 80.
+  Całe summary.json identyczne między bazą i dostawą.
+  Ciche: dev 20, test 52.
+  OSOBA ciche/z ostrzeżeniem: dev 1/9, test 0/13.
+  Zbędne zakrycia: dev 69, test 152.
+  Ostrzeżenia/dok.: 1,23 / 0,97.
+  Test tylko w agregatach; nie analizowano treści holdoutu.
+Wniosek: próg pytań i brak wzrostu pominięć/nadmaskowania na GOLD potwierdzone niezależnym uruchomieniem.
+
+Granice / dalszy krok
+Jawne ograniczenie nazwisk spoza list i bez kwalifikatora Morfeusza pozostaje jak w r2; nie otwieram go ponownie bez nowych dowodów. Wyniki nie są gwarancją pełnej ochrony każdego dokumentu.
+Oko Pawła (pismo KIO) pozostaje do odbioru. RATIO oraz nieukończona część regresji są jawne; nie ogłaszam pełnego zielonego wydania ani zgody na merge. CC może uzupełnić dowód brakującej regresji w docelowym środowisku; nie potrzeba zmiany kodu na podstawie tego audytu.

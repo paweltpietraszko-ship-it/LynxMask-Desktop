@@ -1,0 +1,27 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: 2e9d128b9e19aaf19cb3982d8dcdf42c049b2ebd
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 173/5 = 34.6:1 (threshold 5:1)
+  - TOTAL_LINES: 178 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\docs_variants.py
+  - audyt\engine_quality.py
+  - backend\pseudominizer_api.py
+  - tasks\LYNX-TOKEN-RE-SPEC\round_01\tests\repro_r2.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-NER-MULTILINE\round_01\implementation\edge_sweep.py
+  - tasks\LYNX-NER-MULTILINE\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\implementation\geo_measure.py
+  - tasks\LYNX-NER-GEO-EXACT\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-FIRMA-HYPHEN-SUFFIX\round_01\implementation\firma_sweep.py
+  - backend\layers\ner_adapter.py
+  - backend\tests\test_audyt_2026_10.py
+  - backend\tests\test_layers.py
+  - backend\tests\test_pseudominizer.py
+  - backend\tests\test_token_re_spec.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-FIRMA-FILTER-FIX/measure/measure_cmp.py
+  - tasks/LYNX-FIRMA-FILTER-FIX/measure/measure_run.py

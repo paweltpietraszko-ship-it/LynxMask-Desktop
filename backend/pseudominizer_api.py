@@ -167,6 +167,8 @@ from document_processor import _next_pse, _extract_text
 # ── Inicjalizacja modułów ─────────────────────────────────────────────────────
 
 from pipeline import AppState, pseudonymize_document, S3_FAILURE
+import guard_allowlist  # noqa: E402  [LYNX-GUARD-ALLOWLIST-S5]
+from guard_residue import shift_warnings  # noqa: E402  [LYNX-GUARD-A]
 
 _app_state = AppState()
 _GUARD_AVAILABLE = False
@@ -426,9 +428,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
         return JSONResponse(S3_FAILURE, status_code=500)
     anon_text     = result.text
     reverse_map   = result.reverse_map
-    pseudo_err    = result.error
-    guard_blocked = result.guard_blocked
-    guard_reasons = result.guard_reasons
+    guard_blocked, guard_reasons = result.guard_blocked, result.guard_reasons
 
     tokens = []
     for token, original in reverse_map.items():
@@ -448,7 +448,7 @@ async def preview(request: Request, file: UploadFile = File(...)):
         tokens        = tokens,
         guard_blocked = guard_blocked,
         guard_reasons = guard_reasons,
-        error         = pseudo_err,
+        error         = result.error,
     )
 
     # [PSE-HEADER] Dodaj PSE kod jako pierwszy wiersz wyjscia —
@@ -461,9 +461,10 @@ async def preview(request: Request, file: UploadFile = File(...)):
 
     return {
         "blocked":            guard_blocked,
-        "error":              pseudo_err,
+        "error":              result.error,
         "guard_reasons":      guard_reasons,
         "guard_values":       result.guard_values,  # [LYNX-FAILCLOSED-S3] ostrzeżenie → allowlista (UI)
+        "guard_warnings":     shift_warnings(result.guard_warnings, len(anon_text_with_pse) - len(anon_text)),  # [LYNX-GUARD-A]
         "tokens":             tokens,
         "total":              len(tokens),
         "has_sensitive":      len(tokens) > 0,
@@ -698,7 +699,7 @@ async def archive_audit():
 # ── Export PDF ────────────────────────────────────────────────────────────────
 
 try:
-    from export_pdf import generate_pdf as _generate_pdf
+    from pdf_worker import export_pdf as _generate_pdf  # [LYNX-PDF-CRASH] PyMuPDF poza procesem silnika
     _EXPORT_PDF_AVAILABLE = True
     logger.info("[STARTUP] export_pdf załadowany")
 except ImportError:
@@ -828,66 +829,50 @@ async def profile_delete_entity(token_id: str):
 
 
 # ── Guard allowlist ────────────────────────────────────────────────────────────
+# [LYNX-GUARD-ALLOWLIST-S5] „Zawsze jawne” (tylko żółte) w zaszyfrowanym magazynie; wartości tylko w treści żądań, nie w URL.
 
-def _guard_allowlist_path() -> "Path":
-    from pathlib import Path as _Path
-    profile_dir = Path(os.environ.get("PROFILE_DIR", Path.home() / ".pseudominizer" / "profile"))
-    return profile_dir / "guard_allowlist.json"
-
-def _load_guard_allowlist() -> list[str]:
-    p = _guard_allowlist_path()
-    if not p.exists():
-        return []
+async def _allow_body(request: Request) -> dict:
     try:
-        import json as _j
-        return _j.loads(p.read_text(encoding="utf-8"))
+        body = await request.json()
     except Exception:
-        return []
+        body = None
+    return body if isinstance(body, dict) else {}
 
-def _save_guard_allowlist(entries: list[str]) -> None:
-    import json as _j
-    p = _guard_allowlist_path()
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(_j.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def _allow_call(fn, *args):
+    try:
+        return fn(*args)
+    except guard_allowlist.AllowlistError as e:
+        return JSONResponse({"error": str(e)}, status_code=e.status)
 
 
 @app.get("/profile/guard-allowlist")
 async def guard_allowlist_list():
-    """Zwraca listę fraz ignorowanych przez Guard."""
-    return {"entries": _load_guard_allowlist()}
+    entries, damaged = guard_allowlist.state()
+    return {"entries": [{"value": v, "rule": r} for v, r in entries], "damaged": damaged}
 
 
 @app.post("/profile/guard-allowlist")
 async def guard_allowlist_add(request: Request):
-    """
-    Dodaje frazę do allowlisty Guarda.
-    Body: {phrase: str}
-    """
-    try:
-        body = await request.json()
-    except Exception:
-        return JSONResponse({"error": "Nieprawidłowy JSON"}, status_code=400)
-    phrase = str(body.get("phrase", "")).strip()
-    if not phrase:
-        return JSONResponse({"error": "Brak pola phrase"}, status_code=400)
-    entries = _load_guard_allowlist()
-    if phrase not in entries:
-        entries.append(phrase)
-        _save_guard_allowlist(entries)
-    logger.info("[GUARD-ALLOWLIST] Dodano wyjątek [len=%d]", len(phrase))  # [LYNX-SEC-DISK-PII] bez wartości
-    return {"ok": True, "total": len(entries)}
+    """Body: {value, rules: [...]} — tylko reguły żółte."""
+    b = await _allow_body(request)
+    rules = b.get("rules") if isinstance(b.get("rules"), list) else []
+    r = _allow_call(guard_allowlist.add, str(b.get("value", "")), rules)
+    return r if isinstance(r, JSONResponse) else {"ok": True, "total": r}
 
 
-@app.delete("/profile/guard-allowlist/{phrase}")
-async def guard_allowlist_remove(phrase: str):
-    """Usuwa frazę z allowlisty Guarda."""
-    from urllib.parse import unquote
-    phrase = unquote(phrase)
-    entries = _load_guard_allowlist()
-    if phrase not in entries:
-        return JSONResponse({"error": "Fraza nie istnieje w allowliście"}, status_code=404)
-    entries.remove(phrase)
-    _save_guard_allowlist(entries)
+@app.post("/profile/guard-allowlist/remove")
+async def guard_allowlist_remove(request: Request):
+    """Body: {value, rule}."""
+    b = await _allow_body(request)
+    r = _allow_call(guard_allowlist.remove, str(b.get("value", "")), str(b.get("rule", "")))
+    return r if isinstance(r, JSONResponse) else {"ok": True, "removed": r}
+
+
+@app.post("/profile/guard-allowlist/clear")
+async def guard_allowlist_clear():
+    """Usuwa tylko listę wyjątków (także uszkodzoną) — bez resetu profilu."""
+    guard_allowlist.clear()
     return {"ok": True}
 
 
@@ -1008,7 +993,7 @@ async def profile_reset(request: Request):
 
     # [LYNX-SEC-DISK-PII] F2: wyjątki „to nie PII”, dziennik zdarzeń (+VACUUM) i log launchera — reset obiecuje „wszystkie dane”
     _left = []  # Codex r2 A1: nieusunięty plik = reset częściowy, nie pełny sukces
-    for _f, _label in ((_guard_allowlist_path(), "wyjątki „to nie PII”"), (_LAUNCHER_LOG, "plik logu silnika")):
+    for _f, _label in (*((p, "wyjątki Guarda") for p in guard_allowlist.paths()), (_LAUNCHER_LOG, "plik logu silnika")):
         try:
             _f.unlink(missing_ok=True)
         except OSError as e:  # np. log otwarty przez stare okno silnika (launcher <= v1.3)

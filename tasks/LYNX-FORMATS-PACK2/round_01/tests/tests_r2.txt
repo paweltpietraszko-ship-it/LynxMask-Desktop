@@ -1,0 +1,44 @@
+LYNX-FORMATS-PACK2 — niezależny audyt r2, 2026-10-21
+Wynik: FAIL F1 (niedomknięty zakres skanu form prawnych).
+Kod exact SHA: 25f3b35614b29081f57a3f0905802e30f40203ab
+Baza: 10e62d95ecfa3d408d6ac3413056854ff425aece
+Dostawa: 89d04ae; brief precheck: acfeaf817d1f64317162ae15d1bac52c071a7ecc; poprzedni raport r1: baf1716.
+Odbiorca: CC. Bez zmiany produktu, merge i pracy nad przyszłym zbiorem ślepym.
+
+F1 — skan nie rozpoznaje dwóch spacji w formie prawnej.
+TRACE: brief, Zakres pkt 2: „sp.z o.o. (z dowolnymi spacjami/kropkami)”, skan niezależny od spaCy.
+OWNERSHIP: backend/firma_context.py:54,57 (scan_legal_forms), użyty przez backend/ner_layer.py:247. Wzorzec używa \s? — dopuszcza najwyżej jeden odstęp.
+REPRO na exact SHA (syntetyk, brak kandydatów spaCy):
+    from firma_context import scan_legal_forms
+    text = "Sprzedawca: Brzoza sp.z  o.o."
+    assert scan_legal_forms(text, []) == []  # rzeczywisty wynik; oczekiwana jedna FIRMA z nazwą
+Wariant kontrolny "Sprzedawca: Brzoza sp.z o.o." daje FIRMA.
+Niezależny pion TXT -> POST /preview -> pipeline -> Guard -> wynik:
+    HTTP 200; blocked=false; tokens=[];
+    preview="Sprzedawca: Brzoza sp.z  o.o."
+Cała nazwa zostaje jawna. SAFETY_PRIVACY: luka maskowania syntetycznej FIRMA; nie jest to dowód wycieku realnych danych ani nowej regresji względem main, lecz brak realizacji zamówionej poprawki.
+Dodatkowo ten sam limit odstępów występuje w "Brzoza sp.  j." (helper i /preview); nie wydaję dla niego osobnego findingu.
+Zakres korekty: domknąć zadeklarowane odstępy w istniejącym skanie; nie jest potrzebny nowy projekt architektoniczny. Zachować granice nazwy i wykluczenia obecnego kontraktu.
+
+Przeprowadzone warstwy:
+1. Diff produkcyjny exact SHA i kontrakt.
+2. test_formats_pack2.py + test_firma_context.py: 33 passed.
+3. Własna macierz 37 przypadków: 35 PASS / 2 brak wykrycia skanu (ta sama klasa odstępów).
+   ISO: 5 dodatnich i 9 granic/negatywów; FIRMA: 10 dodatnich i 5 negatywów bez kandydatów spaCy;
+   normalizator: 5 kodów CAPS + 3 warianty nazwisk. Daty, negatywne numery seryjne, kody i nazwiska — PASS w tym zakresie.
+4. Pion /preview w izolowanej kopii exact SHA: 8 wejść, HTTP 200 i odtworzenie z mapy 1:1 dla 8/8.
+   Potwierdzone maskowanie daty ISO, prostych form prawnych, tablic PW YHU1N / RKFL9U, pełnego "Kowalski i Wspólnicy Sp. k.".
+   Jedno wejście z podwójną spacją w sp.z o.o. pozostaje jawne (F1).
+   Pierwotna sonda sp.  j. zachowana jako wcześniejszy dowód tej samej klasy.
+5. Korekta opisu normalizacji CAPS w DELIVERY: wcześniejsza teza o naprawie wszystkich CAPS przez krok 15 była niedokładna.
+   Warunek dla długich słów przywraca wcześniejsze zachowanie; wskazane testy nazwisk/kodów przeszły.
+   Nie rozszerzam tego do oceny wszystkich możliwych identyfikatorów CAPS.
+
+Granice dowodów:
+- Pomiar CC pl-pii 3000/18047 (111 jawnych -> 0; 60 dodatkowych dat zdarzeń ISO), Mobile 693, dataset_clean,
+  gate i cztery stare niepowodzenia: dowody dostawcy, nie mój niezależny pełny rerun. PARTIAL w zakresie niezależnej weryfikacji dużego pomiaru.
+- Globalne maskowanie dat ISO wynika z briefu analogicznie do DD.MM.RRRR; dodatkowe daty zdarzeń nie są nową propozycją audytora.
+- Nie uruchamiałem pełnej suity/benchmarku, OCR obrazów, HerBERT ON ani aplikacji/profilu Pawła.
+- Izolowany profil i archiwum, sieć zewnętrzna odcięta; rzeczywisty backend na 8765 nietknięty.
+- Lokalny materiał audytu: %TEMP%\lynx-formats-audit-r2\ (run.py, matrix.json, api.json, exact/).
+- Brak dodatkowych propozycji architektonicznych. Zakończono po uzyskaniu wystarczającego dowodu.

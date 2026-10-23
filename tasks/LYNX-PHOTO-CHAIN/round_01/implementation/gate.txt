@@ -1,0 +1,31 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: df612f7c6257a25e6de122c478a05d1c41e50353
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 559 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - audyt\bench_offline.py
+  - audyt\engine_quality.py
+  - backend\pseudominizer_api.py
+  - tasks\LYNX-ZUS-BOXED-IDS\round_01\implementation\comb_sweep.py
+  - tasks\LYNX-ZUS-BOXED-IDS\round_01\tests\tests_r2_layout.py
+  - tasks\LYNX-ZUS-BOXED-IDS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-T01-NER-PREFIX\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-SEC-DISK-PII\round_01\tests\repro_r2.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r2_repro.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r3_repro.py
+  - tasks\LYNX-PUBLIC-DATA-TESTS\round_01\tests\tests_r4_repro.py
+  - tasks\LYNX-PHOTO-CHAIN\measure\photo_measure.py
+  - tasks\LYNX-OCR-PARITY-STEP2\measure\pp_quality.py
+  - tasks\LYNX-OCR-PARITY-STEP2\round_02\tests\repro_r2.py
+  - tasks\LYNX-OCR-PARITY-STEP2\round_01\tests\repro_r3.py
+  - tasks\LYNX-OCR-GATE-COMPARE\measure\chain_compare.py
+  - tasks\LYNX-OCR-CASCADE\measure\paired_ocr.py
+  - tasks\LYNX-DOCX-TABLES\round_01\implementation\table_sweep.py
+  - tasks\LYNX-DOCX-TABLES\round_01\tests\tests_r2_layout.py
+  - tasks\LYNX-DOCX-TABLES\round_01\tests\tests_r2_repro.py
+  - backend\tests\test_engine_quality_layout.py
+  - backend\tests\test_pp_ocr_calibration.py
+  - backend\tests\test_startup_check.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-PHOTO-CHAIN/measure/photo_measure.py

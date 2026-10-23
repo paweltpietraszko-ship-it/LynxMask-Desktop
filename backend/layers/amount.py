@@ -31,6 +31,48 @@ _AMOUNT_RE = re.compile(
     r"(?:zł|PLN|EUR|USD|GBP|CHF|DKK|NOK|CZK|HUF|RON)\b",
     re.IGNORECASE,
 )
+# [LYNX-AMOUNTS-NUMBERS] Waluta słowna po cyfrach („813 złotych”, „15 000 złotych”); pomijana, gdy przed liczbą
+# stoi liczebnik/mnożnik (także dla _AMOUNT_RE: „tysięcy 813 zł”) — wtedy całą kwotę bierze verbal_amounts.
+_AMOUNT_WORD_RE = re.compile(r"\b(?!00\s)\d{1,6}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?\s*z[łl]ot(?:ych|e|y)\b", re.IGNORECASE)
+# [SILENT-PACK1] Jednostka po liczbie — to nie kwota („1234,56 mm”, „575,63 cm”).
+_UNIT = r"(?:kg|g|mg|mm|cm|dm|m2|m²|m3|m³|m|km|ml|l|szt|godz|h|min|kWh|kW|MWh)\b"
+# [LYNX-AMOUNTS-NUMBERS] Kwota bez waluty (Mobile A.9c): przecinek + 2 cyfry groszy („2 800,00”); nie procent, jednostka, wersja.
+_AMOUNT_NOCUR_RE = re.compile(
+    r"(?<![\d.,/\-])\d{1,3}(?:[  ]\d{3})*,\d{2}(?!\d|[.,]\d|/|-)"
+    rf"(?!\s*%)(?!\s*{_UNIT})",
+    re.IGNORECASE,
+)
+_VERSION_BEFORE_RE = re.compile(r"(?i)(?:\bwersj\w*|\bwer\.|\bv\.?)\s*$")
+# [SILENT-PACK1] Kwota bez waluty i bez spacji tysięcy („1049,63”, „12.345,67”) — tylko ze słowem kwotowym w tym samym zdaniu.
+_AMOUNT_NOCUR_CTX_RE = re.compile(
+    r"(?<![\d.,/\-])(?:\d{4,6}|\d{1,3}(?:\.\d{3})+),\d{2}(?!\d|[.,]\d|/|-)"
+    rf"(?!\s*%)(?!\s*{_UNIT})",
+    re.IGNORECASE,
+)
+_AMOUNT_CTX_WORD_RE = re.compile(
+    r"(?i)\b(?:kwot|zwrot|zapłat|należno|sald|brutto|netto|wartoś|cen[aiyęą]\b|wynagrodze|opłat|kar[aąyęe]\b|koszt|"
+    r"złot|zł\b|pln\b|walut|grosz|zaliczk|odsetk|rat[aąyęe]\b|podatk|faktur|wpłat|wypłat|przelew)"
+)
+
+
+def _after_number_word(text: str, m: re.Match) -> bool:
+    from verbal_amounts import _PL_NUMBER_WORDS
+    prev = text[:m.start()].split()
+    word = prev[-1].strip(",:;()").lower() if prev else ""
+    return word != "i" and word in _PL_NUMBER_WORDS
+
+
+def _not_amount_nocur(text: str, m: re.Match) -> bool:
+    if _VERSION_BEFORE_RE.search(text[max(0, m.start() - 12):m.start()]):
+        return True
+    return any(a.start() <= m.start() < a.end() for a in _AMOUNT_RE.finditer(text, max(0, m.start() - 30), m.end() + 12))
+
+
+def _not_amount_ctx(text: str, m: re.Match) -> bool:
+    """[SILENT-PACK1] Brak słowa kwotowego w zdaniu (granica: „. ”, „! ”, „? ”, koniec wiersza) — to nie kwota (wersja, wynik pomiaru)."""
+    start = max(text.rfind(c, 0, m.start()) for c in (". ", "! ", "? ", "\n")) + 1
+    ends = [i for i in (text.find(c, m.end()) for c in (". ", "! ", "? ", "\n")) if i >= 0]
+    return _not_amount_nocur(text, m) or not _AMOUNT_CTX_WORD_RE.search(text[start:min(ends, default=len(text))])
 
 # ── Data urodzenia kontekstowa ─────────────────────────────────────────────────
 # Port z StructuralEngine.kt linia 223.
@@ -50,15 +92,19 @@ _BIRTH_DATE_CTX_RE = re.compile(
 _DATE_PL_RE = re.compile(
     r"\b(?:0?[1-9]|[12]\d|3[01])[.,/\-](?:0?[1-9]|1[0-2])[.,/\-](?:19|20)\d{2}\b"
 )
+# [LYNX-FORMATS-PACK2] Data ISO RRRR-MM-DD — ten sam zakres lat co DD.MM.RRRR („ur. 1989-01-05”); bez fragmentu „1989-01-05-001”.
+_DATE_ISO_RE = re.compile(r"(?<![\d-])(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?!\d|-\d)")
 
 
 def _apply_patterns(
     state: PipelineState,
-    patterns: list[tuple[str, re.Pattern]],
+    patterns: list[tuple],
 ) -> None:
     hits: list[tuple[int, int, str, str]] = []
-    for token_type, pat in patterns:
+    for token_type, pat, *skip in patterns:
         for m in pat.finditer(state.text):
+            if skip and skip[0](state.text, m):
+                continue
             hits.append((m.start(), m.end(), m.group(0), token_type))
 
     hits.sort(key=lambda x: x[0], reverse=True)
@@ -78,9 +124,13 @@ def _apply_patterns(
 def apply_amount_layer(state: PipelineState) -> None:
     """Maskuje kwoty cyfrowe i daty urodzenia (kontekstowe + strukturalne DD.MM.YYYY)."""
     _apply_patterns(state, [
-        (TOKEN_KWOTA,  _AMOUNT_RE),
+        (TOKEN_KWOTA,  _AMOUNT_RE, _after_number_word),
+        (TOKEN_KWOTA,  _AMOUNT_WORD_RE, _after_number_word),
+        (TOKEN_KWOTA,  _AMOUNT_NOCUR_RE, _not_amount_nocur),
+        (TOKEN_KWOTA,  _AMOUNT_NOCUR_CTX_RE, _not_amount_ctx),
         (TOKEN_NUMER,  _BIRTH_DATE_CTX_RE),
         (TOKEN_NUMER,  _DATE_PL_RE),
+        (TOKEN_NUMER,  _DATE_ISO_RE),
     ])
 
 

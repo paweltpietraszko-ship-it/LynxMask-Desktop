@@ -1,0 +1,50 @@
+LYNX-PHOTO-CHAIN — BRIEF_ONLY / r1
+Data: 2026-10-20
+Werdykt: PASS PREIMPLEMENTATION
+Exact SHA briefu: 08a8d528c6ccdd471f376142bba41a57008ceb03
+Źródło CC: 4569d1da41ff5dd178230d8c2d67e27606b48449
+Zakres: kontrakt, źródła S1–S6, rozdział propozycji od ustaleń,
+istniejący szew OCR i minimalna redukcja. Bez implementacji.
+
+1. Kontrakt nadaje się do recenzji i szacowania przez CC.
+Obejmuje wyłącznie obrazy: orientacja → PP → dotychczasowy silnik/Guard.
+Awaria techniczna dopuszcza pojedynczy fallback Tesseract; słaba jakość PP
+powoduje odmowę z instrukcją i alternatywą. Brak zmiany S3/S4, tokenów,
+OSOBA/FIRMA, HerBERT i eksportu pikseli/PDF.
+Próg orientacji 0,60, udział słownikowy 0,80 i minimum 5 słów są kandydatami.
+Nie są zatwierdzoną polityką produktu ani dowodem bezpieczeństwa.
+Krótki poprawny dokument może obalić przydatność bramki; kontrakt uczciwie
+dopuszcza NOT_READY i pozostawienie Tesseracta zamiast wymuszonego sukcesu.
+
+2. Potwierdzenie szwu na exact SHA (wyłącznie punktowy odczyt):
+backend/ocr_engine.py:449–460 — extract_text_from_image wybiera rapid
+jawnie i wraca do dotychczasowej ścieżki po None.
+backend/ocr_rapid.py:104–115 — extract_rapid jest istniejącym dostawcą;
+dzisiejszy wynik fazy A ma reject i confidence=0.0.
+Nowy owner obrotu/bramki nie musi kopiować OCR ani maskowania.
+Kontrakt zachowuje tych ownerów i wymaga testu kolejnych requestów po timeout.
+WHERE_MAP pozostaje obowiązkiem CC przed edycją; nie uruchamiano go w BRIEF_ONLY.
+
+3. Plan odbioru rozdziela jakość OCR, rzeczywistą blokadę Guarda i hipotetyczne
+would_ask. Wymaga obrazu na prawdziwym /preview, izolacji, pełnych mianowników,
+wyjaśnienia UNKNOWN, porównania z main i testu instalacyjnego/offline.
+Historyczny zbiór 100 nie jest nazywany świeżym holdoutem.
+17 UNKNOWN to nierozstrzygnięte przypadki dawnego pomiaru, nie 17 potwierdzonych
+wycieków. Ich wyjaśnienie nie jest nakazem naprawiania OSOBA w tym zadaniu.
+Przebudowa OSOBA pozostaje oddzielnym zadaniem; nie rozszerzać tu silnika.
+
+4. Redukcja: istniejący routing, dostawca PP, przekazanie metadanych i ekran;
+jeden nowy owner obrotu/bramki. Bez nowego managera, kolejki i Guardów.
+SOURCE/NECESSITY zapisane w briefie. Brak potrzeby dodatkowego zakresu audytu.
+
+OWNER_DECISION_NEEDED (już jawnie przewidziane w kontrakcie, nie finding):
+po recenzji i szacunku CC — zgoda na rozmiar oraz zachowanie widoczne;
+przed aktywacją — zatwierdzenie zmierzonych progów. PASS prechecku nie daje
+zgody na implementację, merge, aktywację ani gwarancji bezpieczeństwa.
+Dane obrazu i OCR mają pozostać lokalne; brak nowych wysyłek;
+odmowa bez treści/mapy/tokenów, użytkownik poprawia zdjęcie lub wkleja tekst.
+
+Nie uruchamiano modeli, testów, reproduktorów, benchmarków ani realnych zdjęć.
+Nie analizowano diffu implementacji i nie zmieniano produktu.
+Następny odbiorca: CC — recenzja/szacowanie; potem OWNER zgodnie z briefem.
+Zamknięta lista braków kontraktu: brak.

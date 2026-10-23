@@ -1,0 +1,133 @@
+LYNX-FIRMA-FILTER-FIX — independent delivery audit / tests_r3
+Data: 2026-10-21
+Exact SHA: 2e9d128b9e19aaf19cb3982d8dcdf42c049b2ebd
+Diff base / BEFORE: 36ed749d3f40d0638f5b2e500956ebba8806aa5e
+DELIVERY: 8339bba0605003ea5a7c3434076240d8bcb4ff31
+Brief po C1: 3e2154fc492ff5f3b95b5f0d15f174848f7d1f80
+Branch: task/LYNX-FIRMA-FILTER-FIX
+
+WYNIK: FAIL jednego wymagania pkt 1 (F1 / P2).
+Pozostałe sprawdzone poprawki działają; nie neguję wykazanego zysku.
+Nie zamieniać tego w redesign ani pełny ponowny pomiar przed korektą F1.
+Brak zmian kodu produktu i brak merge.
+
+ZAKRES
+Diff firma_context.py / ner_layer.py / ner_blocklist.py, testy ownera,
+DELIVERY, przyjęty brief, punktowe szwy pipeline i skrypty pomiaru.
+Wykonanie w git archive exact SHA i BEFORE, poza repo, izolowane profile,
+lokalny model spaCy, Morfeusz 1.99.15, HerBERT OFF.
+Własny TestClient w procesie, blokada realnego połączenia do 8765 i sieci
+zewnętrznej. Backend i profile właściciela pozostają nietknięte.
+Wszystkie teksty i nazwy są syntetyczne.
+
+F1 / P2 — pełna forma prawna omija nowego ownera
+TRACE:
+Brief, Zakres pkt 1: forma prawna nigdy sama; kandydat będący samą
+formą prawną zostaje rozszerzony o nazwę, a bez nazwy jest usuwany.
+Korekta C1 dodaje rozróżnienie inicjału; nie wyłącza pełnych form spółek.
+Odbiór wymaga braku tokenu dla samej formy bez nazwy.
+
+OWNERSHIP:
+backend/firma_context.py:16-28, _MULTI_FORM_RE i _form_start;
+legal_form_entities:56-66 zostawia kandydata bez zmian, gdy form is None.
+To właściciel dodany właśnie do naprawy kandydatów-form prawnych,
+wywoływany z ner_layer._firma_entities przed dotychczasową kwalifikacją.
+Nie wymagam powtórnej walidacji w API/Guardzie.
+
+REPRO na exact SHA:
+Nowy regex obsługuje m.in. "z o.o." i osobne "A." poprzedzone "S.",
+ale nie rozpoznaje jako całej formy kandydatów "Sp. z o.o.", "S.A.",
+"Sp. k.". Dlatego np. dla tekstu "Wykonawca: BRZOZA Sp. z o.o."
+i kandydata FIRMA na samym "Sp. z o.o." helper oddaje nadal samą formę,
+zamiast "BRZOZA Sp. z o.o.". Analogicznie pełne S.A. i Sp. k.
+Przypadek bez nazwy również nie usuwa kandydata.
+Własny reproduktor: 4 czerwone przypadki + 3 zielone kontrole inicjałów.
+
+PION / OSIĄGALNOŚĆ:
+Prawdziwy /preview, wejście:
+"Forma prawna: Sp. z o.o.
+Spółka z o.o. bez podanej nazwy."
+Otrzymano HTTP200, blocked=false:
+"Forma prawna: FIRMA_001.
+Spółka z o.o. bez podanej nazwy."
+Mapa FIRMA_001 -> "Sp. z o.o".
+To rzeczywista ścieżka spaCy -> nowy owner -> pipeline -> Guard -> /preview,
+nie wyłącznie sztucznie nieosiągalny kandydat.
+Zachowane artefakty CC na tym samym exact SHA także pokazują to w c07_sama_forma:
+token FIRMA_001 o wartości "Sp. z o.o".
+To odziedziczony przypadek, który kontrakt tego Tasku obiecał naprawić;
+nie twierdzę, że poprawka dopiero go wprowadziła.
+
+WYMAGANA KOREKTA:
+Domknąć tę samą regułę pełnych form prawnych wraz z istniejącym kontekstem
+nazwy/braku nazwy; zachować zielone kontrole inicjałów z C1.
+Bez nowego ownera/klasyfikatora lub rozszerzania Tasku.
+Sposób naprawy pozostawiam CC. Przy rechecku zachować oryginalny reproduktor
+oraz sprawdzić rzeczywisty c07 i sąsiednie pełne formy.
+
+ZACHOWANY REPRO
+tasks/LYNX-FIRMA-FILTER-FIX/round_01/tests/repro_f1_r3.py
+commit e339cf376f0b4924fc5c5d49fdd4a998ba621d0d.
+Uruchomienie:
+python repro_f1_r3.py <absolutna-sciezka-do-backend-na-audytowanym-SHA>
+Zależność: pytest. Testy używają syntetycznych kandydatów i nie dotykają profilu.
+Dodatkowe wyniki pionu i pełny harness lokalnie, ścieżka poniżej.
+
+CO PRZESZŁO
+- test_firma_context.py: 14 PASS.
+- test_ner_multiline.py: 21 PASS.
+  Pierwsze wykonanie: 31 PASS łącznie, 4 błędy setup mojego archiwum
+  (brak audyt/engine_quality.py). Po dostarczeniu helperów z exact SHA
+  ponowiono wyłącznie 4 brakujące testy: 4 PASS. Nie regresja produktu.
+- Własne 20 nowych syntetyków /preview na BEFORE i exact SHA: 40/40 HTTP200,
+  bez nowych blokad. 19/20 roundtrip 1:1 w obu wersjach.
+- Potwierdzone naprawy pełnej nazwy pod SPRZEDAWCA, S.A. w osobnej linii,
+  firmy z Doradztwo..., Piekarnia..., Przedsiębiorstwo..., nazwy ze wspólnikiem,
+  dwóch firm i powtórzeń; stop na przecinku przed nazwą.
+- Jan A., samo A., Anna K. i Wspólnicy nie zmieniają zachowania;
+  miasta i pełna osoba w zdaniu kontrolnym również.
+- Sądy/urzędy nie zostały nowo sklasyfikowane jako FIRMA w tych próbach.
+- Zwięzłe "Sp.k." pozostaje jawne w kontrolnym syntetyku; znane ograniczenie
+  DELIVERY, nie otwieram go jako osobnego nowego findingu.
+
+ROUNDTRIP / OGRANICZENIE DOWODU
+Pozostały 1/20 przypadek zawiera dwa zapisy tej samej firmy oraz osobę
+o tym samym nazwisku. BEFORE i PO mają odziedziczony błąd aliasowania
+nazwiska do pełnej osoby; PO naprawia część wystąpień, nie całość.
+Nie kwalifikuję go jako nowej regresji ani osobnego blokera.
+Nie jest to dowód realnego zdarzenia z niezależnych danych;
+to diagnostyka syntetyczna. Nie deklarować uniwersalnego roundtrip 1:1.
+
+DOWODY CC — PRZELICZONE, NIE PONOWNY PEŁNY POMIAR
+raw_przed.json: dcaa3e15c4bd18f10b991b02117bd6c338c77058
+raw_po.json: 2e9d128b9e19aaf19cb3982d8dcdf42c049b2ebd
+Niezależnie sprawdzono 561 sparowanych rekordów:
+0 zmian code/blocked/error, 0 kolizji wartości dla tego samego tokenu.
+550 dostępnych porównań przywrócenia: 547 PRZED=PO, 3 różne:
+test_anchor_full.txt, test_sklejanie_encji_07_07.txt, doc_00024.png.
+Zgadza się z ograniczonym twierdzeniem DELIVERY.
+To NIE oznacza, że 547 przywróceń równa się oryginałowi.
+Liczby gold/FP firm CC są heurystyczne; nie certyfikuję ich pełności ani
+477 osób jako własnego niezależnego benchmarku.
+W c07 artefakt CC potwierdza F1 mimo zielonego agregatu.
+
+PARTIAL / NOT_CHECKED
+- Pełny ponowny bieg 561 dokumentów, 50 obrazów i benchmark.py:
+  NOT_CHECKED; nie powtarzano po uzyskaniu wystarczającego dowodu F1.
+- Etykietowanie całego gold firm, globalne FP oraz deklarowany koszt startu:
+  dowody CC, nie nowa niezależna ocena.
+- Natywne GUI/instalator, HerBERT ON: poza zakresem.
+- Poszerzenie reguły instytucji jest bezpośrednią naprawą regresji
+  po zawężeniu prefiksów; służy zachowaniu opisanej polityki, nie nowej klasie.
+- Gate 178 linii i odstępstwo: zgoda przytoczona w DELIVERY/BOARD;
+  nie wystawiam dodatkowej zgody budżetowej ani automatycznego FAIL za ratio.
+
+LOKALNE NARZĘDZIA / DOWODY (poza repo)
+C:/Users/p_pie/.codex/visualizations/2026/10/19/01a152b6-e997-7cb0-a9e3-752fdcfd00f0/firma-audit-r3/
+run.py, helper.json, before.json, after.json, repro_f1.py,
+check_evidence.py, cc_evidence_check.json.
+Nie publikować profili, map/kluczy wygenerowanych przez harness.
+
+Następny odbiorca: CC — poprawić F1, potem wąski exact-SHA recheck
+z zachowanym repro + bezpośrednie testy ownera/pion.
+HerBERT pozostaje OFF; ponowny pomiar dopiero po domknięciu poprawki firm.

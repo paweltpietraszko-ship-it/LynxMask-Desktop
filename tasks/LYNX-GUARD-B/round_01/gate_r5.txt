@@ -1,0 +1,15 @@
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: d3bc33f3d717b9e3a3fb1c066da680e6a817a521
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - TOTAL_LINES: 401 lines changed (threshold 150)
+IMPORTERS_FOR_REVIEW:
+  - backend\pseudominizer_api.py
+EXCLUDED_ARTIFACTS:
+  - tasks/LYNX-GUARD-B/brief.md
+  - tasks/LYNX-GUARD-B/repo_before.hash
+  - tasks/LYNX-GUARD-B/round_01/gate_r1.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r2.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r3.txt
+  - tasks/LYNX-GUARD-B/round_01/gate_r4.txt
+  - tasks/LYNX-GUARD-B/round_01/implementation/DELIVERY.md

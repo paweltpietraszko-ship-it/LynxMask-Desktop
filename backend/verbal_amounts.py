@@ -107,7 +107,7 @@ _PL_NUMBER_WORDS: frozenset[str] = frozenset({
 })
 
 _CURRENCY_RE = re.compile(
-    r"\b(z[łl]ot\w+|grosz\w+|grosza|groszy|euro|cent\w+|PLN|EUR|USD|GBP)\b",
+    r"\b(z[łl]ot\w+|z[łl]|grosz\w+|grosza|groszy|euro|cent\w+|PLN|EUR|USD|GBP)\b",  # [LYNX-AMOUNTS-NUMBERS] + gołe „zł”
     re.IGNORECASE,
 )
 
@@ -137,6 +137,12 @@ def mask_verbal_amounts(
 
 
 # ── Implementacja ─────────────────────────────────────────────────────────────
+
+def _has_number_word(words: list[str]) -> bool:
+    """[LYNX-AMOUNTS-NUMBERS] Fragment jest kwotą słowną tylko z liczebnikiem/mnożnikiem; same cyfry („15 000 złotych”)
+    obsługuje layers/amount.py."""
+    return any(w.strip(",:;()").lower() != "i" and not w.strip(",:;()").isdigit() for w in words)
+
 
 def _mask_verbal_amounts(
     text: str,
@@ -171,12 +177,12 @@ def _mask_verbal_amounts(
         collected_indices: list[int] = []
         for i in range(len(word_positions) - 1, -1, -1):
             clean_w = word_positions[i][2].strip(",:;()").lower()
-            if clean_w in _PL_NUMBER_WORDS:
+            if clean_w in _PL_NUMBER_WORDS or re.fullmatch(r"\d{1,3}", clean_w):  # [LYNX-AMOUNTS-NUMBERS] „44 tysięcy 813 zł”
                 collected_indices.append(i)
             else:
                 break
 
-        if not collected_indices:
+        if not _has_number_word([word_positions[i][2] for i in collected_indices]):
             continue
 
         collected_indices.reverse()

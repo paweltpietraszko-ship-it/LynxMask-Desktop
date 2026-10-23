@@ -1,0 +1,56 @@
+LYNX-OSOBA-PACK4 — wąski recheck F1/F2 r4, 22.10.2026
+Wynik: FAIL — F2/P2 częściowo pozostaje. F1/P1 zamknięte.
+Exact SHA: b77c27f929995af641674237508252263b31c3ef (kod064f6d963c6fa972ee595cf80163bf0c2a6d52e2).
+Diff od: f980c6e62253b6b607a8d0e810ebf553e94e62be.
+Poprzedni raport: bf754d173cab698a84c9c1fe8a744821bcee7e2a.
+Etap: wąski recheck implementacji. Odbiorca: CC. Bez merge i zmian produktu.
+
+Zakres:
+Jedyny zmieniony owner produkcyjny: guard_residue._released (6 dodanych/2 usunięte linie).
+Ponowiono zachowany reproduktor F1/F2, dwa bezpośrednie pliki testów i mały wariant tego samego połączenia:
+wielkość liter kandydata wejściowego + ta sama krótka odmiana Róża/Róży.
+Nie ponawiano korpusów, modeli ONNX, OCR, pełnej suity ani całego poprzedniego audytu.
+
+Wyniki zachowane:
+- repro_r3.py na exact SHA: F1 ok, F2 pierwotnego przypadku ok, controls PASS, exit0.
+- F1 pełny realny pipeline: Malina i MALINA mają osobne ostrzeżenia R1. Poprzednia regresja SAFETY_PRIVACY zamknięta.
+- test_guard_residue.py51 PASS i test_osoba_pack4.py12 PASS, osobne procesy, izolowane źródła/stan.
+- Razem63 PASS. Poprzednie niezmienione warstwy i wyniki pomiarów pozostają dowodem r3, bez ponownego uruchomienia.
+
+F2/P2 pozostaje dla kandydata wejściowego WERSALIKAMI:
+TRACE: brief Guard (każde wystąpienie także WERSALIKAMI) + ROZSZERZENIE CC4 (formy z typową końcówką odmiany).
+To ta sama para Róża/Róży i ta sama lista kandydatów; nie nowy wymóg pełnej lematyzacji.
+OWNERSHIP: guard_residue._released, obliczenie cut/stem.
+W dostawie końcowe re.finditer ma re.IGNORECASE, ale poprzedzające _INFLECTION_RE.sub nadal rozróżnia wielkość liter.
+Dla Róża powstaje rdzeń Róż; dla RÓŻA pozostaje całe RÓŻA, więc końcówka Y nie zastępuje A.
+
+REPRO exact SHA, bez stubów tych funkcji:
+tekst = "RÓŻA złożyła wniosek. RÓŻY dotyczy odpis."
+1. released_words=["Róża"] -> ostrzeżenia RÓŻA i RÓŻY (kontrola PASS).
+2. released_words=["RÓŻA"] -> tylko RÓŻA, RÓŻY bez ostrzeżenia (FAIL).
+3. released_words=["RÓŻY"] -> tylko RÓŻY, RÓŻA bez ostrzeżenia (symetryczna kontrola FAIL).
+Prawdziwe single_osoba_evidence(tekst,0,4) po start_run zwraca False i zapisuje ["RÓŻA"].
+Przekazanie tak otrzymanej listy do prawdziwego collect_warnings odtwarza pkt2.
+Nie jest to sztucznie niedozwolony kształt wejścia — shared owner faktycznie przekazuje surową wielkość liter.
+Sprawdzono zgodność zakresów z wycinkami tekstu.
+
+Warstwa dowodu F2:
+Rzeczywisty szew single_osoba_evidence/released -> collect_warnings, bez stubów.
+Nie twierdzę, że w każdym pełnym dokumencie wszystkie źródła NER przepuszczą tę odmianę.
+Jak w r3, F2 dotyczy niepełnej obsługi gwarantowanej listy kandydatów; nie reaktywuję zamkniętego F1.
+Przenośny reproduktor: round_01/tests/repro_r4.py <izolowany-backend> <własny-stan>.
+Na dostawie: control PASS, released=["RÓŻA"], fragments=["RÓŻA"], F2_ok=false, exit1.
+
+Gate i granice:
+Dostarczony gate_r4: WYMAGA_DECYZJI, RATIO343/16=21,4:1, TOTAL_LINES359.
+Brief odnotowuje zgodę na około350 linii; nie tworzę nowego warunku z zaokrąglenia kosztu i nie zmieniam statusu gate.
+FAIL wynika wyłącznie z F2, nie rozmiaru. C1/jeden token i zamknięte F1 nie są otwierane ponownie.
+NOT_CHECKED w tym rechecku: nowe pomiary GOLD/fresh/KPWr, OCR, API/GUI/archiwum/schowek, pełna suita, realny HerBERT.
+Nie przeprowadzono nowych ocen jakości całego silnika.
+Bez zmian produktu, merge, subagentów i dostępu do profilu/backendu Pawła.
+
+Zachowane dowody:
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/pack4-recheck-r4/
+exact/, sibling.py/json, repro_r4.py oraz reproduktor r3 w izolowanej kopii.
+Następny krok: CC domyka normalizację końcówki dla tej samej pary zapisanej WERSALIKAMI;
+recheck: zachowane repro_r3 + repro_r4 i test ownera. Nie ma potrzeby nowego audytu korpusów.

@@ -1,0 +1,88 @@
+LYNX-ADDR-REVERSED — niezależny recheck r4, 22.10.2026
+WYNIK: PASS recheck poprawek F1–F4 na exact SHA bb2147407d9a4c4c730c939063001b4cc45ea509.
+Kod poprawki: de4185e696db4f5ab7d5fa0ee9b171cf0a396703.
+Diff od poprzednio audytowanego 12dcccc631ca08b43aef2dd70418fa744d4d1404.
+Baza Tasku:3ad472b. Odbiorca: Paweł / CC.
+To PASS wskazanego zakresu poprawek, nie pełnego pomiaru produktu ani polecenie merge.
+Status mechanicznej bramki pozostaje WYMAGA_DECYZJI (szczegóły poniżej).
+
+Wyrocznia i zakres:
+Obecny frozen spec+lock, brief Tasku, OWNER_CORRECTED z r2. W tym diffie bez zmian tych plików
+ani AGENTS/CODEX_START. Jedyny zmieniony plik produkcyjny: backend/layers/address.py.
+Przeczytano wąski diff i aktualne DELIVERY/gate r3. Bez nowych zachowań produktowych poza naprawą kontraktu.
+
+F3 — ZAMKNIĘTY:
+Globalny zbiór słów osób zastąpiono sprawdzeniem pełnej osoby w konkretnym miejscu.
+Realny pipeline+spaCy/Morfeusz+Guard, bez stubów:
+  Podpis: Jan Kalisz. Adres doręczenia: Kalisz, ul. Polna 5.
+  -> Podpis: OSOBA_001. Adres doręczenia: ADRES_001.
+  OSOBA_001=Jan Kalisz; ADRES_001=Kalisz, ul. Polna 5
+  guard_warnings=[]; error=null
+Podstawienie według mapy odtwarza wejście1:1, miasto nie staje się osobą.
+Kontrola odwróconej kolejności (adres przed podpisem) również poprawna.
+Samo „Kalisz, ul. Polna 5” pozostaje poprawnie zakrytym ADRES.
+
+F4 / SAFETY_PRIVACY — ZAMKNIĘTY:
+Nachodzące na siebie trafienia adresu są łączone przed wspólnym _apply_hits.
+  Adres: 26-600 Radom, ul. Polna 5
+  -> Adres: ADRES_001
+  ADRES_001=26-600 Radom, ul. Polna 5
+  guard_warnings=[]; error=null; podstawienie według mapy1:1.
+Wariant bez przecinka objęty testem ownera.
+W realnym pionie dodatkowo:
+- Pan Jan Kalisz, 26-600 Radom, ul. Polna 5
+  -> Pan OSOBA_001, ADRES_001; osoba i pełny adres w osobnych poprawnych tokenach;
+- Adres:58-500 Jelenia Góra, ul.Długa1 (z normalnymi spacjami we właściwym wejściu)
+  -> ADRES obejmujący cały kod/miasto/ulicę;
+- Kalisz, ul. Polna 5; Radom, ul. Jasna 9
+  -> ADRES_001; ADRES_002 — odrębne adresy nie zostały sklejone.
+Wszystkie4 celowane kontrole z boundaries.json: bez error i ostrzeżeń, poprawne mapy.
+
+F1/F2 — pozostają ZAMKNIĘTE:
+Repro zachowuje miasto po spacji w ADRES i pełne „Jan Kalisz” w jednym OSOBA.
+Osoba nie jest ponownie dzielona między OSOBA/ADRES.
+
+Niezależnie wykonane na exact SHA:
+1. Zachowany audit.py z r1:
+   - macierz20/20 (NER wyłączony): kolejności, przecinek/spacja/tab,1–2 słowa/ASCII,
+     kod bez cięcia, ulica bez prefiksu, dwa adresy, kontrole samych miast/dat i niepoprawnego kodu;
+   - osobno rzeczywisty pion6 wejść, w tym F1/F2.
+   Zachowano obserwację przejścia po przecinku do następnego wiersza z r1/r3;
+   nie tworzę z niej nowego wymagania ani nie rozszerzam tego odbioru.
+2. Zachowany, niezmieniony repro_r3.py:
+   F1-retained, F2-retained, city-control, F3-person-city, F4-postal — 5/5, exit0.
+   Wszystkie5 odtworzeń przez mapę1:1.
+3. Cztery wskazane wyżej lokalne warianty F3/F4 (rzeczywisty pion).
+4. Celowane testy w osobnych procesach:
+   test_addr_reversed.py:23 passed;
+   test_addr_email_leaks.py:22 passed (w tym /preview).
+   Razem45 PASS. Bez nowych błędów w zbadanym zakresie.
+Ostrzeżenia SyntaxWarning/deprecacji nie są nowymi findingami.
+Wyniki CC w DELIVERY pozostają pomocnicze, powyższe uruchomienia wykonano niezależnie.
+
+Bramka mechaniczna, gate_r3.txt implementatora (odczytana, nie ponawiana):
+STATUS: WYMAGA_DECYZJI
+  RATIO:150/1=150.0:1 (threshold5:1)
+  TOTAL_LINES:151 lines changed (threshold150)
+To dwa progi rozmiaru zmiany, nie odtworzony błąd produktu.
+Po odczycie diffu zmiana ma jednego istniejącego ownera i służy F1–F4.
+Rekomenduję dopuścić ten konkretny rozmiar; nie żądam sztucznej redukcji o1 linię
+ani rozbudowy programu. Nie zapisuję tej rekomendacji jako decyzji Pawła ani nie zmieniam wyniku gate.
+PASS rechecku nie oznacza PASS gate; przy odbiorze zachować to rozróżnienie.
+
+NOT_CHECKED / granice PASS:
+- GOLD dev/test i szersze suity nie zostały ponowione w tym rechecku.
+  Ich agregaty w DELIVERY są wynikiem CC; wcześniejsze audyty nie ustanawiają nowego pomiaru exact SHA.
+- Nie wykonywano OCR, pełnego benchmarku, GUI, archiwum/eksportu.
+  Podstawienie tokenów według mapy to kontraktowy odpowiednik _restore, nie kliknięcie GUI.
+- PASS dotyczy zgłoszonych F1–F4, macierzy i celowanych ścieżek; nie certyfikuje wszystkich dokumentów ani całego Tasku poza tym zakresem.
+- Nie wnioskuję z liczb ostrzeżeń o pełnej skuteczności rozpoznawania PII.
+
+Izolacja / artefakty:
+C:/Users/p_pie/AppData/Local/Temp/lynx-addr-recheck-r4-20261022/
+exact/, audit.py, matrix.json, vertical.json, boundaries.py, boundaries.json, run_test.py.
+Użyto zachowanego repro_r3.py z gałęzi Tasku. Własny stan i klucze w Temp, rzeczywiste spaCy/Morfeusz, HerBERT OFF.
+TestClient odcinał prawdziwy port8765 i połączenia zewnętrzne; backend/token/profil Pawła nietknięte.
+Bez zmian produktu, merge i subagentów. Przykłady wyłącznie syntetyczne.
+Po wystarczającym wyniku kończę. Następny krok: odbiór Pawła z uwzględnieniem jawnego gate,
+merge wyłącznie na jego polecenie.

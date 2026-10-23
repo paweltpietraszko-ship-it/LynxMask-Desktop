@@ -37,6 +37,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
+from osoba_not_person import DICTIONARY_PATH_DENYLIST as _OSOBA_DENYLIST  # [LYNX-OSOBA-NOT-PERSON] listy w jednym miejscu
+from osoba_not_person import inside_street_name, person_words_of, single_osoba_evidence  # [LYNX-OSOBA-PACK4]
 from pipeline_core import PipelineState, TokenAllocator
 
 # ── Słownik form fleksyjnych nazwisk (port: LookupTables.surnamesForms) ─────
@@ -212,8 +214,38 @@ def _apply_first_names(text: str, allocator: TokenAllocator) -> str:
     wartością. Propagacja nie rozsyła imion (cudza osoba w Przywróć), a gołe imię przy nazwisku zostawałoby jawne."""
     def name(m: re.Match, i: int) -> str:
         return allocator.assign("OSOBA", m.group(i)) if m.group(i).lower() in _FIRST_NAMES else m.group(i)
-    text = _NAME_AFTER_RE.sub(lambda m: m.group(1) + m.group(2) + name(m, 3), text)
+
+    def after(m: re.Match) -> str:  # [LYNX-OSOBA-PACK4] 4: „OSOBA_n(=Róża) Zielona” → jedna osoba, jeden token (S4)
+        prev, w = allocator.reverse_map.get(m.group(1), ""), m.group(3)
+        if " " not in prev and prev.lower() in _FIRST_NAMES and w.lower() not in _FIRST_NAMES and w.lower() not in _OSOBA_DENYLIST:
+            return allocator.assign("OSOBA", f"{prev} {w}")
+        return m.group(1) + m.group(2) + name(m, 3)
+    text = _NAME_AFTER_RE.sub(after, text)
     return _NAME_BEFORE_RE.sub(lambda m: name(m, 1) + m.group(2) + m.group(3), text)
+
+
+# [LYNX-OCR-GATE-COMPARE E2b] Port Mobile NameEngine 3a „samo nazwisko/samo imię”: słowo z wielkiej litery ze słownika
+# nazwisk (≥4 litery) albo imion → OSOBA także bez kontekstu (lista „Grażyna / Jankowski”). Najniższy priorytet — po NER.
+# Wyjątki 1:1 z Mobile: OSOBA_DENYLIST (potwierdzone kolizje ze zwykłymi słowami) i białe listy kalendarza/krajów/miast.
+# Nadmaskowanie słowa pospolitego (np. „Malina”) świadomie akceptowane, jak w Mobile (polityka: zakryć zamiast przepuścić).
+_STANDALONE_RE = re.compile(r"(?<![\wŁŚŹĆŃĄĘÓŻ])([A-ZŁŚŹĆŃĄĘÓŻ][a-ząćęłńóśźż]{2,})(?![a-ząćęłńóśźż\w])")
+
+
+def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
+    """Imię obok osoby (_apply_first_names), potem samotne nazwisko, potem samotne imię ze słownika (kolejność Mobile)."""
+    text = _apply_first_names(text, allocator)
+    pw = person_words_of([v for k, v in allocator.reverse_map.items() if k.startswith("OSOBA_")])
+    def standalone(words: frozenset[str], min_len: int):
+        def repl(m: re.Match) -> str:
+            w = m.group(1)
+            if len(w) < min_len or w.lower() not in words or w.lower() in _OSOBA_DENYLIST \
+                    or inside_street_name(m.string, m.start(1)) \
+                    or not single_osoba_evidence(m.string, m.start(1), m.end(1), pw, words):  # [PACK4] krok 2
+                return w
+            return allocator.assign("OSOBA", w)
+        return repl
+    text = _STANDALONE_RE.sub(standalone(_SURNAMES_FORMS_FLAT, 4), text)
+    return _STANDALONE_RE.sub(standalone(_FIRST_NAMES, 3), text)
 
 
 def extract_ner_results(state: PipelineState, anon_map: dict) -> None:
@@ -334,7 +366,7 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = _sub_whole(state.text, _var_text, _tok_id)
         state.text = _sub_whole(state.text, _target, _tok_id)
-    state.text = _apply_first_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] po wariantach
+    state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 

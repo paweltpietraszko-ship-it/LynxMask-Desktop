@@ -1,0 +1,42 @@
+LYNX-GUARD-A — wąski recheck F1 r2, 2026-10-22
+Wynik: PASS poprawki F1 / sprawdzonego zakresu etapu A.
+Exact SHA: 8b69fd65e5f490bd2c61a6438e6516e67d267826 (kod poprawki 4a4f660).
+Diff od: 2ebe01d594aee84be216f33fdc4c3bbd64927427; poprzedni raport r1 a06e9de7b944fe1f8553a1d45bfde0ca22e31d76.
+Baza etapu A: 94a795424715aebb997f7528be8d3affeb31a99e.
+Odbiorca: CC. Nadal nie scalać A bez B — warunek briefu/dostawy.
+
+Zmiana i kontrakt:
+R5 odróżnia organy publiczne od szerokiej listy nazw instytucji R1.
+Nazwa z formą prawną nie jest odrzucana tylko za słowo Centrum/Instytut.
+Szeroka lista R1 pozostaje bez zmian. Produkcyjny diff obejmuje tylko guard_residue.py; ponadto testy ownera.
+Brak zmiany S4, modelu NER, serwerowej bramki, API i UI względem poprzedniego audytu.
+
+Niezależne dowody na exact SHA:
+1. Zachowana macierz z r1: 16/16 PASS (wcześniej 14/16).
+   Oba pierwotne reproduktory:
+   "Kontrahent: Centrum Projektowe MODRZEW sp. z o.o."
+   "Kontrahent: Instytut Projektowy MODRZEW sp. z o.o."
+   -> ostrzeżenie R5 obejmujące pełną nazwę.
+   Kontrole Sąd Rejonowy / Gmina Kraków nadal bez alarmu.
+   Pozostałe kontrole HIGH/MEDIUM/MAP_LEAK/R1–R4, tokeny, miasto i deduplikacja nadal przechodzą.
+2. tests/test_guard_residue.py: 39 passed; obejmuje również Fundusz, Urząd Skarbowy i ZUS.
+3. Zachowany pion: /preview z rzeczywistym Guardem, pipeline i przesunięciem o nagłówek PSE,
+   stubem tylko wcześniejszego silnika dostarczającym finalną pozostałość.
+   Centrum otrzymuje R5, HTTP 200 i poprawny zakres start/end.
+   Kontrole PESEL (RED) i prostej spółki (R5) pozostają prawidłowe.
+   To odbiór Guarda na finalnym tekście, nie dowód pełnego wykrywania każdej firmy przez wcześniejszy silnik.
+4. Niezależnie wymuszony wyjątek collect_warnings: HTTP 500, blocked=true, bez tekstu/mapy — S3 zachowane.
+5. Mały rerun reguł na tych samych 150 zapisanych wynikach OCR/silnika:
+   bez zmiany — 25 ostrzeżeń, śr. 0,1667, mediana 0, maks 3, 130 bez pytań;
+   R1 14 / R3 9 / R4 10 (wiele powodów na jedną pozycję).
+   Cache SHA256: baedd9cbaf9622b52ee20f194e6d5d950247185c1a00432e6c69a161eca1e5a5.
+   Nie ponawiano OCR.
+
+F1 zamknięte. Brak nowych findingów w zakresie rechecku.
+Wykorzystano wcześniejsze dowody r1 dla niezmienionych warstw, w tym 23 testy failclosed i pomiar KPWr;
+nie uruchamiano ich ponownie. Pełna suita, KPWr, OCR, GUI decyzji etapu B i gotowość całego produktu nie są wynikiem tego rechecku.
+B nadal musi usunąć zbiorczy bypass i dostarczyć indywidualne decyzje/blokadę zwykłych operacji.
+PASS etapu A nie uprawnia do pominięcia B ani do merge bez polecenia Pawła.
+
+Lokalne zachowane dowody: %TEMP%\lynx-guard-a-audit-r2\audit.py, run.py, matrix.json, api.json, measure.json, exact/.
+Izolowane źródła/profil; backend Pawła nietknięty, sieć zewnętrzna odcięta. Brak zmian produktu i merge.

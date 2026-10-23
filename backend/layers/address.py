@@ -42,8 +42,10 @@ from pipeline_core import PipelineState, TokenAllocator
 # Baza miast SIMC (GUS) — formy morfologiczne wygenerowane przez Morfeusz2.
 # ---------------------------------------------------------------------------
 _CITIES_PATH = pathlib.Path(__file__).parent.parent / 'cities_forms.json'
+_L_STROKE = str.maketrans('łŁ', 'lL')
 def _ascii_fold(s: str) -> str:
-    return unicodedata.normalize('NFD', s).encode('ascii', 'ignore').decode('ascii')
+    # [LYNX-OCR-GATE-COMPARE E2] ł/Ł nie rozkłada się w NFD — bez tego „Bielsko-Biała” → „Bielsko-Biaa”, a OCR czyta „Biala”
+    return unicodedata.normalize('NFD', s.translate(_L_STROKE)).encode('ascii', 'ignore').decode('ascii')
 
 
 try:
@@ -175,6 +177,80 @@ def _apply_hits(
     return text
 
 
+# [LYNX-ADDR-REVERSED] Elementy adresu tuż obok rozpoznanego adresu (polityka OWNERA: adres w całości z miastem; samo
+# miasto bez sąsiedztwa ulicy z numerem / kodu pocztowego zostaje jawne). Miasto zawsze z bazy SIMC, w tej samej linii.
+_CITY_W = r"[A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+(?:-[A-ZŁŚŹĆŃĄĘÓŻ][a-złśźćńąęóż]+)*"
+_CITY_BEFORE_RE = re.compile(rf"(?<![\w-])({_CITY_W})(?:[ \t]+({_CITY_W}))?(?:[ \t]*,[ \t]*|[ \t]+)$")
+_COMMA_RE = re.compile(r"[ \t]*,[ \t]*|[ \t]+")  # separator miasta po ulicy: przecinek albo odstęp (Codex F1)
+_PERSON_BEFORE_RE = re.compile(rf"(?:\b(?:[Pp]an|[Pp]ani|[Pp]\.)|({_CITY_W}))[ \t]+$")
+_BARE_STREET_RE = re.compile(rf"[ \t]*,[ \t]*{_CITY_W}(?:[ \t]+{_CITY_W}){{0,2}}[ \t]+\d+[a-zA-Z]?(?:/\d+[a-zA-Z]?)?(?![\w/])")
+_CUT_POSTAL_RE = re.compile(r"-\d{3}(?!\d)")
+
+
+def _is_city(name: str) -> bool:
+    return name in _CITY_FORMS or _ascii_fold(name) in _CITY_FORMS_ASCII
+
+
+def _city_before(text: str, pos: int, persons: tuple[str, ...] = ()) -> int | None:
+    """Początek miasta (1–2 słowa z SIMC) stojącego tuż przed pos (przecinek albo odstęp, ta sama linia).
+    Nie zabiera nazwiska osoby w TYM miejscu: tekst kończy się pełną rozpoznaną osobą („Jan Kalisz, ul. …” — Codex F2, S4)
+    albo słowo stoi po imieniu / „Pan/Pani”. To samo słowo jako miasto w innym miejscu („Kalisz, ul. …”) — zostaje
+    miastem (Codex F3)."""
+    m = _CITY_BEFORE_RE.search(text[max(0, pos - 60):pos])
+    if not m:
+        return None
+    base = max(0, pos - 60)
+    if m.group(2) and _is_city(f"{m.group(1)} {m.group(2)}"):
+        start, words = base + m.start(1), (m.group(1), m.group(2))
+    elif _is_city(m.group(2) or m.group(1)):
+        start, words = base + (m.start(2) if m.group(2) else m.start(1)), ((m.group(2) or m.group(1)),)
+    else:
+        return None
+    end = start + len(" ".join(words))
+    if any(text[max(0, end - len(v)):end] == v for v in persons):
+        return None
+    p = _PERSON_BEFORE_RE.search(text[max(0, start - 30):start])
+    if p and (not p.group(1) or p.group(1).lower() in _first_names()):
+        return None  # słowo po „Pan/Pani” albo po imieniu to nazwisko, nie miasto
+    return start
+
+
+def _first_names() -> frozenset[str]:
+    from osoba_not_person import first_names  # w funkcji — bez cyklu importów (osoba_not_person importuje address leniwie)
+    return first_names()
+
+
+def _with_neighbours(text: str, hits: list[tuple[int, int, str, str]], ner_results: dict | None = None) -> list[tuple[int, int, str, str]]:
+    """Faza 3: dokłada do trafień adresu ucięty kod, miasto przed / po (przecinek albo odstęp), ulicę bez prefiksu po
+    „kod + miasto” oraz „Miasto, NN-NNN” przy kodzie spoza trafień. Zwraca nową listę dla wspólnego _apply_hits.
+    `ner_results` (osoby rozpoznane przed warstwą adresu) — nazwisko w miejscu, gdzie stoi cała osoba, nie jest miastem (S4).
+    Trafienia nachodzące na siebie łączymy w jedno (Codex F4: „26-600 Radom, ul. Polna 5” — kod nie może wypaść)."""
+    persons = tuple(str(v) for k, v in (ner_results or {}).items() if k.startswith("OSOBA_") and " " in str(v))
+    out = []
+    for s, e, _v, tok in hits:
+        if re.search(r"\d{2}$", text[s:e]) and _CUT_POSTAL_RE.match(text, e):
+            e += 4  # kod pocztowy nigdy cięty w połowie („… 15 31” + „-001”)
+        street = _BARE_STREET_RE.match(text, e) if _POSTAL_IN_MATCH_RE.match(text, s) else None  # „kod miasto, Twarda 18”
+        cs = _city_before(text, s, persons)
+        s = cs if cs is not None else s
+        comma = _COMMA_RE.match(text, e)
+        city = _match_city(text, comma.end()) if comma and not street else None
+        e = street.end() if street else (city[0] if city else e)
+        out.append((s, e, text[s:e], tok))
+    for m in _POSTAL_ANCHOR_RE.finditer(text):
+        cs = None if any(s <= m.start() < e for s, e, _, _ in out) else _city_before(text, m.start(), persons)
+        if cs is not None:
+            out.append((cs, m.end(), text[cs:m.end()], "ADRES"))
+    merged: list[tuple[int, int, str, str]] = []
+    for s, e, _v, tok in sorted(out):
+        if merged and s < merged[-1][1]:  # nachodzą — jedno trafienie obejmujące oba (żaden człon nie wypada)
+            ps, pe, _pv, ptok = merged[-1]
+            merged[-1] = (ps, max(pe, e), text[ps:max(pe, e)], ptok)
+        else:
+            merged.append((s, e, text[s:e], tok))
+    return merged
+
+
 def apply_address_layer(state: PipelineState) -> None:
     """Stosuje wzorce adresów i kodów pocztowych na state.text.
 
@@ -230,7 +306,7 @@ def apply_address_layer(state: PipelineState) -> None:
             city_end, _ = city_r
             all_hits.append((m.start(), city_end, text[m.start():city_end], "ADRES"))
 
-    state.text = _apply_hits(text, all_hits, state.allocator)
+    state.text = _apply_hits(text, _with_neighbours(text, all_hits, state.ner_results), state.allocator)  # [LYNX-ADDR-REVERSED] faza 3
 
 
 # ─────────────────────────────────────────────────────────────────────────────

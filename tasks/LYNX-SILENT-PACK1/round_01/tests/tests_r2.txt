@@ -1,0 +1,59 @@
+LYNX-SILENT-PACK1 — BRIEF_ONLY r2, 22.10.2026
+WYNIK: PASS PREIMPLEMENTATION dla briefu f572d09962e6fdddb5e4510f3868a73b1032804e.
+Poprzedni precheck: brief5bf18d1, raport r1 4a9262a.
+Odbiorca: CC — implementacja według doprecyzowanego kontraktu.
+To odbiór kontraktu, nie implementacji ani prototypu.
+
+Zakres:
+Wąski precheck wyłącznie zamkniętej listy B1–B3 z r1.
+Przeczytano cały bieżący brief oraz aktualny wiersz BOARD.
+Punktowo potwierdzono istniejący osoba_not_person._common_or_person; bez diffu implementacji,
+bez uruchamiania testów/reproduktorów/prototypu/modeli/GOLD.
+
+B1 — ZAMKNIĘTE:
+Brief jawnie zapisuje uzgodnienie OWNERA22.10: „1, jeden token i pełna nazwa”.
+Pełna firma i jej jednoznaczny rdzeń otrzymują wspólny FIRMA_NNN.
+Przywróć w obu miejscach zwraca pełną nazwę z formą prawną.
+Odbiór dopuszcza tę konkretną zmianę treści; nie wymagamy odtwarzania skrótu1:1
+ani nowej mapy wariantów. Nie rozszerzam uzgodnienia na inne kategorie lub niejednoznaczne firmy.
+Zgoda na kierunek jest odnotowana w briefie; nie wyprowadzam jej z samego S4 dotyczącego osób.
+
+B2 — ZAMKNIĘTE:
+Dwie różne pełne firmy o tym samym rdzeniu zachowują osobne tokeny;
+sam rdzeń dostaje trzeci, własny token FIRMA z wartością rdzenia.
+OSOBA równa temu rdzeniowi jest kierowana do tego samego tokenu rdzenia.
+Nie scala się dwóch firm i nie zgaduje przypisania skrótu do jednej z nich.
+Brak pełnej firmy w dokumencie -> bez zmian względem main.
+Odbiór ma konkretny wynik: trzy różne tokeny FIRMA i brak sklejenia pełnych wartości.
+
+B3 — ZAMKNIĘTE:
+Brief wskazuje istniejący predykat osoba_not_person._common_or_person(word).
+Punktowy odczyt potwierdza kontrakt zwracany przez ownera:
+(common, person, geo), a przy braku/błędzie Morfeusza wartości None.
+Wybrana reguła rdzenia jednowyrazowego jest jednoznaczna:
+- jakakolwiek analiza pospolita common=True -> nie propagować;
+- common=False (nieznane lub wyłącznie nazwa własna/geograficzna) -> propagować,
+  z zachowaniem pozostałych wyłączeń briefu, w tym rdzenia wyłącznie osobowego;
+- common=None -> nie propagować.
+Dla ≥2 słów pozostaje reguła z briefu, bez nowego filtrowania pospolitości Morfeuszem.
+Nie testowano teraz rzeczywistych wyników słownika dla przykładów — to etap implementacji/odbioru.
+
+Ocena pozostałych punktów prechecku, z wykorzystaniem r1:
+- Cel: poprawki rozpoznawania firm, kwot i identyfikatorów mieszczą się w S1/S2.
+- Istniejący ownerzy pozostają właściwi: firma_context / ner_layer,
+  layers.amount, layers.numeric i credential_patterns.
+- Nowy helper firma_core_variants ma wskazany minimalny szew, bez nowego silnika ani Guard.
+- Brak dublowania walidacji downstream lub potrzeby projektowania przez Architekta.
+- Format tokenów, taksonomia i .lynxdict bez zmian. Brak globalnej normalizacji spacji.
+- S3/S5 pozostają obowiązujące; wskazanie predykatu z obsługą błędu nie znosi fail-closed pipeline.
+- Bez potrzeby kolejnego rozstrzygnięcia przed implementacją wskazanego kontraktu.
+- Zgoda na szacowany zakres~200l odnotowana w aktualnym BOARD jako już udzielona;
+  nie żądam jej ponownie. To nie automatyczna zgoda na dowolny większy zakres.
+
+Dalszy krok:
+CC może implementować brief na gałęzi Tasku, wykonać wskazane testy/regresje i pomiar GOLD,
+potem przekazać exact SHA do niezależnego audytu.
+Liczby prototypu102->20 itd. pozostają dowodem CC, nie wynikiem tego BRIEF_ONLY.
+PASS PREIMPLEMENTATION nie potwierdza poprawności istniejącego lokalnego prototypu
+i nie jest zgodą na merge.
+Bez zmian produktu, testów, uruchamiania modeli, subagentów i aktualizacji pamięci.

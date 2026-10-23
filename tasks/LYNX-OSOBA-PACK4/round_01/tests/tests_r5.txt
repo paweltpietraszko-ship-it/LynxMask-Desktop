@@ -1,0 +1,44 @@
+LYNX-OSOBA-PACK4 — wąski recheck F2 r5, 22.10.2026
+Wynik: PASS poprawki i sprawdzonego zakresu dostawy. F1/F2 zamknięte.
+Exact SHA: 348c4b08c24a050c2846f2b4c9c1c483aad2e0cd (kod2c7971c033e21ee178b037e839239ff0478015a4).
+Diff od poprzednio badanego SHA: b77c27f929995af641674237508252263b31c3ef.
+Poprzedni raport: c1f0c6c729b24a7a2e565d6684291410ae6c530e.
+Baza całego Tasku: fa1c375. Odbiorca: Paweł / CC.
+
+Zmiana:
+Jedna linia produkcyjna: _INFLECTION_RE ma re.IGNORECASE, tak jak późniejsze dopasowanie wystąpień.
+Końcówka jest teraz obcinana identycznie dla Róża/RÓŻA/RÓŻY. Bez zmiany ownera, połączenia warstw, API lub UI.
+Oracle pozostaje frozen arch/spec.md + brief PACK4 z opisanymi rozszerzeniami; brak nowego kontraktu.
+
+Niezależne dowody na exact SHA:
+1. Zachowany repro_r3.py: F1=true, F2=true, controls PASS, exit0.
+   Pełny realny pipeline nadal wskazuje zarówno Malina, jak i MALINA.
+   Pierwotna para Róża/Róży również otrzymuje dwa prawidłowe ostrzeżenia.
+2. Zachowany repro_r4.py: control PASS, released=["RÓŻA"], fragments=["RÓŻA","RÓŻY"], F2_ok=true, exit0.
+   Prawdziwy szew single_osoba_evidence/released -> collect_warnings działa dla kandydata WERSALIKAMI.
+3. Zachowana macierz r4: wszystkie4 kontrole PASS:
+   kandydaci Róża, RÓŻA, RÓŻY wskazują oba wystąpienia RÓŻA/RÓŻY; działa także realne przekazanie ze wspólnego ownera.
+4. test_guard_residue.py54 PASS; test_osoba_pack4.py12 PASS; razem66 PASS.
+   Osobne procesy, własny TMP/TEMP, izolowane źródła i profile. Rzeczywisty spaCy i Morfeusz, HerBERT OFF.
+5. Zachowane kontrole Maciolus/Maciolusa i Kawa/Kawałek przechodzą; nie dodano nowego zakresu morfologii.
+
+F2 domknięte. F1 i C1 pozostają zamknięte.
+Nie znaleziono nowego defektu w sprawdzonym, zmienionym zakresie.
+
+Wykorzystane wcześniejsze dowody i granice:
+- Zachowano wyniki audytu implementacji r3 dla niezmienionych ownerów, C1/jednej osoby i pionu pipeline->Guard.
+- Pomiary GOLD/fresh/KPWr i ich ograniczenia pochodzą z r3; w tym rechecku NIE ponawiano korpusów ani OCR.
+- NOT_CHECKED ponownie: API/GUI/archiwum/schowek, pełna suita, rzeczywisty HerBERT ON i cała skuteczność silnika.
+- PASS dotyczy powyższego SHA i wymienionych warstw; nie jest pełnym odbiorem programu.
+- Poprzednie ograniczenie metryki słów (scala wystąpienia) nie zmieniło się i nie jest podstawą tego PASS.
+  Domknięcie F1/F2 wynika z niezależnych reproduktorów na konkretnych wystąpieniach.
+
+Mechaniczny gate jest osobną informacją:
+gate_r5: STATUS WYMAGA_DECYZJI; RATIO349/16=21,8:1; TOTAL_LINES365.
+Zgoda na około350 linii była odnotowana w briefie. Nie zapisuję nowej decyzji OWNERA i nie przedstawiam gate jako PASS.
+Techniczny wynik rechecku nie jest poleceniem merge; merge wyłącznie na polecenie Pawła.
+
+Dowody lokalne:
+C:/Users/p_pie/.codex/visualizations/2026/10/22/01a1626f-0a10-7fd0-8b6d-bf67d7f53fac/pack4-recheck-r5/
+exact/ (oba zachowane reproduktory), repro3-result.json, sibling.py/json, własny stan testów.
+Brak zmian produktu, merge, subagentów i dostępu do profilu/backendu Pawła.

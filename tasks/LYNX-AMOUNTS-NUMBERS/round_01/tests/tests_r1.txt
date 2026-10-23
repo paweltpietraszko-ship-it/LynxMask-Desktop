@@ -1,0 +1,81 @@
+LYNX-AMOUNTS-NUMBERS — BRIEF_ONLY / tests_r1
+Data: 2026-10-21
+Exact SHA briefu: 204e14e278945a7a813ccb82b85c6ae5a630afcd
+Branch: task/LYNX-AMOUNTS-NUMBERS
+Baza wskazana przez CC: cc70822d8356398a331799d6de4a30370476738f
+Blob briefu: 8c1b0f71b06d0c61bae1bfe8c50a33086f86e653
+Wynik: PASS PREIMPLEMENTATION.
+
+ZAKRES
+Aktualny wiersz BOARD, brief na exact SHA, punktowy odczyt istniejących
+ownerów: verbal_amounts._mask_verbal_amounts, layers/amount.py,
+layers/numeric.py i layers/legal.py; wyłącznie kolejność wywołań
+amount/verbal w pipeline_new.py:89-90.
+Nie analizowano diffu implementacji, nie uruchamiano kodu produktu,
+testów, sond, modeli, benchmarków ani reproduktorów.
+Źródła diagnozy CC są dowodem pomocniczym, nie nowym audytem ich liczb.
+Nie wznawiano zamkniętej OSOBA ani pomiaru HerBERT.
+
+OCENA KONTRAKTU / MINIMALNY ZAKRES
+A. Mieszane kwoty słowne/cyfrowe i pełne formy waluty:
+   istniejący owner verbal_amounts oraz amount.py.
+   SOURCE: jawne przykłady i Zakres 1/2a; NECESSITY: objąć pełną kwotę,
+   zachować dokładny zapis w mapie i nie zostawiać cyfr poza tokenem.
+B. Kwoty bez waluty:
+   istniejący amount.py, bez nowej kategorii i bez nowego detektora.
+   SOURCE: Zakres 2b wraz z negatywnymi przykładami Odbioru.
+   NECESSITY: odróżnić dopuszczony zapis z 2 cyframi groszy od
+   wskazanych jednostek, procentów, wersji i dat.
+C. Numery dokumentów:
+   istniejący numeric.py; bramka dokumentu i odcinek 60 znaków
+   ograniczają nowe rozpoznania, sam nr/numer pozostaje jawny.
+   SOURCE: Zakres 3; NECESSITY: obsłużyć numery poza zamkniętymi
+   dotychczasowymi prefiksami, bez numerów pokoju i cudzych tokenów.
+E. Wielkość liter sygnatur komorniczych:
+   istniejący legal.py, bez globalnej zmiany taksonomii lub tokenów.
+   SOURCE: Zakres 4; NECESSITY: objąć pełne KM/KMP/KO/KMS z rokiem.
+Zmiana ma wskazanych właścicieli, zamknięty TASK_SCOPE i nie wymaga
+nowej architektury, Guarda, API, modelu lub formatu danych.
+
+OBOWIĄZUJĄCE GRANICE — DO IMPLEMENTACJI I ODBIORU
+To odczyt już zapisanych wymagań, nie nowa lista rozszerzeń:
+1. "wersja 1,05" ma pozostać bez zmian zgodnie z Odbiorem.
+   Sam kształt liczby z przecinkiem nie wystarcza do spełnienia całego
+   kontraktu 2b. Wymagania pozytywne i negatywne należy stosować łącznie.
+   Nie rozszerzam tego na nieopisane formaty wersji lub nowe jednostki.
+2. Dłuższa kwota z walutą ma wygrywać z fragmentem bez waluty.
+   Granice i brak fragmentowych tokenów muszą być sprawdzone w warstwie
+   oraz rzeczywistym run_pipeline_new, nie tylko testem regexu.
+3. W obecnej kolejności pipeline warstwa amount poprzedza verbal.
+   Nowe rozpoznanie "813 złotych" nie może uniemożliwić jednej KWOTA
+   dla "44 tysięcy 813 złotych". Odbiór już wymaga całego tokenu
+   w pełnym pipeline. Nie narzucam CC sposobu realizacji ani zmiany
+   pipeline_new poza TASK_SCOPE.
+4. Dla C odbiór ma uwzględnić zadane 60 znaków, bramkę słowa dokumentu,
+   granice numeru, pozostawienie nr oraz ochronę istniejących tokenów.
+   Testy mają wynikać z reguły, nie jedynie kopiować dwa przykłady.
+5. Przywróć ma zwracać dokładny nowy fragment źródła — spacje,
+   twarde spacje, walutę i część ułamkową w granicach danego tokenu.
+   Znana normalizacja OCR została jawnie odłożona; nie wymuszać
+   w tym Tasku jej przebudowy lub rozszerzenia kontraktu.
+6. Próg >5 w porównaniu Mobile dotyczy wyjaśnienia nowej klasy
+   nadmaskowania. Nie zastępuje kontroli konkretnych przykładów
+   i nie jest zgodą na wyciek danych poniżej progu.
+
+ZAMKNIĘTA LISTA BRAKÓW BLOKUJĄCYCH BRIEF: brak.
+Przypadki pozytywne/negatywne i wymaganie pionu umożliwiają odbiór
+bez dopisywania zachowania przez audytora.
+Poprawka ma proporcjonalny zakres; wskazany koszt pozostaje szacunkiem CC.
+
+GRANICE PASS
+PASS dotyczy testowalności briefu i punktowo potwierdzonych ownerów
+na podanym SHA, nie jakości nieistniejącej jeszcze implementacji.
+Liczby braków A/B/C/E, porównanie 693 tekstów, rzeczywiste FP,
+mapa i wyniki po OCR: NOT_CHECKED w tym prechecku.
+Kopiowanie fałszywego zachowania Mobile nie jest kryterium poprawności;
+oracle to kontrakt, w tym jego jawne wyłączenia i Przywróć.
+
+NASTĘPNY ODBIORCA
+CC — implementacja w zakresie, szacunek/gate i pomiar z briefu;
+następnie niezależny audyt dokładnego SHA.
+Bez zmian produktu, bez merge i bez nowego odstępstwa budżetu od Codexa.

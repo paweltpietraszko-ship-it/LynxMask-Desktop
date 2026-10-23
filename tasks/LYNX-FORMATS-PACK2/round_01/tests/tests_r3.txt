@@ -1,0 +1,30 @@
+LYNX-FORMATS-PACK2 — niezależny recheck r3, 2026-10-21
+Wynik: PASS poprawki F1.
+Exact SHA kodu: 369abc7aa2df4716346e9fd34f464d8327b8e91b
+Diff od poprzednio audytowanego: 25f3b35614b29081f57a3f0905802e30f40203ab.
+Poprzedni raport r2: 82e0a2b7894e662bf6c8a922ad0e0d8b9424a687.
+Odbiorca: CC / Paweł.
+
+Zakres: wyłącznie zamknięcie F1 — dowolne odstępy w linii pomiędzy członami formy prawnej; bez zmian produktu przez Codexa.
+Diff: wzorzec w backend/firma_context.py oraz dodatkowy przypadek test_formats_pack2.py.
+Zamiast opcjonalnego pojedynczego białego znaku skan przyjmuje dowolną liczbę spacji/tabulatorów.
+Nie przechodzi przez nową linię; zachowane wyłączenia spj, S.A., s.c.
+
+Dowody niezależne na exact SHA:
+- 11/11 asercji bez kandydatów spaCy: formy zwykłe, podwójne/wielokrotne spacje, tabulatory; negatywne nowe linie i wyłączenia.
+- test_formats_pack2.py + test_firma_context.py: 34 passed.
+- Pion TXT -> /preview -> pipeline -> Guard -> wynik, izolowany profil:
+  1. "Sprzedawca: Brzoza sp.z  o.o." -> "Sprzedawca: FIRMA_001."
+  2. "Sprzedawca: Brzoza sp.  j." -> "Sprzedawca: FIRMA_001."
+  3. "Sprzedawca: Brzoza sp.\tz\to.\to." -> "Sprzedawca: FIRMA_001."
+  Każdy: HTTP 200, blocked=false, pełna nazwa i forma w wartości FIRMA (końcowa kropka jak dotąd poza tokenem).
+  Odtworzenie tekstu z mapy: 3/3 dokładnie 1:1, łącznie ze spacjami i tabulatorami.
+- Zachowano oba pierwotne reproduktory; F1 nie odtwarza się.
+
+Granice:
+PASS dotyczy tej poprawki na podanym SHA. Poprzednie pozytywne dowody r2 pozostają wykorzystane.
+Nie powtarzano pełnej suity, pomiaru pl-pii/Mobile, OCR ani HerBERT; duże pomiary pozostają dowodami CC, nie nowym niezależnym pomiarem Codexa.
+Uwagi DELIVERY o innym kandydacie spaCy dla "Sigma sp.  j." nie zmieniają wyniku zachowanego reproduktora; nie rozszerzano audytu na całą jakość kandydatów spaCy.
+Backend i profil Pawła nietknięte. Izolowane źródła z git archive exact SHA; brak połączeń zewnętrznych.
+Lokalne dowody: %TEMP%\lynx-formats-audit-r3\ (spacing.py, run.py, api.json, exact/).
+Nie wykonywano merge ani prac nad przyszłym niezależnym zbiorem. Brak nowych findingów w zakresie rechecku.

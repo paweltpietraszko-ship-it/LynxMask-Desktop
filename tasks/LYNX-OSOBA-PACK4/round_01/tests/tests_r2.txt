@@ -1,0 +1,33 @@
+LYNX-OSOBA-PACK4 — wąski BRIEF_ONLY recheck C1 r2, 22.10.2026
+Wynik: PASS PREIMPLEMENTATION.
+Exact SHA briefu: 9ae8d36e6a5573af679e4d2357c9197d48a24c19.
+Poprzednio oceniony brief: f5dbd715f691843cbe6eba6a424f69c5bb0b1d08.
+Poprzedni raport: 3cdcb3c8a97541939d48c2209d3f2178f5ae1c94.
+Odbiorca: CC. Etap: wyłącznie kontrakt przed implementacją.
+
+Zakres:
+Przeczytano aktualny wiersz Tasku zdalnego BOARD i zmieniony fragment briefu względem poprzedniej oceny.
+Porównano punkt4 i kryterium odbioru z zamrożonym arch/spec.md S4.
+Wykorzystano poprzednie potwierdzenie ownerów/szwu z r1, bez ponownego przeglądu kodu.
+
+C1 zamknięte:
+- Usunięto alternatywę dwóch tokenów dla jednej osoby.
+- "Pani Róża Zielona podpisała umowę." ma dać jeden token OSOBA zamiast pełnego imienia i nazwiska,
+  z wartością mapy "Róża Zielona"; bez jawnego nazwiska.
+- Kolejne wiarygodnie ustalone wystąpienia tej samej osoby mają wspólny token zgodnie z dotychczasową logiką;
+  różne osoby nie mogą być scalane.
+Punkt4 i odbiór są teraz zgodne z S4: jedna wiarygodnie ustalona osoba = jeden token.
+Nie wprowadzono nowego wyjątku produktowego ani potrzeby zmiany frozen spec.
+
+Pozostała ocena r1 pozostaje aktualna; brak nowych uwag w zmienionym fragmencie.
+Zgodę OWNERA na deklarowany rozmiar ~350 linii odnotowano w briefie i aktualnym BOARD; nie żądam jej ponownie.
+Zależność FIX1: 6204666decfae9d1332c69fd67a283dc2719404f jest przodkiem odświeżonego origin/main
+(potwierdzone git merge-base --is-ancestor, exit0).
+CC przed implementacją wykonuje wymagany rebase na aktualny main.
+
+Granice:
+Bez testów, modeli, sond, reproduktorów, benchmarków i oglądu prototypów CC.
+Bez analizy diffu implementacji, zmian kodu produktu, merge i subagentów.
+To PASS jednoznaczności/spójności kontraktu na powyższym SHA, nie odbiór działania programu.
+Po implementacji pozostaje niezależny audyt exact SHA zgodnie z kontraktem.
+Gold test pozostaje tylko wejściem skryptu pomiarowego CC, bez oglądu i strojenia.

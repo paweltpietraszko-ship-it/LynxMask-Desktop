@@ -1,0 +1,54 @@
+# LYNX-HERBERT-NET — brief Architekta v2: FIRMA + OSOBA, bez rozbudowy silnika
+
+21.10.2026. **STATUS: READY_FOR_CODEX — nowy precheck BRIEF_ONLY dla v2. NIE IMPLEMENTOWAĆ.**
+Podstawa: [propozycja CC `91e096b`](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/91e096ba3b886272af0ef8d383bd0b1b9f93b732/tasks/LYNX-HERBERT-NET/cc_proposal.md) oraz [poprawka FIRMA `7be8f7a`](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/7be8f7a6ae2f642ea19132a233f189e548b91151/tasks/LYNX-HERBERT-NET/cc_amendment_firma.md). OWNER: FIRMA jest poważniejszym problemem niż OSOBA, ale rozwiązanie **nie może** przerodzić się w 1000 linii kodu i piętrowe zależności. v1 `ceefa2a` tylko PER — historyczne, **nie kierować do implementacji ani używać wcześniejszego prechecku jako PASS v2**. LYNX-OSOBA-COLOR-TRACE odłożony.
+
+## Jedna zmiana produktu, dwa typy wykrywania
+
+**HerBERT jest ostatnią, opcjonalną siatką**, wywoływaną w `backend/pipeline.py::_apply_guard` **tuż przed dotychczasowym OutputGuardem**, po spaCy, słownikach, warstwach strukturalnych i fallbacku. Nie zastępuje spaCy; nie cofa żadnego wcześniejszego maskowania. Nowy moduł `backend/herbert_net.py` ma tylko detekcję i kwalifikację dodatkowych kandydatów na **nadal jawnym** tekście.
+
+- `PER` (etykieta modelu) → istniejący `OSOBA_NNN`; `ORG` (etykieta modelu) → kandydat na **istniejący** `FIRMA_NNN` **po dotychczasowym odsiewie instytucji publicznych, urzędów, nagłówków i słów technicznych**. `ORG_NNN` **NIE istnieje i NIE wolno go wprowadzać**. `INSTYTUCJA_NNN` pozostaje domeną obecnej warstwy instytucji, nie nowej autonomicznej klasyfikacji HerBERT-a. `LOC/ID` pomijamy; bez nowych kategorii.
+- Model widzi kontekst zamaskowanego tekstu, ale **zakrywa tylko całą kwalifikującą się, dotąd jawną wartość**. Spany obejmujące/przecinające istniejący token są **odrzucane i raportowane** (szczególnie częściowe maskowanie nazwy FIRMA), chyba że Codex **przed implementacją** potwierdzi jedno minimalne rozwiązanie bez naruszania poniższego kontraktu. Żadnych heurystyk dzielenia/łączenia złożonych encji na ślepo.
+- **Zakaz poprawki CC „ta sama wartość mapy dla jawnego kawałka obok `FIRMA_001`” bez dowodu roundtrip.** Przykład: `FIRMA_001 → z o.o.` i w tekście `ALFA Sp. FIRMA_001`. Wstawienie `FIRMA_001` zamiast „ALFA Sp.” odtworzy „z o.o. z o.o.”, nie „ALFA Sp. z o.o.”. **Nie zmieniać znaczenia ani wartości istniejących tokenów i nie zastępować ich tokenem o innej wartości.** Jeżeli bezpieczna prosta naprawa tego przypadku przekracza zakres, oznaczyć `PARTIAL_FIRMA_UNFIXED`, zostawić bieżący wynik i osobno policzyć tę nadal istniejącą lukę; nie deklarować, że HerBERT ją naprawił. Alternatywny pomysł podlega nowemu precheckowi przed kodem.
+- Jeden dotychczasowy mechanizm mapy tokenów i Przywróć 1:1. Nowe identyfikatory `OSOBA_NNN`/`FIRMA_NNN` bez kolizji z mapą profilu i sesji; żadnej osobnej mapy modelu ani zmian formatu `.lynxdict`. Obowiązkowe testy tekstu z 2 różnymi firmami, identyczną nazwą dwa razy oraz istniejącym `FIRMA_001`.
+- Rozpoznania modeli / reguły semantyczne mają być odrębne od samej alokacji tokenu. Jeśli istniejące filtry `ner_layer` są nieosiągalne z tego szwu bez przebudowy, **STOP → wróć do Architekta z najprostszą alternatywą**, zamiast kopiować cały klasyfikator w `herbert_net.py`. Nie zmieniać starego `ner_layer.py`, `layers/ner_adapter.py` ani `layers/institution.py`.
+
+## Sterowanie i awarie
+
+- **Jeden prosty przełącznik** `LYNX_HERBERT=off|PER|ORG|PER,ORG`; bez czterech osobnych ścieżek pipeline. `off` domyślnie w pilocie i gwarantuje wynik bajtowo identyczny z aktualnym `main`, bez wczytania ONNX i bez regresji czasu. `ORG` osobno pozwala zbadać problem FIRMA. Po pomiarze OWNER decyduje o domyślnym włączeniu lub wyłączeniu.
+- Przy włączonej siatce brak zweryfikowanego lokalnego modelu/tokenizera (SHA256), awaria inicjalizacji/inferencji/offsetów → S3 fail-closed. Bez cichego pominięcia i bez pobierania z internetu; lokalne ONNX, offline i telemetria wyłączona. Wyraźny komunikat UI z alternatywą: „Dodatkowa kontrola HerBERT jest niedostępna. Spróbuj ponownie lub świadomie wyłącz tę dodatkową kontrolę w ustawieniach uruchomienia.” Nie tworzyć nowego ekranu konfiguracji; wykorzystać istniejący kanał błędu.
+- Niezmieniona ochrona dotychczasowych tokenów i Guard uruchamiany **jeden raz po siatce**. Długie teksty wymagają jawnego zachowania (okna z zakładką lub kontrolowana odmowa, nigdy ciche obcięcie przy 512 subtokenach), bez rozwijania osobnego orkiestratora modeli. Przy odmowie użytkownik dostaje alternatywę zgodną z zasadą produktu.
+
+## Kontrakt pomiaru (CC podał nowe wskazówki, nie audyt)
+
+Z [poprawki CC](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/7be8f7a6ae2f642ea19132a233f189e548b91151/tasks/LYNX-HERBERT-NET/cc_amendment_firma.md): na pustym profilu w `dataset_clean` heurystycznie wyznaczono 43 firm, z nich 26 jawnych i 5 częściowo; `firma_sweep` 64/160 jawne; OSOBA 0 jawnych na 477 gold. **Nie przeliczać tych wartości na wynik wdrożenia**. W `dataset_clean` nie ma kompletnego niezależnego gold dla firm: „gold z tekstu” (pole SPRZEDAWCA + forma prawna) jest dolnym oszacowaniem i może być niekompletny. Skrypty pomocnika CC pozostają lokalnie poza repo; miarka wymaga odtworzenia/dostarczenia przed akceptacją jej liczb.
+
+Przebieg na **tym samym wejściu, profilu i exact SHA**: `off`, `PER`, `ORG`, `PER,ORG`. Porównaj wprost:
+1. **FIRMA i OSOBA oddzielnie:** nowe trafienia realnie poprawiające ochronę, jawne nadal, `PARTIAL_FIRMA_UNFIXED`, nadmaskowanie klas firm vs instytucje/pospolite słowa. Nie mieszaj liczby tokenów z liczbą rozpoznanych bytów.
+2. **Bezpieczeństwo i wierność:** stare tokeny/mapy nietknięte, brak nowych kolizji, każdy `Przywróć` 1:1, Guard blokady OFF/ON, awaria S3. Dodatkowo test `ALFA Sp. FIRMA_001` oraz bezpiecznych pełnych nazw `ALFA Sp. z o.o.`, `Urząd Skarbowy` i `Sąd Rejonowy`. Jeśli fragmentowy FIRMA nadal jawny, raport to mówi.
+3. **Koszt:** mediana/p95 czasu, RAM, długi dokument, brak sieci i zakaz PII w artefaktach. Dla PER/ORG próg pewności ustalić na znanym zbiorze, a weryfikować na holdoucie; bez dostrajania pod wynik holdoutu.
+4. Opcjonalnie pomocniczo HerBERT vs spaCy samodzielnie, tylko jeśli nie zwiększa zakresu zadania. Kryterium „warto włączyć” = zysk potwierdzony przypadkami przy akceptowalnych FP/czasie; decyduje OWNER po raporcie, a nie założony procent.
+
+## TASK_SCOPE i twarda granica
+
+Nowy **jeden** plik produkcyjny `backend/herbert_net.py`, minimalne wywołanie w `backend/pipeline.py`, jedna próba warunkowa w `backend/startup_check.py`, jeden `backend/requirements.txt` (`tokenizers`, przypięta wersja), celowane testy i informacja licencyjna CC BY 4.0. Model lokalny, wskazana dokładna rewizja i checksumy ONNX/tokenizera; instalator modelu to osobny task. **Bez zmian** NER, warstw FIRMA, Guarda, API, frontend, profilu, `arch/spec.md`, FROZEN.lock ani formatów tokenów. **Bez nowego modułu arbitra, adapterów wielopiętrowych i dodatkowych zależności poza `tokenizers`**.
+
+**Twarda granica propozycji CC: 350 linii łącznie z testami** (liczenie zgodnie z `gate.py`; uszczegółowić próg, nie wykorzystywać go jako celu). To **nie jest nowa zgoda OWNERA na przekroczenie istniejącego 150-liniowego gate**. Przed kodem CC zgłasza dokładny zakres i wymagane odstępstwo. Jeśli nie da się dotrzymać 350 albo zachować powyższych warunków — **STOP, zgłoś jeden najmniejszy wariant do decyzji OWNERA**. Żadnego „małego” dodatkowego podsystemu naprawy FIRMA ukrytego w Tasku.
+
+TASK_SCOPE:
+- backend/herbert_net.py
+- backend/pipeline.py
+- backend/startup_check.py
+- backend/requirements.txt
+- backend/tests/test_herbert_net.py
+- README.md
+
+**Uzupełnienie CC przed kodem (21.10):** lista plików wg akapitu powyżej (README = atrybucja CC BY 4.0). Budżet: zgoda OWNERA 21.10 do
+350 l. łącznie z testami („jeśli limit ma psuć kod/działanie — zatrzymaj się i zapytaj”). Szew: `_apply_guard` dzielony na siatkę +
+dotychczasowe ciało pod nową nazwą (funkcja Guarda nie rośnie — ratchet gate). Tokeny siatki tylko w mapie dokumentu (jak warstwy
+regex), numer powyżej najwyższego w dokumencie i profilu, **bez zapisu do profilu**. Komunikat awarii: API (poza zakresem) zwraca stały
+komunikat S3 z alternatywą — dedykowany tekst HerBERT nie trafi do UI; odnotowane w DELIVERY.
+
+## Handoff
+
+**Teraz Codex BRIEF_ONLY v2 na dokładnym SHA gałęzi**; sprawdź wąsko: (A) poprawność mapowania `PER/ORG` na istniejące OSOBA/FIRMA bez `ORG_NNN`, (B) osiągalność obecnych filtrów instytucji w prostym szwie, (C) niewykonalność naiwnego sklejania/spółdzielenia `FIRMA_001` dla nazwy i „z o.o.”, (D) gwarancję OFF=main, S3 przy ON i wierności mapy, (E) realność 350 linii i pomiaru ORG. Nie uruchamiać kodu/testów, nie implementować. **Raport nowy, nie używać prechecku v1 jako PASS v2.** Po PASS / korekcie briefu: CC review, budżet do zgody OWNERA przed implementacją, implementacja, Codex independent exact-SHA audit, OWNER decyzja o merge i włączeniu.

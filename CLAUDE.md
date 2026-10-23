@@ -23,11 +23,12 @@ SPECYFIKA LYNXMASK — PRYWATNOŚĆ:
 URUCHAMIANIE TESTÓW:
 - `cd backend && py -3 -m pytest tests/ -q` — gołe `python` na tej maszynie (Windows Pawła) nie istnieje (alias Microsoft Store). Na Linuksie/w chmurze: `python3`.
 - 38 testów skipuje się bez działającego backendu (`py -3 pseudominizer_api.py`, port 8765) — to nie błąd.
-- Stan 2026-10-16 bez backendu: 122 passed, 3 failed, 40 skipped, 1 xfailed. Failujące: `test_pipeline_v2.py::TestIbanWithSpace::test_iban_reverse_map_entry`, `test_pseudominizer.py::TestFilterFunction::{test_prefix_nie_uderza_w_podobne_nazwy,test_prywatna_firma_nie_odfiltrowana}`. To NIE są nieaktualne testy — wykrywają realne wycieki (BUG-IBAN-RECEPTA, BUG-NER-PREFIX-FILTER, `arch/FINDING_2026-10_AUDYT.md` §3a). Naprawa tylko w ramach właściwego Tasku, nie przy okazji innego.
+- Silnik i testy uruchamiaj w środowisku `.venv` z `backend/requirements.txt` (`.venv\Scripts\python.exe -m pytest tests/ -q`); `LynxMask.vbs` startuje silnik z `.venv`. Część testów (`test_pseudominizer.py`) łączy się z działającym silnikiem na 8765 i wymaga jego `api_token.txt` w katalogu `backend/` — w worktree bez tokenu failują (to nie regresja). Testy nowych modułów (`test_photo_chain.py`, `test_herbert_net.py`, `test_firma_context.py`, …) są poza `pytest.ini` — uruchamiaj wprost.
 - `backend/tests/test_audyt_2026_10.py` (niezbierany przez `pytest.ini`, uruchamiaj wprost): 26 reproduktorów `xfail(strict=True)`, każdy przypięty do BUG-ID z audytu. Gdy Task naprawi błąd, test przechodzi w XPASS → zdejmij marker w tym samym Tasku.
 - Po wąskiej zmianie uruchamiaj zakres dotyczący zmiany, nie całą suitę.
 
 REVIEW CHAIN:
+- 2026-10-21 Paweł: **poprawki (błędy, filtry, listy, zależności) idą bez Architekta** — CC pisze `tasks/<id>/brief.md` sam, Codex precheck i audyt. Architekt tylko projektuje zmiany programu (nowe funkcje, architektura, kontrakt).
 - Drobne mechaniczne poprawki: `gate.py` PASS + Codex PASS wystarcza; architekt tylko przy realnym pytaniu o kontrakt/ownera.
 - Merge tylko na polecenie Pawła („merge" / „zmerguj"). Nigdy z własnej inicjatywy.
 

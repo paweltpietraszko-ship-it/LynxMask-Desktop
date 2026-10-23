@@ -1,0 +1,66 @@
+LYNX-SILENT-PACK1 — BRIEF_ONLY r1, 22.10.2026
+WYNIK: brak PASS PREIMPLEMENTATION; jedna zamknięta lista3 doprecyzowań poniżej.
+Etap: wyłącznie brief, bez implementacji.
+Badany SHA briefu:5bf18d197e2bc73808a6a6992c04e2010148f093.
+Źródła: brief na exact SHA + frozen arch/spec.md i AGENTS.md.
+Odbiorca: CC — doprecyzowanie kontraktu; Paweł — wyjaśniona poniżej kwestia przywracania FIRMA.
+Nie wydaję FAIL implementacji, ponieważ implementacji nie ma.
+
+Sprawdzone zgodnie z BRIEF_ONLY:
+1. Klasy1/3/4 to rozpoznawanie firm, kwot i identyfikatorów w istniejącym celu S1/S2.
+   Bez nowej kategorii, formatu tokenów lub globalnej normalizacji spacji.
+2. Właściciele istnieją. Jednym celowanym odczytem potwierdzono:
+   firma_context._form_start/scan_legal_forms/legal_form_entities -> ner_layer.process_ner/_process_ner;
+   layers/amount._AMOUNT_NOCUR_RE; layers/numeric.apply_numeric_layer.
+   Helper rdzeni firm ma wskazany minimalny szew w firma_context, wykorzystujący istniejący wynik NER.
+3. TASK_SCOPE wskazuje pliki produkcyjne i testowe. Brak konieczności kierowania rutynowych poprawek do Architekta.
+4. Nie analizowano diffu/prototypu, nie uruchamiano testów, reproduktorów, modeli ani GOLD.
+   Liczby prototypu w briefie są twierdzeniem CC, nie zweryfikowanym wynikiem tego prechecku.
+
+Zamknięta lista braków kontraktu:
+
+B1 — przywracanie skróconej firmy do pełnej nazwy wymaga jawnego rozstrzygnięcia produktowego.
+Brief2 stwierdza: „TEN SAM token co pełna firma” oraz „Przywróć daje pełną nazwę — jak przy osobach”.
+Frozen S4 dopuszcza mianownik w przywracaniu OSOBA; nie jest automatyczną zgodą na rozszerzanie
+każdego skrótu FIRMA do całej nazwy z formą prawną.
+Przed kodem wyjaśnić i zapisać jawną akceptację tej konkretnej reguły albo poprawiony kontrakt.
+Wyzwalacz: dokument zawiera pełną firmę i później jej rdzeń bez formy.
+Przykład: „Filar Północy sp. z o.o. … Filar Północy …”.
+Proponowany efekt: oba wystąpienia stają się tym samym FIRMA_NNN; po Przywróć oba mają pełną formę,
+więc drugie „Filar Północy” zmienia się na „Filar Północy sp. z o.o.”.
+Dane: istniejący tekst dokumentu i lokalna mapa firmy; brief nie proponuje nowej sieci, usługi,
+jawnego zapisu dokumentu ani osobnego ekranu. Zasady szyfrowania mapy S5 pozostają obowiązujące.
+UI otrzyma wspólny token, a po przywróceniu rozszerzoną treść. To zmiana treści, nie tylko techniczny szczegół.
+Nie tworzę wymogu przywracania rdzenia1:1 ani nowej mapy wariantów.
+Jeżeli Paweł zaakceptuje pełną nazwę przy każdym takim przywróceniu, odbiór ma jawnie dopuszczać ten wynik.
+Przed akceptacją nie traktować porównania „jak przy osobach” jako decyzji OWNERA.
+
+B2 — konflikt dwóch pełnych firm mających ten sam rdzeń.
+Nowa reguła nie określa, co zrobić, gdy „Filar Północy sp. z o.o.” i „Filar Północy S.A.”
+występują jako dwa podmioty, a dalej jest „Filar Północy”.
+Nie wiadomo, który token ma otrzymać skrót ani co dzieje się z odpowiadającym mu OSOBA.
+CC ma dopisać jeden deterministyczny wynik dla tego przypadku i przypadku bez jednoznacznego
+powiązania z pełną nazwą, wraz z kontrolą, że nie scala się dwóch różnych firm.
+To brak kontraktu nowego mapowania, nie finding na produkcie ani odtworzony realny konflikt.
+Nie wskazuję algorytmu ani nie żądam nowego ownera/Guard/architektury.
+
+B3 — kryterium „zwykłego słowa (Morfeusz)” dla rdzenia jednowyrazowego nie definiuje wyniku.
+Brief2 mówi: „1 słowo ≥4 litery niebędące zwykłym słowem (Morfeusz)”.
+Brakuje reguły dla analizy wieloznacznej: wynik zwykły i nazwa własna jednocześnie, albo brak analizy.
+Nie ma tu wskazanego istniejącego predykatu, który zamrażałby tę decyzję.
+CC ma wskazać istniejącą regułę, którą zamierza zachować, albo doprecyzować te klasy w briefie
+i podać oczekiwane wyniki; bez projektowania przez audytora.
+„Most na rzece” i „Punkt3 umowy” pozostają obowiązującymi kontrolami negatywnymi z briefu.
+
+Pozostałe uwagi nie stanowią dodatkowych blockerów:
+- ~200 linii: brief jawnie przewiduje zgodę OWNERA przed implementacją. Nie interpretuję samego zlecenia
+  audytu jako akceptacji przekroczenia, ale nie wymagajcie ponownej zgody, jeżeli już zostanie udzielona.
+- Do odbioru implementacji wciąż należą jawnie wskazane testy/regresje/pomiar GOLD;
+  nie uruchamia się ich na etapie BRIEF_ONLY.
+- Pełne zachowanie skrótów nie może zostać ustalone dopiero przypadkiem przez kolejność wpisów w mapie.
+- Wyłączenia s.c., opisów JDG, Nietoperza, zepsutych e-maili i szumu R1 pozostają poza tym Taskiem.
+Nie rozszerzam tej listy poza wskazane3 luki.
+
+Dalszy krok:
+CC doprecyzowuje B2/B3 i zapisuje uzgodniony wynik B1 w briefie; po korekcie jeden wąski precheck.
+Bez pisania produktu/testów przez Codexa, bez subagentów, bez zmian pamięci i bez merge.

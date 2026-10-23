@@ -1,0 +1,72 @@
+LYNX-GUARD-B — wąski recheck F1–F3 r2, 2026-10-22
+Wynik: FAIL — F1 pozostaje otwarte w wariancie identycznych fragmentów; F2 i F3 ZAMKNIĘTE.
+Exact SHA: 43dafa4e97e0674e6048677f3d0a4ec05be7f290 (kod 0f3f855c1ed05d42ea98dc7e1ed2f12fa57ce363).
+Diff od poprzedniego audytu: b16be398803f298680c600f02bb68518ea297d94.
+Poprzedni raport r1: 40c4b25a6f0121e8b15a2617488e71400b40c1da.
+Odbiorca: CC; tylko korekta tej samej klasy pozycji F1. Brak nowej listy wymagań i brak merge.
+
+Pozytywne wyniki
+- Wszystkie 7 zachowanych przypadków repro_r1.mjs przechodzą (failures=0).
+- node --test tests/revealText.test.mjs: 17 passed.
+- tsc --noEmit: exit 0 na izolowanej kopii exact SHA.
+- F2: częściowe zakrycie Rogalik nie zamyka R5 całej firmy; po Maskuj firmy całość zostaje zakryta i zastępuje wewnętrzne zakrycie.
+- F3: Kawa nie maskuje już początku Kawałek.
+- F1: pierwotny pojedynczy numer po jednym/12 emoji jest teraz maskowany prawidłowo.
+Wygląd/przyciski nadal traktowane jako pozytywnie ocenione przez OWNERA; nie otwierano ich ponownie.
+
+F1 — SAFETY_PRIVACY: rozpoznawanie „pozycja już UTF-16” po zgodności fragmentu jest niejednoznaczne dla duplikatów.
+TRACE: niezmienione względem F1 r1 — brief B pkt 1 numer zakrywany we wskazanym miejscu;
+S4 rozstrzygnięcie ostrzeżeń ma dotyczyć wskazanych wystąpień i nie dopuszczać niezamaskowanego numeru po Maskuj.
+Grupowanie ×N wymaga obsłużenia wszystkich wskazanych miejsc, nie tylko jednego.
+OWNERSHIP: frontend/src/screens/guardDecisions.ts:toUtf16/at16 oraz konsumenci warningKey, coverWarning, pendingWarnings.
+at16 zakłada, że jeżeli base.slice(start,end) równa się fragmentowi, indeksy są już UTF-16.
+To może być inne identyczne wystąpienie. Konwersja po wartości fragmentu nie identyfikuje jednostki współrzędnych.
+Nie jest to nowy wymóg architektury; to niedomknięcie tej samej korekty F1.
+
+REPRO exact SHA:
+Finalny syntetyk do Guarda:
+    "📄".repeat(20) + " PESEL: 44051401359; PESEL: 44051401359."
+Dwa rzeczywiste ostrzeżenia HIGH/R4 dla dwóch wystąpień. API dodaje zwykły nagłówek PSE.
+Pozycje Python z /preview: [135, 155].
+Poprawne pozycje UTF-16: [155, 175].
+Rzeczywisty toUtf16: [155, 155].
+Dla drugiego raw start=155 przypadkowo wskazuje w JS pierwszy identyczny numer, więc at16 go nie przelicza.
+
+Odtworzono normalną logikę ekranu i panelu:
+warnings=toUtf16(...);
+ten sam rodzaj/poziom/wartość jest w jednym wierszu x2;
+Maskuj obu wskazanych pozycji -> zbiór warningKey -> reduce coverWarning -> applyCovers -> pendingWarnings.
+Końcowa linia:
+    [20 emoji] PESEL: NUMER_002; PESEL: 44051401359.
+pending=0, guardBlocked=false -> locked=false.
+Drugi PESEL pozostaje w całości jawny mimo Maskuj x2 i rozstrzygniętej listy.
+Kontrole z 0, 1 i 21 emoji: oba numery są maskowane. To deterministyczna kolizja indeksów,
+a nie losowy problem Unicode ani brak modelu.
+
+Warstwa pionowa i uczciwe granice:
+Realny /preview/pipeline._apply_output_guard/collect_warnings/shift_warnings na exact SHA;
+stub WYŁĄCZNIE wcześniejszego silnika dostarczającego finalny tekst z pozostałościami.
+Następnie rzeczywiste funkcje JS z tego samego SHA, z odtworzeniem wiązania stanu używanego w Pseudonimizuj.tsx
+i grupowania dwóch identycznych ostrzeżeń z GuardPanel.
+Nie twierdzę, że pełny silnik standardowo przepuszcza taki PESEL. Badany obowiązek to poprawna obsługa finalnego ostrzeżenia Guarda.
+Nie wykonywano schowka, zapisu przez Tauri ani automatycznych kliknięć GUI; finalny wynik i pending odtworzono w funkcjach,
+a użycie locked/shownText przez ekran pozostaje potwierdzone odczytem kodu z r1.
+To wystarcza do odtworzenia F1 w jego właścicielu; nie przypisuję temu pełnego odbioru aplikacji.
+
+Do CC
+Usunąć niejednoznaczność jednostek indeksów; raw Python i przeliczone UTF-16 muszą być odróżniane jednoznacznie,
+bez zgadywania na podstawie równości fragmentu. Zachować idempotencję bez sklejania różnych wystąpień.
+Nie wymaga to nowego protokołu bezpieczeństwa, serwerowego nadzorcy ani przebudowy panelu.
+Ponowić zachowane repro_r1 oraz repro_r2 i bezpośrednie testy helperów.
+
+Zachowane reproduktory:
+- repro_r1.mjs pozostaje niezmienione, 7/7 PASS.
+- nowy tasks/LYNX-GUARD-B/round_01/tests/repro_r2.mjs, commit 7a49c566120c43b6e7a0e37ff8a75fc32c2d5526.
+  Na Node 24: 3 kontrole poprawne, 1 wariant F1 z jawnym numerem, failures=1.
+- Lokalne: %TEMP%\lynx-guard-b-audit-r2\duplicate_fixtures.py, duplicate.json, duplicate.mjs,
+  duplicate-results.json, run.py, exact/.
+
+Nie uruchamiano ponownie backendowych suit, pomiarów 150/KPWr/OCR ani audytu wyglądu.
+Diff produkcyjny dotyczy helperów decyzji i ich podłączenia; wcześniejsze dowody niezmienionych warstw wykorzystane.
+Cudze obrazy w głównym repo nietknięte. Izolowany profil/archiwum, bez sieci zewnętrznej i kontaktu z backendem Pawła.
+Bez zmian produktu, merge i subagentów. Stop po potwierdzeniu jednej nadal otwartej klasy F1.

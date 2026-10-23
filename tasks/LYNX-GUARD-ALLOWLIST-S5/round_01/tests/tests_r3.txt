@@ -1,0 +1,39 @@
+LYNX-GUARD-ALLOWLIST-S5 — r3, korekta interpretacji O1,22.10.2026
+WERDYKT: PASS na exact SHA a7c31d93ed5eedcfd2772d2cbb1131778a92c8de.
+DELIVERY:ca06c71a9b6da5407e2af744087288621ceef65f.
+Baza:35b3ad1ccf8ca3ae6f46c106767cad4e2252152a.
+Odbiorca: Paweł / CC.
+Nowy raport uzupełnia niezmienny r2 (7db99e2). Nie zmieniano kodu ani nie ponawiano testów.
+
+O1 — ZAMKNIĘTE jako niezasadna blokada; wycofana rekomendacja poszerzenia wyjątku.
+Paweł zwrócił uwagę, że lepiej zapytać o „Kawa”, niż błędnie rozciągać wybór dotyczący „Jan Kawa”.
+Po ponownej ocenie Codex zgadza się z tym argumentem.
+Nie zapisuję „chyba lepiej” jako nowej zamrożonej decyzji OWNERA.
+Koryguję własną interpretację istniejącego kontraktu dokładnej pary (wartość, reguła).
+
+Brief określa dokładne dopasowanie fragmentu, a nie automatyczną zgodę dla jego podfragmentów.
+Zapis („Jan Kawa”,R1) nie jest zapisem („Kawa”,R1).
+Ponowne pytanie o krótszy fragment pozostaje zgodne z tą zasadą i zachowuje kontrolę człowieka.
+R2 prawidłowo odtworzył zachowanie, ale niezasadnie potraktował je jako wymagające akceptacji wyjątku.
+Nie ma tu nowego odstępstwa od kontraktu do zatwierdzenia; OWNER_EXPLANATION_GATE O1 zamknięty.
+Nie należy odsyłać CC do rozszerzania zgody na krótszy fragment na podstawie rekomendacji z r2.
+
+Wykorzystane, zakończone dowody r2:
+- Niezależny rzeczywisty /preview -> add -> ponowne /preview -> remove -> pytanie wraca.
+- Szyfrowanie/migracja po udanym zapisie; zachowanie jawnego pliku przy zasymulowanej awarii replace.
+- HIGH i MAP_LEAK niewyciszalne przez pary i stare wildcardy.
+- Express/brak tokena401 dla endpointów profilu.
+- Uszkodzony plik: damaged/409 bez nadpisania; clear zachowuje keystore; reset usuwa enc i legacy.
+- Przechwycone logi modułu bez wartości; frontend przenosi wartości w body, nie w URL.
+- UI realnych komponentów w izolowanym harnessie: zapamiętanie i cofnięcie obu reguł,
+  RED/Express bez przycisku, błąd zapisu pozostawia pozycję bez decyzji, naprawa listy z potwierdzeniem.
+-368 testów PASS,3 znane wcześniej porażki,2 xfail; tsc i vite build OK.
+Granice tych prób pozostają dokładnie takie jak w r2 (m.in. kontrolowany fetch w teście UI).
+Gate538 l. ma wcześniej odnotowaną zgodę; nie żądam jej ponownie.
+
+Zakres PASS:
+Dokładny wskazany SHA oraz warstwy przebadane w r2; bez rozszerzania na cały produkt i dowolne dokumenty.
+Ochrona dostępu do słownika na wspólnym koncie Windows nadal osobny LYNX-DICT-ACCESS-PROTECTION.
+Nie jest zamknięta tym PASS.
+Bez nowych testów/GOLD/OCR, zmian produktu, subagentów, aktualizacji pamięci lub merge.
+Dalszy krok: odbiór Pawła; merge tylko na jego polecenie.

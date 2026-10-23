@@ -90,13 +90,16 @@ def test_propagacja_nie_rozsyla_imienia():
     with patch.object(spacy_ner, "detect_entities", _fake_ner(("OSOBA", "Piotr Masłowski"))), \
             contextlib.redirect_stdout(io.StringIO()):
         out, rev, blocked = run_pipeline_new(text, anon_map={})
-    assert "Piotr Wrona" in out and "Piotrowski" in out and "Masłowski" not in out, (out, rev)
+    # [LYNX-OCR-GATE-COMPARE E2b] inne imiona/nazwiska ze słownika są teraz zakryte własnymi tokenami (port Mobile 3a);
+    # sedno C047 bez zmian: token „Piotr Masłowski” stoi tylko w jego miejscu, nie na „Piotr” innej osoby ani „Piotrowski”.
+    tok = [t for t, v in rev.items() if v == "Piotr Masłowski"]
+    assert len(tok) == 1 and out.count(tok[0]) == 1 and "Masłowski" not in out, (out, rev)
     assert not blocked and _restore(out, rev) == text
 
 
 @pytest.mark.parametrize("text,frags,name", [
     ("Zielińska Katarzyna złożyła wniosek. Katarzyna Zielińska podpisała.", [("OSOBA", "Katarzyna Zielińska")], "Katarzyna"),
-    ("Wniosek złożyła Pani Wiktoria, Róża rośnie w ogrodzie.", [], "Wiktoria"),          # Pan/Pani; „Róża” bez kontekstu
+    ("Wniosek złożyła Pani Wiktoria, Róża rośnie w ogrodzie.", [], "Wiktoria"),          # Pan/Pani; „Róża” — E2b: własny token
 ])
 def test_imie_przy_osobie_dostaje_wlasny_token(text, frags, name):
     """Propozycja Pawła: imię obok tokenu osoby lub po Pan/Pani → własny token z dosłowną wartością (nie cudzy, nie jawne).
@@ -105,7 +108,8 @@ def test_imie_przy_osobie_dostaje_wlasny_token(text, frags, name):
     from pipeline_new import run_pipeline_new
     with patch.object(spacy_ner, "detect_entities", _fake_ner(*frags)), contextlib.redirect_stdout(io.StringIO()):
         out, rev, blocked = run_pipeline_new(text, anon_map={})
-    assert not blocked and name not in out and name in rev.values() and "Róża" not in rev.values(), (out, rev)
+    # [LYNX-OCR-GATE-COMPARE E2b] samotna „Róża” (słownik imion) zakryta jak w Mobile — świadome nadmaskowanie; nie sklejona z imieniem
+    assert not blocked and name not in out and name in rev.values() and "Wiktoria Róża" not in rev.values(), (out, rev)
 
 
 def test_dwie_osoby_w_liniach_to_dwa_tokeny():
@@ -160,6 +164,10 @@ def test_prawdziwy_spacy_span_z_nowa_linia(_full, text, hidden):
     with contextlib.redirect_stdout(io.StringIO()):
         ents = spacy_ner.detect_entities(text)
         res = run(text)
-    assert any("\n" in text[e.start:e.end] for e in ents), "model nie zwrócił spanu z \\n — syntetyk nie falsyfikuje"
+    # [LYNX-OSOBA-PACK4] Osoby nie są już sklejane przez koniec linii/przecinek (lista nazwisk = osobne tokeny), więc span
+    # z \n powstaje tylko z samego modelu. Warunek: model dał osoby (z \n albo osobno) — sprawdzamy wciąż, że żadne nazwisko
+    # nie zostaje jawne.
+    assert any("\n" in text[e.start:e.end] for e in ents) or sum(e.label == "OSOBA" for e in ents) >= 2, \
+        "model nie zwrócił osób — syntetyk nie falsyfikuje"
     assert not res.guard_blocked, res.guard_reasons
     _check(text, res.text, res.reverse_map, hidden)

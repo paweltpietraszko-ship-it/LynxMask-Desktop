@@ -1,6 +1,30 @@
 # ARCHITECT_START_HERE — handoff dla następnej instancji Architekta
 
+## STAN 21.10.2026 — czytaj najpierw (sekcje niżej z datami wcześniejszymi to historia; bieżąca kolejka: `BOARD.md` → TERAZ)
+- **Zmergowane:** zdjęcia — PP-OCRv6 z prostowaniem (`PP-LCNet_x1_0_doc_ori`) **domyślnie**, Tesseract tylko zapas (`LYNX-PHOTO-CHAIN`
+  `7dfe261`); odkrywanie pojedynczego tokenu w UI jak Mobile (`LYNX-MANUAL-REVEAL` v5 `c426211`); własne środowisko `.venv` +
+  `backend/requirements.txt`, aktualizacje bezpieczeństwa, Morfeusz 1.99.15 (`LYNX-DEPS-UPDATE`); siatka HerBERT przed Guardem
+  `LYNX_HERBERT=off|PER|ORG|PER,ORG`, **domyślnie off** do decyzji po pomiarze (`LYNX-HERBERT-NET` `dcaa3e1`); FIRMA — forma prawna
+  nigdy sama, lista prefiksów tylko ze słów wyłącznie własnych, urzędy nigdy FIRMA (`LYNX-FIRMA-FILTER-FIX` `325b031`).
+- **Proces (Paweł 21.10):** poprawki (błędy, filtry, listy, zależności) idą **bez Architekta** — CC pisze `brief.md`, Codex precheck
+  i audyt; Architekt projektuje zmiany programu (nowe funkcje, architektura, kontrakt). Pomiary robi pomocnik CC; miarka = wycieki
+  i fałszywe alarmy na końcu łańcucha, wiele zbiorów naraz.
+- **Uruchamianie:** `LynxMask.vbs` startuje silnik z `.venv` (zapas: `py -3`); modele w `backend/models/{ocr,herbert}` (poza git,
+  SHA w kodzie; na komputery klientów dostarczy `LYNX-INSTALLER`).
+
+
 LynxMask Desktop, 19.10.2026 (aktualizacja po korekcie benchmarku CC). Ten dokument to **migawka operacyjna, NIE PRODUCT_TRUTH**. Repo: paweltpietraszko-ship-it/LynxMask-Desktop. Przed podjęciem zadania odśwież origin/main, nagłówek i sekcję TERAZ w BOARD.md oraz WŁAŚCIWY wiersz. Nie zakładaj, że wskazany tutaj SHA nadal jest HEAD.
+
+## AKTUALIZACJA 20.10.2026 — TEST OSOBA I RZECZYWISTE PRIORYTETY
+
+**Czytaj tę sekcję PRZED historycznym stanem z 19.10 poniżej.** Bieżący status i ostatnie SHA zawsze potwierdź w `BOARD.md`; poniższe streszczenie może się zestarzeć. Przebudowa OSOBA jest już osobną propozycją CC, nie dotychczasowym „jedynie HerBERT bez przebudowy”.
+
+- **PHOTO-CHAIN pierwszy:** brief Architekta w `tasks/LYNX-PHOTO-CHAIN/brief.md`. BOARD 20.10: CC ma zgodę OWNERA na rozmiar około 370 linii i implementację pod flagą **domyślnie OFF**. Zgoda na aktywację/progi jeszcze nie zapadła; status `OWNER_DECISION_NEEDED` nie oznacza, że CC ma przerwać samo kodowanie. Nie odwracaj tych decyzji według starej sekcji „START” z 19.10.
+- **OSOBA-REDESIGN drugi:** propozycja CC `tasks/LYNX-OSOBA-REDESIGN/cc_proposal.md`. Priorytet: jedno miejsce decyzji „czy konkretne wystąpienie jest osobą” na podstawie zgodnych dowodów ZA i PRZECIW; spaCy, Morfeusz, słowniki, wielka litera, odmiana i kontekst — źródła dowodów, nie autonomiczne wyrocznie. HerBERT zgodnie z ustaleniem **jako ostatnia siatka na nadal jawny tekst**, bez cofania decyzji silnika. Nie zmieniać S4 Guarda bez zgody OWNERA.
+- **Krytyczne nowe dane:** [handoff z kompletnym 68-zdaniowym testem syntetycznym, kluczem, dosłownym wynikiem Mobile oraz fragmentem mapy Desktop](https://github.com/paweltpietraszko-ship-it/LynxMask-Desktop/blob/c1a469304ee03ecc16baa6c93dada0a6b00b537d/tasks/LYNX-OSOBA-REDESIGN/HANDOFF_EXPERIMENT_2026-10-20.md) (branch `task/LYNX-OSOBA-REDESIGN`, commit `c1a4693`). Mobile nie rozwiązuje w pełni homonimów: maskuje `Róża`, `Malina` i zwierzęta w nieosobowym kontekście; ten sam token stosuje dla różnych znaczeń tego samego słowa. Wstępnie 18/32 nieosobowych wystąpień błędnie zakryte jako OSOBA oraz 5/36 oczekiwanych osób jawnych (+ fragment `Anna Maj`); te liczby są **diagnostyczne, do odtworzenia na exact SHA, nie benchmark produkcyjny**.
+- **Desktop:** OWNER dostarczył tylko MAPĘ maskowania, nie pełny wynik na 68 zdań; są np. `OCZEKIWANA → OSOBA_022`, podczas gdy Mobile pozostawił nagłówki 61–64 jawne. Nie twórz porównania FP/FN Desktop–Mobile bez rzeczywistego tekstu wyjściowego Desktop.
+- **Następny eksperyment:** niezależne uruchomienie obu silników na identycznym wejściu, izolowanych profilach i wskazanych SHA; porównać per *wystąpienie* FP, FN, role FIRMA/ADRES, zniekształcenia granic tokenu, mapę i Przywróć. Nie stroić pod oglądany test i nie udawać, że jest świeżym holdoutem. Dopiero potem minimalny brief `OSOBA-REDESIGN`.
+- **Wątek projektu poza kolejką:** sekcja `Kierunki zastosowania` w BOARD: klawiatura LynxMask / Secure Compose dla Androida (bez zastępowania Gboarda) oraz wsadowa pseudonimizacja folderów i baz przez CLI — **pomysły przyszłe, nie zlecenia implementacji**.
 
 ## 1. NAJWAŻNIEJSZA ZMIANA KIERUNKU
 
@@ -58,6 +82,6 @@ Security review Codexa: F1–F3 (jawny trie profilu, reset nieusuwający całoś
 
 ## 7. START PO OTWARCIU NOWEGO OKNA
 
-**Pierwsza praca:** przeczytaj `BOARD.md` → TERAZ (cel, dowody, kolejność). Skoryguj brief kroku 1 `LYNX-OCR-PARITY` według recenzji CC (nowy moduł zamiast rozbudowy `benchmark.py`), potem briefy kroków 2 i 3. Jeśli nie zgadzasz się z celem lub kolejnością, zapisz to w TERAZ przed pisaniem briefów.
+**Pierwsza praca (aktualizacja 20.10):** przeczytaj `BOARD.md` → TERAZ i bieżące wiersze PHOTO-CHAIN / OSOBA-REDESIGN; przeglądnij wskazany wyżej nowy handoff z testem 68 przypadków. Poprzednie zadania OCR-PARITY krok 1 i GATE-COMPARE są historyczne, nie pisać ich briefów ponownie. Wszelkie nowe decyzje wymagają aktualnego kontekstu, nie tej migawki.
 
 **Nie odziedzicz bezkrytycznie moich hipotez.** Pytanie nie brzmi „jak napisać piękny silnik?”, tylko „jaki minimalny zabieg daje mierzalnie lepszą ochronę i Przywróć na dokumentach użytkownika?”. Jeżeli OWNER zmieni priorytet — reaguj na aktualne polecenie, nie na tę migawkę.
