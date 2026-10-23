@@ -44,3 +44,28 @@ RATIO: zmiana głównie dodaje (nowe reguły + testy). Rozmiary: `firma_context.
 | `testset_owner` | wszystkie zbiory | — | identycznie z main |
 Klasy zaprojektowane na GOLD dev (20/20); GOLD test nieoglądany — spadek 52 → 1 to wynik na danych spoza projektowania
 (ten sam generator szablonów GOLD, więc nie dowód dla dowolnych pism). Opinia Qwena (pkt 4: filtr przed regułami) potwierdzona przy A.
+
+---
+
+# Runda 2 — po Codex r2 FAIL (`d32fcd6`, `tests_r2.txt`)
+Kod r2: `b9315c5890d5838eab38ad9afbc8f0af8f8d0e71` (diff od `281b7d9`: commit `b9315c5`).
+
+## gate.py (stdout dosłownie, pierwsze linie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: b9315c5890d5838eab38ad9afbc8f0af8f8d0e71
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 133/5 = 26.6:1 (threshold 5:1)
+```
+RATIO 133/5: zmiana prawie wyłącznie dodaje (reguły + testy). Uwaga Codexa r2 słuszna — zgoda Pawła na miarkę linii dotyczyła kwot;
+dla tego Tasku pytanie o RATIO przekazane Pawłowi osobno (CC nie traktuje wcześniejszej zgody jako ogólnej).
+
+## F1 (P2) — nazwisko będące też imieniem wyłączało JDG
+- Przyczyna: `jdg_entities` wymagał, by ostatni wyraz NIE był na liście imion („Cezary Marek”, „Anna Roman”, „Jan Marek” — odrzucone).
+- Poprawka: ostatnia para = imię (lista imion) + następny wyraz z wielkiej litery, bez warunku „nie-imię” dla nazwiska.
+- Retained `repro_r2.py` na `b9315c5890d5838eab38ad9afbc8f0af8f8d0e71`: 6/6 zgodne (A_control, A_surname_firstname, A_surname_firstname2, A_short_jdg → jedna FIRMA, wspólny
+  token w obu wzmiankach; B, C bez zmian).
+- Testy: `test_firma_silent2` 13 passed (+3 przypadki F1); regresja: test_firma_context 14, test_silent_pack1 30, test_formats_pack2 20,
+  test_map_fidelity 29, test_osoba_layout 49, test_ner_multiline 21, test_osoba_pack4 12, test_pipeline_v2 41.
+- Pomiar r2: GOLD ciche dev 0 / test 1, zbędne 69/152, pytania 0,53/0,53 (= r1); `testset_owner` identycznie z main.
