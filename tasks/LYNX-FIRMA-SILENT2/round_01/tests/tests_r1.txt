@@ -1,0 +1,54 @@
+LYNX-FIRMA-SILENT2 — BRIEF_ONLY r1, 23.10.2026
+WYNIK: PASS PREIMPLEMENTATION.
+Exact brief SHA: ad35f6cff72ea61c0f8ea42122a2b954b99e1dc4.
+Wskazana baza: f617ef6fecf9c1c409afb2bf19c9a579d12a2e33.
+Adresat: CC — implementacja w podanym TASK_SCOPE.
+
+ZAKRES
+Przeczytano aktualne przekazanie BOARD i pełny brief; punktowo potwierdzono istniejący szew w firma_context.py, _firma_entities w ner_layer.py oraz kolejność podmian w layers/ner_adapter.py na wskazanej bazie.
+Bez analizy implementacyjnego diffu, testów, reproduktorów, modeli i pomiarów.
+20/20 klas dev, 52 test i diagnoza Qwena w briefie pozostają deklaracją/dowodem CC — nie niezależnym wynikiem tego prechecku.
+Nie otwierano treści GOLD test ani rzeczywistych dokumentów.
+
+PRODUCT_TRUTH / ZAKRES PRODUKTOWY
+Cel A–C realizuje istniejące maskowanie nazw firm i integralność mapy FIRMA. Kategorie, format tokenów, .lynxdict, Guard i Mobile kontrakt pozostają bez zmian.
+Nie wymaga kolejnego niezależnego detektora ani przebudowy architektury. To naprawa reguł/granic i kolejności w istniejącej ścieżce.
+Wybór Pawła „Tak” przy propozycji A traktuję jako zgodę na kierunek rekomendacji CC, zgodnie z OWNER_INPUT_IS_A_PROPOSAL; nie zapisuję tego jako nowej globalnej decyzji OWNERA „dowolne nadmaskowanie jest dopuszczalne”.
+Pozytywny precheck wynika z istniejącego celu ochrony pełnej firmy i ograniczonych warunków A–C, nie z takiej ogólnej licencji.
+
+A — JDG
+Rzeczownik z wymienionej zamkniętej listy + dalsze człony z wielkiej litery w tej samej linii + imię z listy i nazwisko daje testowalny schemat pełnej FIRMA.
+Bez pary osoby / przy małej literze w opisie reguła nie ma przejmować zwykłej wypowiedzi ani nazwy instytucji.
+Powtórzona pełna nazwa ma wspólny token FIRMA; osoba wspomniana samodzielnie nadal zachowuje istniejącą ścieżkę OSOBA.
+To ogranicza odpowiedzialność nowej funkcji. Nie jest zgodą na zamianę każdej roli/urzędu z listy na firmę ani sklejenie odrębnych osób.
+
+B — s.c.
+Rozszerzenie istniejącego skanu formy prawnej jest właściwym miejscem. Warunek nazwy przed formą i negatyw samych inicjałów („J. S.C.”) wyraźnie oddzielają nazwę firmy od inicjału.
+Rdzeń powtórzony bez formy pozostaje odpowiedzialnością istniejącego firma_core_variants; nie potrzeba drugiego systemu propagacji.
+
+C — dłuższa znana nazwa i krótsze trafienie
+Reguła pierwszeństwa pełnego znanego wystąpienia nad zawartym fragmentem jest testowalna: „Ulotny Rys” ma zostać zakryte w całości, a nie „FIRMA_n Rys”.
+Punktowy odczyt potwierdza istniejący szew:
+- firma_core_variants przygotowuje rdzenie/odmiany i mapy;
+- apply_ner_layer najpierw podmienia ner_reverse, a później ner_variants.
+Samo sortowanie każdej z tych list według długości nie dowodzi pierwszeństwa między etapami.
+Brief obejmuje oba dotknięte istniejące moduły i wskazuje tę granicę odpowiedzialności. Dokładne położenie minimalnej poprawki CC może ustalić podczas implementacji; nowy owner ani nowa decyzja produktu nie są do tego potrzebne.
+Nie projektuję algorytmu ani nie przesądzam technicznej przyczyny bez implementacji/repro.
+
+MINIMALNOŚĆ ODPOWIEDZIALNOŚCI
+- A: nowy wariant wykrywania w istniejącym firma_context; konieczny dla pełnego spanu wskazanej klasy JDG.
+- B: istniejący skan/rozszerzenie formy prawnej, bez nowego niezależnego detektora.
+- C: istniejące mapy/warianty i ich konsument w adapterze; ochrona kompletności podmiany.
+- ner_layer: wpięcie do istniejącej _firma_entities, bez rozbudowy drugiej implementacji tych reguł.
+Limit 600 linii ner_layer jest zapisany w briefie; precheck go nie uchyla.
+Nie wymagam szerokiej konsolidacji wszystkich historycznych regexów firm w tym małym zadaniu.
+
+ODBIÓR
+Pozytywy A/B/C i wskazane negatywy są wystarczająco konkretne, by rozpocząć implementację.
+Na dostawie potrzebny będzie minimalny niezależny pion dla pełnej firmy i jej powtórzenia, weryfikacja mapy/Przywróć oraz wskazane testy regresji.
+Istniejące testy sprawdzają kontrakt; zmiana ich oczekiwań nie może sama zastąpić dowodu poprawy.
+GOLD dev≤2 / spadek test / brak wzrostu zbędnych zakryć / brak pogorszenia owner są deklarowanymi kryteriami pomiaru; na tym etapie nie twierdzę, że są już osiągnięte.
+Pomiary pozostają agregatowe dla test; nie stroić reguł na treści GOLD test. Poprzednia miarka ma heurystyczne mapowanie — nie zastępuje punktowej kontroli rzeczywistych spanów.
+
+PASS dotyczy gotowości tego briefu do implementacji, nie przyszłego kodu ani wyników pomiarów.
+Bez zmian produktu, merge i subagentów.
