@@ -48,11 +48,13 @@ Pozostałe ~690 pytań R1 to `_r1` (człony nazw własnych „Dzienniku Ustaw”
 TASK_SCOPE:
 - backend/osoba_not_person.py
 - backend/guard_residue.py
+- backend/surnames_extended.json
 - backend/tests/test_osoba_handoff.py
 - tasks/LYNX-OSOBA-HANDOFF/brief.md
 - tasks/LYNX-OSOBA-HANDOFF/repo_before.hash
 - tasks/LYNX-OSOBA-HANDOFF/round_01/implementation/DELIVERY.md
 - tasks/LYNX-OSOBA-HANDOFF/round_01/implementation/r1_diag.py
+- tasks/LYNX-OSOBA-HANDOFF/round_01/implementation/c1_evidence.py
 
 Szacunek: kod ~10 l., testy ~60 l. (< 150).
 
@@ -68,3 +70,21 @@ Szacunek: kod ~10 l., testy ~60 l. (< 150).
 - Pomiar: `r1_diag.py` (do repo, `round_01/implementation/`) na tych samych 255 dok. (main vs gałąź) + GOLD `human_view.py all`:
   R1 ≤ 950, GOLD ciche razem i OSOBA nie większe niż main, zbędne zakrycia bez zmian.
 - Oko Pawła: pismo KIO na silniku z gałęzi.
+
+## Odpowiedź na Codex BRIEF_ONLY r1 C1 (`b4ac3be`) — granica „tylko pospolite” dla nazwisk
+**Dowód** (`round_01/implementation/c1_evidence.py <backend> <katalog PESEL CSV> <lista>`; lista = Mobile `surnames_extended.json` oczyszczona
+`tasks/LYNX-NAMES-DICT-CLEAN/clean_names.py`; PESEL = dane.gov.pl zbiór 1681 „Nazwiska osób żyjących występujące w rejestrze PESEL”, CC0,
+zasoby 1148808/1148811 stan 2026-01-20, kolumny `Nazwisko aktualne, Liczba`; bez danych z dokumentów):
+- 38 783 hasła listy; **113** Morfeusz klasyfikuje jako tylko-pospolite (`common=True, person=False`) — razem 51 092 osoby w PESEL; 11 z nich jest w `person_forms`.
+  Największe: Kim 4012, Li 2111, Holub 2107, Prokopenko 1673, Park 1240, Łysak/Lysak 1211, Islam 1052, Palii 1003, Yang 1000, Sokol 890 … (głównie nazwiska obce).
+- Najczęstsze słowa `released()` na main: **żadne słowo roli nie jest na liście nazwisk** — „Odwołującego/Odwołujący/Odwołującemu”, „Przystępującego”,
+  „Protokolant”, „Powódka”, „Powodowi”, „Pozwanemu”, „Protestującego”, „Skarżącego”, „Zaskarżonemu”, „Gwaranta”, „Poręczyciela”, „Mebla”, „Ergo”, „Loco”,
+  „Komornika”, „Sam”. Na liście są: „Mają”, „Rady”, „Marszałek”, „Konieczne”, „Pola” — mają odczyt imię/nazwisko (`person=True`), więc reguła A ich i tak nie dotyczy.
+**Granica (zastępuje pkt 1.A):** słowo NIE trafia do `released()`, gdy Morfeusz zna je wyłącznie jako pospolite **i** nie ma go ani w `person_forms`, ani
+na liście nazwisk `backend/surnames_extended.json` (Mobile 39k oczyszczona; formy z odmianą; zapis zwarty w 1 linii; ładowana raz; brak pliku → reguła A wyłączona,
+zachowanie jak main). Wtedy 113 nazwisk z klasy C1 (i każde inne z listy) nadal idzie do Guarda — **brak kosztu w tej klasie**, decyzja OWNERA niepotrzebna.
+Ograniczenie wniosku: nazwisko spoza listy 39k (nosiciele < ok. 100 w PESEL), tylko-pospolite w Morfeuszu i bez dowodu w zdaniu nie dostanie pytania z `released()`
+(może je dać `_r1`/inna reguła). Rozmiar tej klasy nieznany; lista 39k obejmuje nazwiska od ok. 100 nosicieli wzwyż.
+**Odbiór — dodatkowe klasy w `test_osoba_handoff.py`:** kandydat tylko-pospolity z listy nazwisk (np. „Holub”, „Prokopenko” — klasyfikacja Morfeusza sprawdzona w teście) → nadal w `released()`;
+kandydat w `person_forms` → nadal w `released()`; słowo roli spoza listy → nie; brak pliku listy → zachowanie jak main.
+Szacunek: kod ~15 l., testy ~70 l.; `surnames_extended.json` 1 linia (6,4 MB; zgoda Pawła 22.10 na plik tej wielkości).
