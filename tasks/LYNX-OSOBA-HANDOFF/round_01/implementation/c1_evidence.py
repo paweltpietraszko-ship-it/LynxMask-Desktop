@@ -1,19 +1,26 @@
 """C1: nazwiska z listy (Mobile 39k, oczyszczona) klasyfikowane przez Morfeusza jako tylko-pospolite (common=True, person=False);
 ich liczba w PESEL 2026-01-20; obecność w person_forms (silnik). Plus: czy najczęstsze słowa z released() są na liście nazwisk."""
-import csv, json, os, sys
+import csv
+import json
+import os
+import sys
 src, pdir, surn = sys.argv[1:4]
-os.chdir(src); sys.path.insert(0, "."); sys.stdout.reconfigure(encoding="utf-8")
-from osoba_not_person import _common_or_person
-from ner_layer import _PERSON_FORMS
+os.chdir(src)
+sys.path.insert(0, ".")
+sys.stdout.reconfigure(encoding="utf-8")
+from osoba_not_person import _common_or_person  # noqa: E402
+from ner_layer import _PERSON_FORMS  # noqa: E402
 cnt = {}
 for f in ("m_2026.csv", "f_2026.csv"):
     for row in csv.DictReader(open(os.path.join(pdir, f), encoding="utf-8")):
-        k = row["Nazwisko aktualne"].strip().lower(); cnt[k] = cnt.get(k, 0) + int(row["Liczba"])
+        k = row["Nazwisko aktualne"].strip().lower()
+        cnt[k] = cnt.get(k, 0) + int(row["Liczba"])
 d = json.load(open(surn, encoding="utf-8"))
 forms = set(d) | {f for v in d.values() for f in v}
 only = []
 for base in d:
-    if " " in base: continue
+    if " " in base:
+        continue
     c, p, g = _common_or_person(base)
     if c is True and p is False:
         only.append((cnt.get(base, 0), base, base in _PERSON_FORMS))

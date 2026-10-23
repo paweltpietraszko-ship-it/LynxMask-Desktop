@@ -48,7 +48,7 @@ def text_of(path):
 def branch(text, s, e):
     """Gałąź _person_word, która dała True."""
     m = re.match(r".+", text[s:e])
-    word, low = m.group(0), m.group(0).lower()
+    word = m.group(0)
     if gr._TITLE_BEFORE_RE.search(text[max(0, s - 8):s]):
         return "tytul"
     parts = [gr._morf_interps(w) for w in word.split("-")]
