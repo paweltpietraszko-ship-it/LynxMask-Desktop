@@ -22,6 +22,13 @@ bez prawdziwych dokumentów.
   i Desktop `cc70822` z 21.10 (punkt odniesienia). W HTML kolumny Mobile | Desktop:
   żółty = zakrył tylko Mobile, niebieski = tylko Desktop, fioletowy = inny typ.
 
+## Uruchomienie
+
+`.venv\Scripts\python.exe testset_owner\run_testset.py [katalog_backendu] [wynik.json]` — przepuszcza cały zbiór przez
+silnik (w procesie, pusty profil, ~10 min) i drukuje: pytania Guarda na dokument per zbiór oraz dla `clean`/`stress`
+wycieki per rodzaj (`cichy(z pytaniem)/wartości w kluczu`). Stan 23.10.2026 (main `5a552b6`): clean 0 wycieków,
+stress osoba 21 cichych + 34 z pytaniem / 412.
+
 ## Ograniczenia
 
 - Klucz jest tylko dla `clean` i `stress` i opisuje dane, które muszą zniknąć. Nie mówi, czego nie wolno
