@@ -55,9 +55,9 @@ _CUR = r"(?:zł|PLN|EUR|USD|GBP|CHF|DKK|NOK|CZK|HUF|RON|z[łl]ot(?:ych|e|y))"
 _MULT = r"(?:tys\.|tys\b|tysi[ąę]c\w*|mln\b\.?|milion\w*|mld\b\.?|miliard\w*)"
 _MULT_CUR_RE = re.compile(rf"(?<![\d.,])\d{{1,4}}(?:[.,]\d{{1,2}})?\s*{_MULT}\s*{_CUR}(?!\w)", re.IGNORECASE)
 _MULT_CTX_RE = re.compile(rf"(?<![\d.,])\d{{1,4}}(?:[.,]\d{{1,2}})?\s*{_MULT}(?!\s*{_UNIT})", re.IGNORECASE)
-_O_NUM = r"(?<![\w.,])\d[\dOo]{0,5}(?:[.,  ][\dOo]{3})*(?:,[\dOo]{2})?"
+_O_NUM = r"(?<![\w.,])\d[\dOo]{0,5}(?:[.,  ][\dOo]{3})*(?:[.,][\dOo]{1,2})?"
 _AMOUNT_O_RE = re.compile(rf"{_O_NUM}\s*{_CUR}(?!\w)", re.IGNORECASE)
-_AMOUNT_O_CTX_RE = re.compile(rf"(?<![\w.,])\d[\dOo]{{0,2}}(?:[  .][\dOo]{{3}})+(?:,[\dOo]{{2}})?(?![\w.,]?\d)(?!\s*%)(?!\s*{_UNIT})",
+_AMOUNT_O_CTX_RE = re.compile(rf"(?<![\w.,])\d[\dOo]{{0,2}}(?:[  .][\dOo]{{3}})+(?:[.,][\dOo]{{1,2}})?(?![\w.,]?\d)(?!\s*%)(?!\s*{_UNIT})",
                               re.IGNORECASE)
 _AMOUNT_CTX_WORD_RE = re.compile(
     r"(?i)\b(?:kwot|zwrot|zapłat|należno|sald|brutto|netto|wartoś|cen[aiyęą]\b|wynagrodze|opłat|kar[aąyęe]\b|koszt|"
@@ -138,7 +138,13 @@ def _apply_patterns(
                 continue
             hits.append((m.start(), m.end(), m.group(0), token_type))
 
-    hits.sort(key=lambda x: x[0], reverse=True)
+    # [LYNX-AMOUNT-OCR-MULT] z nakładających się trafień wygrywa najdłuższe („15 OOO,50 zł”, nie same „50 zł”); przy równej długości
+    # — wcześniejszy wzorzec z listy (sortowanie stabilne)
+    chosen: list[tuple[int, int, str, str]] = []
+    for h in sorted(hits, key=lambda x: x[1] - x[0], reverse=True):
+        if not any(c[0] < h[1] and h[0] < c[1] for c in chosen):
+            chosen.append(h)
+    hits = sorted(chosen, key=lambda x: x[0], reverse=True)
 
     text = state.text
     for start, end, value, token_type in hits:

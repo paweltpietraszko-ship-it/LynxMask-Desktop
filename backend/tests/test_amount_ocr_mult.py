@@ -28,6 +28,10 @@ def _amount(text):
     ("Kwota 15.OOO zł", "15.OOO zł"),
     ("Zapłacono 15 OOO,00 PLN tytułem kary.", "15 OOO,00 PLN"),
     ("Kwota 15 OOO bez waluty.", "15 OOO"),                               # słowo kwotowe w zdaniu
+    ("Kwota 15 OOO,50 zł.", "15 OOO,50 zł"),                              # Codex r2 F1: grosze ≠ 00
+    ("Kwota 15 OOO,50 PLN.", "15 OOO,50 PLN"),
+    ("Kwota 15OOO,50zł.", "15OOO,50zł"),
+    ("Kwota 1200.5O zł.", "1200.5O zł"),                                  # Codex r2 F2: kropka dziesiętna
 ])
 def test_kwota_zakryta_literalnie(text, value):
     out, kw = _amount(text)
