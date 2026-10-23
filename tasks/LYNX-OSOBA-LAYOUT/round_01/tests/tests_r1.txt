@@ -1,0 +1,62 @@
+LYNX-OSOBA-LAYOUT — niezależny audyt r1, 23.10.2026
+WYNIK: FAIL — F1 SAFETY_PRIVACY. F2: odtworzona nieprawidłowa propagacja homonimu.
+Adresat: CC. Bez merge kodu; bez zmian produktu.
+
+Exact audited SHA: 92168210ba31f813f4ea33c735ad34d36115e3df
+Diff base: b50655a8d3991add5313714f59f89bb3211e0afa
+Brief/DELIVERY: task/LYNX-OSOBA-LAYOUT, dostawa 54ba23a.
+Warstwy: precheck dokumentów + diff 4 plików produktu; testy ownerów; niezależny realny pipeline + Guard, porównany z bazą.
+Izolowane kopie git archive, własne puste profile i stan w Temp. Backend użytkownika na 8765 nietknięty.
+Wszystkie przytoczone teksty są syntetyczne.
+
+KONTRAKT / PRECHECK
+Model opisany w briefie jako uzgodniony z Pawłem: silnik maskuje osoby z kotwic/układu; Guard pyta o wyłącznie osobowe analizy i słowa nieopisane, a OCR wycisza tylko zwykłe słowa.
+Jawnie opisany koszt homonimu bez kotwicy odnotowany; nie zgłaszam go jako regresji.
+Nie przenoszę całego kontraktu wstrzymanego REDESIGN do tego zadania. Zachowuję jednak jawną wcześniejszą decyzję OWNERA dotyczącą znaczenia konkretnego wystąpienia: „Termin wykonania” ma pozostać jawne, bez globalnego zastępowania homonimów. Nowy brief nie odwołuje tej decyzji.
+Nie tworzę nowej decyzji produktowej ani wymogu pełnego wykrywania wszystkich osób.
+
+F1 [P1, SAFETY_PRIVACY] Utrata pytania o nazwisko bez ogonka.
+TRACE: brief, Model (b): wyciszenie tylko gdy „jest zwykłym słowem zniekształconym przez OCR”; Model (a): nazwiska bez zwykłego znaczenia mają być pytaniem.
+OWNERSHIP: guard_residue._unknown, linie 146–147: any(_known(analyse(v))) uznaje dowolną znaną analizę wariantu za powód do wyciszenia. Nie sprawdza zwykłego znaczenia.
+REPRO na exact SHA, pełny rzeczywisty pseudonymize_document → silnik → Guard:
+- „Pismo przekazał Ladzinski.” → tekst identyczny, guard_warnings=[].
+- „Pismo przekazał Cieslikowski.” → tekst identyczny, guard_warnings=[].
+Na bazie oba nazwiska też pozostają jawne, ale każde ma ostrzeżenie R1.
+Morfeusz: Ladzinski/Cieslikowski = ign; Ladziński/Cieślikowski = wyłącznie subst + kwalifikator nazwisko, bez zwykłego znaczenia.
+Kontrola: „Pismo przekazał Ladziński.” → „Pismo przekazał OSOBA_001.” na obu wersjach.
+Nie jest to akceptowany koszt pospolitego homonimu: warianty są wyłącznie nazwiskami.
+UI consequence: brak pozycji do Maskuj/Zostaw, więc zwykła obsługa ostrzeżeń nie zatrzyma takiego jawnego fragmentu. Test obejmował odpowiedź pipeline, nie kliknięcia GUI.
+Wystarczający dowód regresji ochrony; do poprawy w istniejącym ownerze filtra, bez projektowania nowego mechanizmu.
+
+F2 [P2] Kotwica nazwiska rozciągnięta na zwykłe słowo w innym zdaniu.
+TRACE: jawna decyzja OWNERA C3 z 23.10: „Termin wykonania” pozostaje PASS; dwa homonimy o innym znaczeniu mają osobne decyzje per wystąpienie, bez globalnego zastępowania.
+Zapis decyzji: tasks/LYNX-OSOBA-REDESIGN/brief.md na 83e605b0bf8b585a0d2f7c4414f85e21bdba3417. Nie wymagam starych wyłączeń tytułu z REDESIGN: obecny model Pan/Pani+osoba może działać zgodnie z nowym briefem.
+OWNERSHIP: person_layout.apply_person_layout, linie 125–126, _titled wykrywa nazwisko lokalnie, sub_whole podmienia je w całym tekście.
+REPRO: „Pismo przekazała Pani Termin. Termin wykonania upływa jutro.”
+Gałąź: „Pismo przekazała Pani OSOBA_001. OSOBA_001 wykonania upływa jutro.”, warnings=[].
+Baza pozostawia drugie „Termin” jawne. Zakrycie nazwiska w pierwszym zdaniu nie uzasadnia zakrycia pojęcia w drugim.
+Sąsiednia kontrpróba „Pismo przekazała Pani Kawa. Kawa i herbata zostały.” zachowuje drugie Kawa na obu wersjach — nie każde użycie homonimu zawodzi; kolejność wcześniejszych warstw ma znaczenie.
+Nie jest to zmiana danych wysyłanych na zewnątrz ani nowa funkcja zapisu: efekt dotyczy tekstu i mapy lokalnego wyniku.
+
+TESTY NIEZALEŻNIE URUCHOMIONE
+- test_osoba_layout.py: 43 PASS.
+- test_guard_residue.py: 50 PASS.
+- test_osoba_handoff.py: 16 PASS.
+- test_osoba_pack4.py: 12 PASS.
+- test_map_fidelity.py: 28 PASS; 1 początkowo ERROR, bo kopia audytu nie zawierała audyt/engine_quality.py. Po uzupełnieniu audyt/ z tego samego SHA: ten jeden test 1 PASS.
+Razem 150 różnych testów PASS, osobne procesy. Pierwotny błąd kopii nie jest regresją produktu.
+- Niezależny reproduktor: repro_r1.py (5 przypadków na gałęzi i 5 na bazie, plus analizy Morfeusza). Nie jest testem CC.
+Uruchomienie: Python .venv, -B -X utf8 repro_r1.py <backend_exact_SHA> <nowy_katalog_stanu>.
+Nie uruchamia serwera; katalogi backendu wymagają zasobów z git archive backend.
+
+GRANICE / WYNIKI CC
+GOLD, testset_owner, ślepe 600 i 255 pism: NOT_CHECKED niezależnie w r1. Liczby w DELIVERY pozostają dowodem CC, nie wynikiem tego audytu.
+Po odtworzeniu blokera zatrzymano kosztowne pomiary zgodnie z CODEX_START_HERE. Nawet zgodna suma korpusu nie unieważni powyższych kontrprób.
+Nie stwierdzam pełnej zgodności macierzy Tasku, całego repo ani skuteczności na dowolnych dokumentach.
+Znane ograniczenie CAPS: syntetyk „Imię i nazwisko:\nZORYANA FORTUŃSKA\nPESEL: brak” jest jawny bez pytań na OBU wersjach. Nie jest nową regresją tej dostawy; nie używam go do FAIL.
+Odczyt human_view.py wykazał użycie difflib w awaryjnym mapowaniu znaków; jego agregatów nie traktowano jako dowodu dokładnych spanów.
+
+NASTĘPNY KROK
+CC: poprawić F1 i F2, zachować reproduktor; przekazać nowy exact SHA.
+Recheck: diff od 9216821, retained repro + testy zmienionych ownerów. Dopiero po usunięciu blokera wrócić do wyraźnie wymaganych pomiarów wynikowych.
+Nie żądam powtórzenia całej suity ani niezwiązanych zmian architektury.
