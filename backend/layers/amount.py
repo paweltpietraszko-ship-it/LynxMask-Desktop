@@ -49,6 +49,16 @@ _AMOUNT_NOCUR_CTX_RE = re.compile(
     rf"(?!\s*%)(?!\s*{_UNIT})",
     re.IGNORECASE,
 )
+# [LYNX-AMOUNT-OCR-MULT] Liczba z mnożnikiem („15 tys. zł”, „2,5 mln zł”, „15 tysięcy” przy słowie kwotowym) oraz „O” zamiast zera
+# w liczbie przy znaku pieniędzy („15 OOO zł”) — rozpoznanie bez zmiany tekstu (Przywróć zwraca fragment tak, jak dotarł do warstwy).
+_CUR = r"(?:zł|PLN|EUR|USD|GBP|CHF|DKK|NOK|CZK|HUF|RON|z[łl]ot(?:ych|e|y))"
+_MULT = r"(?:tys\.|tys\b|tysi[ąę]c\w*|mln\b\.?|milion\w*|mld\b\.?|miliard\w*)"
+_MULT_CUR_RE = re.compile(rf"(?<![\d.,])\d{{1,4}}(?:[.,]\d{{1,2}})?\s*{_MULT}\s*{_CUR}(?!\w)", re.IGNORECASE)
+_MULT_CTX_RE = re.compile(rf"(?<![\d.,])\d{{1,4}}(?:[.,]\d{{1,2}})?\s*{_MULT}(?!\s*{_UNIT})", re.IGNORECASE)
+_O_NUM = r"(?<![\w.,])\d[\dOo]{0,5}(?:[.,  ][\dOo]{3})*(?:[.,][\dOo]{1,2})?"
+_AMOUNT_O_RE = re.compile(rf"{_O_NUM}\s*{_CUR}(?!\w)", re.IGNORECASE)
+_AMOUNT_O_CTX_RE = re.compile(rf"(?<![\w.,])\d[\dOo]{{0,2}}(?:[  .][\dOo]{{3}})+(?:[.,][\dOo]{{1,2}})?(?![\w.,]?\d)(?!\s*%)(?!\s*{_UNIT})",
+                              re.IGNORECASE)
 _AMOUNT_CTX_WORD_RE = re.compile(
     r"(?i)\b(?:kwot|zwrot|zapłat|należno|sald|brutto|netto|wartoś|cen[aiyęą]\b|wynagrodze|opłat|kar[aąyęe]\b|koszt|"
     r"złot|zł\b|pln\b|walut|grosz|zaliczk|odsetk|rat[aąyęe]\b|podatk|faktur|wpłat|wypłat|przelew)"
@@ -73,6 +83,27 @@ def _not_amount_ctx(text: str, m: re.Match) -> bool:
     start = max(text.rfind(c, 0, m.start()) for c in (". ", "! ", "? ", "\n")) + 1
     ends = [i for i in (text.find(c, m.end()) for c in (". ", "! ", "? ", "\n")) if i >= 0]
     return _not_amount_nocur(text, m) or not _AMOUNT_CTX_WORD_RE.search(text[start:min(ends, default=len(text))])
+
+
+def _no_letter_o(m: re.Match) -> bool:
+    """[LYNX-AMOUNT-OCR-MULT] Wzorce O/o tylko dla liczb z literą O (pozostałe kwoty biorą dotychczasowe wzorce)."""
+    return not re.search(r"[Oo]", re.match(r"[\dOo.,  ]*", m.group(0)).group(0))
+
+
+def _skip_o_cur(text: str, m: re.Match) -> bool:
+    return _no_letter_o(m) or _after_number_word(text, m)
+
+
+def _skip_o_ctx(text: str, m: re.Match) -> bool:
+    return _no_letter_o(m) or _not_amount_ctx(text, m)
+
+
+def _skip_mult_ctx(text: str, m: re.Match) -> bool:
+    """Mnożnik z dalszym ciągiem liczby („44 tysięcy 813 złotych”) bierze w całości verbal_amounts."""
+    from verbal_amounts import _PL_NUMBER_WORDS
+    nxt = text[m.end():m.end() + 30].split()
+    return bool(nxt) and (nxt[0][:1].isdigit() or nxt[0].strip(",.;:()").lower() in _PL_NUMBER_WORDS) \
+        or _not_amount_ctx(text, m)
 
 # ── Data urodzenia kontekstowa ─────────────────────────────────────────────────
 # Port z StructuralEngine.kt linia 223.
@@ -107,7 +138,13 @@ def _apply_patterns(
                 continue
             hits.append((m.start(), m.end(), m.group(0), token_type))
 
-    hits.sort(key=lambda x: x[0], reverse=True)
+    # [LYNX-AMOUNT-OCR-MULT] z nakładających się trafień wygrywa najdłuższe („15 OOO,50 zł”, nie same „50 zł”); przy równej długości
+    # — wcześniejszy wzorzec z listy (sortowanie stabilne)
+    chosen: list[tuple[int, int, str, str]] = []
+    for h in sorted(hits, key=lambda x: x[1] - x[0], reverse=True):
+        if not any(c[0] < h[1] and h[0] < c[1] for c in chosen):
+            chosen.append(h)
+    hits = sorted(chosen, key=lambda x: x[0], reverse=True)
 
     text = state.text
     for start, end, value, token_type in hits:
@@ -124,6 +161,10 @@ def _apply_patterns(
 def apply_amount_layer(state: PipelineState) -> None:
     """Maskuje kwoty cyfrowe i daty urodzenia (kontekstowe + strukturalne DD.MM.YYYY)."""
     _apply_patterns(state, [
+        (TOKEN_KWOTA,  _MULT_CUR_RE, _after_number_word),  # [LYNX-AMOUNT-OCR-MULT] dłuższe przed krótszymi (ten sam start)
+        (TOKEN_KWOTA,  _MULT_CTX_RE, _skip_mult_ctx),
+        (TOKEN_KWOTA,  _AMOUNT_O_RE, _skip_o_cur),
+        (TOKEN_KWOTA,  _AMOUNT_O_CTX_RE, _skip_o_ctx),
         (TOKEN_KWOTA,  _AMOUNT_RE, _after_number_word),
         (TOKEN_KWOTA,  _AMOUNT_WORD_RE, _after_number_word),
         (TOKEN_KWOTA,  _AMOUNT_NOCUR_RE, _not_amount_nocur),

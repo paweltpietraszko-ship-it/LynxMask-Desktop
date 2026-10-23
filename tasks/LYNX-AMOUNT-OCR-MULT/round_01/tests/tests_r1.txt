@@ -1,0 +1,45 @@
+LYNX-AMOUNT-OCR-MULT — BRIEF_ONLY r1, 23.10.2026
+WYNIK: PASS PREIMPLEMENTATION.
+Exact brief SHA: 8356de7bfb07878b41334d41845488687220e9f5.
+Wskazana baza: 9fb40b1c438b67c85059e1a3dbd2342937f6c9d9.
+Adresat: CC — implementacja w istniejącym TASK_SCOPE, O/o i mnożniki, bez I/l.
+
+ZAKRES PRECHECKU
+Przeczytano bieżący wiersz/nagłówek BOARD, pełny brief i punktowo istniejący owner backend/layers/amount.py na bazie.
+Wykorzystano wcześniej przeczytane, niezmienione instrukcje/spec i granice poprzednich audytów.
+Nie analizowano implementacyjnego diffu, nie uruchamiano testów, pipeline, reproduktorów ani pomiarów.
+Tabela reprodukcji w briefie jest dowodem CC, nie niezależnym odtworzeniem Codexa.
+
+OCENA
+1. Zgodność kierunku:
+To rozszerzenie wykrywania już istniejącej kategorii KWOTA na brakujące zapisy biurowe. Nie zmienia formatu tokenów, kategorii, Guard/modelu decyzji, plików słownika ani Mobile kontraktu.
+Nie tworzę nowej polityki maskowania samych liczb bez dowodu kwoty.
+2. Kontrakt:
+Waluta z istniejących wzorców albo — bez waluty — istniejące słowo kwotowe w tym samym zdaniu, z zachowaniem wykluczeń, daje sprawdzalny warunek.
+Pozytywy obejmują mnożniki i O/o wewnątrz liczby zaczynającej się cyfrą; negatywy obejmują jednostki, wersję, brak kontekstu kwotowego i OOO bez cyfry.
+„15 tys. mieszkańców”, „15 OOO szt.”, „15 tys. km”, „Wersja 2 tys.” i „OOO Gazprom” nie otrzymują nowego KWOTA.
+„Na koncie było 15 OOO.” pozostaje poza zakresem zgodnie z wyraźnym wyłączeniem w briefie; nie poszerzam listy kontekstowej.
+3. Owner i konieczność:
+Istniejący amount.py już łączy wzorce, skipy, centralny allocator i mapę, a _after_number_word pozostawia liczby słowne verbal_amounts.
+Nowe wzorce mogą wejść w ten istniejący szew. Brak podstaw do nowego ownera, drugiego normalizera lub zmiany Guarda.
+Zachować wykluczenia _UNIT / wersja / kontekst i regułę przekazania liczebników do verbal_amounts.
+4. O/o:
+Lokalne rozpoznanie znaku w liczbie przy dowodzie kwoty jest adekwatne. Sam tekst nie ma być globalnie przepisywany O→0. „OOO Gazprom” nie spełnia warunku cyfrowego początku.
+5. I/l:
+Podobna rodzina zniekształceń OCR, ale inne znaki i nieopisane przypadki graniczne. Nie rozszerzam tego zadania na I/l.
+Brak potrzeby decyzji OWNERA lub angażowania Architekta do samego pozostawienia ich poza zakresem tej poprawki.
+
+GRANICA PRZYWRÓĆ 1:1
+Zakres nowego zachowania dotyczy zachowania literalnego fragmentu przejmowanego przez amount.py; wykrywanie O/o nie ma samo normalizować zapisu.
+Nie rozszerzam tego na nową gwarancję cofania wszystkich wcześniejszych normalizacji całego pipeline. Sam brief podaje przykład istniejącej zmiany „1 2OO,5O” → „1 200,5O” przed warstwą kwot, a normalizer jest jawnie poza TASK_SCOPE.
+CC powinien dopisać to rozróżnienie w opisie dostawy/testach roundtrip, aby nie deklarować pełnego powrotu do tekstu źródłowego tam, gdzie poprzedni owner już go zmienił.
+To granica odpowiedzialności istniejącej poprawki, nie żądanie naprawy normalizera ani blokujący nowy wymóg.
+
+TESTOWALNOŚĆ ODBIORU
+Tabela pozytywów/negatywów + wskazane testy regresji pozwalają sprawdzić detekcję, zakres KWOTA i zapis mapy.
+Przy odbiorze odróżnić test amount.py od pionu przez prawdziwy pipeline: wcześniejszy normalizer może zmienić wejście.
+Przewidziane pomiary owner/GOLD są sprawdzeniem braku pogorszenia według istniejących miar. Owner nie ma kwot w kluczu; nie dowodzi poprawy wykrywania kwot. Poprawę muszą wykazać celowane syntetyczne przypadki.
+Nie dodaję nowego benchmarku ani pełnej suity poza odbiorem opisanym w briefie.
+
+Werdykt dotyczy gotowości opisanego zakresu do implementacji, nie poprawności przyszłego kodu.
+Bez zmian produktu, merge, testów i subagentów.
