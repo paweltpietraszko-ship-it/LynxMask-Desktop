@@ -1,0 +1,20 @@
+LYNX-OSOBA-LAYOUT — korekta kwalifikacji r3, 23.10.2026
+Exact oceniony kod: e1cb34dbc9f62b81edfc91857437339535ef74b9.
+To korekta oceny r2, bez zmiany kodu i bez nowych testów.
+
+DECYZJA AUDYTORA: wycofuję blokujący FAIL z powodu F2.
+F1 SAFETY_PRIVACY pozostaje zamknięte zgodnie z niezależnym recheckiem r2.
+F2 pozostaje odtworzoną, NIEBLOKUJĄCĄ uwagą o nadmaskowaniu homonimu.
+CC nie musi poprawiać F2 przed dalszą oceną tej dostawy.
+
+Uzasadnienie:
+Po wyjaśnieniu wyniku Paweł zwrócił uwagę na przeznaczenie programu do biura i marginalny charakter użytych kontrprób.
+Audytor ponownie ocenił wagę: dowód potwierdza możliwość błędnego zakrycia, ale nie ustala częstości ani istotnego wpływu na typowe dokumenty biurowe. F2 nie wykazuje utraty ochrony danych. Traktowanie tego kosztu jako blokera całej dostawy było nieproporcjonalne.
+Nie zapisuję tej rozmowy jako globalnej decyzji OWNERA znoszącej rozróżnianie homonimów. Nie dopuszczam na tej podstawie dowolnego nadmaskowania ani nowego wycieku; koryguję kwalifikację konkretnego findingu.
+Raporty r1/r2 i reproduktory pozostają niezmienione jako historia i dowody.
+
+STATUS CAŁOŚCI: PARTIAL — brak otwartego blokera w sprawdzonych poprawkach.
+Nie wydaję pełnego PASS dostawy: wymagane w Tasku pomiary GOLD / testset_owner / ślepe 600 / 255 pism pozostają NOT_CHECKED niezależnie.
+Dowody już wykonane pozostają ważne: retained repro, F1 naprawione, 99 testów ownerów PASS na e1cb34d. Bez mechanicznego powtarzania.
+Następny adresat: Codex — dokończyć weryfikację wyników, nie odsyłać CC do poprawiania marginalnego F2.
+Bez merge produktu.
