@@ -69,3 +69,6 @@ dla tego Tasku pytanie o RATIO przekazane Pawłowi osobno (CC nie traktuje wcze�
 - Testy: `test_firma_silent2` 13 passed (+3 przypadki F1); regresja: test_firma_context 14, test_silent_pack1 30, test_formats_pack2 20,
   test_map_fidelity 29, test_osoba_layout 49, test_ner_multiline 21, test_osoba_pack4 12, test_pipeline_v2 41.
 - Pomiar r2: GOLD ciche dev 0 / test 1, zbędne 69/152, pytania 0,53/0,53 (= r1); `testset_owner` identycznie z main.
+
+## Zgoda na RATIO
+Paweł 23.10, na pytanie CC o RATIO 133/5 dla LYNX-FIRMA-SILENT2: „Tak” (akceptacja przekroczenia miarki dla tego Tasku).
