@@ -97,3 +97,41 @@ RATIO — zgoda Pawła dla tego Tasku (wyżej).
   bez jawnego „Rys”; C_short_company_alfa analogicznie; C_two_long_companies — bez zmian względem r3, oba powtórzenia zakryte w całości).
 - Testy: `test_firma_silent2` 14 passed (+1 F2); test_firma_context 14, test_silent_pack1 30, test_formats_pack2 20, test_map_fidelity 29,
   test_osoba_layout 49. Pełne pomiary nie powtarzane (zmiana wąska; pomiary r3 Codexa na `b9315c5`).
+
+---
+
+# Runda 4 — po Codex r4 FAIL (`91ab350`: F2 przy powtórzeniu obu firm bez formy)
+Kod r4: `d058a43d8041ae5190a8dc82ceec7c1559a209ba` (diff od `e08ff51`: `aa1efb3`, `d058a43`).
+
+## gate.py (stdout dosłownie, pierwsze linie)
+```
+STATUS: WYMAGA_DECYZJI
+HEAD_SHA: d058a43d8041ae5190a8dc82ceec7c1559a209ba
+CHECKS: TASK_SCOPE / STALE_HEAD / GIT_DIFF / FROZEN_LOCK / DIFF_SCOPE / NEW_FILES / DELETED_FILES / RUFF / SIZE_FILE / SIZE_FUNC / RATIO / TOTAL_LINES
+WYMAGA_DECYZJI:
+  - RATIO: 171/32 = 5.3:1 (threshold 5:1)
+  - TOTAL_LINES: 203 lines changed (threshold 150)
+```
+TOTAL_LINES 203 > 150 — nowa pozycja od r4 (refaktor adaptera); zgoda Pawła z 23.10 dotyczyła RATIO — pytanie o TOTAL_LINES przekazane Pawłowi.
+
+## Przyczyna (właściwa, nie objaw)
+`apply_ner_layer` podmieniał NAJPIERW wszystkie wartości NER (także samo „Ulotny” — osobna firma albo kandydat spaCy), a DOPIERO POTEM
+warianty (rdzeń „Ulotny Rys”). Heurystyka `_absorb_inside_core` (r1–r3) przepinała krótszą encję tylko w wybranych układach dokumentu —
+każdy nowy układ (r3, r4) ją obchodził.
+
+## Poprawka
+- `layers/ner_adapter.py`: jedno przejście „najdłuższe najpierw” (`_sub_longest_first`) po wartościach NER **i** wielowyrazowych
+  wariantach FIRMA (powtórzenie rdzenia) — ta sama zasada co `[LYNX-MAP-FIDELITY]` i `LYNX-AMOUNT-OCR-MULT`. Ciało pętli wariantów
+  wydzielone do `_sub_variant` (bez zmiany logiki); pozostałe warianty jak dotąd po propagacji osób. `apply_ner_layer` krótsza.
+- `firma_context._absorb_inside_core` usunięte (zbędne).
+- Skutek uboczny (jawnie): w mapie może zostać wpis krótszej encji bez wystąpienia w tekście (np. „Ulotny”, „Studio”), gdy wszystkie jej
+  wystąpienia zabrała dłuższa nazwa — bez wpływu na tekst, Guard (MAP_LEAK liczy tylko wartości obecne w tekście) i Przywróć.
+
+## Dowody r4
+- Retained: `repro_r2` 6/6, `repro_r3` 4/4, `repro_r4` 3/3 zgodne (both_repeat i both_repeat_short_first: „FIRMA_001” w obu wzmiankach
+  dłuższej firmy, bez jawnego „Rys”; „Ulotny” samodzielne — osobny token).
+- `test_firma_silent2` 16 passed (+2: obie kolejności). Regresja: test_firma_context 14, test_silent_pack1 30, test_formats_pack2 20,
+  test_map_fidelity 29, test_osoba_layout 49, test_ner_multiline 21, test_osoba_pack4 12, test_pipeline_v2 41, test_addr_email_leaks 22,
+  test_osoba_not_person 25, test_names_dict_clean 22; test_layers 2 failed/119 i test_audyt_2026_10 1 failed/122/2 xfailed — jak main.
+- Pomiar (zmiana kolejności w adapterze dotyczy wszystkich encji — dlatego ponowiony): GOLD ciche dev 0 / test 1, zbędne 69/152,
+  pytania 0,53/0,53 (= r1–r3); `testset_owner` jak main poza testy 3,61 → 3,58 pytań/dok.
