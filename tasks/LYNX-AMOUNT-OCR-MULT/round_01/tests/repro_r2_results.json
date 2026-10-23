@@ -1,0 +1,220 @@
+[
+  {
+    "case": "mult_currency",
+    "input": "Kara wynosi 15 tys. zł.",
+    "expected_span": "15 tys. zł",
+    "layer_output": "Kara wynosi KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "15 tys. zł"
+    },
+    "pipeline_output": "Kara wynosi KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "15 tys. zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "mult_context",
+    "input": "Wynagrodzenie wynosi 15 tysięcy miesięcznie.",
+    "expected_span": "15 tysięcy",
+    "layer_output": "Wynagrodzenie wynosi KWOTA_001 miesięcznie.",
+    "layer_values": {
+      "KWOTA_001": "15 tysięcy"
+    },
+    "pipeline_output": "Wynagrodzenie wynosi KWOTA_001 miesięcznie.",
+    "pipeline_values": {
+      "KWOTA_001": "15 tysięcy"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_integer",
+    "input": "Kwota 15 OOO zł.",
+    "expected_span": "15 OOO zł",
+    "layer_output": "Kwota KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "15 OOO zł"
+    },
+    "pipeline_output": "Kwota KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "15 OOO zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_fraction_zero",
+    "input": "Kwota 15 OOO,00 PLN.",
+    "expected_span": "15 OOO,00 PLN",
+    "layer_output": "Kwota KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "15 OOO,00 PLN"
+    },
+    "pipeline_output": "Kwota KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "15 OOO,00 PLN"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_fraction_fifty",
+    "input": "Kwota 15 OOO,50 zł.",
+    "expected_span": "15 OOO,50 zł",
+    "layer_output": "Kwota 15 OOO,KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "50 zł"
+    },
+    "pipeline_output": "Kwota 15 OOO,KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "50 zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_fraction_fifty_pln",
+    "input": "Kwota 15 OOO,50 PLN.",
+    "expected_span": "15 OOO,50 PLN",
+    "layer_output": "Kwota 15 OOO,KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "50 PLN"
+    },
+    "pipeline_output": "Kwota 15 OOO,KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "50 PLN"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_fraction_compact",
+    "input": "Kwota 15OOO,50zł.",
+    "expected_span": "15OOO,50zł",
+    "layer_output": "Kwota 15OOO,KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "50zł"
+    },
+    "pipeline_output": "Kwota 15OOO,KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "50zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_fraction_decimal_o",
+    "input": "Kwota 15 OOO,5O zł.",
+    "expected_span": "15 OOO,5O zł",
+    "layer_output": "Kwota KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "15 OOO,5O zł"
+    },
+    "pipeline_output": "Kwota KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "15 OOO,5O zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "o_decimal_dot",
+    "input": "Kwota 1200.5O zł.",
+    "expected_span": "1200.5O zł",
+    "layer_output": "Kwota 1200.5O zł.",
+    "layer_values": {},
+    "pipeline_output": "Kwota 1200.5O zł.",
+    "pipeline_values": {},
+    "warnings": []
+  },
+  {
+    "case": "o_decimal_plain",
+    "input": "Kwota 1200,5O zł.",
+    "expected_span": "1200,5O zł",
+    "layer_output": "Kwota KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "1200,5O zł"
+    },
+    "pipeline_output": "Kwota KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "1200,5O zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "decimal_dot_control",
+    "input": "Kwota 1200.50 zł.",
+    "expected_span": "1200.50 zł",
+    "layer_output": "Kwota KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "1200.50 zł"
+    },
+    "pipeline_output": "Kwota KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "1200.50 zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "mult_million",
+    "input": "Odszkodowanie 2,5 mln zł.",
+    "expected_span": "2,5 mln zł",
+    "layer_output": "Odszkodowanie KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "2,5 mln zł"
+    },
+    "pipeline_output": "Odszkodowanie KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "2,5 mln zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "mult_without_dot",
+    "input": "Kwota 15 tys zł.",
+    "expected_span": "15 tys zł",
+    "layer_output": "Kwota KWOTA_001.",
+    "layer_values": {
+      "KWOTA_001": "15 tys zł"
+    },
+    "pipeline_output": "Kwota KWOTA_001.",
+    "pipeline_values": {
+      "KWOTA_001": "15 tys zł"
+    },
+    "warnings": []
+  },
+  {
+    "case": "unit_negative",
+    "input": "Ludność: 15 tys. mieszkańców.",
+    "expected_span": null,
+    "layer_output": "Ludność: 15 tys. mieszkańców.",
+    "layer_values": {},
+    "pipeline_output": "Ludność: 15 tys. mieszkańców.",
+    "pipeline_values": {},
+    "warnings": []
+  },
+  {
+    "case": "o_unit_negative",
+    "input": "Pozycja 15 OOO szt.",
+    "expected_span": null,
+    "layer_output": "Pozycja 15 OOO szt.",
+    "layer_values": {},
+    "pipeline_output": "Pozycja 15 OOO szt.",
+    "pipeline_values": {},
+    "warnings": []
+  },
+  {
+    "case": "company_negative",
+    "input": "Sprzedawca: OOO Gazprom.",
+    "expected_span": null,
+    "layer_output": "Sprzedawca: OOO Gazprom.",
+    "layer_values": {},
+    "pipeline_output": "Sprzedawca: FIRMA_001.",
+    "pipeline_values": {},
+    "warnings": []
+  },
+  {
+    "case": "version_negative",
+    "input": "Wersja 2 tys.",
+    "expected_span": null,
+    "layer_output": "Wersja 2 tys.",
+    "layer_values": {},
+    "pipeline_output": "Wersja 2 tys.",
+    "pipeline_values": {},
+    "warnings": []
+  }
+]
