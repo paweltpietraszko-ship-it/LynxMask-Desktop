@@ -52,3 +52,25 @@ Jedno przejście istniejącego `r1_diag.py` na main (tryb off, te same 255 dok.)
 ## Werdykt
 **WARTO PRZETESTOWAĆ KOMPROMIS** — na znanej trzeciej części 63% R1 to FP trzech powtarzalnych klas, których Guard dziś nie wyłącza,
 a filtry nie dotykają silnika. Warunek: najpierw pomiar z pkt 6, potem decyzja OWNERA o małym eksperymencie.
+
+## 7. Pomiar pełny (zgoda OWNERA 23.10) — wszystkie 902 R1
+`r1_diag.py` (zmiana: zapis każdego R1 z kontekstem ±60 znaków; dokumenty oznaczone `private` — 178 prawdziwych pism publicznych —
+tylko lokalnie w scratchpadzie CC, do repo wyłącznie agregaty) na exact main `56cf5b9`, te same 255 dok.; ocena filtrów
+`filters_eval.py` (filtry działają tylko bez kotwicy osoby: tytuł, etykieta roli, imię/inicjał/token OSOBA obok).
+**Uwaga:** 607 „nieustalonych” z pkt 2 nie wynikało z limitu narzędzia, lecz z flagi `private` (treść celowo nie zapisywana).
+
+| wynik | R1 | w tym dopasowanie do osoby z gold |
+|---|---|---|
+| F1 biała lista 316 | **385** | 1 → sprawdzone: „Dzienniku” (Urzędowym UE) — fałszywe dopasowanie zgrubnej metryki, nie osoba |
+| F3 przymiotnik geo/urzędowy w nazwie | **92** | 0 |
+| F2 nazwa funkcji | **41** | 0 |
+| **razem wyciszone** | **518 / 902 (57%)** | **0 prawdziwych osób** |
+| zostaje | 384 | 3 — wszystkie trzy prawdziwe osoby (K******, S****, Z*****) nadal z pytaniem |
+Przykłady (dokumenty nieprywatne): F1 Dzienniku 15, Polski 14, Warunków 12, Polskiej 12, Komornika 10, Forma 7, Komornik 6, Rady 5,
+Mazowiecki 5; F3 Gdańskim 14, Tarnowskiej 4, Gdańskiego 3, Tomaszowski, Wielkopolski, Miejskiego; F2 Wojewody 13, Wojewoda 6, Starosty.
+Pozostałe 384 (np. Sam 9, Wielka 8, Paryż 7, nazwy obce/marki, Konieczne 5, Mają 4, Ani 3) — poza zakresem tych 3 filtrów.
+Średnio R1 na dok.: 902/255 = 3,5 → 384/255 = **1,5**.
+
+**Werdykt podtrzymany: WARTO PRZETESTOWAĆ KOMPROMIS.** Zmiana: `guard_residue.py` + mały plik białej listy (316 słów) i lista
+funkcji; silnik OSOBA bez zmian. Ograniczenie: zbiór publiczny ma mało osób (dopasowania do gold to metryka zgrubna); przed
+wdrożeniem sprawdzić GOLD dev/test (ciche OSOBA bez wzrostu) i zdania kontrolne.
