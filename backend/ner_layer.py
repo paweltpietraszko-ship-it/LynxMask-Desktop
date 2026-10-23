@@ -126,7 +126,7 @@ import dataclasses
 import re
 import logging
 
-from firma_context import firma_core_variants, legal_form_entities, scan_legal_forms
+from firma_context import firma_core_variants, is_jdg, jdg_entities, legal_form_entities, scan_legal_forms
 from osoba_not_person import drop_street_osoba, filter_single_osoba, reject_single_osoba  # [LYNX-OSOBA-PACK4]
 from ner_blocklist import (
     _GEO_WORDS,
@@ -244,7 +244,7 @@ def _firma_entities(text: str, ner_results: list) -> list:
     """[LYNX-FIRMA-HYPHEN-SUFFIX] Granice FIRMA (_firma_bounds); fragment samej formy prawnej („z o.o.”, „A.”) leżący
     wewnątrz rozpoznanej firmy nie dostaje osobnego tokenu — rozbiłby jej maskowanie."""
     bounded = [_firma_bounds(text, r) for r in ner_results]
-    out = legal_form_entities(text, bounded + scan_legal_forms(text, bounded))  # [LYNX-FIRMA-FILTER-FIX] + [LYNX-FORMATS-PACK2]
+    out = legal_form_entities(text, bounded + scan_legal_forms(text, bounded) + jdg_entities(text))  # + [LYNX-FIRMA-SILENT2] JDG
     firms = [(r.start, r.end) for r in out if r.label == "FIRMA"]
     return [r for r in out if not (_LEGAL_FRAGMENT_RE.fullmatch(r.text.strip())
                                    and any(a <= r.start and r.end <= b and (a, b) != (r.start, r.end) for a, b in firms))]
@@ -361,7 +361,7 @@ def _filter_institutions(ner_results: list) -> list:
         if _prefix_rejects(ner.label, entity_text, name_lower):
             continue
         # [FIX-NER-INTERNAL-ORG] Pomiń wewnętrzne działy jako FIRMA
-        if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text):
+        if ner.label == "FIRMA" and _INTERNAL_ORG_RE.match(entity_text) and not is_jdg(entity_text):  # [LYNX-FIRMA-SILENT2]
             logger.debug("[FILTER] pominięto dział wewnętrzny [len=%d]", len(entity_text))
             continue
         # [BUG-FIRMA-ZUS-MIX] Pomiń encję FIRMA zawierającą fragment instytucji publicznej

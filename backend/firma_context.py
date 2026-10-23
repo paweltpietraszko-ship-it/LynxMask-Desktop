@@ -52,8 +52,9 @@ def _name_start(text: str, form_start: int) -> int | None:
 
 
 # [LYNX-FORMATS-PACK2] Forma prawna z kropką po „sp” (także bez spacji: „sp.j.”, „Sp.k.”, „sp.z o.o.”) — FIRMA bez encji spaCy
-# (Mobile NameEngine FIRMA_LEGAL_REGEX). „spj” bez kropki, S.A. i s.c. świadomie poza skanem (inicjały, spaCy łapie S.A.).
-_FORM_SCAN_RE = re.compile(r"(?<![\w.])(?:sp\.[ \t]*z[ \t]*o\.?[ \t]*o|sp\.[ \t]*k\.?[ \t]*a|sp\.[ \t]*[jkp]|p\.[ \t]*s\.[ \t]*a)\.?(?!\w)",
+# (Mobile NameEngine FIRMA_LEGAL_REGEX). „spj” bez kropki i S.A. poza skanem (spaCy łapie S.A.).
+# [LYNX-FIRMA-SILENT2] „s.c.” w skanie — tylko po nazwie z wyrazem ≥2 liter (nie po samych inicjałach „J. S.C.”).
+_FORM_SCAN_RE = re.compile(r"(?<![\w.])(?:sp\.[ \t]*z[ \t]*o\.?[ \t]*o|sp\.[ \t]*k\.?[ \t]*a|sp\.[ \t]*[jkp]|p\.[ \t]*s\.[ \t]*a|s\.[ \t]*c)\.?(?!\w)",
                            re.IGNORECASE)  # odstępy dowolne w linii (Codex F1: „sp.z  o.o.”)
 
 
@@ -66,8 +67,39 @@ def scan_legal_forms(text: str, ner_results: list) -> list:
         if any(r.start < m.end() and m.start() < r.end and not (r.label == "OSOBA" and r.start < m.start()) for r in ner_results):
             continue
         name = _name_start(text, m.start())
+        if name is not None and m.group(0)[:1] in "sS" and not re.search(r"[^\W\d_]{2,}[\"”]?[ \t]*$", text[name:m.start()]):
+            continue   # „s.c.” tuż po inicjale („J. S.C.”) — nie firma; wyraz przed formą musi mieć ≥2 litery
         if name is not None:
             out.append(NERResult(text[name:m.end()], "FIRMA", 0.8, name, m.end()))
+    return out
+
+
+# [LYNX-FIRMA-SILENT2] Nazwa jednoosobowej działalności: rzeczownik działalności + słowa z wielkiej litery + imię i nazwisko na końcu
+# („Usługi Konserwatorskie Cezary Jeż”) — jedna FIRMA (wybór Pawła 23.10: opis działalności zakryty razem z osobą).
+_JDG_HEAD_RE = re.compile(r"(?<![\w-])(?:Usługi|Biuro|Zakład|Pracownia|Studio|Kancelaria|Gabinet|Warsztat|Firma|Przedsiębiorstwo|Sklep"
+                          r"|Hurtownia|Serwis|Salon|Atelier|Agencja)(?![\w-])")
+_CAP_WORD_RE = re.compile(r"[ \t]+([A-ZĄĆĘŁŃÓŚŹŻ][\w]*(?:-[A-ZĄĆĘŁŃÓŚŹŻ][\w]*)?)(?![\w-])")
+
+
+def is_jdg(value: str) -> bool:
+    """Cała wartość to nazwa JDG (rzeczownik działalności … imię nazwisko) — nie dział wewnętrzny („Biuro Organizacji Pracy Jan Kos”)."""
+    return any(e.start == 0 and e.end == len(value.strip()) for e in jdg_entities(value.strip()))
+
+
+def jdg_entities(text: str) -> list:
+    """FIRMA dla każdego wystąpienia „rzeczownik działalności + słowa z wielkiej litery + imię + nazwisko”; bez imienia — nic."""
+    from osoba_not_person import first_names
+    from spacy_ner import NERResult
+    names, out = first_names(), []
+    for m in _JDG_HEAD_RE.finditer(text):
+        words, pos = [], m.end()
+        while (w := _CAP_WORD_RE.match(text, pos)) and len(words) < 8:
+            words.append(w)
+            pos = w.end()
+        for i in range(len(words) - 1, 0, -1):   # ostatnia para imię + nazwisko, przed nią ≥1 słowo opisu
+            if words[i - 1].group(1).lower() in names and words[i].group(1).lower() not in names:
+                out.append(NERResult(text[m.start():words[i].end()], "FIRMA", 0.8, m.start(), words[i].end()))
+                break
     return out
 
 
@@ -150,4 +182,20 @@ def firma_core_variants(text: str, reverse_map: dict, all_variants: dict, is_per
                     all_variants[var] = tok
             del reverse_map[old]
         all_variants[core] = tok
+        _absorb_inside_core(text, core, tok, toks, reverse_map, all_variants)
     return reverse_map, all_variants
+
+
+def _absorb_inside_core(text: str, core: str, tok: str, toks: list, reverse_map: dict, all_variants: dict) -> None:
+    """[LYNX-FIRMA-SILENT2] Encja, której wartość leży w tekście WYŁĄCZNIE wewnątrz wystąpień rdzenia firmy („Ulotny” w „Ulotny Rys”),
+    przechodzi na token rdzenia — inaczej jej wcześniejsza podmiana rozcina powtórzenie („FIRMA_002 Rys”)."""
+    spans = [m.span() for m in re.finditer(rf"(?<!\w){re.escape(core)}(?!\w)", text)]
+    for other, value in list(reverse_map.items()):
+        if other == tok or other in toks or not value or value == core or value not in core:
+            continue
+        hits = [m.span() for m in re.finditer(rf"(?<!\w){re.escape(value)}(?!\w)", text)]
+        if hits and all(any(a <= s and e <= b for a, b in spans) for s, e in hits):
+            for var, t in list(all_variants.items()):
+                if t == other:
+                    all_variants[var] = tok
+            del reverse_map[other]
