@@ -13,7 +13,7 @@ WYMAGA_DECYZJI:
   - TOTAL_LINES: 504 lines changed (threshold 150)
 ```
 Rozkład: kod +218/−42 (nowy `firma_proof.py` 125 l.), testy +150/−94 (nowy `test_firma_proof.py` 116 l., klasa instytucji
-w `test_pseudominizer.py` przepisana). Każdy plik < 600 l. (`ner_layer.py` 597 → 598). Zgoda Pawła na przekroczenie TOTAL_LINES — do uzyskania (pytanie w BOARD).
+w `test_pseudominizer.py` przepisana). Każdy plik < 600 l. (`ner_layer.py` 597 → 598). Zgoda Pawła na przekroczenie TOTAL_LINES: udzielona 23.10 („Zgoda na rozmiar kodu.”) po obejrzeniu wyniku na KIO.
 
 ## Pomiar (ten sam kod, pusty profil, w procesie)
 | miarka | main `948c3bb` | gałąź |
