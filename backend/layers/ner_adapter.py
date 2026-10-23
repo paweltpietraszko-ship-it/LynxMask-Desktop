@@ -318,14 +318,7 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
     local, remap = _remap_ner_ids(state, ner_reverse)  # [LYNX-T03]
     ner_reverse = {remap[tid]: local[tid] for tid in remap}
 
-    for token_id, value in sorted(
-        ner_reverse.items(),
-        key=lambda x: (len(x[1]), state.text.find(x[1])),  # [LYNX-MAP-FIDELITY] najdłuższe najpierw: „Izby” nie w „Krajowej Izby…”
-        reverse=True,
-    ):
-        if value.startswith("@"):
-            continue
-        state.text = _sub_whole(state.text, value, token_id)
+    _sub_longest_first(state, ner_reverse, local, remap)
 
     # ── Warstwa 3c: Propagacja wykrytych nazwisk ─────────────────────────────
     for token_id, value in ner_reverse.items():
@@ -348,27 +341,42 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         key=lambda x: (len(x[0]), state.text.find(x[0])),
         reverse=True,
     ):
-        _local = _tok_id  # [LYNX-T03] lokalny numer NER → numer alokatora (niżej, gdy odmiana jest w tekście)
-        if _local not in local or _var_text.startswith("@"):
-            continue
-        if _TOKEN_RE.search(_var_text):
-            continue
-        if _ADDR_PREFIX_RE.match(_var_text):
-            continue
-        if _tok_id.startswith("FIRMA") and _BARE_SUFFIX_RE.match(_var_text.strip()):
-            continue
-        _stripped = re.sub(r"[,\.;:!?\s]+$", "", _var_text).rstrip()
-        _target = _stripped if _stripped else _var_text
-        if not _target or not _whole(_target).search(state.text):
-            continue
-        if _local not in remap:
-            remap[_local] = state.allocator.assign(_local.rsplit("_", 1)[0], local[_local])
-        _tok_id = remap[_local]
-        if _stripped and _stripped != _var_text:
-            state.text = _sub_whole(state.text, _var_text, _tok_id)
-        state.text = _sub_whole(state.text, _target, _tok_id)
+        _sub_variant(state, _var_text, _tok_id, local, remap)
     state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
+
+
+def _sub_longest_first(state: PipelineState, ner_reverse: dict, local: dict, remap: dict) -> None:
+    """[LYNX-MAP-FIDELITY] Najdłuższe najpierw („Izby” nie w „Krajowej Izby…”). [LYNX-FIRMA-SILENT2] Razem z wielowyrazowymi wariantami
+    FIRMA (powtórzenie rdzenia „Ulotny Rys”) — krótsza encja („Ulotny”, osobna firma) nie rozcina dłuższej znanej nazwy."""
+    variants = getattr(state, "ner_variants", None) or {}
+    items = [(v, t, False) for t, v in ner_reverse.items()] + \
+            [(v, t, True) for v, t in variants.items() if t.startswith("FIRMA") and " " in v.strip()]
+    for value, tok, is_variant in sorted(items, key=lambda x: (len(x[0]), state.text.find(x[0])), reverse=True):
+        if value.startswith("@"):
+            continue
+        if is_variant:
+            _sub_variant(state, value, tok, local, remap)
+        else:
+            state.text = _sub_whole(state.text, value, tok)
+
+
+def _sub_variant(state: PipelineState, var_text: str, tok_id: str, local: dict, remap: dict) -> None:
+    """Odmiana/wariant SpaCy (port: FIX-NER-GLOBAL) → token encji; numer alokatora nadawany, gdy wariant jest w tekście (LYNX-T03)."""
+    if tok_id not in local or var_text.startswith("@") or _TOKEN_RE.search(var_text) or _ADDR_PREFIX_RE.match(var_text):
+        return
+    if tok_id.startswith("FIRMA") and _BARE_SUFFIX_RE.match(var_text.strip()):
+        return
+    stripped = re.sub(r"[,\.;:!?\s]+$", "", var_text).rstrip()
+    target = stripped if stripped else var_text
+    if not target or not _whole(target).search(state.text):
+        return
+    if tok_id not in remap:
+        remap[tok_id] = state.allocator.assign(tok_id.rsplit("_", 1)[0], local[tok_id])
+    tok = remap[tok_id]
+    if stripped and stripped != var_text:
+        state.text = _sub_whole(state.text, var_text, tok)
+    state.text = _sub_whole(state.text, target, tok)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
