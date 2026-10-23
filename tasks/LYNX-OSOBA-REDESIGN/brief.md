@@ -1,6 +1,6 @@
-# LYNX-OSOBA-REDESIGN — brief Architekta v1 (23.10.2026)
+# LYNX-OSOBA-REDESIGN — brief Architekta v1.1 (23.10.2026, po Codex r1 C1/C2)
 
-**Status: propozycja kontraktu do Codexa BRIEF_ONLY; bez implementacji i bez zgody na merge.**
+**Status: C1/C2 uzupełnione po Codex r1; C3 OWNER_DECISION_NEEDED. NIE kierować do Codexa r2 przed C3; bez implementacji i merge.**
 Źródła: `cc_proposal.md` (20.10), `cc_proposal_update_2026-10-23.md` i `evidence_2026-10-23/` na gałęzi zadania; `BOARD.md` wiersz `LYNX-OSOBA-REDESIGN` (23.10); zamrożone `arch/spec.md` S1–S5. Bazę implementacji CC musi odświeżyć po prechecku; nie zakładać, że main jest nieruchomy.
 
 ## 1. Problem i granice dowodów
@@ -11,46 +11,46 @@ Na pomiarach CC: `LYNX-OSOBA-HANDOFF` zmniejszył pytania R1 z **7448 do 902** n
 
 Cel: **jedna automatyczna decyzja OSOBA na całym wystąpieniu w kontekście dokumentu**, wykorzystująca istniejące źródła dowodów. Nie chodzi o dokładanie PESEL jako kolejnej ścieżki automatycznie zakrywającej obok starego NER.
 
-## 2. Kontrakt wyniku
+## 2. Rozstrzyganie OSOBA (C2 — zasady zamknięte)
 
-Dla kandydata w danym miejscu tekstu decyzja jest dokładnie jedna:
-- `MASK`: wystarczające dowody osoby i brak rozstrzygającego dowodu przeciw → maskuj poprzez istniejący `TokenAllocator`, mapę i Przywróć.
-- `ASK`: wiarygodne podejrzenie OSOBA z nierozstrzygniętą kolizją dowodów → **jedno ostrzeżenie R1 w Guardzie**, nie automatyczne maskowanie.
-- `PASS`: wiarygodnie nieosobowe wystąpienie albo brak przesłanek pozwalających uznać je za kandydata → pozostaw jawne, bez pytania R1. Nie zastępuje kontroli pozostałych R2–R5/HIGH/MEDIUM/MAP_LEAK.
+Jedna funkcja na każde **wystąpienie**, a nie na pisownię: `MASK` (token OSOBA), `ASK` (jedno R1 w Guardzie), `PASS` (bez R1). Inne ostrzeżenia Guarda pozostają niezależne. Wystąpienia o identycznym zapisie mogą otrzymać różne decyzje; samo powtórzenie nazwiska nie dowodzi, że to ta sama osoba. Jeżeli nie sposób wiarygodnie ustalić wspólnego referenta, nie scalać tokenów tylko po pisowni. Dotychczasowy kanoniczny mianownik Przywróć dopuszczalny dla tej samej ustalonej osoby.
 
-Decyzja należy do **wystąpienia/spanu**, nie do ciągu znaków globalnie. `Róża` jako osoba, kwiat i nazwa lokalu mogą dać różne decyzje. Pary `Jan Kowalski` / `Jana Kowalskiego` oceniać jako całość; nie wyciszać pełnej osoby z powodu pojedynczego członu. Nie scalać różnych osób o tym samym nazwisku. Jeśli wiarygodnie ta sama osoba występuje w odmianach, zachowuje jeden token; kanoniczny mianownik w Przywróć jest dopuszczalny. Wierność granic tokenu i dosłownej wartości mapy pozostaje obowiązkowa.
+Zamknięta kolejność (pierwsza pasująca reguła wygrywa):
 
-### Dowody i pierwszeństwo (reguły deterministyczne v1, bez uczenia wag)
+| Sytuacja na konkretnym spanie | Wynik |
+| --- | --- |
+| Span już zakryty świadomą encją OSOBA użytkownika z profilu | Nie klasyfikować ponownie, istniejący token zostaje |
+| Fragment należy w całości do potwierdzonej ADRES/FIRMA/INSTYTUCJA/innej kategorii, bez niezależnej pełnej osoby poza jej granicą | `PASS` jako OSOBA; obowiązuje dotychczasowa kategoria |
+| Potwierdzona cała para imię–nazwisko / inicjał–nazwisko, bądź nazwisko wiarygodnie powiązane z pełną osobą w tym dokumencie | `MASK`; nie odrzucać z powodu pojedynczego członu przypominającego instytucję |
+| Wyraźna kotwica osoby (Pan/Pani, Świadek, Wnioskodawca, podpis, pole imię i nazwisko) **i** wiarygodny kandydat imienia/nazwiska z PESEL lub imion/Morfeusza; bez kolizji kategorii | `MASK` |
+| Tytuł/funkcja bez odrębnej nazwy osoby (`Pani dyrektor`, `Pełnomocnik Odwołującego`) | `PASS`; sama funkcja nie jest nazwiskiem |
+| Samotny miesiąc/dzień tygodnia bez niezależnej kotwicy osoby, nagłówek/termin urzędowy, kontekst ulicy/miasta, nieliterowy szum OCR lub wyłącznie mała litera | `PASS` |
+| Samodzielne słowo z białej listy 316 (bez potwierdzonego pełnego imienia i nazwiska) | `PASS` i bez R1 — zachowuje zatwierdzoną listę; wyjątek dla pełnej osoby wymaga C3 niżej |
+| Samotne nazwisko z PESEL ≥1000, zapisane jak nazwa własna, niebędące funkcją, adresem, instytucją lub oczywistym nie-słowem | `MASK` również bez spaCy; początek zdania nie jest wykluczeniem |
+| PESEL 100–999, pisownia nazwy własnej, bez kotwicy i bez mocnego przeciw; z samym spaCy PER lub bez niego | `ASK` (dodatkowy słaby sygnał nie zmienia na `MASK`) |
+| Niejasna fleksja nazwiska albo słowo prawdopodobnie oznaczające osobę z czasownikiem czynności osoby, bez mocnej kotwicy, ale co najmniej z wiarygodnym słownikowym lub kontekstowym sygnałem osoby | `ASK`, nie `MASK`; `być` samo w sobie nie jest takim sygnałem |
+| Rzeczywisty konflikt kotwicy osoby z rozpoznaną inną kategorią lub funkcją, nieobejmujący całej potwierdzonej pary | `ASK`, o ile fragment pozostał jawny; jeśli został prawidłowo zakryty przez inną kategorię, bez powtórnego R1 |
+| Sam spaCy PER bez słownika, kotwicy, czynności osoby lub innego dowodu; sam CAPS; brak kandydata | `PASS` (to nie jest samodzielna podstawa pytania) |
 
-Kandydaci: niezakryte całe spany z istniejącego spaCy, z przeglądu nazwisk PESEL (również samodzielne nazwiska poza spaCy), z istniejących imion i słownika biura; rozpatrywać sąsiadujące imię–nazwisko, inicjał–nazwisko i odmianę jako możliwy **jeden span**. Kandydata badać na kontekście, zanim utraci go przez podmiany ADRES/FIRMA/INSTYTUCJA; ostatecznie nie naruszać spanów już przejętych przez token strukturalny. Sam CAPS lub sama etykieta spaCy nie wystarcza do `MASK` ani automatycznego `ASK`.
+Miesiące `Styczeń…Grudzień` jako nazwisko wymagają **kotwicy osoby** także przy liczbie nosicieli PESEL ≥1000. Słownik nazwisk jest ważniejszy od samotnego wyniku spaCy, ale nie unieważnia dowodu geograficznego lub prawnego dotyczącego tego konkretnego wystąpienia. PESEL 100 to tylko dolna granica pomocniczych kandydatów; próg automatycznego zakrycia samodzielnego nazwiska = 1000. Bez uczenia wag, regresji logistycznej i arbitra LLM.
 
-**Mocne ZA:** jawna etykieta/kotwica osoby (Pan/Pani, podpis, imię i nazwisko, świadek, osoba pełniąca funkcję), para imię–nazwisko lub inicjał–nazwisko, wiarygodne wcześniejsze pełne wystąpienie tej osoby w dokumencie, świadomy wpis OSOBA w słowniku biura. Nazwisko PESEL **≥1000 nosicieli** przy zapisie nazwy własnej jest mocnym ZA również samotnie, **o ile brak konkretnego silnego PRZECIW**. Słownik nazwisk ma wyższą rangę od samotnego wskazania spaCy. `Nowak`, `Mazur`, `Bocian` w zdaniach o działaniach ludzi to kandydaci rzeczywiści także przy znaczeniu pospolitym.
+**C3 — rozstrzygnięcie OWNERA wymagane przed ponownym precheckiem:** biała lista 316 słów (zaakceptowana 23.10) blokuje zgłoszenie samodzielnego wyrazu jako nazwiska. Architekt **rekomenduje** wyjątek tylko dla wiarygodnie rozpoznanej pełnej osoby (`Jan Termin` może być OSOBA, `Termin wykonania` nie); Codex potwierdził sens ochrony pełnej osoby, ale nie uznał wyjątku za zatwierdzony. Do jawnego wyboru OWNERA: (A) potwierdzić wyjątek dla pełnej osoby — preferowane; (B) wymagać wyłączenia członu z białej listy nawet wewnątrz imienia–nazwiska, z ryzykiem utraty właściwego zakrycia. Nie wprowadzać automatycznie A bez akceptacji.
 
-**Słabsze ZA / kolizja:** PESEL 100–999 bez niezależnej kotwicy, niejednoznaczne rozpoznanie fleksji oraz składnia „nazwisko + czynność osoby” (czasownik osobowy Morfeusza, nie samo „być”) mogą wspierać `MASK` lub prowadzić do `ASK`; nie są pretekstem do hurtowego zakrywania każdego słowa wielką literą. Sam spaCy PER jest słabym sygnałem.
+## 3. Konkretny szew C1 — finalna decyzja bez przenoszenia starych offsetów
 
-**Mocne PRZECIW:** konkretne wystąpienie jako człon instytucji, firmy, adresu, nazwy geograficznej/ulicy w kontekście miejsca, termin prawny/funkcja, nie-słowo/OCR lub nagłówek bez niezależnej przesłanki osoby. Samo sąsiedztwo innego słowa wielką literą NIE jest dowodem instytucji: `Piotra G*********` oraz `Anna Nowak` należy ocenić jako pełną parę. Wyraz na początku zdania NIE jest globalnie wyłączony — `Nowak zlecił` to przypadek dodatni, `Kawa i herbata zostały` ujemny.
+Codex poprawnie wskazał, że `PipelineState.ner_results` i `ner_variants` przechowują słowniki wartości, `TokenAllocator.reset_spans()` kasuje spany pomiędzy warstwami, a `run_pipeline_new` dotąd zwraca tylko `(text, reverse_map, force_block)`. Globalne `_sub_whole` także zamienia identyczne słowa naraz. To **nie jest transport per wystąpienie**.
 
-**Biała lista 316 zaakceptowanych słów** z `evidence_2026-10-23/biala_lista_pesel_zatwierdzona.csv`: odrzuca **samodzielne zgłoszenie tego słowa jako nazwiska** zarówno w silniku, jak i R1. Nie wolno jej użyć do przecięcia potwierdzonej pełnej osoby: złożony span ocenić jako całość (np. imię + nazwisko). Codex ma jawnie ocenić tę granicę wobec literalnej zasady OWNERA „słowa z białej listy wyłączone z maskowania i pytań”.
+Minimalny kontrakt do falsyfikacji w E1: **przenieść punkt podejmowania decyzji OSOBA na sam koniec przetwarzania tekstu, po obecnych warstwach i wywołaniu HerBERT, ale przed `guard_output_with_map` i `collect_warnings`**. W tym miejscu mamy jeden aktualny, niezmienny snapshot `text` i bieżącą `reverse_map`; decyzje `MASK/ASK/PASS` powstają i są wykonywane **na tych samych współrzędnych**. Nie ma potrzeby przenosić decyzji przez etap ADRES/FIRMA ani budować globalnej mapy offsetów. HerBERT zachowuje swoje miejsce po obecnych warstwach i ustawienie domyślnie OFF; nowa decyzja jest deterministycznym rozstrzygnięciem nazw, nie dodatkowym modelem.
 
-**Miesiące:** `Styczeń…Grudzień` jako samotne nazwy miesięcy → `PASS`; jako nazwiska tylko z niezależną kotwicą osoby. Mała litera bez wyraźnej kotwicy osoby nie staje się OSOBA. Samo nazwisko rzadkie lub nieobecne w PESEL nie może być automatycznie uznane za nie-PII, gdy kontekst wskazuje osobę → co najmniej `ASK`.
+**Owner i dane:** `backend/person_decision.py::resolve_final_persons(text, reverse_map, context) -> (text_after, reverse_map_after, ask_spans)`, gdzie `ask_spans` to wystąpienia `{start:int,end:int,rule:"R1",reason:str}` **w finalnym `text_after`**, przed dopisaniem nagłówka PSE. Start/end liczone w indeksach znaków Pythona (Unicode code points), po stronie API istniejące `shift_warnings` dla nagłówka i `toUtf16` w oknie; nie przenosić bajtów ani pozycji UTF-16 do backendu. Każdy kandydat oceniany z tego samego niemodyfikowanego snapshotu. Nakładające się kandydatury: potwierdzona pełna osoba pierwsza, krótsze w całości zawarte pomijane, nierozstrzygnięta kolizja → `ASK` jednej pozycji. `MASK` wykonywać według jednoznacznych spanów od prawej do lewej za pomocą istniejącego alokatora/tokenizacji, nigdy przez globalne `str.replace` ani `_sub_whole`. Indeksy `ASK` przeliczyć **wyłącznie przez znane lokalne podmiany `MASK` z tego snapshotu**, każdą z kontrolowanym start/end i różnicą długości. `ASK` przecinający `MASK` nie może pozostać jako osobny surowy alarm; konflikt trzeba rozstrzygnąć przed podmianą. Jeśli identyfikacja lub pozycja nie jest jednoznaczna, nie zgadywać: wynik `ASK` z właściwym spanem albo blokada S3, nigdy ciche `PASS`.
 
-**Kolejność rozstrzygnięcia:** 1) już świadomie zamaskowane w profilu użytkownika i spany struktur innych kategorii pozostają pod ich obecnym ownerem; 2) cała para / mocne kotwice osoby; 3) kontekstowo pewne wyłączenia; 4) samodzielne nazwisko PESEL z progiem 1000; 5) kolizje → `ASK`; 6) brak przesłanek → `PASS`. Nie wolno stosować „dowodu przeciw” z członu instytucji do nazwiska w niezależnej, rozpoznanej parze osoby.
+**Miejsce transportu:** `pipeline.py::_apply_guard` (wspólne wejście po `run_pipeline_new` i ewentualnej legacy ścieżce) wywołuje `resolve_final_persons` po obecnym `apply_net`, przekazuje otrzymane `ask_spans` bezpośrednio do `pipeline.py::_apply_output_guard`, która łączy je z pozostałymi ostrzeżeniami `guard_residue.collect_warnings`. R1 z `_r1` i `released()` zostaje wyłączone w obu dostępnych ścieżkach — **nie zostawić równoległego źródła R1**. R2–R5, HIGH/MEDIUM/MAP_LEAK i obecny mechanizm Guard/allowlist/S3/S4/S5 bez zmian. Do końcowego wyniku przekazać identyfikatory pozycji ostrzeżeń już istniejącym formatem.
 
-**Nie implementować w v1** regresji logistycznej, uczenia progów, zewnętrznego NER, arbitra LLM ani automatycznego odświeżania list. Jeśli prosty deterministyczny zestaw priorytetów nie przejdzie kontrprób, STOP i wrócić z pomiarem, nie dorabiać dziesiątek wyjątków.
+**Warunek przełączenia:** obecne automatyczne ścieżki OSOBA w `ner_layer.py`/`layers/ner_adapter.py` muszą przestać autonomicznie maskować imiona/nazwiska; zachować obecną FIRMA, struktury i świadomą tokenizację OSOBA przez `trie_layer`. Nowy decyder analizuje to, co nadal jawne po tych warstwach, również **całe sąsiadujące imię–nazwisko**. Dane spaCy, Morfeusza, PESEL, słownika imion i kontekstu z bieżącego finalnego tekstu są wejściem jednego rozstrzygnięcia, nie kolejnymi właścicielami maskowania. Nie przyjmować nieprzeniesionych pozycji wcześniejszego spaCy jako dowodu tożsamości wystąpienia; jeśli późny etap traci jego poprawne trafienia, nie maskować tej straty dodatkowymi `_sub_whole`: **E1 STOP, szew wymaga korekty przed E2**. Ta decyzja minimalizuje transport, ale jej zachowanie na pełnych nazwach w pobliżu adresów jest **hipotezą do weryfikacji**, nie ustalonym faktem.
 
-## 3. Minimalny szew istniejącego pipeline
+Mapowanie tokenów: wykorzystywać tę samą finalną `reverse_map` i reguły numeracji S2; nie tworzyć konkurencyjnej mapy. Przy takim samym zapisie dotyczącym dwóch różnych referentów nie wolno użyć tego samego tokenu wyłącznie dlatego, że `TokenAllocator.assign` deduplikuje po kanonicznej wartości — CC musi określić minimalny wariant rozróżnienia albo zakończyć E1 jako niewykonalne; nie rozszerzać całego alokatora dla innych typów.
 
-Aktualnie `pipeline_new.py` wywołuje `extract_ner_results` **przed adresem**, a `apply_ner_layer` po adresie. Nowy owner decyzji (proponowane `backend/person_decision.py`) ma **raz** zebrać/ocenić kandydatów OSOBA z pełnym kontekstem, zanim podmiany odbiorą relację imię–nazwisko. Zwraca tylko `MASK / ASK / PASS` dla spanów wraz z powodami/kodem dowodu do testów (bez logowania jawnego tekstu). Nie zmienia API S2 ani typów tokenów.
-
-`ner_layer.py` i `layers/ner_adapter.py`: dotychczasowe źródła OSOBA (spaCy, lematy, słownik, propagacja, inicjały) mają dostarczać kandydatów/dowody lub zastosować **decyzję z jednego ownera**; nie mogą po decyzji `PASS` ani `ASK` ponownie autonomicznie zakryć tego samego fragmentu. Zachować dotychczasowy właściciel FIRMA, pozostałe warstwy i priorytety tokenów. Profilowe, **świadomie dodane** encje OSOBA z `trie_layer` pozostają nadrzędną decyzją użytkownika, nie są drugi raz klasyfikowane.
-
-Przed maskowaniem zweryfikować aktualne granice spanów po OCR/warstwach. **Nie wolno zastosować zapamiętanych offsetów z tekstu sprzed zamiany ADRES** do tekstu po podmianie; użyć istniejących mechanizmów mapowania albo odtworzyć span w bieżącym tekście bez niejednoznacznego globalnego `str.replace`. Żaden `MASK` OSOBA nie przecina tokenu ADRES/FIRMA/INSTYTUCJA/NUMER. Bez nowych, równoległych map tokenów.
-
-`guard_residue.py`: R1 ma pokazywać **tylko `ASK` tego samego ownera** dla nadal jawnych wystąpień, z przeliczeniem pozycji na finalny wynik. Usunąć równoległe wyrokowanie R1 przez `_r1` i `released()` po integracji, nie pozostawić dwóch źródeł tych samych pytań. R2–R5, HIGH/MEDIUM/MAP_LEAK, zachowanie UI, allowlista i S3/S4/S5 pozostają bez zmian.
-
-`herbert_net.py`: pozostaje **po silniku, przed Guardem, domyślnie OFF**; może dołożyć rozpoznanie tylko na nadal jawnych spanach, **nie cofa `MASK`**. Osobny pomiar ON/OFF później, bez strojenia HerBERT i bez włączania go przy okazji tego Tasku.
-
-Jeżeli obie ścieżki `USE_NEW_PIPELINE` są rzeczywiście dostępne dla użytkownika, CC musi zapewnić zgodny kontrakt na każdej aktywnej ścieżce albo zaproponować jawny wybór jednej; nie pozostawiać ukrytej drogi z dawnymi samodzielnymi decyzjami OSOBA.
+**Nowe sprawdzenie C1:** tekst zawiera dwie identyczne frazy `Róża`, jedną osobową, drugą nie; między nimi warstwa adresu zamienia długi fragment na krótki `ADRES_001`. Osobowy span `MASK`, nieosobowy `PASS`, inny celowo niejednoznaczny homonim `ASK` → dokładnie ten trzeci fragment po finalnych podmianach. Powtórzyć z emoji przed każdym wystąpieniem (Python code points vs JavaScript UTF-16), dwiema identycznymi osobami o nieustalonej tożsamości, a także z `FIRMA_001`. Brak globalnej zamiany powtórzeń. W odbiorze E1 wymagać **pełnej listy poprawnych zakryć starego silnika, które nowy traci**; nawet jedno utracone prawdziwe nazwisko = STOP przed E2, a nie skompensowanie dodatkowymi trafieniami.
 
 ## 4. Dane i koszty
 
@@ -58,7 +58,7 @@ Jeżeli obie ścieżki `USE_NEW_PIPELINE` są rzeczywiście dostępne dla użytk
 
 Skala i progi: zamiast arbitralnych punktów 0,35 / 0,7 zastosować kolejność silnych i słabych dowodów z §2; **1000** pozostaje progiem produktowym dla samodzielnego nazwiska, **100** dolnym progiem danych pomocniczych z propozycji CC. Reguły końcówek i lematyzacja nie mogą dopasowywać innych słów jako nazwisk bez kontekstu; rejestrować warianty tylko, gdy są rzeczywistymi formami dopasowanego kandydata.
 
-Rozmiar i podział: **jeden Task**, dwa wewnętrzne kroki CC: E1 ślad decyzji/shadow na identycznym wejściu (nic nie maskuje w trybie próby), E2 przełączenie ownera OSOBA + wyłączenie starych autonomicznych ścieżek + Guard R1. Po prechecku CC podaje budżet plików, linii, czasu i RAM; **>150 nowych/zmienionych linii wymaga zgody OWNERA**. Nowe reguły w jednym małym ownerze, nie powiększać bez końca `ner_layer.py`, `ner_adapter.py`, `pipeline.py`. E1 to bramka porównawcza, nie dodatkowa infrastruktura produktu.
+Rozmiar i podział: **jeden Task**, dwa wewnętrzne kroki CC: E1 ślad decyzji/shadow na identycznym wejściu (nowa klasyfikacja i symulacja lokalnych podmian NIE wpływają na wynik użytkownika), E2 po zaakceptowanej bramce przełączenie ownera OSOBA + wyłączenie starych autonomicznych ścieżek + Guard R1. Po prechecku CC podaje budżet plików, linii, czasu i RAM; **>150 nowych/zmienionych linii wymaga zgody OWNERA**. Nowe reguły w jednym małym ownerze, nie powiększać bez końca `ner_layer.py`, `ner_adapter.py`, `pipeline.py`. E1 to bramka porównawcza, nie dodatkowa infrastruktura produktu.
 
 ## 5. Falsyfikacja i odbiór
 
@@ -80,14 +80,15 @@ Jeśli E1 pokaże, że prosta wspólna decyzja odbiera prawdziwe pełne osoby al
 
 ## 6. TASK_SCOPE (proponowany; CC ma skorygować tylko na podstawie exact SHA)
 
-- backend/person_decision.py (nowy, owner jednej automatycznej decyzji)
+- backend/person_decision.py (nowy, owner pojedynczego finalnego rozstrzygnięcia)
 - backend/layers/ner_adapter.py (wyłączenie autonomicznych OSOBA i aplikacja decyzji)
 - backend/ner_layer.py (spaCy jako źródło kandydatów; FIRMA niezmieniona)
 - backend/osoba_not_person.py (wspólne dowody/wyłączenia i odejście od osobnego released)
 - backend/guard_residue.py (R1 z `ASK`, pozostały Guard bez zmian)
-- backend/pipeline_new.py (szew pełnego kontekstu i ostatecznej aplikacji)
-- backend/pipeline.py (tylko jeśli aktywna legacy ścieżka wymaga zgodności)
+- backend/pipeline_new.py (oddanie autonomicznej decyzji OSOBA; weryfikacja obecnej kolejności i jej wpływu na E1)
+- backend/pipeline.py (**wymagany wspólny szew** decydera i Guard na aktywnej nowej/legacy ścieżce)
 - backend/person_surnames_pesel_20260120.json (nowy, z manifestem/odtwarzalnym generatorem)
+- backend/pipeline_core.py (tylko jeśli konieczny wąski szew istniejącego TokenAllocator dla rozróżnienia referentów; nie zmieniać innych kategorii)
 - backend/tests/test_person_decision.py (kontrpróby i integracja)
 - tasks/LYNX-OSOBA-REDESIGN/round_01/implementation/DELIVERY.md (po kodzie)
 - tasks/LYNX-OSOBA-REDESIGN/brief.md (ten kontrakt)
@@ -98,4 +99,4 @@ Nie zmieniać S2, `arch/spec.md`, `FROZEN.lock`, FIRMA, OCR, UI, allowlisty, Her
 
 ## 7. Przekazanie
 
-**Codex BRIEF_ONLY:** czytaj brief, dwie propozycje CC i wyłącznie punktowo wskazane szwy. Bez kodowania, testów, pobierania danych PESEL czy benchmarków. Zweryfikuj wykonalność jednej decyzji na całym spanie przy obecnej kolejności NER/ADRES/FIRMA i braku bezpiecznych offsetów po podmianie; niełamanie decyzji słownika biura; przeniesienie ASK do Guarda bez równoległego R1; definicję białej listy dla par imię–nazwisko; progi i odbiór; S2/S3/S4/S5 i minimalną liczbę zmienianych ownerów. Zwróć `PASS PREIMPLEMENTATION` albo **jedną zamkniętą listę** niejasności/konfliktów. Jeśli istotna decyzja produktowa nadal jest niejednoznaczna, `OWNER_DECISION_NEEDED`, nie dorabiać samodzielnie nowej architektury. Dopiero po PASS → szacunek CC → zgoda OWNERA na koszt → implementacja → niezależny audyt Codexa exact SHA → decyzja OWNERA o merge.
+**Codex BRIEF_ONLY r2 (DOPIERO PO C3):** przeczytaj zmiany C1/C2 w tym briefie i jedną decyzję OWNERA dla C3; wyłącznie punktowo wskazane szwy. Bez kodowania, testów, pobierania danych PESEL czy benchmarków. Zweryfikuj wykonalność jednej decyzji na całym spanie przy obecnej kolejności NER/ADRES/FIRMA i braku bezpiecznych offsetów po podmianie; niełamanie decyzji słownika biura; przeniesienie ASK do Guarda bez równoległego R1; definicję białej listy dla par imię–nazwisko; progi i odbiór; S2/S3/S4/S5 i minimalną liczbę zmienianych ownerów. Zwróć `PASS PREIMPLEMENTATION` albo **jedną zamkniętą listę** niejasności/konfliktów. Jeśli istotna decyzja produktowa nadal jest niejednoznaczna, `OWNER_DECISION_NEEDED`, nie dorabiać samodzielnie nowej architektury. Dopiero po PASS → szacunek CC → zgoda OWNERA na koszt → implementacja → niezależny audyt Codexa exact SHA → decyzja OWNERA o merge.
