@@ -1,0 +1,34 @@
+[
+  {
+    "case": "short_full_only",
+    "input": "Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.\nPodwykonawca: Ulotny sp. z o.o.",
+    "output": "Zamawiający: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_001 stosuje się jako skrót zamawiającego.\nPodwykonawca: FIRMA_002.",
+    "map": {
+      "FIRMA_001": "Ulotny Rys sp. z o.o",
+      "FIRMA_002": "Ulotny sp. z o.o"
+    },
+    "warnings": []
+  },
+  {
+    "case": "both_repeat",
+    "input": "Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.\nPodwykonawca: Ulotny sp. z o.o.\nNazwę Ulotny stosuje się jako skrót podwykonawcy.",
+    "output": "Zamawiający: FIRMA_001.\nW dalszej części pisma nazwę FIRMA_003 Rys stosuje się jako skrót zamawiającego.\nPodwykonawca: FIRMA_002.\nNazwę FIRMA_003 stosuje się jako skrót podwykonawcy.",
+    "map": {
+      "FIRMA_001": "Ulotny Rys sp. z o.o",
+      "FIRMA_002": "Ulotny sp. z o.o",
+      "FIRMA_003": "Ulotny"
+    },
+    "warnings": []
+  },
+  {
+    "case": "both_repeat_short_first",
+    "input": "Podwykonawca: Ulotny sp. z o.o.\nZamawiający: Ulotny Rys sp. z o.o.\nNazwę Ulotny stosuje się jako skrót podwykonawcy.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót zamawiającego.",
+    "output": "Podwykonawca: FIRMA_002.\nZamawiający: FIRMA_001.\nNazwę FIRMA_003 stosuje się jako skrót podwykonawcy.\nW dalszej części pisma nazwę FIRMA_003 Rys stosuje się jako skrót zamawiającego.",
+    "map": {
+      "FIRMA_001": "Ulotny Rys sp. z o.o",
+      "FIRMA_002": "Ulotny sp. z o.o",
+      "FIRMA_003": "Ulotny"
+    },
+    "warnings": []
+  }
+]
