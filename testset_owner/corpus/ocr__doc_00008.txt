@@ -1,0 +1,21 @@
+FAKTURA VAT
+Nr FV/2022/01/6091
+Data wystawienia: 30.09.2020
+Numer klienta: KL-50165
+SPRZEDAWCA:
+Biuro Rachunkowe RACHMISTRZ
+Adres: ul. Kopernika 51, 90-001 Zielona Góra
+NIP: 487-450-62-31 REGON: 158999870
+Nr konta: PL28150010136349990802100615
+NABYWCA:
+Maria Kowalczyk
+Adres: ul. Norwida 71, 30-001 Sosnowiec
+NIP:408-017-42-17
+Lp. Nazwa uslugi II. Cena VAT Netto Brutto
+1. Konsultacja techniczna 9 1094 23% 9846 12111
+2. Usługa projektowa 3 854 23% 2562 3151
+3. Naprawa sprzętu 4 578 23% 2312 2844
+ŁACZNIE DO ZAPLATY: 18106 PLN
+Płatność przelewem: PL28150010136349990802100615
+Termin płatności: 14 dni od daty wystawienia faktury.
+Wystawit/a: Odebrał/a:

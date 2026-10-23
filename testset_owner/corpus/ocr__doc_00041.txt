@@ -1,0 +1,23 @@
+FAKTURA VAT
+Nr FV-04824/12/2024
+Data wystawienia: 22.03.2021
+Numer klienta: KL-97981
+SPRZEDAWCA:
+Hurtownia Materiałów BUDMAT Sp. z o.o.
+Adres: ul. Leśna 9, 70-001 Wrocław
+NIP: 597-344-12-74 REGON: 958118352
+Nr konta: PL49240101359601283538807380
+NABYWCA:
+Maria Kowalczyk
+Adres: ul. Krakowska 74, 30-001 Warszawa
+NIP: 752-700-47-49
+Lp. Nazwa uslugi II. Cena VAT Netto Brutto
+1.Obsługa prawna 7 1895 8% 13265 14326
+2. Usługa doradcza 2 1191 8% 2382 2573
+3.Obsluga prawna 6 115 8% 690 745
+4. Szkolenie zawodowe 1 1211 8% 1211 1308
+5.Obsługa prawna 8 1297 23% 10376 12762
+ŁACZNIE DO ZAPŁATY: 31714 PLN
+Płatność przelewem: PL49240101359601283538807380
+Termin platności: 14 dni od daty wystawienia faktury.
+Wystawił/a: Odebral/a:

@@ -1,0 +1,3467 @@
+[
+ {
+  "id": "testy__bramka_merge_silnik_14_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/bramka_merge_silnik_14_07.txt"
+ },
+ {
+  "id": "testy__test_adres_60.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_adres_60.txt"
+ },
+ {
+  "id": "testy__test_adres_regresja_sesja.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_adres_regresja_sesja.txt"
+ },
+ {
+  "id": "testy__test_adresy_50.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_adresy_50.txt"
+ },
+ {
+  "id": "testy__test_anchor_full.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_anchor_full.txt"
+ },
+ {
+  "id": "testy__test_b_word_boundary_diacritics_08_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_b_word_boundary_diacritics_08_07.txt"
+ },
+ {
+  "id": "testy__test_degradacje_lvl.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_degradacje_lvl.txt"
+ },
+ {
+  "id": "testy__test_email_adres_hard.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_email_adres_hard.txt"
+ },
+ {
+  "id": "testy__test_email_izolowany_09_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_email_izolowany_09_07.txt"
+ },
+ {
+  "id": "testy__test_email_kropka_spacja_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_email_kropka_spacja_07_07.txt"
+ },
+ {
+  "id": "testy__test_faktura_20_warianty_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_faktura_20_warianty_07_07.txt"
+ },
+ {
+  "id": "testy__test_faktura_slash_26_06_14_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_faktura_slash_26_06_14_07.txt"
+ },
+ {
+  "id": "testy__test_firma_miasto_jako_osoba_09_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_firma_miasto_jako_osoba_09_07.txt"
+ },
+ {
+  "id": "testy__test_hard_v2.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_hard_v2.txt"
+ },
+ {
+  "id": "testy__test_iban_20_warianty_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_iban_20_warianty_07_07.txt"
+ },
+ {
+  "id": "testy__test_iban_spacja_srodek_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_iban_spacja_srodek_07_07.txt"
+ },
+ {
+  "id": "testy__test_imiona_nazwiska_100_11_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_imiona_nazwiska_100_11_07.txt"
+ },
+ {
+  "id": "testy__test_kod_pocztowy_migracja.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_kod_pocztowy_migracja.txt"
+ },
+ {
+  "id": "testy__test_kwota_regresja_08_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_kwota_regresja_08_07.txt"
+ },
+ {
+  "id": "testy__test_lvl3_dane_wrazliwe.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_lvl3_dane_wrazliwe.txt"
+ },
+ {
+  "id": "testy__test_mix_encje.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_mix_encje.txt"
+ },
+ {
+  "id": "testy__test_nip_warianty.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_nip_warianty.txt"
+ },
+ {
+  "id": "testy__test_numer_dokumentu.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_numer_dokumentu.txt"
+ },
+ {
+  "id": "testy__test_ocr_normalizer_hard.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_ocr_normalizer_hard.txt"
+ },
+ {
+  "id": "testy__test_pesel_migracja.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_pesel_migracja.txt"
+ },
+ {
+  "id": "testy__test_pesel_nip_spacja_srodek_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_pesel_nip_spacja_srodek_07_07.txt"
+ },
+ {
+  "id": "testy__test_pesel_obca_litera_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_pesel_obca_litera_07_07.txt"
+ },
+ {
+  "id": "testy__test_pesel_warianty.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_pesel_warianty.txt"
+ },
+ {
+  "id": "testy__test_reczny_21_06.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_reczny_21_06.txt"
+ },
+ {
+  "id": "testy__test_s1_s2_run.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_s1_s2_run.txt"
+ },
+ {
+  "id": "testy__test_silnik_statystyki.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_silnik_statystyki.txt"
+ },
+ {
+  "id": "testy__test_silnik_trudny_przed_merge_14_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_silnik_trudny_przed_merge_14_07.txt"
+ },
+ {
+  "id": "testy__test_sklejanie_encji_07_07.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_sklejanie_encji_07_07.txt"
+ },
+ {
+  "id": "testy__test_stress_pawel_08_07_pdf.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_stress_pawel_08_07_pdf.txt"
+ },
+ {
+  "id": "testy__test_telefon_warianty.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_telefon_warianty.txt"
+ },
+ {
+  "id": "testy__test_ui2_encje_silnik.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_ui2_encje_silnik.txt"
+ },
+ {
+  "id": "testy__test_ui2_guard_only.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/test_ui2_guard_only.txt"
+ },
+ {
+  "id": "testy__wyniki_testy_reczne.txt",
+  "set": "testy",
+  "source": "LynxMask (Mobile): testy/wyniki_testy_reczne.txt"
+ },
+ {
+  "id": "clean__doc_00000.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00000.txt"
+ },
+ {
+  "id": "clean__doc_00001.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00001.txt"
+ },
+ {
+  "id": "clean__doc_00002.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00002.txt"
+ },
+ {
+  "id": "clean__doc_00003.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00003.txt"
+ },
+ {
+  "id": "clean__doc_00004.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00004.txt"
+ },
+ {
+  "id": "clean__doc_00005.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00005.txt"
+ },
+ {
+  "id": "clean__doc_00006.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00006.txt"
+ },
+ {
+  "id": "clean__doc_00007.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00007.txt"
+ },
+ {
+  "id": "clean__doc_00008.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00008.txt"
+ },
+ {
+  "id": "clean__doc_00009.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00009.txt"
+ },
+ {
+  "id": "clean__doc_00010.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00010.txt"
+ },
+ {
+  "id": "clean__doc_00011.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00011.txt"
+ },
+ {
+  "id": "clean__doc_00012.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00012.txt"
+ },
+ {
+  "id": "clean__doc_00013.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00013.txt"
+ },
+ {
+  "id": "clean__doc_00014.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00014.txt"
+ },
+ {
+  "id": "clean__doc_00015.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00015.txt"
+ },
+ {
+  "id": "clean__doc_00016.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00016.txt"
+ },
+ {
+  "id": "clean__doc_00017.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00017.txt"
+ },
+ {
+  "id": "clean__doc_00018.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00018.txt"
+ },
+ {
+  "id": "clean__doc_00019.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00019.txt"
+ },
+ {
+  "id": "clean__doc_00020.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00020.txt"
+ },
+ {
+  "id": "clean__doc_00021.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00021.txt"
+ },
+ {
+  "id": "clean__doc_00022.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00022.txt"
+ },
+ {
+  "id": "clean__doc_00023.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00023.txt"
+ },
+ {
+  "id": "clean__doc_00024.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00024.txt"
+ },
+ {
+  "id": "clean__doc_00025.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00025.txt"
+ },
+ {
+  "id": "clean__doc_00026.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00026.txt"
+ },
+ {
+  "id": "clean__doc_00027.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00027.txt"
+ },
+ {
+  "id": "clean__doc_00028.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00028.txt"
+ },
+ {
+  "id": "clean__doc_00029.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00029.txt"
+ },
+ {
+  "id": "clean__doc_00030.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00030.txt"
+ },
+ {
+  "id": "clean__doc_00031.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00031.txt"
+ },
+ {
+  "id": "clean__doc_00032.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00032.txt"
+ },
+ {
+  "id": "clean__doc_00033.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00033.txt"
+ },
+ {
+  "id": "clean__doc_00034.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00034.txt"
+ },
+ {
+  "id": "clean__doc_00035.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00035.txt"
+ },
+ {
+  "id": "clean__doc_00036.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00036.txt"
+ },
+ {
+  "id": "clean__doc_00037.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00037.txt"
+ },
+ {
+  "id": "clean__doc_00038.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00038.txt"
+ },
+ {
+  "id": "clean__doc_00039.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00039.txt"
+ },
+ {
+  "id": "clean__doc_00040.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00040.txt"
+ },
+ {
+  "id": "clean__doc_00041.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00041.txt"
+ },
+ {
+  "id": "clean__doc_00042.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00042.txt"
+ },
+ {
+  "id": "clean__doc_00043.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00043.txt"
+ },
+ {
+  "id": "clean__doc_00044.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00044.txt"
+ },
+ {
+  "id": "clean__doc_00045.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00045.txt"
+ },
+ {
+  "id": "clean__doc_00046.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00046.txt"
+ },
+ {
+  "id": "clean__doc_00047.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00047.txt"
+ },
+ {
+  "id": "clean__doc_00048.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00048.txt"
+ },
+ {
+  "id": "clean__doc_00049.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00049.txt"
+ },
+ {
+  "id": "clean__doc_00050.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00050.txt"
+ },
+ {
+  "id": "clean__doc_00051.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00051.txt"
+ },
+ {
+  "id": "clean__doc_00052.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00052.txt"
+ },
+ {
+  "id": "clean__doc_00053.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00053.txt"
+ },
+ {
+  "id": "clean__doc_00054.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00054.txt"
+ },
+ {
+  "id": "clean__doc_00055.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00055.txt"
+ },
+ {
+  "id": "clean__doc_00056.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00056.txt"
+ },
+ {
+  "id": "clean__doc_00057.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00057.txt"
+ },
+ {
+  "id": "clean__doc_00058.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00058.txt"
+ },
+ {
+  "id": "clean__doc_00059.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00059.txt"
+ },
+ {
+  "id": "clean__doc_00060.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00060.txt"
+ },
+ {
+  "id": "clean__doc_00061.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00061.txt"
+ },
+ {
+  "id": "clean__doc_00062.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00062.txt"
+ },
+ {
+  "id": "clean__doc_00063.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00063.txt"
+ },
+ {
+  "id": "clean__doc_00064.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00064.txt"
+ },
+ {
+  "id": "clean__doc_00065.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00065.txt"
+ },
+ {
+  "id": "clean__doc_00066.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00066.txt"
+ },
+ {
+  "id": "clean__doc_00067.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00067.txt"
+ },
+ {
+  "id": "clean__doc_00068.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00068.txt"
+ },
+ {
+  "id": "clean__doc_00069.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00069.txt"
+ },
+ {
+  "id": "clean__doc_00070.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00070.txt"
+ },
+ {
+  "id": "clean__doc_00071.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00071.txt"
+ },
+ {
+  "id": "clean__doc_00072.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00072.txt"
+ },
+ {
+  "id": "clean__doc_00073.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00073.txt"
+ },
+ {
+  "id": "clean__doc_00074.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00074.txt"
+ },
+ {
+  "id": "clean__doc_00075.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00075.txt"
+ },
+ {
+  "id": "clean__doc_00076.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00076.txt"
+ },
+ {
+  "id": "clean__doc_00077.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00077.txt"
+ },
+ {
+  "id": "clean__doc_00078.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00078.txt"
+ },
+ {
+  "id": "clean__doc_00079.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00079.txt"
+ },
+ {
+  "id": "clean__doc_00080.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00080.txt"
+ },
+ {
+  "id": "clean__doc_00081.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00081.txt"
+ },
+ {
+  "id": "clean__doc_00082.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00082.txt"
+ },
+ {
+  "id": "clean__doc_00083.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00083.txt"
+ },
+ {
+  "id": "clean__doc_00084.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00084.txt"
+ },
+ {
+  "id": "clean__doc_00085.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00085.txt"
+ },
+ {
+  "id": "clean__doc_00086.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00086.txt"
+ },
+ {
+  "id": "clean__doc_00087.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00087.txt"
+ },
+ {
+  "id": "clean__doc_00088.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00088.txt"
+ },
+ {
+  "id": "clean__doc_00089.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00089.txt"
+ },
+ {
+  "id": "clean__doc_00090.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00090.txt"
+ },
+ {
+  "id": "clean__doc_00091.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00091.txt"
+ },
+ {
+  "id": "clean__doc_00092.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00092.txt"
+ },
+ {
+  "id": "clean__doc_00093.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00093.txt"
+ },
+ {
+  "id": "clean__doc_00094.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00094.txt"
+ },
+ {
+  "id": "clean__doc_00095.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00095.txt"
+ },
+ {
+  "id": "clean__doc_00096.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00096.txt"
+ },
+ {
+  "id": "clean__doc_00097.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00097.txt"
+ },
+ {
+  "id": "clean__doc_00098.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00098.txt"
+ },
+ {
+  "id": "clean__doc_00099.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00099.txt"
+ },
+ {
+  "id": "clean__doc_00100.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00100.txt"
+ },
+ {
+  "id": "clean__doc_00101.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00101.txt"
+ },
+ {
+  "id": "clean__doc_00102.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00102.txt"
+ },
+ {
+  "id": "clean__doc_00103.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00103.txt"
+ },
+ {
+  "id": "clean__doc_00104.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00104.txt"
+ },
+ {
+  "id": "clean__doc_00105.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00105.txt"
+ },
+ {
+  "id": "clean__doc_00106.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00106.txt"
+ },
+ {
+  "id": "clean__doc_00107.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00107.txt"
+ },
+ {
+  "id": "clean__doc_00108.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00108.txt"
+ },
+ {
+  "id": "clean__doc_00109.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00109.txt"
+ },
+ {
+  "id": "clean__doc_00110.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00110.txt"
+ },
+ {
+  "id": "clean__doc_00111.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00111.txt"
+ },
+ {
+  "id": "clean__doc_00112.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00112.txt"
+ },
+ {
+  "id": "clean__doc_00113.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00113.txt"
+ },
+ {
+  "id": "clean__doc_00114.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00114.txt"
+ },
+ {
+  "id": "clean__doc_00115.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00115.txt"
+ },
+ {
+  "id": "clean__doc_00116.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00116.txt"
+ },
+ {
+  "id": "clean__doc_00117.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00117.txt"
+ },
+ {
+  "id": "clean__doc_00118.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00118.txt"
+ },
+ {
+  "id": "clean__doc_00119.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00119.txt"
+ },
+ {
+  "id": "clean__doc_00120.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00120.txt"
+ },
+ {
+  "id": "clean__doc_00121.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00121.txt"
+ },
+ {
+  "id": "clean__doc_00122.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00122.txt"
+ },
+ {
+  "id": "clean__doc_00123.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00123.txt"
+ },
+ {
+  "id": "clean__doc_00124.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00124.txt"
+ },
+ {
+  "id": "clean__doc_00125.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00125.txt"
+ },
+ {
+  "id": "clean__doc_00126.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00126.txt"
+ },
+ {
+  "id": "clean__doc_00127.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00127.txt"
+ },
+ {
+  "id": "clean__doc_00128.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00128.txt"
+ },
+ {
+  "id": "clean__doc_00129.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00129.txt"
+ },
+ {
+  "id": "clean__doc_00130.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00130.txt"
+ },
+ {
+  "id": "clean__doc_00131.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00131.txt"
+ },
+ {
+  "id": "clean__doc_00132.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00132.txt"
+ },
+ {
+  "id": "clean__doc_00133.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00133.txt"
+ },
+ {
+  "id": "clean__doc_00134.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00134.txt"
+ },
+ {
+  "id": "clean__doc_00135.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00135.txt"
+ },
+ {
+  "id": "clean__doc_00136.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00136.txt"
+ },
+ {
+  "id": "clean__doc_00137.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00137.txt"
+ },
+ {
+  "id": "clean__doc_00138.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00138.txt"
+ },
+ {
+  "id": "clean__doc_00139.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00139.txt"
+ },
+ {
+  "id": "clean__doc_00140.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00140.txt"
+ },
+ {
+  "id": "clean__doc_00141.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00141.txt"
+ },
+ {
+  "id": "clean__doc_00142.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00142.txt"
+ },
+ {
+  "id": "clean__doc_00143.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00143.txt"
+ },
+ {
+  "id": "clean__doc_00144.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00144.txt"
+ },
+ {
+  "id": "clean__doc_00145.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00145.txt"
+ },
+ {
+  "id": "clean__doc_00146.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00146.txt"
+ },
+ {
+  "id": "clean__doc_00147.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00147.txt"
+ },
+ {
+  "id": "clean__doc_00148.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00148.txt"
+ },
+ {
+  "id": "clean__doc_00149.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00149.txt"
+ },
+ {
+  "id": "clean__doc_00150.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00150.txt"
+ },
+ {
+  "id": "clean__doc_00151.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00151.txt"
+ },
+ {
+  "id": "clean__doc_00152.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00152.txt"
+ },
+ {
+  "id": "clean__doc_00153.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00153.txt"
+ },
+ {
+  "id": "clean__doc_00154.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00154.txt"
+ },
+ {
+  "id": "clean__doc_00155.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00155.txt"
+ },
+ {
+  "id": "clean__doc_00156.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00156.txt"
+ },
+ {
+  "id": "clean__doc_00157.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00157.txt"
+ },
+ {
+  "id": "clean__doc_00158.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00158.txt"
+ },
+ {
+  "id": "clean__doc_00159.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00159.txt"
+ },
+ {
+  "id": "clean__doc_00160.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00160.txt"
+ },
+ {
+  "id": "clean__doc_00161.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00161.txt"
+ },
+ {
+  "id": "clean__doc_00162.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00162.txt"
+ },
+ {
+  "id": "clean__doc_00163.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00163.txt"
+ },
+ {
+  "id": "clean__doc_00164.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00164.txt"
+ },
+ {
+  "id": "clean__doc_00165.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00165.txt"
+ },
+ {
+  "id": "clean__doc_00166.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00166.txt"
+ },
+ {
+  "id": "clean__doc_00167.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00167.txt"
+ },
+ {
+  "id": "clean__doc_00168.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00168.txt"
+ },
+ {
+  "id": "clean__doc_00169.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00169.txt"
+ },
+ {
+  "id": "clean__doc_00170.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00170.txt"
+ },
+ {
+  "id": "clean__doc_00171.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00171.txt"
+ },
+ {
+  "id": "clean__doc_00172.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00172.txt"
+ },
+ {
+  "id": "clean__doc_00173.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00173.txt"
+ },
+ {
+  "id": "clean__doc_00174.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00174.txt"
+ },
+ {
+  "id": "clean__doc_00175.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00175.txt"
+ },
+ {
+  "id": "clean__doc_00176.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00176.txt"
+ },
+ {
+  "id": "clean__doc_00177.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00177.txt"
+ },
+ {
+  "id": "clean__doc_00178.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00178.txt"
+ },
+ {
+  "id": "clean__doc_00179.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00179.txt"
+ },
+ {
+  "id": "clean__doc_00180.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00180.txt"
+ },
+ {
+  "id": "clean__doc_00181.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00181.txt"
+ },
+ {
+  "id": "clean__doc_00182.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00182.txt"
+ },
+ {
+  "id": "clean__doc_00183.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00183.txt"
+ },
+ {
+  "id": "clean__doc_00184.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00184.txt"
+ },
+ {
+  "id": "clean__doc_00185.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00185.txt"
+ },
+ {
+  "id": "clean__doc_00186.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00186.txt"
+ },
+ {
+  "id": "clean__doc_00187.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00187.txt"
+ },
+ {
+  "id": "clean__doc_00188.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00188.txt"
+ },
+ {
+  "id": "clean__doc_00189.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00189.txt"
+ },
+ {
+  "id": "clean__doc_00190.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00190.txt"
+ },
+ {
+  "id": "clean__doc_00191.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00191.txt"
+ },
+ {
+  "id": "clean__doc_00192.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00192.txt"
+ },
+ {
+  "id": "clean__doc_00193.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00193.txt"
+ },
+ {
+  "id": "clean__doc_00194.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00194.txt"
+ },
+ {
+  "id": "clean__doc_00195.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00195.txt"
+ },
+ {
+  "id": "clean__doc_00196.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00196.txt"
+ },
+ {
+  "id": "clean__doc_00197.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00197.txt"
+ },
+ {
+  "id": "clean__doc_00198.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00198.txt"
+ },
+ {
+  "id": "clean__doc_00199.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00199.txt"
+ },
+ {
+  "id": "clean__doc_00200.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00200.txt"
+ },
+ {
+  "id": "clean__doc_00201.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00201.txt"
+ },
+ {
+  "id": "clean__doc_00202.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00202.txt"
+ },
+ {
+  "id": "clean__doc_00203.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00203.txt"
+ },
+ {
+  "id": "clean__doc_00204.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00204.txt"
+ },
+ {
+  "id": "clean__doc_00205.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00205.txt"
+ },
+ {
+  "id": "clean__doc_00206.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00206.txt"
+ },
+ {
+  "id": "clean__doc_00207.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00207.txt"
+ },
+ {
+  "id": "clean__doc_00208.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00208.txt"
+ },
+ {
+  "id": "clean__doc_00209.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00209.txt"
+ },
+ {
+  "id": "clean__doc_00210.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00210.txt"
+ },
+ {
+  "id": "clean__doc_00211.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00211.txt"
+ },
+ {
+  "id": "clean__doc_00212.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00212.txt"
+ },
+ {
+  "id": "clean__doc_00213.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00213.txt"
+ },
+ {
+  "id": "clean__doc_00214.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00214.txt"
+ },
+ {
+  "id": "clean__doc_00215.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00215.txt"
+ },
+ {
+  "id": "clean__doc_00216.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00216.txt"
+ },
+ {
+  "id": "clean__doc_00217.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00217.txt"
+ },
+ {
+  "id": "clean__doc_00218.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00218.txt"
+ },
+ {
+  "id": "clean__doc_00219.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00219.txt"
+ },
+ {
+  "id": "clean__doc_00220.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00220.txt"
+ },
+ {
+  "id": "clean__doc_00221.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00221.txt"
+ },
+ {
+  "id": "clean__doc_00222.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00222.txt"
+ },
+ {
+  "id": "clean__doc_00223.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00223.txt"
+ },
+ {
+  "id": "clean__doc_00224.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00224.txt"
+ },
+ {
+  "id": "clean__doc_00225.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00225.txt"
+ },
+ {
+  "id": "clean__doc_00226.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00226.txt"
+ },
+ {
+  "id": "clean__doc_00227.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00227.txt"
+ },
+ {
+  "id": "clean__doc_00228.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00228.txt"
+ },
+ {
+  "id": "clean__doc_00229.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00229.txt"
+ },
+ {
+  "id": "clean__doc_00230.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00230.txt"
+ },
+ {
+  "id": "clean__doc_00231.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00231.txt"
+ },
+ {
+  "id": "clean__doc_00232.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00232.txt"
+ },
+ {
+  "id": "clean__doc_00233.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00233.txt"
+ },
+ {
+  "id": "clean__doc_00234.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00234.txt"
+ },
+ {
+  "id": "clean__doc_00235.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00235.txt"
+ },
+ {
+  "id": "clean__doc_00236.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00236.txt"
+ },
+ {
+  "id": "clean__doc_00237.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00237.txt"
+ },
+ {
+  "id": "clean__doc_00238.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00238.txt"
+ },
+ {
+  "id": "clean__doc_00239.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00239.txt"
+ },
+ {
+  "id": "clean__doc_00240.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00240.txt"
+ },
+ {
+  "id": "clean__doc_00241.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00241.txt"
+ },
+ {
+  "id": "clean__doc_00242.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00242.txt"
+ },
+ {
+  "id": "clean__doc_00243.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00243.txt"
+ },
+ {
+  "id": "clean__doc_00244.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00244.txt"
+ },
+ {
+  "id": "clean__doc_00245.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00245.txt"
+ },
+ {
+  "id": "clean__doc_00246.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00246.txt"
+ },
+ {
+  "id": "clean__doc_00247.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00247.txt"
+ },
+ {
+  "id": "clean__doc_00248.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00248.txt"
+ },
+ {
+  "id": "clean__doc_00249.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00249.txt"
+ },
+ {
+  "id": "clean__doc_00250.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00250.txt"
+ },
+ {
+  "id": "clean__doc_00251.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00251.txt"
+ },
+ {
+  "id": "clean__doc_00252.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00252.txt"
+ },
+ {
+  "id": "clean__doc_00253.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00253.txt"
+ },
+ {
+  "id": "clean__doc_00254.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00254.txt"
+ },
+ {
+  "id": "clean__doc_00255.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00255.txt"
+ },
+ {
+  "id": "clean__doc_00256.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00256.txt"
+ },
+ {
+  "id": "clean__doc_00257.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00257.txt"
+ },
+ {
+  "id": "clean__doc_00258.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00258.txt"
+ },
+ {
+  "id": "clean__doc_00259.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00259.txt"
+ },
+ {
+  "id": "clean__doc_00260.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00260.txt"
+ },
+ {
+  "id": "clean__doc_00261.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00261.txt"
+ },
+ {
+  "id": "clean__doc_00262.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00262.txt"
+ },
+ {
+  "id": "clean__doc_00263.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00263.txt"
+ },
+ {
+  "id": "clean__doc_00264.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00264.txt"
+ },
+ {
+  "id": "clean__doc_00265.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00265.txt"
+ },
+ {
+  "id": "clean__doc_00266.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00266.txt"
+ },
+ {
+  "id": "clean__doc_00267.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00267.txt"
+ },
+ {
+  "id": "clean__doc_00268.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00268.txt"
+ },
+ {
+  "id": "clean__doc_00269.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00269.txt"
+ },
+ {
+  "id": "clean__doc_00270.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00270.txt"
+ },
+ {
+  "id": "clean__doc_00271.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00271.txt"
+ },
+ {
+  "id": "clean__doc_00272.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00272.txt"
+ },
+ {
+  "id": "clean__doc_00273.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00273.txt"
+ },
+ {
+  "id": "clean__doc_00274.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00274.txt"
+ },
+ {
+  "id": "clean__doc_00275.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00275.txt"
+ },
+ {
+  "id": "clean__doc_00276.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00276.txt"
+ },
+ {
+  "id": "clean__doc_00277.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00277.txt"
+ },
+ {
+  "id": "clean__doc_00278.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00278.txt"
+ },
+ {
+  "id": "clean__doc_00279.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00279.txt"
+ },
+ {
+  "id": "clean__doc_00280.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00280.txt"
+ },
+ {
+  "id": "clean__doc_00281.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00281.txt"
+ },
+ {
+  "id": "clean__doc_00282.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00282.txt"
+ },
+ {
+  "id": "clean__doc_00283.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00283.txt"
+ },
+ {
+  "id": "clean__doc_00284.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00284.txt"
+ },
+ {
+  "id": "clean__doc_00285.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00285.txt"
+ },
+ {
+  "id": "clean__doc_00286.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00286.txt"
+ },
+ {
+  "id": "clean__doc_00287.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00287.txt"
+ },
+ {
+  "id": "clean__doc_00288.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00288.txt"
+ },
+ {
+  "id": "clean__doc_00289.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00289.txt"
+ },
+ {
+  "id": "clean__doc_00290.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00290.txt"
+ },
+ {
+  "id": "clean__doc_00291.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00291.txt"
+ },
+ {
+  "id": "clean__doc_00292.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00292.txt"
+ },
+ {
+  "id": "clean__doc_00293.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00293.txt"
+ },
+ {
+  "id": "clean__doc_00294.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00294.txt"
+ },
+ {
+  "id": "clean__doc_00295.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00295.txt"
+ },
+ {
+  "id": "clean__doc_00296.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00296.txt"
+ },
+ {
+  "id": "clean__doc_00297.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00297.txt"
+ },
+ {
+  "id": "clean__doc_00298.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00298.txt"
+ },
+ {
+  "id": "clean__doc_00299.txt",
+  "set": "clean",
+  "source": "LynxMask (Mobile): dataset_clean/docs/doc_00299.txt"
+ },
+ {
+  "id": "pliki__doc_lvl0_umowa_o_prace.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_lvl0_umowa_o_prace.txt"
+ },
+ {
+  "id": "pliki__doc_lvl1_decyzja_administracyjna.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_lvl1_decyzja_administracyjna.txt"
+ },
+ {
+  "id": "pliki__doc_lvl2_pismo_komornicze.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_lvl2_pismo_komornicze.txt"
+ },
+ {
+  "id": "pliki__doc_lvl3_faktura_zlecenie.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_lvl3_faktura_zlecenie.txt"
+ },
+ {
+  "id": "pliki__doc_stresstest_silnik_guard_lvl0_3.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_stresstest_silnik_guard_lvl0_3.txt"
+ },
+ {
+  "id": "pliki__doc_test_guard.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_test_guard.txt"
+ },
+ {
+  "id": "pliki__doc_test_nowe_encje.txt",
+  "set": "pliki",
+  "source": "LynxMask-Desktop: Pliki testowe/doc_test_nowe_encje.txt"
+ },
+ {
+  "id": "stress__doc_00000.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00000.txt"
+ },
+ {
+  "id": "stress__doc_00001.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00001.txt"
+ },
+ {
+  "id": "stress__doc_00002.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00002.txt"
+ },
+ {
+  "id": "stress__doc_00003.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00003.txt"
+ },
+ {
+  "id": "stress__doc_00004.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00004.txt"
+ },
+ {
+  "id": "stress__doc_00005.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00005.txt"
+ },
+ {
+  "id": "stress__doc_00006.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00006.txt"
+ },
+ {
+  "id": "stress__doc_00007.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00007.txt"
+ },
+ {
+  "id": "stress__doc_00008.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00008.txt"
+ },
+ {
+  "id": "stress__doc_00009.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00009.txt"
+ },
+ {
+  "id": "stress__doc_00010.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00010.txt"
+ },
+ {
+  "id": "stress__doc_00011.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00011.txt"
+ },
+ {
+  "id": "stress__doc_00012.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00012.txt"
+ },
+ {
+  "id": "stress__doc_00013.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00013.txt"
+ },
+ {
+  "id": "stress__doc_00014.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00014.txt"
+ },
+ {
+  "id": "stress__doc_00015.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00015.txt"
+ },
+ {
+  "id": "stress__doc_00016.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00016.txt"
+ },
+ {
+  "id": "stress__doc_00017.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00017.txt"
+ },
+ {
+  "id": "stress__doc_00018.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00018.txt"
+ },
+ {
+  "id": "stress__doc_00019.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00019.txt"
+ },
+ {
+  "id": "stress__doc_00020.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00020.txt"
+ },
+ {
+  "id": "stress__doc_00021.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00021.txt"
+ },
+ {
+  "id": "stress__doc_00022.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00022.txt"
+ },
+ {
+  "id": "stress__doc_00023.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00023.txt"
+ },
+ {
+  "id": "stress__doc_00024.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00024.txt"
+ },
+ {
+  "id": "stress__doc_00025.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00025.txt"
+ },
+ {
+  "id": "stress__doc_00026.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00026.txt"
+ },
+ {
+  "id": "stress__doc_00027.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00027.txt"
+ },
+ {
+  "id": "stress__doc_00028.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00028.txt"
+ },
+ {
+  "id": "stress__doc_00029.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00029.txt"
+ },
+ {
+  "id": "stress__doc_00030.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00030.txt"
+ },
+ {
+  "id": "stress__doc_00031.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00031.txt"
+ },
+ {
+  "id": "stress__doc_00032.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00032.txt"
+ },
+ {
+  "id": "stress__doc_00033.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00033.txt"
+ },
+ {
+  "id": "stress__doc_00034.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00034.txt"
+ },
+ {
+  "id": "stress__doc_00035.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00035.txt"
+ },
+ {
+  "id": "stress__doc_00036.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00036.txt"
+ },
+ {
+  "id": "stress__doc_00037.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00037.txt"
+ },
+ {
+  "id": "stress__doc_00038.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00038.txt"
+ },
+ {
+  "id": "stress__doc_00039.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00039.txt"
+ },
+ {
+  "id": "stress__doc_00040.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00040.txt"
+ },
+ {
+  "id": "stress__doc_00041.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00041.txt"
+ },
+ {
+  "id": "stress__doc_00042.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00042.txt"
+ },
+ {
+  "id": "stress__doc_00043.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00043.txt"
+ },
+ {
+  "id": "stress__doc_00044.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00044.txt"
+ },
+ {
+  "id": "stress__doc_00045.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00045.txt"
+ },
+ {
+  "id": "stress__doc_00046.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00046.txt"
+ },
+ {
+  "id": "stress__doc_00047.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00047.txt"
+ },
+ {
+  "id": "stress__doc_00048.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00048.txt"
+ },
+ {
+  "id": "stress__doc_00049.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00049.txt"
+ },
+ {
+  "id": "stress__doc_00050.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00050.txt"
+ },
+ {
+  "id": "stress__doc_00051.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00051.txt"
+ },
+ {
+  "id": "stress__doc_00052.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00052.txt"
+ },
+ {
+  "id": "stress__doc_00053.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00053.txt"
+ },
+ {
+  "id": "stress__doc_00054.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00054.txt"
+ },
+ {
+  "id": "stress__doc_00055.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00055.txt"
+ },
+ {
+  "id": "stress__doc_00056.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00056.txt"
+ },
+ {
+  "id": "stress__doc_00057.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00057.txt"
+ },
+ {
+  "id": "stress__doc_00058.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00058.txt"
+ },
+ {
+  "id": "stress__doc_00059.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00059.txt"
+ },
+ {
+  "id": "stress__doc_00060.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00060.txt"
+ },
+ {
+  "id": "stress__doc_00061.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00061.txt"
+ },
+ {
+  "id": "stress__doc_00062.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00062.txt"
+ },
+ {
+  "id": "stress__doc_00063.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00063.txt"
+ },
+ {
+  "id": "stress__doc_00064.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00064.txt"
+ },
+ {
+  "id": "stress__doc_00065.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00065.txt"
+ },
+ {
+  "id": "stress__doc_00066.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00066.txt"
+ },
+ {
+  "id": "stress__doc_00067.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00067.txt"
+ },
+ {
+  "id": "stress__doc_00068.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00068.txt"
+ },
+ {
+  "id": "stress__doc_00069.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00069.txt"
+ },
+ {
+  "id": "stress__doc_00070.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00070.txt"
+ },
+ {
+  "id": "stress__doc_00071.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00071.txt"
+ },
+ {
+  "id": "stress__doc_00072.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00072.txt"
+ },
+ {
+  "id": "stress__doc_00073.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00073.txt"
+ },
+ {
+  "id": "stress__doc_00074.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00074.txt"
+ },
+ {
+  "id": "stress__doc_00075.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00075.txt"
+ },
+ {
+  "id": "stress__doc_00076.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00076.txt"
+ },
+ {
+  "id": "stress__doc_00077.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00077.txt"
+ },
+ {
+  "id": "stress__doc_00078.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00078.txt"
+ },
+ {
+  "id": "stress__doc_00079.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00079.txt"
+ },
+ {
+  "id": "stress__doc_00080.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00080.txt"
+ },
+ {
+  "id": "stress__doc_00081.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00081.txt"
+ },
+ {
+  "id": "stress__doc_00082.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00082.txt"
+ },
+ {
+  "id": "stress__doc_00083.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00083.txt"
+ },
+ {
+  "id": "stress__doc_00084.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00084.txt"
+ },
+ {
+  "id": "stress__doc_00085.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00085.txt"
+ },
+ {
+  "id": "stress__doc_00086.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00086.txt"
+ },
+ {
+  "id": "stress__doc_00087.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00087.txt"
+ },
+ {
+  "id": "stress__doc_00088.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00088.txt"
+ },
+ {
+  "id": "stress__doc_00089.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00089.txt"
+ },
+ {
+  "id": "stress__doc_00090.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00090.txt"
+ },
+ {
+  "id": "stress__doc_00091.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00091.txt"
+ },
+ {
+  "id": "stress__doc_00092.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00092.txt"
+ },
+ {
+  "id": "stress__doc_00093.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00093.txt"
+ },
+ {
+  "id": "stress__doc_00094.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00094.txt"
+ },
+ {
+  "id": "stress__doc_00095.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00095.txt"
+ },
+ {
+  "id": "stress__doc_00096.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00096.txt"
+ },
+ {
+  "id": "stress__doc_00097.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00097.txt"
+ },
+ {
+  "id": "stress__doc_00098.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00098.txt"
+ },
+ {
+  "id": "stress__doc_00099.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00099.txt"
+ },
+ {
+  "id": "stress__doc_00100.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00100.txt"
+ },
+ {
+  "id": "stress__doc_00101.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00101.txt"
+ },
+ {
+  "id": "stress__doc_00102.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00102.txt"
+ },
+ {
+  "id": "stress__doc_00103.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00103.txt"
+ },
+ {
+  "id": "stress__doc_00104.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00104.txt"
+ },
+ {
+  "id": "stress__doc_00105.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00105.txt"
+ },
+ {
+  "id": "stress__doc_00106.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00106.txt"
+ },
+ {
+  "id": "stress__doc_00107.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00107.txt"
+ },
+ {
+  "id": "stress__doc_00108.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00108.txt"
+ },
+ {
+  "id": "stress__doc_00109.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00109.txt"
+ },
+ {
+  "id": "stress__doc_00110.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00110.txt"
+ },
+ {
+  "id": "stress__doc_00111.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00111.txt"
+ },
+ {
+  "id": "stress__doc_00112.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00112.txt"
+ },
+ {
+  "id": "stress__doc_00113.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00113.txt"
+ },
+ {
+  "id": "stress__doc_00114.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00114.txt"
+ },
+ {
+  "id": "stress__doc_00115.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00115.txt"
+ },
+ {
+  "id": "stress__doc_00116.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00116.txt"
+ },
+ {
+  "id": "stress__doc_00117.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00117.txt"
+ },
+ {
+  "id": "stress__doc_00118.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00118.txt"
+ },
+ {
+  "id": "stress__doc_00119.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00119.txt"
+ },
+ {
+  "id": "stress__doc_00120.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00120.txt"
+ },
+ {
+  "id": "stress__doc_00121.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00121.txt"
+ },
+ {
+  "id": "stress__doc_00122.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00122.txt"
+ },
+ {
+  "id": "stress__doc_00123.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00123.txt"
+ },
+ {
+  "id": "stress__doc_00124.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00124.txt"
+ },
+ {
+  "id": "stress__doc_00125.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00125.txt"
+ },
+ {
+  "id": "stress__doc_00126.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00126.txt"
+ },
+ {
+  "id": "stress__doc_00127.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00127.txt"
+ },
+ {
+  "id": "stress__doc_00128.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00128.txt"
+ },
+ {
+  "id": "stress__doc_00129.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00129.txt"
+ },
+ {
+  "id": "stress__doc_00130.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00130.txt"
+ },
+ {
+  "id": "stress__doc_00131.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00131.txt"
+ },
+ {
+  "id": "stress__doc_00132.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00132.txt"
+ },
+ {
+  "id": "stress__doc_00133.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00133.txt"
+ },
+ {
+  "id": "stress__doc_00134.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00134.txt"
+ },
+ {
+  "id": "stress__doc_00135.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00135.txt"
+ },
+ {
+  "id": "stress__doc_00136.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00136.txt"
+ },
+ {
+  "id": "stress__doc_00137.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00137.txt"
+ },
+ {
+  "id": "stress__doc_00138.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00138.txt"
+ },
+ {
+  "id": "stress__doc_00139.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00139.txt"
+ },
+ {
+  "id": "stress__doc_00140.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00140.txt"
+ },
+ {
+  "id": "stress__doc_00141.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00141.txt"
+ },
+ {
+  "id": "stress__doc_00142.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00142.txt"
+ },
+ {
+  "id": "stress__doc_00143.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00143.txt"
+ },
+ {
+  "id": "stress__doc_00144.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00144.txt"
+ },
+ {
+  "id": "stress__doc_00145.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00145.txt"
+ },
+ {
+  "id": "stress__doc_00146.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00146.txt"
+ },
+ {
+  "id": "stress__doc_00147.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00147.txt"
+ },
+ {
+  "id": "stress__doc_00148.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00148.txt"
+ },
+ {
+  "id": "stress__doc_00149.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00149.txt"
+ },
+ {
+  "id": "stress__doc_00150.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00150.txt"
+ },
+ {
+  "id": "stress__doc_00151.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00151.txt"
+ },
+ {
+  "id": "stress__doc_00152.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00152.txt"
+ },
+ {
+  "id": "stress__doc_00153.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00153.txt"
+ },
+ {
+  "id": "stress__doc_00154.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00154.txt"
+ },
+ {
+  "id": "stress__doc_00155.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00155.txt"
+ },
+ {
+  "id": "stress__doc_00156.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00156.txt"
+ },
+ {
+  "id": "stress__doc_00157.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00157.txt"
+ },
+ {
+  "id": "stress__doc_00158.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00158.txt"
+ },
+ {
+  "id": "stress__doc_00159.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00159.txt"
+ },
+ {
+  "id": "stress__doc_00160.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00160.txt"
+ },
+ {
+  "id": "stress__doc_00161.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00161.txt"
+ },
+ {
+  "id": "stress__doc_00162.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00162.txt"
+ },
+ {
+  "id": "stress__doc_00163.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00163.txt"
+ },
+ {
+  "id": "stress__doc_00164.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00164.txt"
+ },
+ {
+  "id": "stress__doc_00165.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00165.txt"
+ },
+ {
+  "id": "stress__doc_00166.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00166.txt"
+ },
+ {
+  "id": "stress__doc_00167.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00167.txt"
+ },
+ {
+  "id": "stress__doc_00168.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00168.txt"
+ },
+ {
+  "id": "stress__doc_00169.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00169.txt"
+ },
+ {
+  "id": "stress__doc_00170.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00170.txt"
+ },
+ {
+  "id": "stress__doc_00171.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00171.txt"
+ },
+ {
+  "id": "stress__doc_00172.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00172.txt"
+ },
+ {
+  "id": "stress__doc_00173.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00173.txt"
+ },
+ {
+  "id": "stress__doc_00174.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00174.txt"
+ },
+ {
+  "id": "stress__doc_00175.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00175.txt"
+ },
+ {
+  "id": "stress__doc_00176.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00176.txt"
+ },
+ {
+  "id": "stress__doc_00177.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00177.txt"
+ },
+ {
+  "id": "stress__doc_00178.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00178.txt"
+ },
+ {
+  "id": "stress__doc_00179.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00179.txt"
+ },
+ {
+  "id": "stress__doc_00180.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00180.txt"
+ },
+ {
+  "id": "stress__doc_00181.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00181.txt"
+ },
+ {
+  "id": "stress__doc_00182.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00182.txt"
+ },
+ {
+  "id": "stress__doc_00183.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00183.txt"
+ },
+ {
+  "id": "stress__doc_00184.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00184.txt"
+ },
+ {
+  "id": "stress__doc_00185.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00185.txt"
+ },
+ {
+  "id": "stress__doc_00186.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00186.txt"
+ },
+ {
+  "id": "stress__doc_00187.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00187.txt"
+ },
+ {
+  "id": "stress__doc_00188.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00188.txt"
+ },
+ {
+  "id": "stress__doc_00189.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00189.txt"
+ },
+ {
+  "id": "stress__doc_00190.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00190.txt"
+ },
+ {
+  "id": "stress__doc_00191.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00191.txt"
+ },
+ {
+  "id": "stress__doc_00192.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00192.txt"
+ },
+ {
+  "id": "stress__doc_00193.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00193.txt"
+ },
+ {
+  "id": "stress__doc_00194.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00194.txt"
+ },
+ {
+  "id": "stress__doc_00195.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00195.txt"
+ },
+ {
+  "id": "stress__doc_00196.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00196.txt"
+ },
+ {
+  "id": "stress__doc_00197.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00197.txt"
+ },
+ {
+  "id": "stress__doc_00198.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00198.txt"
+ },
+ {
+  "id": "stress__doc_00199.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00199.txt"
+ },
+ {
+  "id": "stress__doc_00200.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00200.txt"
+ },
+ {
+  "id": "stress__doc_00201.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00201.txt"
+ },
+ {
+  "id": "stress__doc_00202.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00202.txt"
+ },
+ {
+  "id": "stress__doc_00203.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00203.txt"
+ },
+ {
+  "id": "stress__doc_00204.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00204.txt"
+ },
+ {
+  "id": "stress__doc_00205.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00205.txt"
+ },
+ {
+  "id": "stress__doc_00206.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00206.txt"
+ },
+ {
+  "id": "stress__doc_00207.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00207.txt"
+ },
+ {
+  "id": "stress__doc_00208.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00208.txt"
+ },
+ {
+  "id": "stress__doc_00209.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00209.txt"
+ },
+ {
+  "id": "stress__doc_00210.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00210.txt"
+ },
+ {
+  "id": "stress__doc_00211.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00211.txt"
+ },
+ {
+  "id": "stress__doc_00212.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00212.txt"
+ },
+ {
+  "id": "stress__doc_00213.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00213.txt"
+ },
+ {
+  "id": "stress__doc_00214.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00214.txt"
+ },
+ {
+  "id": "stress__doc_00215.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00215.txt"
+ },
+ {
+  "id": "stress__doc_00216.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00216.txt"
+ },
+ {
+  "id": "stress__doc_00217.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00217.txt"
+ },
+ {
+  "id": "stress__doc_00218.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00218.txt"
+ },
+ {
+  "id": "stress__doc_00219.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00219.txt"
+ },
+ {
+  "id": "stress__doc_00220.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00220.txt"
+ },
+ {
+  "id": "stress__doc_00221.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00221.txt"
+ },
+ {
+  "id": "stress__doc_00222.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00222.txt"
+ },
+ {
+  "id": "stress__doc_00223.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00223.txt"
+ },
+ {
+  "id": "stress__doc_00224.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00224.txt"
+ },
+ {
+  "id": "stress__doc_00225.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00225.txt"
+ },
+ {
+  "id": "stress__doc_00226.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00226.txt"
+ },
+ {
+  "id": "stress__doc_00227.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00227.txt"
+ },
+ {
+  "id": "stress__doc_00228.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00228.txt"
+ },
+ {
+  "id": "stress__doc_00229.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00229.txt"
+ },
+ {
+  "id": "stress__doc_00230.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00230.txt"
+ },
+ {
+  "id": "stress__doc_00231.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00231.txt"
+ },
+ {
+  "id": "stress__doc_00232.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00232.txt"
+ },
+ {
+  "id": "stress__doc_00233.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00233.txt"
+ },
+ {
+  "id": "stress__doc_00234.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00234.txt"
+ },
+ {
+  "id": "stress__doc_00235.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00235.txt"
+ },
+ {
+  "id": "stress__doc_00236.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00236.txt"
+ },
+ {
+  "id": "stress__doc_00237.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00237.txt"
+ },
+ {
+  "id": "stress__doc_00238.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00238.txt"
+ },
+ {
+  "id": "stress__doc_00239.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00239.txt"
+ },
+ {
+  "id": "stress__doc_00240.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00240.txt"
+ },
+ {
+  "id": "stress__doc_00241.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00241.txt"
+ },
+ {
+  "id": "stress__doc_00242.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00242.txt"
+ },
+ {
+  "id": "stress__doc_00243.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00243.txt"
+ },
+ {
+  "id": "stress__doc_00244.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00244.txt"
+ },
+ {
+  "id": "stress__doc_00245.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00245.txt"
+ },
+ {
+  "id": "stress__doc_00246.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00246.txt"
+ },
+ {
+  "id": "stress__doc_00247.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00247.txt"
+ },
+ {
+  "id": "stress__doc_00248.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00248.txt"
+ },
+ {
+  "id": "stress__doc_00249.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00249.txt"
+ },
+ {
+  "id": "stress__doc_00250.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00250.txt"
+ },
+ {
+  "id": "stress__doc_00251.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00251.txt"
+ },
+ {
+  "id": "stress__doc_00252.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00252.txt"
+ },
+ {
+  "id": "stress__doc_00253.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00253.txt"
+ },
+ {
+  "id": "stress__doc_00254.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00254.txt"
+ },
+ {
+  "id": "stress__doc_00255.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00255.txt"
+ },
+ {
+  "id": "stress__doc_00256.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00256.txt"
+ },
+ {
+  "id": "stress__doc_00257.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00257.txt"
+ },
+ {
+  "id": "stress__doc_00258.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00258.txt"
+ },
+ {
+  "id": "stress__doc_00259.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00259.txt"
+ },
+ {
+  "id": "stress__doc_00260.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00260.txt"
+ },
+ {
+  "id": "stress__doc_00261.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00261.txt"
+ },
+ {
+  "id": "stress__doc_00262.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00262.txt"
+ },
+ {
+  "id": "stress__doc_00263.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00263.txt"
+ },
+ {
+  "id": "stress__doc_00264.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00264.txt"
+ },
+ {
+  "id": "stress__doc_00265.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00265.txt"
+ },
+ {
+  "id": "stress__doc_00266.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00266.txt"
+ },
+ {
+  "id": "stress__doc_00267.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00267.txt"
+ },
+ {
+  "id": "stress__doc_00268.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00268.txt"
+ },
+ {
+  "id": "stress__doc_00269.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00269.txt"
+ },
+ {
+  "id": "stress__doc_00270.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00270.txt"
+ },
+ {
+  "id": "stress__doc_00271.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00271.txt"
+ },
+ {
+  "id": "stress__doc_00272.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00272.txt"
+ },
+ {
+  "id": "stress__doc_00273.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00273.txt"
+ },
+ {
+  "id": "stress__doc_00274.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00274.txt"
+ },
+ {
+  "id": "stress__doc_00275.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00275.txt"
+ },
+ {
+  "id": "stress__doc_00276.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00276.txt"
+ },
+ {
+  "id": "stress__doc_00277.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00277.txt"
+ },
+ {
+  "id": "stress__doc_00278.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00278.txt"
+ },
+ {
+  "id": "stress__doc_00279.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00279.txt"
+ },
+ {
+  "id": "stress__doc_00280.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00280.txt"
+ },
+ {
+  "id": "stress__doc_00281.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00281.txt"
+ },
+ {
+  "id": "stress__doc_00282.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00282.txt"
+ },
+ {
+  "id": "stress__doc_00283.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00283.txt"
+ },
+ {
+  "id": "stress__doc_00284.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00284.txt"
+ },
+ {
+  "id": "stress__doc_00285.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00285.txt"
+ },
+ {
+  "id": "stress__doc_00286.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00286.txt"
+ },
+ {
+  "id": "stress__doc_00287.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00287.txt"
+ },
+ {
+  "id": "stress__doc_00288.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00288.txt"
+ },
+ {
+  "id": "stress__doc_00289.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00289.txt"
+ },
+ {
+  "id": "stress__doc_00290.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00290.txt"
+ },
+ {
+  "id": "stress__doc_00291.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00291.txt"
+ },
+ {
+  "id": "stress__doc_00292.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00292.txt"
+ },
+ {
+  "id": "stress__doc_00293.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00293.txt"
+ },
+ {
+  "id": "stress__doc_00294.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00294.txt"
+ },
+ {
+  "id": "stress__doc_00295.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00295.txt"
+ },
+ {
+  "id": "stress__doc_00296.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00296.txt"
+ },
+ {
+  "id": "stress__doc_00297.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00297.txt"
+ },
+ {
+  "id": "stress__doc_00298.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00298.txt"
+ },
+ {
+  "id": "stress__doc_00299.txt",
+  "set": "stress",
+  "source": "LynxMask (Mobile): dataset_stress/docs/doc_00299.txt"
+ },
+ {
+  "id": "ocr__doc_00000.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00000.png"
+ },
+ {
+  "id": "ocr__doc_00001.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00001.png"
+ },
+ {
+  "id": "ocr__doc_00002.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00002.png"
+ },
+ {
+  "id": "ocr__doc_00003.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00003.png"
+ },
+ {
+  "id": "ocr__doc_00005.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00005.png"
+ },
+ {
+  "id": "ocr__doc_00006.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00006.png"
+ },
+ {
+  "id": "ocr__doc_00007.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00007.png"
+ },
+ {
+  "id": "ocr__doc_00008.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00008.png"
+ },
+ {
+  "id": "ocr__doc_00009.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00009.png"
+ },
+ {
+  "id": "ocr__doc_00010.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00010.png"
+ },
+ {
+  "id": "ocr__doc_00011.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00011.png"
+ },
+ {
+  "id": "ocr__doc_00013.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00013.png"
+ },
+ {
+  "id": "ocr__doc_00014.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00014.png"
+ },
+ {
+  "id": "ocr__doc_00015.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00015.png"
+ },
+ {
+  "id": "ocr__doc_00016.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00016.png"
+ },
+ {
+  "id": "ocr__doc_00017.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00017.png"
+ },
+ {
+  "id": "ocr__doc_00018.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00018.png"
+ },
+ {
+  "id": "ocr__doc_00019.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00019.png"
+ },
+ {
+  "id": "ocr__doc_00020.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00020.png"
+ },
+ {
+  "id": "ocr__doc_00021.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00021.png"
+ },
+ {
+  "id": "ocr__doc_00022.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00022.png"
+ },
+ {
+  "id": "ocr__doc_00023.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00023.png"
+ },
+ {
+  "id": "ocr__doc_00024.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00024.png"
+ },
+ {
+  "id": "ocr__doc_00025.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00025.png"
+ },
+ {
+  "id": "ocr__doc_00026.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00026.png"
+ },
+ {
+  "id": "ocr__doc_00027.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00027.png"
+ },
+ {
+  "id": "ocr__doc_00028.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00028.png"
+ },
+ {
+  "id": "ocr__doc_00029.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00029.png"
+ },
+ {
+  "id": "ocr__doc_00030.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00030.png"
+ },
+ {
+  "id": "ocr__doc_00031.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00031.png"
+ },
+ {
+  "id": "ocr__doc_00032.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00032.png"
+ },
+ {
+  "id": "ocr__doc_00033.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00033.png"
+ },
+ {
+  "id": "ocr__doc_00034.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00034.png"
+ },
+ {
+  "id": "ocr__doc_00035.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00035.png"
+ },
+ {
+  "id": "ocr__doc_00036.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00036.png"
+ },
+ {
+  "id": "ocr__doc_00037.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00037.png"
+ },
+ {
+  "id": "ocr__doc_00038.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00038.png"
+ },
+ {
+  "id": "ocr__doc_00039.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00039.png"
+ },
+ {
+  "id": "ocr__doc_00040.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00040.png"
+ },
+ {
+  "id": "ocr__doc_00041.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00041.png"
+ },
+ {
+  "id": "ocr__doc_00042.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00042.png"
+ },
+ {
+  "id": "ocr__doc_00043.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00043.png"
+ },
+ {
+  "id": "ocr__doc_00044.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00044.png"
+ },
+ {
+  "id": "ocr__doc_00045.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00045.png"
+ },
+ {
+  "id": "ocr__doc_00046.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00046.png"
+ },
+ {
+  "id": "ocr__doc_00047.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00047.png"
+ },
+ {
+  "id": "ocr__doc_00048.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00048.png"
+ },
+ {
+  "id": "ocr__doc_00049.txt",
+  "set": "ocr",
+  "source": "LynxMask-Desktop: backend/dataset_20260627_095419/images/doc_00049.png"
+ }
+]

@@ -1,0 +1,22 @@
+FAKTURA VAT
+Nr FV-08708/08/2024
+Data wystawienla: 30.12.2020
+Numer klienta: KL-18581
+SPRZEDAWCA
+Uslugi Informatyczne Jan Kowalski
+Adres: of. Warszawska 144, 31-00 t Sosnowlec
+NIP: 166-243-14-03 REGON: 894217833
+Nr konta: PL44240101358914616184281239
+NABYWCA:
+Beata Piotrowska
+Adres: ul. Kolejowa 105, 31-001 (Olsztyn
+NIP: 948-879-07-55
+Lp. Nazwa usiui II Cena VAT Netto Brutto
+1. Usluga transportowa 9 1560 23% 14040 17269
+2. Instalacja oprogramowania 8 1175 23% 9400 11562
+3. Konsultacja techniczna 3 471 8% 1413 1526
+4. Szkolenie zawodowe 3 1085 8% 3255 3515
+LACZNIE DO ZAPLATY: 33872 PLN
+Platnodé przelewem: PL.44240101358914616184281239
+Termin platnośici: 14 dni od daty wystawienia faktury.
+Wystawil/a: Odebralla:
