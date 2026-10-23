@@ -39,6 +39,7 @@ import spacy_ner as _spacy_ner_mod
 from ner_layer import process_ner
 from osoba_not_person import DICTIONARY_PATH_DENYLIST as _OSOBA_DENYLIST  # [LYNX-OSOBA-NOT-PERSON] listy w jednym miejscu
 from osoba_not_person import inside_street_name, person_words_of, single_osoba_evidence  # [LYNX-OSOBA-PACK4]
+from person_decision import enabled as _person_decider_on  # [LYNX-OSOBA-REDESIGN]
 from pipeline_core import PipelineState, TokenAllocator
 
 # ── Słownik form fleksyjnych nazwisk (port: LookupTables.surnamesForms) ─────
@@ -314,6 +315,9 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         state.ner_error = True
         return
 
+    decider = _person_decider_on()  # [LYNX-OSOBA-REDESIGN] OSOBA rozstrzyga person_decision na końcu; tu tylko FIRMA
+    if decider:
+        ner_reverse = {tid: val for tid, val in ner_reverse.items() if not tid.startswith("OSOBA")}
     local, remap = _remap_ner_ids(state, ner_reverse)  # [LYNX-T03]
     ner_reverse = {remap[tid]: local[tid] for tid in remap}
 
@@ -335,7 +339,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         state.text = _propagate_osoba(state.text, token_id, value)
 
     # ── Inicjały: "K. Kowalski" → OSOBA (port: INITIALS_REGEX) ──────────────
-    state.text = _apply_initials(state.text, state.allocator)
+    if not decider:
+        state.text = _apply_initials(state.text, state.allocator)
     # ── Warianty SpaCy (port: FIX-NER-GLOBAL) ────────────────────────────────
     # ner_variants zawiera WSZYSTKIE formy wykryte przez SpaCy (odmiany fleksyjne,
     # wersje bez cudzysłowów, warianty FIRMA). Stary pipeline.py stosował je przez
@@ -366,7 +371,8 @@ def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
         if _stripped and _stripped != _var_text:
             state.text = _sub_whole(state.text, _var_text, _tok_id)
         state.text = _sub_whole(state.text, _target, _tok_id)
-    state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
+    if not decider:
+        state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
     # [LYNX-FIRMA-LEGAL-FORM-RESTORE] Forma prawna za tokenem („FIRMA_001 Sp.k.”) zostaje (mapa jej nie ma; Przywróć 1:1).
 
 

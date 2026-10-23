@@ -320,7 +320,16 @@ def _apply_guard(text: str, reverse_map: dict, state: AppState, force_block: boo
         except Exception as e:  # siatka włączona, ale niedostępna → S3 fail-closed; S5: tylko typ wyjątku
             logger.error("[PIPELINE] HerBERT: %s", type(e).__name__)
             return _s3_failure("[HERBERT_ERROR] dodatkowa kontrola HerBERT niedostępna")
-    return _apply_output_guard(text, reverse_map, state, force_block)
+    person_asks = None
+    if not force_block:
+        try:  # [LYNX-OSOBA-REDESIGN] jedna decyzja OSOBA na finalnym tekście (LYNX_OSOBA_DECIDER=off: bez zmian)
+            from person_decision import enabled, resolve_final_persons
+            if enabled():
+                text, reverse_map, person_asks = resolve_final_persons(text, reverse_map, {"anon_map": state.anon_map})
+        except Exception as e:  # S3: awaria decydera → odmowa; S5: tylko typ wyjątku
+            logger.error("[PIPELINE] decyzja OSOBA: %s", type(e).__name__)
+            return _s3_failure("[OSOBA_DECIDER_ERROR] decyzja OSOBA niedostępna")
+    return _apply_output_guard(text, reverse_map, state, force_block, person_asks)
 
 
 def _apply_output_guard(
@@ -328,6 +337,7 @@ def _apply_output_guard(
     reverse_map: dict,
     state: AppState,
     force_block: bool = False,
+    person_asks: list | None = None,  # [LYNX-OSOBA-REDESIGN] ASK decydera = jedyne R1 osób (None: dotychczasowe R1)
 ) -> PipelineResult:
     # Wspolna sciezka output_guard dla obu pipelinow.
     # force_block=True: blokada prewencyjna gdy wczesniejszy etap zglosil blad (MED-1).
@@ -352,7 +362,7 @@ def _apply_output_guard(
                 return _s3_failure("[GUARD_ERROR] awaria Guarda")
             guard_reasons, guard_values = guard_result.reasons, guard_result.values
             # [LYNX-GUARD-A] S4: bez automatycznego [REDACTED] i blokady — każde wykrycie to ostrzeżenie do decyzji
-            guard_warnings = collect_warnings(text, guard_values, _allowlist, released())  # [PACK4] + kandydaci bez dowodu
+            guard_warnings = collect_warnings(text, guard_values, _allowlist, released(), person_asks)  # [PACK4]/[REDESIGN]
             if guard_warnings:
                 logger.warning("[PIPELINE] Guard: %d ostrzeżeń do decyzji", len(guard_warnings))
         except Exception as e:

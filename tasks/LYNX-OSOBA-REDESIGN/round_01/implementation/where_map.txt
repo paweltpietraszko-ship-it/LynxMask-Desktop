@@ -1,0 +1,206 @@
+WHERE_MAP LYNX-OSOBA-REDESIGN (CC, 5473787)
+=== backend/ner_layer.py :: process_ner
+FILE: backend/ner_layer.py
+LAYER: backend
+IMPORTS (8):
+  dataclasses
+  re
+  logging
+  firma_context
+  osoba_not_person
+  ner_blocklist
+  morfeusz2
+  layers.ocr_normalizer
+
+TOP_LEVEL_SYMBOLS (1):
+  process_ner
+
+SYMBOL: process_ner
+  TOTAL_RAW_HITS: 63
+    TEXT OTHER_FILE PRODUCTION     audyt/trace_layers.py:37: with patch.object(N, "process_ner", return_value=({}, {})):
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:3: Adapter NER — wywołuje ner_layer.process_ner() i rejestruje tokeny w allocatorze.
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:6: v1.4: [BUG-NER-WRONG-ARG] process_ner(text, spacy_ner_mod) — drugi argument
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:8: moduł. Poprzednio: process_ner(state.text, anon_map) → spacy_ner_mod=dict →
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:26: w przeciwnym razie wywołuje process_ner() bezpośrednio (fallback).
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:39: from ner_layer import process_ner
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:257: ponownie wywoływać process_ner().
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:264: ner_reverse, ner_variants = process_ner(state.text, _spacy_ner_mod)
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:276: """[LYNX-T03] process_ner numeruje lokalnie od 001 — numery z alokatora, który zna tokeny
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:292: W przeciwnym razie wywołuje process_ner() bezpośrednio (fallback).
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:307: ner_reverse, ner_variants = process_ner(state.text, _spacy_ner_mod)
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:402: with _mock.patch.object(this_module, "process_ner",
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:429: with _mock.patch.object(this_module, "process_ner",
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:448: with _mock.patch.object(this_module, "process_ner",
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:466: with _mock.patch.object(this_module, "process_ner",
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:480: with _mock.patch.object(this_module, "process_ner", return_value=({}, {})):
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:497: with _mock.patch.object(this_module, "process_ner", return_value=({}, {})):
+    CALL SAME_FILE  PRODUCTION     backend/ner_layer.py:91: [BUG-B analiza] Sygnatura process_ner() NIE zmieniona. Zmiana
+    CALL SAME_FILE  PRODUCTION     backend/ner_layer.py:94: v1.4 — [BUG-B] process_ner() re-raisuje NERBlockError zamiast ją połykać
+    TEXT SAME_FILE  PRODUCTION     backend/ner_layer.py:99: Linia dotknięta: ~117-120 (process_ner).
+    CALL SAME_FILE  PRODUCTION     backend/ner_layer.py:117: process_ner(text, spacy_ner_mod) -> tuple[dict, dict]
+    CALL SAME_FILE  PRODUCTION     backend/ner_layer.py:120: NERBlockError propaguje się przez process_ner() do pipeline.py — nie jest łapana.
+    DEF  SAME_FILE  PRODUCTION     backend/ner_layer.py:444: def process_ner(text: str, spacy_ner_mod) -> tuple[dict, dict]:
+=== backend/layers/ner_adapter.py :: apply_ner_layer
+FILE: backend/layers/ner_adapter.py
+LAYER: backend/layers
+IMPORTS (13):
+  __future__
+  json
+  os
+  re
+  sys
+  unicodedata
+  spacy_ner
+  ner_layer
+  osoba_not_person
+  pipeline_core
+  ner_blocklist
+  unittest.mock
+  logging
+
+TOP_LEVEL_SYMBOLS (1):
+  apply_ner_layer
+
+SYMBOL: apply_ner_layer
+  TOTAL_RAW_HITS: 23
+    TEXT OTHER_FILE TEST_TASK_ARCH arch/FINDING_2026-10_MOBILE_PORT.md:29: | W0b AddressEngine (jedyny właściciel ADRES, **przed** NameEngine) | `AddressEngine.kt:65` | `layers/address.py` — po `extract_ner_results`, przed `apply_ner_layer` | podobna intencja; brak STREET_CITY („ul. X 5, Miasto”) |
+    TEXT OTHER_FILE PRODUCTION     audyt/trace_layers.py:17: ("address", P.apply_address_layer, ()), ("ner", P.apply_ner_layer, ({},)),
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:11: v1.3: [WYS-1] extract_ner_results() i apply_ner_layer() mają teraz try/except.
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:25: apply_ner_layer() używa state.ner_results jeśli wypełnione (pre-cache),
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:256: apply_ner_layer() wykryje wypełnione state.ner_results i użyje ich zamiast
+    DEF  SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:287: def apply_ner_layer(state: PipelineState, anon_map: dict) -> None:
+    TEXT SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:312: f"[NER] apply_ner_layer crash — blokowanie odpowiedzi: {e}"
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:408: apply_ner_layer(state, anon_map={})
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:435: apply_ner_layer(state2, anon_map={})
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:454: apply_ner_layer(state3, anon_map={})
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:472: apply_ner_layer(state4, anon_map={})
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:485: apply_ner_layer(state5, anon_map={})
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:500: apply_ner_layer(state7, anon_map={})
+    CALL OTHER_FILE PRODUCTION     backend/pipeline_new.py:24: Rozwiązanie: extract_ner_results() przed adresem, apply_ner_layer() po.
+    TEXT OTHER_FILE PRODUCTION     backend/pipeline_new.py:42: from layers.ner_adapter import apply_ner_layer, extract_ner_results
+    TEXT OTHER_FILE PRODUCTION     backend/pipeline_new.py:98: _apply(state, apply_ner_layer, anon_map)
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-ADDR-REVERSED/round_01/tests/tests_r3.txt:27: Zmiana jest przed istniejącym apply_ner_layer; po odrzuceniu miasta dalsza propagacja osoby przejmuje to wystąpienie.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-FIRMA-HYPHEN-SUFFIX/brief.md:38: - TARGETS: backend/layers/ner_adapter.py --symbol apply_ner_layer
+=== backend/layers/ner_adapter.py :: _apply_dictionary_names
+FILE: backend/layers/ner_adapter.py
+LAYER: backend/layers
+IMPORTS (13):
+  __future__
+  json
+  os
+  re
+  sys
+  unicodedata
+  spacy_ner
+  ner_layer
+  osoba_not_person
+  pipeline_core
+  ner_blocklist
+  unittest.mock
+  logging
+
+TOP_LEVEL_SYMBOLS (1):
+  _apply_dictionary_names
+
+SYMBOL: _apply_dictionary_names
+  TOTAL_RAW_HITS: 16
+    DEF  SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:234: def _apply_dictionary_names(text: str, allocator: TokenAllocator) -> str:
+    CALL SAME_FILE  PRODUCTION     backend/layers/ner_adapter.py:369: state.text = _apply_dictionary_names(state.text, state.allocator)  # [LYNX-NER-MULTILINE] + [E2b] po wariantach
+    TEXT OTHER_FILE PRODUCTION     backend/osoba_not_person.py:11: - DICTIONARY_PATH_DENYLIST — zbiór ścieżki słownikowej `_apply_dictionary_names` bez zmian (denylista + kalendarz/kraje/miasta).
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_osoba_not_person.py:64: out = ner_adapter._apply_dictionary_names("Data wystawienia. Podpisał Kowalski.", TokenAllocator())
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-NAMES-DICT-CLEAN/brief.md:11: i kwalifikatora imię/nazwisko (plik pochodzi z wcześniejszej wersji generatora). Ścieżka FP: `layers/ner_adapter._apply_dictionary_names`
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-NAMES-DICT-CLEAN/round_01/tests/tests_r1.txt:24: konsument layers/ner_adapter.py:_apply_dictionary_names. Skan słownika jest istniejącym ownerem tego wykrywania.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OCR-GATE-COMPARE/round_01/implementation/DELIVERY.md:133: Kwiatkowski (Mobile golden: wszystkie zakryte). Port `NameEngine` 3a do `layers/ner_adapter.py::_apply_dictionary_names` (wywołanie
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-NOT-PERSON/brief.md:21: działa tylko w ścieżce słownikowej `_apply_dictionary_names`, **nie** na kandydatach spaCy. Sonda: `_filter_institutions` dla
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-NOT-PERSON/brief.md:29: `ner_adapter._apply_dictionary_names` używa tego modułu zamiast własnej kopii (zachowanie bez zmian).
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-NOT-PERSON/brief.md:40: Moduł rozdziela te dwie listy (`OSOBA_DENYLIST` i `WHITE_LISTS`); `_apply_dictionary_names` dalej używa ich sumy jak dziś (bez zmian
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-NOT-PERSON/brief.md:60: sprawdza najpierw obecność w `_PERSON_FORMS`) → zostają; „Anna Osoba” (wielowyrazowa) → zakryta; „Jan Kowalski, zamieszkały w Krakowie” → OSOBA tylko „Jan Kowalski”; `_apply_dictionary_names`
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-NOT-PERSON/round_01/implementation/DELIVERY.md:14: (216 = 216, porównanie z `origin/main` przez `ast`), `_apply_dictionary_names` bez zmian zachowania.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-NOT-PERSON/round_01/tests/tests_r2.txt:42: - Deklarację "zachowanie _apply_dictionary_names bez zmian" trzeba
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/tests/tests_r1.txt:37: reject_single_osoba, _filter_institutions/_process_ner, _apply_first_names/_apply_dictionary_names,
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-REDESIGN/brief.md:113: **WHERE_MAP:** REQUIRED przed kodem, TARGETS: `backend/ner_layer.py::process_ner`; `backend/layers/ner_adapter.py::apply_ner_layer`; `backend/layers/ner_adapter.py::_apply_dictionary_names`; `backend/osoba_not_person.py::single_osoba_evidence`; `backend/guard_residue.py::collect_warnings`. Powód: przenosimy/wyłączamy dotychczasowe owners decyzji OSOBA, nie możemy zostawić ukrytych równoległych zakryć.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-REDESIGN/cc_proposal.md:11: od 20.10 samotne słowo ze słownika (`ner_adapter._apply_dictionary_names`). Nikt nie waży dowodów razem, a „przeciw” istnieje tylko
+  NOTE: raw text-match evidence only — no reachability/ownership verdict is computed. Read each flagged line yourself, especially DEF hits (possible duplicate name) and CALL hits in files other than the one you're analyzing.
+
+=== backend/osoba_not_person.py :: single_osoba_evidence
+FILE: backend/osoba_not_person.py
+LAYER: backend
+IMPORTS (7):
+  __future__
+  contextvars
+  json
+  os
+  re
+  layers.address
+  morfeusz2
+
+TOP_LEVEL_SYMBOLS (1):
+  single_osoba_evidence
+
+SYMBOL: single_osoba_evidence
+  TOTAL_RAW_HITS: 27
+    TEXT OTHER_FILE PRODUCTION     backend/herbert_net.py:120: from osoba_not_person import single_osoba_evidence
+    CALL OTHER_FILE PRODUCTION     backend/herbert_net.py:131: if kind == "PER" and " " not in value and at >= 0 and not single_osoba_evidence(text, at, at + len(value)):
+    TEXT OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:41: from osoba_not_person import inside_street_name, person_words_of, single_osoba_evidence  # [LYNX-OSOBA-PACK4]
+    CALL OTHER_FILE PRODUCTION     backend/layers/ner_adapter.py:243: or not single_osoba_evidence(m.string, m.start(1), m.end(1), pw, words):  # [PACK4] krok 2
+    DEF  SAME_FILE  PRODUCTION     backend/osoba_not_person.py:224: def single_osoba_evidence(text: str, start: int, end: int, person_words=(), person_forms=frozenset()) -> bool:
+    CALL SAME_FILE  PRODUCTION     backend/osoba_not_person.py:282: or single_osoba_evidence(text, r.start, r.start + len(r.text.rstrip(",.;:!? ")), pw, person_forms)]
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_osoba_handoff.py:16: masked = onp.single_osoba_evidence(text, s, s + len(word), person_forms=person_forms)
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_osoba_handoff.py:73: onp.single_osoba_evidence(t, s, s + 2)
+    TEXT OTHER_FILE TEST_TASK_ARCH backend/tests/test_pdf_worker.py:22: from osoba_not_person import single_osoba_evidence
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_pdf_worker.py:24: single_osoba_evidence(text, text.index("Kawa"), text.index("Kawa") + 4)
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/brief.md:17: 3. `single_osoba_evidence` wpisuje jednak KAŻDE odrzucone słowo do `released()` — nie rozróżnia „brak dowodu, może być nazwiskiem”
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/brief.md:25: 1. **`backend/osoba_not_person.py`, `single_osoba_evidence`** — po istniejących warunkach, przed `_RELEASED.append`:
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/round_01/implementation/DELIVERY.md:9: | `backend/osoba_not_person.py` | 23 | 0 | `_NAME_SHAPE_RE`, `_VOWEL_RE`, `_surname_forms()` (lista ładowana raz; brak/uszkodzony plik → pusty zbiór); w `single_osoba_evidence` przed `_RELEASED.append`: **B** nie-nazwa → bez przekazania; **A (granica z sekcji „Granica (zastępuje pkt 1.A)”)** `common and not person and low not in person_forms and _surname_forms() and low not in _surname_forms()` → bez przekazania |
+    CALL OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/round_01/tests/repro_r3.py:15: masked=onp.single_osoba_evidence(text,s,s+len(word),person_forms=forms)
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/round_01/tests/tests_r1.txt:10: Cały brief, bieżący wiersz BOARD, wcześniej przeczytane S4 i zasady audytu. Jedna punktowa inspekcja istniejącego ownera: osoba_not_person._common_or_person i single_osoba_evidence. Lokalny odczyt odpowiada tym plikom na exact SHA. Nie badano implementacji, nie uruchamiano modeli, testów, reproduktorów ani pomiaru próbek nazwisk. Prototyp i agregaty GOLD pozostają deklaracją CC, nie wynikiem niezależnego audytu.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/round_01/tests/tests_r1.txt:18: OWNERSHIP: single_osoba_evidence jest właścicielem przekazania. Istniejący parametr person_forms stanowi osobny sygnał nazwiska. Obecna gałąź zakrywa przy not common AND (person OR low in person_forms); przy common=True i person=False może dojść do przekazania do Guarda także przy low in person_forms. Nowy warunek A nie opisuje tej kolizji.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-HANDOFF/round_01/tests/tests_r2.txt:21: SOURCE/NECESSITY: S4 — wiarygodne podejrzenia zamiast przypadkowych wyrazów; istniejące single_osoba_evidence odpowiada za przekazanie, _released za wystąpienia. Oczyszczona lista służy ochronie kandydatów przed nowym filtrem, nie tworzy nowego silnika maskowania. Nie potrzeba nowej warstwy/Architekta do tej poprawki.
+    CALL OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/brief.md:28: Jedno miejsce decyzji: `osoba_not_person.single_osoba_evidence(text, start, end, …)`. Wołają je oba źródła pojedynczych OSOBA:
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/implementation/DELIVERY.md:20: - krok 2: `single_osoba_evidence`, `filter_single_osoba`, rejestr `start_run`/`released` (ContextVar).
+    CALL OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/tests/repro_r4.py:17: assert onp.single_osoba_evidence(text,0,4) is False
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/tests/tests_r1.txt:22: - Krok2 ma jedno miejsce decyzji single_osoba_evidence w osoba_not_person.py, wspólne dla NER, słownika i włączonego HerBERT.
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/tests/tests_r3.txt:52: - Niedostępny Morfeusz w single_osoba_evidence: zachowanie zakrywania=True (fail-safe), bez zwolnienia kandydata.
+    CALL OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/tests/tests_r4.txt:32: Prawdziwe single_osoba_evidence(tekst,0,4) po start_run zwraca False i zapisuje ["RÓŻA"].
+    TEXT OTHER_FILE TEST_TASK_ARCH tasks/LYNX-OSOBA-PACK4/round_01/tests/tests_r4.txt:38: Rzeczywisty szew single_osoba_evidence/released -> collect_warnings, bez stubów.
+=== backend/guard_residue.py :: collect_warnings
+FILE: backend/guard_residue.py
+LAYER: backend
+IMPORTS (7):
+  __future__
+  re
+  guard_allowlist
+  osoba_not_person
+  output_guard
+  ner_layer
+  morfeusz2
+
+TOP_LEVEL_SYMBOLS (1):
+  collect_warnings
+
+SYMBOL: collect_warnings
+  TOTAL_RAW_HITS: 73
+    DEF  SAME_FILE  PRODUCTION     backend/guard_residue.py:236: def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list | None = None,
+    TEXT OTHER_FILE PRODUCTION     backend/pipeline.py:340: from guard_residue import collect_warnings, load_allowlist
+    CALL OTHER_FILE PRODUCTION     backend/pipeline.py:355: guard_warnings = collect_warnings(text, guard_values, _allowlist, released())  # [PACK4] + kandydaci bez dowodu
+    TEXT OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_allowlist_s5.py:30: from guard_residue import collect_warnings
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_allowlist_s5.py:35: assert collect_warnings("Wczoraj Kawa zlecił wysłanie paczki.", allowlist=ga.load()) == []
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_allowlist_s5.py:36: ws = collect_warnings("Pismo: Kawa.", map_values=["Kawa"], allowlist=ga.load())
+    TEXT OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_allowlist_s5.py:56: from guard_residue import collect_warnings
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_allowlist_s5.py:58: assert collect_warnings(text, allowlist=[("KAWA", "R1")]) == []
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_allowlist_s5.py:59: assert collect_warnings(text, allowlist=[("Kawa", "R5")]) != []
+    TEXT OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:4: from guard_residue import collect_warnings, shift_warnings
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:8: return {w["fragment"]: w["rules"] for w in collect_warnings(text, **kw)}
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:73: ws = collect_warnings("Sprzedawca: ALFA sp. z o.o.")
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:78: ws = collect_warnings("Pismo od OSOBA_001, w stopce KOWALSKI.", map_values=["Kowalski"])
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:83: ws = collect_warnings("Kontakt: NUMER_123 oraz FIRMA_001.")
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:93: w = shift_warnings(collect_warnings(text), 10)[0]
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:98: assert collect_warnings("Kraków, 01.02.2026\nDoręczono do Jelenia Góra.\nOddział: NUMER_006, Tomaszów Mazowiecki") == []
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:107: ws = collect_warnings("Model Maciolus działał. Model Maciolusa zasilano pakietem.", released_words=["Maciolus"])
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:109: ws = collect_warnings("Kawa zlecił paczkę. Kawałek chleba.", released_words=["Kawa"])
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:114: ws = collect_warnings("Dokument przekazał wczoraj Malina. W notatce zapisano MALINA.", released_words=["Malina"])
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:116: ws = collect_warnings("Róża złożyła wniosek. Róży dotyczy odpis.", released_words=["Róża"])
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:118: assert "Różowy" not in {w["fragment"] for w in collect_warnings("Różowy płot.", released_words=["Róża"])}
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_guard_residue.py:123: ws = collect_warnings("RÓŻA złożyła wniosek. RÓŻY dotyczy odpis.", released_words=[released])
+    TEXT OTHER_FILE TEST_TASK_ARCH backend/tests/test_osoba_handoff.py:10: from guard_residue import collect_warnings  # noqa: E402
+    CALL OTHER_FILE TEST_TASK_ARCH backend/tests/test_osoba_handoff.py:65: assert [w["fragment"] for w in collect_warnings(text, released_words=["Kawa"])] == ["Kawa", "KAWA"]

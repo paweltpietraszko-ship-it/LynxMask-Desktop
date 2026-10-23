@@ -234,15 +234,17 @@ _RED = ("HIGH", "MAP_LEAK")
 
 
 def collect_warnings(text: str, map_values: list[str] | None = None, allowlist: list | None = None,
-                     released_words: list[str] | None = None) -> list[dict]:
+                     released_words: list[str] | None = None, person_asks: list[dict] | None = None) -> list[dict]:
     """Ostrzeżenia dla finalnego tekstu: [{id, start, end, fragment, rule, level, reasons}], posortowane po pozycji.
-    Fragmenty nachodzące na siebie → jedna pozycja (wszystkie powody); nic wewnątrz tokenów; allowlista (fragment, reguła) wycisza tylko żółte (S5)."""
+    Fragmenty nachodzące na siebie → jedna pozycja (wszystkie powody); nic wewnątrz tokenów; allowlista (fragment, reguła) wycisza tylko żółte (S5).
+    [LYNX-OSOBA-REDESIGN] `person_asks` (ASK decydera OSOBA) zastępuje własne R1 i `released` — jedno źródło pytań o osoby."""
     tokens = [m.span() for m in _TOKEN_RE.finditer(text)]
     masked = _TOKEN_RE.sub(lambda m: "#" * len(m.group(0)), text)
     allow = [(a, ANY_YELLOW) if isinstance(a, str) else tuple(a) for a in allowlist or []]
     hits = []
-    for src in (_patterns(masked), _map_leaks(masked, map_values or []), _r1(text), _released(text, released_words or []),
-                _r2(text), _r3(text), _r4(text), _r5(text)):
+    r1 = ([(a["start"], a["end"], "R1", a["reason"]) for a in person_asks],) if person_asks is not None \
+        else (_r1(text), _released(text, released_words or []))
+    for src in (_patterns(masked), _map_leaks(masked, map_values or []), *r1, _r2(text), _r3(text), _r4(text), _r5(text)):
         for s, e, rule, reason in src:
             if s < e and not any(ts < e and s < te for ts, te in tokens) and not silenced(text[s:e], rule, allow):
                 hits.append((s, e, rule, reason))
