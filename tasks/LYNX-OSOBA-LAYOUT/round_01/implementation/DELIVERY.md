@@ -138,3 +138,7 @@ test_pipeline_v2 41; test_layers 2 failed/119 (jak main); test_audyt_2026_10 1 f
 | ślepe 600 stress | j.w. | 17 (39) | 3 (1) | **3 (1)** |
 | 255 pism | pytania R1 | 902 | 526 | **542** (+F1: pytania o nazwiska bez ogonków) |
 | 255 pism | OSOBA nowe / utracone | — | 28 / 0 | **28 / 0** |
+
+## Korekta po Codex r4 (`4d6223f`, PASS)
+- GOLD FIRMA cicho: **19 / 52 → 20 / 52** (nie „20 / 52 bez zmian”). Dev doc_020: skrót firmy „… Rys” po tokenie FIRMA — main pytał przez stare R1,
+  nowy model nie pyta (znane słowo pospolite). Brak nowego odsłonięcia przez silnik; przypadek przechodzi do zadania o cichych FIRMA.
