@@ -1,0 +1,33 @@
+LYNX-OSOBA-REDESIGN — BRIEF_ONLY r3
+Data: 2026-10-23
+Exact SHA briefu v1.4: 446ad9085735ec61bfaaa7b6379717c828f50d78
+Poprzedni badany brief: bdd2447315f6f00cdc827cefec9155ed901ee4ad
+Raport r2: 8dbcc3546c0c130ac9b416335f7c6c0dfbf97c15
+Wynik: PASS PREIMPLEMENTATION.
+Odbiorca: CC — estymacja, następnie wymagana zgoda OWNERA na koszt przed implementacją.
+Bez merge.
+
+Zakres
+Wyłącznie zmienione pierwszeństwo C2/C3, udokumentowane doprecyzowanie OWNERA o odniesieniu w obrębie dokumentu oraz dopisane klasy odbioru. C1 i pozostałe ustalenia nie były otwierane ponownie.
+Bez testów, modeli, benchmarków, pobierania PESEL i implementacji. Osobna analiza hipotezy „duża litera w środku zdania”, zlecona przez użytkownika w tym samym komunikacie, nie stanowi części tego prechecku i nie zmienia kontraktu.
+
+C2 — CLOSED
+Kontrola białego członu następuje przed zwykłą kotwicą i progami PESEL. Zwykła reguła Pan/Pani jawnie wyklucza obejście C3. Pełna para/inicjał w następnym wierszu dotyczy kandydatów bez białego członu, ponieważ białe zostały wcześniej rozstrzygnięte.
+Usunięto sprzeczność wskazaną w r2. Izolowane Pan Termin / J. Termin bez wcześniej rozpoznanej pełnej osoby nie omijają białej listy. Jan Termin jako bezpośrednia, wiarygodna pełna para może być MASK.
+
+Doprecyzowanie odniesienia w jednym dokumencie — spójne
+- Najpierw sprawdzenie wiarygodnego związku z wcześniej rozpoznaną pełną osobą, potem domyślne wyłączenie białego słowa.
+- Jan Termin -> później Pan Termin: przy ustalonym tym samym referencie MASK i spójny token; przy prawdopodobnej osobie, ale niejednoznacznej tożsamości ASK bez scalania.
+- Dwie różne osoby o nazwisku Termin i późniejsze niejednoznaczne Pan Termin: ASK, nie wspólny token wybrany po samej pisowni.
+- Termin wykonania nadal PASS, nawet gdy dokument zawiera osobę o tym nazwisku. Nie ma globalnego zdjęcia białej listy ani pamięci odniesień między dokumentami/sesjami.
+- Dodane kontrpróby wymagają kontroli mapy i Przywróć.
+To jest opisany i testowalny kontrakt wystąpienia; PASS nie dowodzi, że implementacja potrafi już ustalać takie związki. Nie wymaga się nowego silnika coreference.
+
+Granice PASS
+C1 pozostaje przyjętym kontraktem etapu E1, z hipotezą późnego rozpoznawania i STOP przy utracie poprawnie rozpoznanej osoby. Nie jest to potwierdzenie wykonalności E2.
+Obowiązują wcześniejsze warunki: jeden właściciel automatycznej decyzji, brak równoległego R1 i samodzielnych zakryć, istniejące S2–S5, ochrona świadomych wpisów użytkownika, odrębne pomiary dziedzin i dodatkowy nieoglądany GOLD do odbioru, bez strojenia na holdoucie.
+Oszacowanie CC ma objąć kod, czas/RAM oraz koszt danych odbiorczych. Wymagana zgoda OWNERA >150 linii nie została zastąpiona tym PASS. E1 shadow nie zmienia wyniku użytkownika; dopiero zaakceptowana bramka pozwala na E2.
+Pomysł pytań o każde jawne słowo wielką literą jest osobną hipotezą użytkownika. Nie dopisano go do zatwierdzonego briefu ani implementacji.
+
+Następny krok
+CC: aktualna baza main -> estymacja plików/linii/czasu/RAM i danych -> wymagana zgoda na koszt -> E1 -> ocena bramki -> E2 -> niezależny audyt exact SHA. Bez merge na podstawie prechecku.
