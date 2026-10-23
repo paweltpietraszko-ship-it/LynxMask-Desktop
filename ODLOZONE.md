@@ -80,3 +80,7 @@ Silnik Mobile uruchamia się na komputerze Pawła jako test JVM, bez telefonu: J
 ## [2026-10-21] OSOBA krok 2 — „udowodnij, że jesteś OSOBA”
 
 Pojedyncze słowo zakrywane tylko z dowodem (imię obok, Pan/Pani, PESEL, nazwisko ze słownika); bez dowodu — lista do decyzji człowieka. Odłożone przez Pawła 21.10: dziś pojedyncze słowo ze spaCy jest zakrywane (bezpieczny kierunek, czasem nadmaskowanie np. „Kawa”), a celem są dokumenty biurowe, gdzie nadmaskowanie jest akceptowane. Wycieki niezłapanych słów rozwiązuje `LYNX-GUARD-RESIDUE` („pokaż resztę”). Wrócić tylko, jeśli nadmaskowanie zacznie przeszkadzać w praktyce. Kontekst: BOARD 21.10, pomiar KPWr (`%TEMP%\lynx_cc_review\kpwr\` lokalnie u CC).
+
+## [2026-10-23] Model rozumiejący zdanie jako sędzia szarej strefy OSOBA
+
+Pomysł z rozmowy 23.10: mały lokalny model językowy (np. Bielik) ocenia tylko przypadki, w których dziś pyta Guard („czy w tym zdaniu »Kawa« to osoba?”), człowiek dopiero gdy model niepewny. Odłożone przez Pawła 23.10 na rzecz: człowiek decyduje 2–4 razy na dokument, a projekt `LYNX-OSOBA-REDESIGN` dba, by do Guarda nie trafiały śmieci. Test CC 23.10: HerBERT (legal NER) gubi pojedyncze nazwiska w krótkich zdaniach („Wczoraj Nowak zlecił…”). Wrócić, jeśli po REDESIGN pytań będzie wyraźnie więcej niż 2–4 na dokument; wtedy mały eksperyment: kilkadziesiąt trudnych zdań, model vs HerBERT vs reguły; do sprawdzenia licencja, czas na komputerze biurowym, rozmiar instalatora, powtarzalność. Kontekst: `tasks/LYNX-OSOBA-REDESIGN/cc_proposal_update_2026-10-23.md` (gałąź zadania), pkt 6.
