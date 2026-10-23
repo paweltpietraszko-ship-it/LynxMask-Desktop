@@ -1,0 +1,20 @@
+FAKTURA VAT
+Nr VAT/2021/5990
+Data wystawienia: 09.12.2022
+Numer klienta: KL-14750
+SPRZEDAWCA:
+Doradztwo Biznesowe EXPERT Sp. z o.o.
+Adres: ul. Mickiewicza 136/3, 44-100 Warszawa
+NIP: 424-060-82-23 REGON: 939638359
+Nr konta: PL62102028921586699657136547
+NABYWCA:
+Anna Wieczorek
+Adres: ul. Sienkiewicza 141, 00-001 Zabrze
+NIP: 958-974-08-88
+Lp. Nazwa uslugi II. Cena VAT Netto Brutto
+1. Usluga transportowa 1 1104 23% 1104 1358
+2. Szkolenie zawodowe 5 548 23% 2740 3370
+ŁACZNIE DO ZAPŁATY: 4728 PLN
+Płatność przelewem: PL62102028921586699657136547
+Termin platności: 14 dni od daty wystawienia faktury.
+Wystawil/a: Odebral/a:

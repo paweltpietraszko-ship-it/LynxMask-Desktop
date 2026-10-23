@@ -1,0 +1,29 @@
+FORMULARZ DANYCH OSOBOWYCH
+DANE OSOBOWE WNIOSKODAWCY
+Imię i nazwisko:
+Karolina Kozłowska
+Data urodzenia:
+06.05.1997
+PESEL:
+50120523417
+Nr dowodu osobistego:
+KEH651570
+Nr paszportu:
+YO8277747
+DANE KONTAKTOWE
+Adres zamieszkania:
+ul. Polna 110/37, 40-001 Gliwice
+Telefon:
++48 578 118 691
+Adres e-mail:
+karolinakozlowska@interia.pl
+DANE PODATKOWE
+NIP (jeśli dotyczy):
+134-667-06-00
+DANE NIERUCHOMOŚCI
+Nr księgi wieczystej:
+WR1K/00312690/5
+Nr działki ewidencyjnej:
+678439.0010.1439/19
+Oświadczam, że podane dane są zgodne ze s    godnie z art. 6 ust 1 lit. b) RODO.
+Data: .

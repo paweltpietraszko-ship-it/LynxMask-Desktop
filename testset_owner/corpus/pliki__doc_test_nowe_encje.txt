@@ -1,0 +1,62 @@
+TEST NOWYCH ENCJI — dokument do ręcznego sprawdzenia
+
+=== SYGNATURY AKT ===
+Sprawa I C 123/24
+Sygnatura akt III K 45/2023
+Sygn. akt I ACa 678/23
+Postępowanie o sygn. II Ca 99/2024
+Sprawa egzekucyjna Km 1234/24
+
+=== KRS ===
+Spółka wpisana do KRS 0000123456
+KRS nr 0000987654
+Wpisany do Krajowego Rejestru Sądowego 0000543210
+
+=== TABLICE REJESTRACYJNE ===
+Pojazd o numerze rejestracyjnym WA 12345
+Samochód KR 4AB67
+Tablica rejestracyjna GD 99XYZ
+Pojazd PO 12AB3
+
+=== KSIĘGI WIECZYSTE ===
+Nieruchomość objęta księgą wieczystą WA1M/00123456/7
+KW nr GD1G/00045678/2
+Lokal objęty KW KR1P/00012345/9
+
+=== HISTORIA CHOROBY / KARTOTEKA ===
+Historia choroby nr HC-2024-00789
+Nr pacjenta PAC/2024/1234
+Numer kartoteki KAR-00045-B
+
+=== POLISA UBEZPIECZENIOWA ===
+Polisa ubezpieczeniowa nr PZU/2024/00123456
+Numer polisy HDI-PL-2024-987654
+
+=== IMIONA I NAZWISKA (trie) ===
+Pacjentem jest Jan Kowalski zamieszkały w Gdańsku.
+Pełnomocnik Tomasz Wiśniewski, ul. Leśna 12, Kraków.
+Dłużnik Piotr Nowak, Warszawa.
+Wierzyciel Marek Wójcik.
+Anna Kowalczyk złożyła wniosek.
+Małgorzata Kamińska-Zając, córka Jana.
+
+=== PLACÓWKI MEDYCZNE ===
+Pacjent leczony w Szpitalu Miejskim w Gdańsku.
+Skierowanie do Kliniki Kardiologii.
+Wynik z Centrum Medycznego przy ul. Polnej.
+Przychodnia Lekarzy Rodzinnych, Wrocław.
+Zaświadczenie ze Szpitala Klinicznego nr 2.
+
+=== ULICE I MIASTA (blocklist — nie powinny być encjami) ===
+Zamieszkały: ul. Leśna 5, 00-001 Warszawa
+Adres: ul. Polna 12/3, Kraków
+Zameldowany w Gdańsku przy ul. Morskiej 7
+Miejscowość: Poznań, ul. Słoneczna 9
+
+=== KOMBINOWANE ===
+Jan Nowak, PESEL 85010112345, zam. ul. Kwiatowa 3, Warszawa,
+jest właścicielem pojazdu WA 12345 oraz nieruchomości KW WA1M/00123456/7.
+Sprawa sądowa I C 789/24, pozwany wpisany do KRS 0000112233.
+Leczony w Szpitalu Powiatowym w Krakowie, historia choroby nr HC-2024-0099.
+NIP 855-019-31-23, REGON 123456789, e-mail: jan.nowak@example.com
+IBAN: PL 27 1160 2202 0000 0001 8844 5523

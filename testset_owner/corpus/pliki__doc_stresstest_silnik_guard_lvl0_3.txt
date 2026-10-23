@@ -1,0 +1,173 @@
+══════════════════════════════════════════════════════════════════════════════
+PLIK TESTOWY — STRESS SILNIKA + OUTPUT GUARD
+LynxMask Desktop | folder: Pliki testowe
+══════════════════════════════════════════════════════════════════════════════
+
+Jak używać:
+  - Wrzuć cały plik przez Pseudonimizuj (/preview) albo tnij po sekcjach LVL.
+  - LVL 0 = tekst jak ze skanera biurowego (idealny OCR).
+  - LVL 1 = lekki szum (pojedyncze literówki, spacje).
+  - LVL 2 = mocniejszy szum (rozbite słowa, złamane linie).
+  - LVL 3 = symulacja zdjęcia telefonem (brudny OCR — najtrudniejszy).
+
+Co powinno wyjść (orientacyjnie):
+  SILNIK maskuje: PESEL, NIP, IBAN, email, telefon, osoby, firmy, adresy, kwoty.
+  SILNIK NIE maskuje (etykiety): Dłużnik, Wierzyciel, Płatność, Odebrał, Nabywca.
+  GUARD łapie: goły PESEL/NIP/IBAN/email w wyniku, jeśli silnik coś przepuści (lvl 3).
+
+Ten plik NIE zawiera ground_truth.json — ocena wzrokowa + smoke_e2e_report.txt.
+
+══════════════════════════════════════════════════════════════════════════════
+SEKCJA LVL 0 — SKAN IDEALNY (jakość: perfect scan)
+══════════════════════════════════════════════════════════════════════════════
+
+WEZWANIE DO ZAPŁATY
+Komornik Sądowy przy Sądzie Rejonowym w Krakowie
+Artur Wojciechowski, e-mail: komornik.wojciechowski@krakow.pl
+NIP: 526-000-20-35
+
+Dłużnik: Marcin Zieliński, PESEL: 82091423456
+Adres: ul. Kościuszki 18/7, 31-127 Kraków
+Telefon: +48 793 456 789
+
+Wierzyciel: Bank PKO BP S.A., NIP: 526-021-29-93
+Adres wierzyciela: Al. Jerozolimskie 123A, 02-017 Warszawa
+Rachunek wierzyciela: PL 14 8619 0006 0030 0200 6258 0001
+
+Kwota do zapłaty: 40 701,70 PLN
+(słownie: czterdzieści tysięcy siedemset jeden złotych 70/100)
+
+Sygnatura akt: Km 17224/2021
+Data: 29.08.2024
+
+Płatność w terminie 7 dni od doręczenia pisma.
+Odebrał: ........................................ (podpis dłużnika)
+
+══════════════════════════════════════════════════════════════════════════════
+SEKCJA LVL 1 — LEKKI SZUM OCR (jakość: light noise)
+══════════════════════════════════════════════════════════════════════════════
+
+DECYZJA ADMINISTRACYJNA
+Powiatowy Urząd Pracy w Gdańsku
+ul. Długa 45/12, 80-831 Gdańsk
+e-mail: sekretariat@pup.gdansk.pl
+
+Dotyczy: Roberta Nowakowskiego, PESEL 78031512378
+Adres: ul. Lastadia 8, 80-880 Gdańsk
+Telefon: 512 987 654
+
+Zleceniodawca: STOCZNIA GDAŃSKA SERWIS Sp. z o.o., NIP 583-001-89-23
+REGON: 190560433
+
+Kwota świadczenia: 1 491,90 PLN
+Kwota zaległa: 1 173,80 PLN
+Razem do wypłaty: 1533,09 PLN
+
+Nr decyzji: GT.022.4531.2024.MK
+Data: 22.10.2024
+
+Nabywca usług szkoleniowych: nie dotyczy.
+Sprzedawca kursu: nie dotyczy.
+Pouczenie: od decyzji przysługuje odwołanie w terminie 14 dni.
+
+══════════════════════════════════════════════════════════════════════════════
+SEKCJA LVL 2 — NOISE + ROZBICIA (jakość: noise + blur w tekście)
+══════════════════════════════════════════════════════════════════════════════
+
+UMOWA ZLECENIA
+
+Zleceniodawca: Kancelaria Prawna Nowak & Partnerzy Sp. k.
+               ul. Jana Kowalskiego 5/2
+               30-001 Kraków
+               NIP: 675-204-89-31
+               IBAN: PL61102044760000870201355387
+
+Zleceniobiorca: Anna Brzezińska
+                 PESEL: 92081512345
+                 tel. 22 123 45 67
+                 e-mail: anna.brzezinska@kancelaria-nowak.pl
+
+Przedmiot: Obsluga prawna w sprawie sygn. akt II C 445/2023
+Wynagrodzenie: 12 345,67 PLN
+Zaliczka: 500,00 EUR
+
+Dowód osobisty zleceniobiorcy: ABC 123456
+Paszport (delegacja): ZX 1234567
+
+Adres korespondencyjny zleceniodawcy:
+ul. Kazimierza Wielkiego
+14/3
+30-004 Kraków
+
+Orzekam — nie dotyczy (formuła sądowa poza kontekstem).
+Doręczone dnia 15.03.2024.
+
+══════════════════════════════════════════════════════════════════════════════
+SEKCJA LVL 3 — ZDJĘCIE TELEFONEM (jakość: phone / heavy OCR)
+══════════════════════════════════════════════════════════════════════════════
+
+FAKTURAvVAT Nr FV/2024/11/00999
+─────────────────────────────────────────────────────────────────────────────
+
+Sprzedawca:                              Nabywca:
+MEDITECH SOLUTIONS SP Z O.O              Przychodnia Rejonowa „Zdrowie”
+NIP: 7 12-304-56 78                      NIP: 873 -000 -51-39
+REGON: 361298450                         REGON: 000309256
+ul. Pulaskiego 2 0, 32-500 Chrzanow      ul. Lwowska 178, 33-100 Tarnow
+tel.: 32 623 45 67                       tel.: 14 631 02 00
+e-mail: biuro©meditech-sol.pl            e-mail: rejestracja @zdrowie-med.pl
+
+Data wystawienia: 02.11.2024
+Termin platnosci: 16.11.2024
+
+Razem brutto: 63 222,00 PLN
+(s lownie: szescdziesiat trzy tysiac e dwiescie dwadziescia dwa zlote 00/100)
+
+Platnosc przelewem:
+PL 98 1 053 1 875 0000 0023 4567 8901
+Bank: ING Bank Slaski S.A.
+
+─────────────────────────────────────────────────────────────────────────────
+ZLECENIE (zalacznik)
+
+Zleceniobiorca: Piotr Dabrowskl
+PESEL: 880 304 56789
+Adres: ul. Prz emyslowa 7/4, 32-5 00 Chrzanow
+dowod: DYF492031
+tel.: 660 -987- 654
+e-mail: p.dabrowski @meditech-sol.pl
+PWZ 2 345678 (fizjoterapeuta)
+
+Wynagrodzenie: 3 000,00 PLN
+(slowa: trzy tysiace zlotych 00/100)
+
+Platnosc na rachunek:
+PL 27 1 160 2202 0000 0001 8844 5523
+
+Zleceniodawca: dyr. Ryszard Kowalczyk, PESEL 65071812345
+
+─────────────────────────────────────────────────────────────────────────────
+PUŁAPKI (test Guard + blocklist NER — NIE powinny być OSOBA/FIRMA):
+
+Dłużnik: ........................................
+Wierzyciel: .....................................
+Płatność gotówką: nie dotyczy.
+Odebrał: .........................................
+Doręczone: .....................................
+Wpłatę przyjęto w kasie.
+
+─────────────────────────────────────────────────────────────────────────────
+PUŁAPKI GUARD (silnik może przepuścić — Guard powinien zareagować):
+
+Jeśli poniższe widać GOŁO w wyniku maskowania = FAIL Guard:
+  PESEL jawny: 44051401458
+  NIP jawny: 5260001320
+  Email jawny: test.wyciek@example.com.pl
+  IBAN jawny: PL61109010140000071219812874
+
+(Uwaga: powyższe linie są CELOWYM baitem na końcu lvl 3 — silnik powinien
+ je zamaskować PRZED Guard; jeśli nie — Guard blokuje zapis.)
+
+══════════════════════════════════════════════════════════════════════════════
+KONIEC PLIKU TESTOWEGO
+══════════════════════════════════════════════════════════════════════════════

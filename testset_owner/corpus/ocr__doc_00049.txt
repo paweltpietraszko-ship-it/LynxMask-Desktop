@@ -1,0 +1,23 @@
+FORMULARZ DANYCH OSOBOWYCH
+DANE OSOBOWE WNIOSKODAWCY
+Imię i nazwisko:
+Maria Krawczyk
+Data urodzenia:
+19.06.1994
+PESEL:
+87122103820
+Nr dowodu osobistego:
+ZNZ534683
+DANE KONTAKTOWE
+Adres zamieszkania:
+ul. Poina 45/10, 10-100 Kraków
+Telefon:
++48 786 151 607
+Adres e-mail:
+maria.krawczyk@gmail.com
+DANE PODATKOWE
+NIP (jeśli dotyczy):
+798-779-41-96
+Oświadzam.
+Data:
+Podpis:
