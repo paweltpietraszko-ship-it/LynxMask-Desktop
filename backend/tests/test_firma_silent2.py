@@ -58,6 +58,15 @@ def test_firma_zakryta_w_calosci(run, text, value, hidden):
     assert out.count(tok) == 2 or "Adres" in text, out   # pełna nazwa i powtórzenie — ten sam token
 
 
+def test_powtorzenie_przy_osobnej_krotszej_firmie(run):  # Codex r3 F2
+    out, rmap = run("Zamawiający: Ulotny Rys sp. z o.o.\nW dalszej części pisma nazwę Ulotny Rys stosuje się jako skrót podmiotu.\n"
+                    "Podwykonawca: Ulotny sp. z o.o.")
+    assert "Rys" not in out and "Ulotny" not in out, out
+    full = [k for k, v in rmap.items() if v == "Ulotny Rys sp. z o.o"][0]
+    short = [k for k, v in rmap.items() if v == "Ulotny sp. z o.o"][0]
+    assert out.count(full) == 2 and out.count(short) == 1, (out, rmap)
+
+
 @pytest.mark.parametrize("text,kept", [
     ("Sprawę prowadzi Biuro Obsługi Klienta.", "Biuro Obsługi Klienta"),           # dział wewnętrzny bez osoby
     ("Dział Kadr przekazał dokumenty.", "Dział Kadr"),

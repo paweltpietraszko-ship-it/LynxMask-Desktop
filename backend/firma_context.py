@@ -193,8 +193,12 @@ def _absorb_inside_core(text: str, core: str, tok: str, toks: list, reverse_map:
     for other, value in list(reverse_map.items()):
         if other == tok or other in toks or not value or value == core or value not in core:
             continue
+        # Codex r3 F2: wystąpienie w innej, dłuższej znanej wartości („Ulotny sp. z o.o.”) też jest pokryte — tamtą bierze jej token
+        longer = spans + [m.span() for t, v in reverse_map.items() if t != other and len(v) > len(value)
+                          for m in re.finditer(rf"(?<!\w){re.escape(v)}(?!\w)", text)]
         hits = [m.span() for m in re.finditer(rf"(?<!\w){re.escape(value)}(?!\w)", text)]
-        if hits and all(any(a <= s and e <= b for a, b in spans) for s, e in hits):
+        if hits and all(any(a <= s and e <= b for a, b in longer) for s, e in hits) \
+                and any(a <= s and e <= b for a, b in spans for s, e in hits):
             for var, t in list(all_variants.items()):
                 if t == other:
                     all_variants[var] = tok
