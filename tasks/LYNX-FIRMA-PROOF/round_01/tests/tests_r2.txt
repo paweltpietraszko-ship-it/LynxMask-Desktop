@@ -1,0 +1,111 @@
+LYNX-FIRMA-PROOF — niezależna ocena uzasadnienia i ochrony r2, 23.10.2026
+STATUS: SAFETY_PRIVACY — potwierdzone regresje, dostawa wymaga poprawek; brak zgody na nowe zasady i brak całościowego PASS/FAIL.
+REKOMENDACJA: nie dopuszczać tej wersji jako zachowującej dotychczasową ochronę. CC ma usunąć F1/F2; nie oczekuję od Pawła poświadczenia zgodności z prawem.
+Exact SHA: bff9b8ab7cf685096898b1a9ee024a17d2c5e88e.
+Baza: 948c3bb.
+Poprzedni precheck: 8e1cf561301d65841a5c93ff9bf86167611edcf5, tests_r1.txt.
+Nowe zlecenie Pawła: niezależnie ocenić, czy research CC uzasadnia zmianę, czy zmniejszono liczbę alarmów kosztem ochrony.
+Nie traktuję tej wypowiedzi jako OWNER_ACCEPTED nowych reguł.
+
+KOREKTA POPRZEDNIEGO PRZEKAZANIA
+Pytanie o produkt nie może przenosić na OWNERA oceny prawnej heurystyk. Wniosek audytora i uzasadnienie są poniżej.
+Nie czekam na „zatwierdzenie RODO” przez Pawła. Nie wydaję też certyfikatu legalności całego programu.
+OWNER_EXPLANATION_GATE dla całej nowej polityki pozostaje nierozstrzygnięty; nie używam tej analizy do samodzielnego zamrożenia zmian produktu.
+Odtworzone regresje ochrony można wskazać bez akceptowania nowych zwolnień.
+
+WYKONANE
+Izolowane git archive bff9b8a i 948c3bb, własne profile/stan Temp, rzeczywisty silnik → pipeline → Guard, bez HTTP i bez profilu/serwera 8765 Pawła.
+7 syntetycznych scenariuszy na obu wersjach = 14 uruchomień pionu.
+test_firma_proof.py: 56 PASS na exact dostarczonym SHA.
+Dane wyłącznie syntetyczne. Raporty r1 i wcześniejsze taski pozostawiono niezmienione.
+Załączniki: repro_r2.py + repro_r2_results.json.
+Nie ponawiano pełnego repo, modeli na korpusach, OCR, KIO/GOLD/owner/600. STOP po wystarczającym niezależnym dowodzie utraty ochrony.
+
+F1 [P1, SAFETY_PRIVACY] Data urodzenia dziecka uznana za datę pisma.
+TRACE:
+Istniejąca ochrona dat urodzenia; sam brief nowej dostawy, reguła 4: „Każda inna data zakryta jak dotąd (urodzenia, zdarzenia, w zdaniu, w tabeli)”.
+To nie oczekiwanie utworzone przez test ani nowy wymóg maskowania wszystkich publicznych dat.
+OWNERSHIP:
+layers.amount._doc_date ocenia tylko bieżący wiersz i kształt tekstu po jednej stronie przecinka. Nie bierze pod uwagę nagłówka wykazu urodzeń.
+_PLACE_WORDS_RE akceptuje też imię i nazwisko jako rzekomą miejscowość; niedawny rok nie wyklucza daty urodzenia dziecka.
+
+REPRO:
+Wejście:
+Daty urodzenia dzieci:
+Jan Kowalski, 05.01.2024
+Baza:
+Daty urodzenia dzieci:
+OSOBA_001, NUMER_001
+Dostawa:
+Daty urodzenia dzieci:
+OSOBA_001, 05.01.2024
+Guard [] — data jawna i bez pytania.
+
+Rodzeństwo, z prawdziwą nazwą miejscowości:
+Daty i miejsca urodzenia dzieci:
+Warszawa, 05.01.2024
+Baza zakrywa datę, dostawa pozostawia ją jawną, Guard [].
+Zatem samo dodanie słownika miast nie byłoby dowodem zamknięcia tej klasy.
+Kontrole:
+- data urodzenia 05.01.2020 w tej samej liście nadal zakryta;
+- rzeczywisty nagłówek „Warszawa, 05.01.2024” nad wnioskiem zostaje jawny zgodnie z propozycją CC.
+Nie odrzucam celu ograniczenia nadmaskowania daty pisma. Obecne rozpoznawanie myli ją z jawnymi datami urodzenia; próg wieku nie zapewnia ochrony dzieci.
+
+F2 [P1, SAFETY_PRIVACY — utrata ostrzeżenia o identyfikatorze sprawy]
+TRACE:
+Istniejący R4 ostrzega o numerach w kontekście danych identyfikujących; brief reguła 6 obiecuje pozostawienie pytań o numery pism/spraw.
+Kwalifikacja „akt publiczny / struktura” nie obejmuje automatycznie każdej decyzji indywidualnej.
+Nie twierdzę, że każdy napis AB12 w dowolnym dokumencie jest daną osobową. Tu opisano identyfikator indywidualnej sprawy konkretnego dziecka.
+OWNERSHIP:
+guard_residue._STRUCT_NR_RE wycisza R4 po dowolnym „decyzj...” bez rozróżnienia aktu ogólnego od indywidualnego pisma.
+
+REPRO:
+„Doręczono decyzję nr AB12 w indywidualnej sprawie dziecka.”
+Na obu wersjach identyfikator jest jawny.
+Baza: R4 dla AB12.
+Dostawa: Guard [].
+Rodzeństwo:
+„Decyzja nr AB12 dotyczy małoletniego Jana Kowalskiego.”
+Baza: osoba zakryta, R4 dla AB12.
+Dostawa: osoba zakryta, identyfikator jawny, Guard [].
+Nie przeprowadzano próby identyfikacji rzeczywistej osoby; potwierdzono utratę istniejącej kontroli identyfikatora.
+Kontrola prawdziwego szumu: „Załącznik nr 12” traci R4 — zgodnie z celem zmiany.
+
+OCENA RESEARCHU CC
+Źródła istnieją i część kierunku jest uzasadniona. Nie ma podstaw do przypisywania CC złej intencji.
+Wnioski implementacyjne idą jednak dalej niż potwierdzone przesłanki:
+
+1. RODO motyw 14 dotyczy danych osób prawnych. Nie dowodzi, że kandydat bez formy prawnej nie jest firmą/JDG, ani że każda nazwa instytucji jest bezpieczna w dowolnym kontekście.
+Samo oczyszczanie słów takich jak „Rejonu” czy „Rady Ministrów” z błędnej kategorii FIRMA jest uzasadnioną naprawą klasyfikacji.
+Ochrona biznesowych nazw firm wykraczająca poza dane osób jest osobnym celem produktu; motyw 14 nie kasuje wcześniejszego kontraktu programu.
+
+2. EDPB 01/2025 (wersja do konsultacji) pkt 98 i 101–104 wspiera ochronę numerów spraw i quasi-identyfikatorów oraz ocenę kombinacji danych.
+Nie uzasadnia mechanicznego wyłączania wszystkich numerów po słowie „decyzja” ani gwarancji bezpieczeństwa samych etykiet kategorii.
+Nie przedstawiam projektu wytycznych jako wiążącego przepisu ani finalnej wersji.
+
+3. UODO, Biuletyn 4/06/23 s.14–16 opisuje możliwość identyfikacji z połączenia imienia, szkoły i klasy oraz niewystarczającą pseudonimizację.
+Wspiera ostrożność wobec kontekstu; nie daje listy słów, po których dane zawsze przestają identyfikować osobę.
+
+4. Materiał reguł publikacji orzeczeń przewiduje jawność czasu z wyjątkiem urodzenia.
+Przenoszenie tej praktyki na prywatne wykazy dzieci i dowolne dokumenty biurowe wymaga poprawnego rozpoznania znaczenia.
+Nie znalazłem w sprawdzonych materiałach podstawy dla progu „ostatnich 5 lat” jako dowodu, że data nie jest urodzeniem.
+Pełny DOC ze wskazanego URL nie został odczytany (narzędzie nie obsłużyło formatu); fragment 3.2 zweryfikowano w indeksowanej oficjalnej kopii sądu. Nie deklaruję pełnej weryfikacji całego dokumentu.
+
+ŹRÓDŁA PIERWOTNE SPRAWDZONE:
+- RODO motyw 14: https://eur-lex.europa.eu/legal-content/PL/TXT/PDF/?uri=CELEX%3A32016R0679
+- EDPB: https://www.edpb.europa.eu/system/files/2025-01/edpb_guidelines_202501_pseudonymisation_en.pdf
+- UODO: https://uodo.gov.pl/pl/file/4376 (s.14–16)
+- oficjalna kopia reguł sądowych, odczyt ograniczony do indeksowanego fragmentu: https://bialystok.so.gov.pl/component/attachments/download/1686.html
+
+WNIOSKI DLA PRODUKTU
+Nie wszystkie usunięte pozycje były śmieciami. F1/F2 pokazują, że część spadku może pochodzić z utraty potrzebnej ochrony.
+Nie obliczono udziału tych regresji w wyniku KIO 272→158; publiczne orzeczenia nie są pełnym testem prywatnych akt biurowych.
+Nie unieważniam liczb CC bez własnego pomiaru, ale odrzucam traktowanie mniejszej liczby alarmów jako dowodu bezpieczeństwa.
+Zachować uzasadnione naprawy fałszywych FIRMA, granic i powtórzeń; poprawić warunki wyłączeń, zamiast prosić Pawła o zatwierdzenie ryzyka, którego jeszcze nie oceniono.
+
+DALEJ — CC, NIE EGZAMIN PRAWNY DLA OWNERA
+- Usunąć F1: wykaz urodzeń / data dotycząca osoby nie może być wyłączana jak nagłówek pisma, również gdy wiersz zawiera prawdziwą miejscowość.
+- Usunąć F2: indywidualne numery spraw/pism nie mogą tracić R4 tylko przez rzeczownik „decyzja”.
+- W briefie odróżnić podstawę prawną, cel produktu, heurystyki i zaakceptowane ograniczenia. Nie przedstawiać pięcioletniego progu jako wniosku z RODO.
+- Dalszy audyt pozostałych zmian/matrycy i pomiarów po usunięciu wykazanych regresji i wyjaśnieniu kontraktu. Wnioski prawne nadal są analizą ograniczoną do sprawdzonych źródeł i kodu, nie certyfikatem wszystkich zastosowań programu.
+Bez merge/rollback/restartu 8765 przez Codexa.
