@@ -63,6 +63,7 @@ def cuts_long_number(runs: list[tuple[int, int]], start: int, end: int) -> bool:
 def apply_fallback_layer(state: PipelineState, full: bool = True) -> None:
     """Ostatnia warstwa: całe resztki ≥15 cyfr (oba tryby), w pełnym trybie także ciągi 8+ cyfr. Jedno przejście —
     dłuższe dopasowanie wygrywa, krótsze nakładające się pominięte (LYNX-T07 r3 F1)."""
+    apply_value_propagation(state)  # [LYNX-FIRMA-PROOF] najpierw: wartość zakryta raz — zakryta wszędzie
     hits = [(m.start(), m.end(), m.group(0)) for pat in ((_LONG_NUMBER_RE, _FALLBACK_RE) if full else (_LONG_NUMBER_RE,))
             for m in pat.finditer(state.text)]
     taken: list[tuple[int, int, str]] = []

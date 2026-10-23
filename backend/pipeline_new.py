@@ -40,7 +40,7 @@ from layers.institution import apply_institution_layer
 from layers.address import apply_address_layer
 from layers.ocr_normalizer import apply_ocr_normalizer
 from layers.ner_adapter import apply_ner_layer, extract_ner_results
-from layers.fallback import apply_fallback_layer, apply_value_propagation  # + [LYNX-FIRMA-PROOF]
+from layers.fallback import apply_fallback_layer
 from layers.validation import apply_validation_layer
 from layers.trie_layer import apply_trie_layer
 from layers.amount import apply_amount_layer
@@ -97,7 +97,6 @@ def run_pipeline_new(
         _apply(state, apply_address_layer)
         _apply(state, apply_ner_layer, anon_map)
         _apply(state, apply_institution_layer)
-        _apply(state, apply_value_propagation)  # [LYNX-FIRMA-PROOF] wartość zakryta raz — zakryta wszędzie
         if anonymizer is not None:
             _apply(state, apply_validation_layer, anonymizer)
         _apply(state, apply_fallback_layer)  # [LYNX-T07] ostatnia warstwa — po wszystkich rozpoznających

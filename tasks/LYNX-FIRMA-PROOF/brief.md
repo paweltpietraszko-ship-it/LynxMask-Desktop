@@ -57,12 +57,12 @@ Panel Guarda na 40 orzeczeniach KIO (`backend/dataset_real_public/B_kio/docs`, p
 
 ## Zmiany
 1. **Nowy `backend/firma_proof.py`** — `firma_proof(text, ner_results)`, `has_proof`, `strip_role`; wołany w
-   `ner_layer._process_ner` po filtrach (import + 1 linia; plik 597 → 599 l.).
+   `ner_layer._process_ner` po filtrach (import + wywołanie w istniejącej linii; plik 597 → 598 l., funkcja bez wzrostu).
 2. `backend/firma_context.py` — rdzeń firmy z łącznikiem („AG-COMPLEX”) też jest rdzeniem (1 linia).
 3. `backend/layers/ner_adapter.py` — podmiana FIRMA bez względu na wielkość liter (`_whole(value, ci)`).
 4. `backend/layers/institution.py` — nowy wzorzec: rodzaj instytucji + miejscowość/numer, wydział; sama nazwa jawna.
 5. `backend/layers/amount.py` — `_doc_date` (pominięcie daty pisma) dla `_DATE_PL_RE`.
-6. `backend/layers/fallback.py` — `apply_value_propagation`; `backend/pipeline_new.py` — wywołanie po warstwie instytucji.
+6. `backend/layers/fallback.py` — `apply_value_propagation`, wołane na początku `apply_fallback_layer` (ostatnia warstwa; `run_pipeline_new` bez zmian — limit długości funkcji).
 7. `backend/guard_residue.py` — R4: `_STRUCT_NR_RE`, klucz w tokenie, resztka obok tokenu.
 8. Testy: nowy `backend/tests/test_firma_proof.py`; `tests/test_pseudominizer.py` (klasa instytucji przepisana na nową zasadę:
    sama nazwa jawna, z miejscem/numerem/wydziałem zakryta); `tests/test_map_fidelity.py` (fikstura „Beta Grupa” → „Betanex Grupa”:
@@ -83,7 +83,6 @@ TASK_SCOPE:
 - backend/layers/institution.py
 - backend/layers/amount.py
 - backend/layers/fallback.py
-- backend/pipeline_new.py
 - backend/guard_residue.py
 - backend/tests/test_firma_proof.py
 - backend/tests/test_pseudominizer.py
