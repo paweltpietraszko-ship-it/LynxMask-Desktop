@@ -1,0 +1,45 @@
+LYNX-OSOBA-REDESIGN — BRIEF_ONLY r2
+Data: 2026-10-23
+Exact SHA briefu v1.2: bdd2447315f6f00cdc827cefec9155ed901ee4ad
+Poprzedni brief v1: b697c47545aed502fe4e42b76e93361565cf8c97
+Poprzedni raport r1: c372784c48e683b81295483663f6dfb0cdf10660
+Baza kodu wskazana w aktualnym przekazaniu: 63c003334ce4964c823b4309c064cffbb981eae4
+Wynik: C1 i C3 zamknięte w kontrakcie; C2 pozostała jedna sprzeczność pierwszeństwa.
+Brak PASS PREIMPLEMENTATION do usunięcia tej sprzeczności; bez FAIL implementacji.
+Odbiorca: Architekt — jedna korekta spójności tabeli. Nie potrzeba kolejnej decyzji OWNERA.
+
+Zakres
+Diff briefu v1->v1.2, reużycie raportu r1/propozycji i punktowe potwierdzenie wskazanego szwu na aktualnej bazie main. Kod na historycznej gałęzi zadania jest starszy od tej bazy: wnioski o istnieniu apply_net/_apply_output_guard sprawdzono na 63c0033, nie na starym kodzie gałęzi briefu.
+Bez testów, reproduktorów, modeli, benchmarków, PESEL i czytania zbiorów. Nie projektowano nowego mechanizmu.
+
+C1 — CLOSED PREIMPLEMENTATION
+Wskazano konkretny resolver, wejście/wyjście i wspólne miejsce w pipeline._apply_guard po apply_net, przed _apply_output_guard. Ten szew istnieje na wskazanej bazie main.
+Decyzje powstają na jednym aktualnym snapshocie; MASK wykonywane lokalnie od prawej do lewej; ASK przeliczane przez znane podmiany, Python code points; ochrona tokenów, obsługa kolizji i brak globalnego _sub_whole. pipeline.py obowiązkowy w zakresie. Dawne R1/released i samodzielne OSOBA mają być wyłączone.
+Późny etap może utracić wcześniejszy kontekst NER przy adresach: brief jawnie traktuje to jako HIPOTEZĘ E1, wymaga porównania poprawnych zakryć i STOP przy jakiejkolwiek rzeczywistej stracie. To wystarczający, falsyfikowalny kontrakt etapu E1; nie jest jeszcze dowodem wykonalności ani zgodą na przełączenie E2.
+Rozróżnianie referentów z identyczną pisownią i użycie alokatora mają wymaganą granicę/STOP. Nie żądam ogólnej mapy pozycji ani rozbudowy innych kategorii.
+
+C3 — CLOSED CONTRACT DECISION
+Brief i aktualne przekazanie dokumentują odpowiedź OWNERA „Tak, z warunkiem”:
+316 słów wyłączone samodzielnie z maskowania i pytań; wyjątek tylko dla bezpośredniej pełnej pary imię+nazwisko, w tym samym zdaniu, bez kropki/przecinka pomiędzy. Nie wystarczy sam inicjał ani tytuł. Przykłady Jan Termin / Termin wykonania / Jan, Termin / Jan. Termin są testowalne.
+Nie otwieram tej decyzji ponownie i nie proszę OWNERA o ponowne zatwierdzenie.
+
+C2 — jedna pozostała sprzeczność normatywna
+Źródło: §2 „Zamknięta kolejność (pierwsza pasująca reguła wygrywa)” kontra jawna granica C3.
+Tabela umieszcza przed wyłączeniem samodzielnego białego słowa:
+  „Wyraźna kotwica osoby (Pan/Pani...) i wiarygodny kandydat ... z PESEL ...; bez kolizji kategorii” -> MASK.
+Konkretna klasa: „Pan Termin”. Termin jest białym słowem/nazwiskiem z PESEL. Sam Pan stanowi kotwicę w tym wierszu, ale nie pełne imię, więc nie spełnia wyjątku C3.
+Czytając pierwszy pasujący wiersz, implementer otrzymuje MASK przed dojściem do białej listy. Czytając szczególne rozstrzygnięcie C3, nie wolno maskować/pytać o ten biały człon samym tytułem. Dwie instrukcje dają różny wynik.
+
+Jedyna wymagana korekta:
+Uzgodnić kolejność albo warunki tabeli z już przyjętym C3: sam tytuł/inicjał nie omija wyłączenia białego słowa; wyjątek nadal wyłącznie dla bezpośredniej pełnej pary. W odbiorze dopisać granicę „Pan Termin” / „J. Termin” bez wyjątku kontra „Jan Termin” z wyjątkiem. Nie zmieniać zakresu decyzji OWNERA ani projektować kolejnej heurystyki.
+Pozostała niejednoznaczność słabszych ZA z r1 jest usunięta: PESEL 100–999 bez kotwicy -> ASK, słaba fleksja/czynność z wiarygodnym sygnałem -> ASK, sam spaCy/CAPS -> PASS. Nie zgłaszam nowych klas do projektu.
+
+Mierzalność odbioru — pozostałe uwagi nieblokujące
+- 2–4 średnie R1/dok. to cel użytkowy do raportowania razem z ochroną nazwisk i jakością pytań; nie wolno sztucznie poprawiać metryki przez cichy PASS.
+- Oznaczony niezależny GOLD ma wymagać MASK/ASK dla każdego nazwiska i oceny oczywistych śmieci; osobne wyniki per dziedzina oraz nowe/utracone poprawne zakrycia są mierzalne.
+- Dodatkowy zbiór nie istnieje jeszcze; liczność na dziedzinę, przygotowanie i koszt są jawnie pozostawione do estymacji CC i zgody OWNERA przed odbiorem E2. Obecny precheck nie potwierdza generalizacji ani gotowości danych.
+- Weryfikacja słownictwa na niezależnym korpusie jest diagnostyką przy dostępności/licencji, bez cichej zmiany zatwierdzonych 316 słów.
+- E1 nie wpływa na wynik użytkownika. Budżet i zgoda >150 l. pozostają wymagane; PASS prechecku nie zastąpi ich ani odbioru E1/E2.
+
+Dalej
+Architekt usuwa jedną sprzeczność C2. Potem wyłącznie punktowy odczyt poprawionych warunków, bez kolejnej analizy całej architektury. Do tego czasu nie rozpoczynać implementacji. Bez merge.
