@@ -1,6 +1,6 @@
-# LYNX-OSOBA-REDESIGN — brief Architekta v1.1 (23.10.2026, po Codex r1 C1/C2)
+# LYNX-OSOBA-REDESIGN — brief Architekta v1.2 (23.10.2026, po CC i rozstrzygnięciu C3)
 
-**Status: C1/C2 uzupełnione po Codex r1; C3 OWNER_DECISION_NEEDED. NIE kierować do Codexa r2 przed C3; bez implementacji i merge.**
+**Status: C1/C2 uzupełnione po Codex r1; C3 rozstrzygnięte przez OWNERA 23.10; do Codexa BRIEF_ONLY r2, bez implementacji i merge.**
 Źródła: `cc_proposal.md` (20.10), `cc_proposal_update_2026-10-23.md` i `evidence_2026-10-23/` na gałęzi zadania; `BOARD.md` wiersz `LYNX-OSOBA-REDESIGN` (23.10); zamrożone `arch/spec.md` S1–S5. Bazę implementacji CC musi odświeżyć po prechecku; nie zakładać, że main jest nieruchomy.
 
 ## 1. Problem i granice dowodów
@@ -21,11 +21,11 @@ Zamknięta kolejność (pierwsza pasująca reguła wygrywa):
 | --- | --- |
 | Span już zakryty świadomą encją OSOBA użytkownika z profilu | Nie klasyfikować ponownie, istniejący token zostaje |
 | Fragment należy w całości do potwierdzonej ADRES/FIRMA/INSTYTUCJA/innej kategorii, bez niezależnej pełnej osoby poza jej granicą | `PASS` jako OSOBA; obowiązuje dotychczasowa kategoria |
-| Potwierdzona cała para imię–nazwisko / inicjał–nazwisko, bądź nazwisko wiarygodnie powiązane z pełną osobą w tym dokumencie | `MASK`; nie odrzucać z powodu pojedynczego członu przypominającego instytucję |
+| Potwierdzona cała para imię–nazwisko / inicjał–nazwisko, bądź nazwisko wiarygodnie powiązane z pełną osobą w tym dokumencie | `MASK`; dla nazwiska z białej listy wyjątek dotyczy wyłącznie pełnego imienia + nazwiska spełniającego C3 (nie samego inicjału); nie odrzucać całej rozpoznanej osoby z powodu pojedynczego członu |
 | Wyraźna kotwica osoby (Pan/Pani, Świadek, Wnioskodawca, podpis, pole imię i nazwisko) **i** wiarygodny kandydat imienia/nazwiska z PESEL lub imion/Morfeusza; bez kolizji kategorii | `MASK` |
 | Tytuł/funkcja bez odrębnej nazwy osoby (`Pani dyrektor`, `Pełnomocnik Odwołującego`) | `PASS`; sama funkcja nie jest nazwiskiem |
 | Samotny miesiąc/dzień tygodnia bez niezależnej kotwicy osoby, nagłówek/termin urzędowy, kontekst ulicy/miasta, nieliterowy szum OCR lub wyłącznie mała litera | `PASS` |
-| Samodzielne słowo z białej listy 316 (bez potwierdzonego pełnego imienia i nazwiska) | `PASS` i bez R1 — zachowuje zatwierdzoną listę; wyjątek dla pełnej osoby wymaga C3 niżej |
+| Samodzielne słowo z białej listy 316 (bez bezpośredniej pełnej pary z C3) | `PASS` i bez R1; wyjątek tylko według rozstrzygnięcia C3 |
 | Samotne nazwisko z PESEL ≥1000, zapisane jak nazwa własna, niebędące funkcją, adresem, instytucją lub oczywistym nie-słowem | `MASK` również bez spaCy; początek zdania nie jest wykluczeniem |
 | PESEL 100–999, pisownia nazwy własnej, bez kotwicy i bez mocnego przeciw; z samym spaCy PER lub bez niego | `ASK` (dodatkowy słaby sygnał nie zmienia na `MASK`) |
 | Niejasna fleksja nazwiska albo słowo prawdopodobnie oznaczające osobę z czasownikiem czynności osoby, bez mocnej kotwicy, ale co najmniej z wiarygodnym słownikowym lub kontekstowym sygnałem osoby | `ASK`, nie `MASK`; `być` samo w sobie nie jest takim sygnałem |
@@ -34,7 +34,7 @@ Zamknięta kolejność (pierwsza pasująca reguła wygrywa):
 
 Miesiące `Styczeń…Grudzień` jako nazwisko wymagają **kotwicy osoby** także przy liczbie nosicieli PESEL ≥1000. Słownik nazwisk jest ważniejszy od samotnego wyniku spaCy, ale nie unieważnia dowodu geograficznego lub prawnego dotyczącego tego konkretnego wystąpienia. PESEL 100 to tylko dolna granica pomocniczych kandydatów; próg automatycznego zakrycia samodzielnego nazwiska = 1000. Bez uczenia wag, regresji logistycznej i arbitra LLM.
 
-**C3 — rozstrzygnięcie OWNERA wymagane przed ponownym precheckiem:** biała lista 316 słów (zaakceptowana 23.10) blokuje zgłoszenie samodzielnego wyrazu jako nazwiska. Architekt **rekomenduje** wyjątek tylko dla wiarygodnie rozpoznanej pełnej osoby (`Jan Termin` może być OSOBA, `Termin wykonania` nie); Codex potwierdził sens ochrony pełnej osoby, ale nie uznał wyjątku za zatwierdzony. Do jawnego wyboru OWNERA: (A) potwierdzić wyjątek dla pełnej osoby — preferowane; (B) wymagać wyłączenia członu z białej listy nawet wewnątrz imienia–nazwiska, z ryzykiem utraty właściwego zakrycia. Nie wprowadzać automatycznie A bez akceptacji.
+**C3 — rozstrzygnięcie OWNERA 23.10 („Tak, z warunkiem”):** biała lista 316 słów wyłącza pojedynczy wyraz z samodzielnego zgłoszenia jako nazwisko zarówno w silniku, jak i R1. Wyjątek: wyraz z listy jest **bezpośrednim członem pełnego imienia i nazwiska**, w tym samym zdaniu, **bez przecinka ani kropki między rozpoznanym imieniem a nazwiskiem**. Wiarygodnie potwierdzoną całą parę można zamaskować jako OSOBA. `Jan Termin` → OSOBA, `Termin wykonania` → PASS, `Jan podpisał Termin wykonania` → nie jest pełną parą; `Jan, Termin` / `Jan. Termin` → nie spełnia wyjątku. Sam inicjał, tytuł lub dowolne imię wcześniej w zdaniu **nie tworzą** wyjątku. Nie rozcinać prawidłowo rozpoznanej pełnej osoby ze względu na biały człon.
 
 ## 3. Konkretny szew C1 — finalna decyzja bez przenoszenia starych offsetów
 
@@ -78,6 +78,18 @@ Minimalne przypadki:
 
 Jeśli E1 pokaże, że prosta wspólna decyzja odbiera prawdziwe pełne osoby albo nie ogranicza kosztu pytań, **STOP przed E2**. Nie „naprawiać” wyniku nową autonomiczną regułą lub kolejną warstwą.
 
+### Uzupełnienie odbioru CC 23.10 — cel produktu i niezależna kontrola
+
+**Cel użytkowy:** OWNER akceptuje średnio 2–4 decyzje o osobach na dokument, ale nie zalewanie Guarda oczywistymi śmieciami. W raporcie mierzyć osobno R1 i wszystkie ostrzeżenia. Cel 2–4 R1/dokument średnio na niezależnych zbiorach odbiorczych nie może zostać osiągnięty przez ukrycie rzeczywistych nazwisk. Każde nazwisko oznaczone w gold musi być MASK lub ASK — bez cichego PASS. Nie oznacza to gwarancji wykrywania dowolnych nieznanych nazwisk na świecie.
+
+**Jakość pytań:** zero oczywistych śmieci R1 w oznaczonych dokumentach odbiorczych: nazwy funkcji i ról bez osoby, człony nazw urzędów i miejscowości, skróty, nie-słowa/OCR, sama mała litera bez kotwicy oraz samodzielne słowa z białej listy. Mierzyć też, czy przypadki ASK są rzeczywiście niejednoznaczne. Gdy cel liczby pytań koliduje z ochroną nazwisk, raportować i STOP, a nie obniżać metrykę przez ciche PASS.
+
+**Oddzielenie diagnozy od odbioru:** 255 dokumentów publicznych, GOLD dev i znane zdania to materiały do rozwijania reguł i porównania baseline, NIE niezależny dowód generalizacji. GOLD test pozostaje zamknięty dla strojenia. Przed decyzją o wdrożeniu E2 wymagany jest dodatkowy, nieoglądany przez implementera GOLD przygotowany przez innego autora, zweryfikowany niezależnie, na innych szablonach i w brakujących dziedzinach (kadry, księgowość, medycyna, budowa). CC proponuje liczbę dokumentów na dziedzinę i koszt Ownerowi — nie twierdzić, że zbiór już istnieje. Istniejące pl-pii/Mobile służą porównaniu, ale holdoutem są wyłącznie nieoglądane wcześniej części. Wyniki prezentować osobno per dziedzina, z poprawnymi i utraconymi zakryciami; dokumenty prywatne nie trafiają do repo.
+
+**Biała lista:** 316 słów pozostaje wejściem zaakceptowanym przez OWNERA, bez cichej podmiany. Przed odbiorem ocenić jej ograniczenie do języka pism KIO na niezależnym korpusie ogólnej polszczyzny, jeżeli licencja i dostęp na to pozwalają (np. NKJP). Rozbieżności raportować; ewentualna zmiana listy wymaga osobnej decyzji. Brak zależności sieciowej podczas pracy aplikacji.
+
+Model rozumiejący zdanie (np. Bielik) jest już odłożony w `ODLOZONE.md`. Nie budować dla niego interfejsu ani integracji w tym Tasku.
+
 ## 6. TASK_SCOPE (proponowany; CC ma skorygować tylko na podstawie exact SHA)
 
 - backend/person_decision.py (nowy, owner pojedynczego finalnego rozstrzygnięcia)
@@ -99,4 +111,4 @@ Nie zmieniać S2, `arch/spec.md`, `FROZEN.lock`, FIRMA, OCR, UI, allowlisty, Her
 
 ## 7. Przekazanie
 
-**Codex BRIEF_ONLY r2 (DOPIERO PO C3):** przeczytaj zmiany C1/C2 w tym briefie i jedną decyzję OWNERA dla C3; wyłącznie punktowo wskazane szwy. Bez kodowania, testów, pobierania danych PESEL czy benchmarków. Zweryfikuj wykonalność jednej decyzji na całym spanie przy obecnej kolejności NER/ADRES/FIRMA i braku bezpiecznych offsetów po podmianie; niełamanie decyzji słownika biura; przeniesienie ASK do Guarda bez równoległego R1; definicję białej listy dla par imię–nazwisko; progi i odbiór; S2/S3/S4/S5 i minimalną liczbę zmienianych ownerów. Zwróć `PASS PREIMPLEMENTATION` albo **jedną zamkniętą listę** niejasności/konfliktów. Jeśli istotna decyzja produktowa nadal jest niejednoznaczna, `OWNER_DECISION_NEEDED`, nie dorabiać samodzielnie nowej architektury. Dopiero po PASS → szacunek CC → zgoda OWNERA na koszt → implementacja → niezależny audyt Codexa exact SHA → decyzja OWNERA o merge.
+**Codex BRIEF_ONLY r2:** oceń C1/C2 po raporcie r1, rozstrzygnięcie C3 z BOARD oraz nowe kryteria odbioru z §5; czytaj wyłącznie punktowo wskazane szwy. Bez kodowania, testów, pobierania danych PESEL czy benchmarków. Zweryfikuj wykonalność jednej decyzji na całym spanie przy obecnej kolejności NER/ADRES/FIRMA i braku bezpiecznych offsetów po podmianie; niełamanie decyzji słownika biura; przeniesienie ASK do Guarda bez równoległego R1; definicję białej listy dla par imię–nazwisko; progi i odbiór; S2/S3/S4/S5 i minimalną liczbę zmienianych ownerów. Zwróć `PASS PREIMPLEMENTATION` albo **jedną zamkniętą listę** niejasności/konfliktów. Jeśli istotna decyzja produktowa nadal jest niejednoznaczna, `OWNER_DECISION_NEEDED`, nie dorabiać samodzielnie nowej architektury. Dopiero po PASS → szacunek CC → zgoda OWNERA na koszt → implementacja → niezależny audyt Codexa exact SHA → decyzja OWNERA o merge.
